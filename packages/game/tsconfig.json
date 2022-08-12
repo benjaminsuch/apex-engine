@@ -1,0 +1,9 @@
+{
+  "exclude": ["node_modules", "build"],
+  "include": ["**/*.ts"],
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "outDir": "build",
+    "target": "esnext"
+  }
+}

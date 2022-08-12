@@ -1,0 +1,20 @@
+{
+  "name": "@seawars/game",
+  "version": "0.0.1",
+  "type": "module",
+  "author": "Benjamin Such",
+  "license": "UNLICENSED",
+  "main": "./build/index.js",
+  "module": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "engines": {
+    "node": "^16.0.0"
+  },
+  "scripts": {
+    "build-types": "tsc -p ./ --declaration --declarationMap --emitDeclarationOnly"
+  },
+  "packageManager": "yarn@3.2.2",
+  "devDependencies": {
+    "typescript": "^4.7.4"
+  }
+}
