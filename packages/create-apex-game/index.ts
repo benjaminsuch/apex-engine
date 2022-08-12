@@ -18,89 +18,81 @@ program
   .description(createApexPkg.description)
   .version(createApexPkg.version);
 
-program
-  .argument('[name]', 'Name of your project.')
-  .action(async (initialDir: string = '', { skipOptional }) => {
-    let targetDir = resolve(initialDir === '.' ? '' : initialDir);
+program.argument('[name]', 'Name of your project.').action(async (initialDir: string = '') => {
+  let targetDir = resolve(initialDir === '.' ? '' : initialDir);
 
-    if (initialDir[0] === '~') {
-      targetDir = join(homedir(), initialDir.substring(1));
-    }
+  if (initialDir[0] === '~') {
+    targetDir = join(homedir(), initialDir.substring(1));
+  }
 
-    const projectName = initialDir === '.' ? basename(resolve()) : initialDir;
-    const cwd = process.cwd();
+  const projectName = initialDir === '.' ? basename(resolve()) : initialDir;
+  const cwd = process.cwd();
 
-    try {
-      const { packageName = projectName, overwrite } = await prompts(
-        [
-          {
-            type: initialDir ? null : 'text',
-            name: 'projectName',
-            message: 'Project name:',
-            initial: defaultProjectName,
-            onState({ value = defaultProjectName }) {
-              targetDir = resolve(sanitizePath(value));
-            }
-          },
-          {
-            type: isValidDir(targetDir) ? null : 'confirm',
-            name: 'overwrite',
-            message: `Target directory "${targetDir}" exists already. Do you want to continue (existing files will be removed)?`
-          },
-          {
-            type: isValidPackageName(projectName) ? null : 'text',
-            name: 'packageName',
-            message: 'Package name:',
-            initial: toValidPackageName(projectName),
-            validate(val) {
-              return isValidPackageName(val) || 'Invalid package name';
-            }
-          },
-          {
-            type: skipOptional ? null : 'confirm',
-            name: 'installBlender',
-            message: 'Do you want to install Blender with the ApexEngine add-on?',
-            initial: false
-          }
-        ],
+  try {
+    const { packageName = projectName, overwrite } = await prompts(
+      [
         {
-          onCancel() {
-            throw new Error(chalk.red('✖') + ' Operation cancelled');
-          },
-          onSubmit(_, __, { overwrite }: any = {}) {
-            if (overwrite === false) {
-              throw new Error(chalk.red('✖') + ' Operation cancelled');
-            }
+          type: initialDir ? null : 'text',
+          name: 'projectName',
+          message: 'Project name:',
+          initial: defaultProjectName,
+          onState({ value = defaultProjectName }) {
+            targetDir = resolve(sanitizePath(value));
+          }
+        },
+        {
+          type: isValidDir(targetDir) ? null : 'confirm',
+          name: 'overwrite',
+          message: `Target directory "${targetDir}" exists already. Do you want to continue (existing files will be removed)?`
+        },
+        {
+          type: isValidPackageName(projectName) ? null : 'text',
+          name: 'packageName',
+          message: 'Package name:',
+          initial: toValidPackageName(projectName),
+          validate(val) {
+            return isValidPackageName(val) || 'Invalid package name';
           }
         }
-      );
-
-      if (overwrite) {
-        rmSync(targetDir, { recursive: true, force: true });
+      ],
+      {
+        onCancel() {
+          throw new Error(chalk.red('✖') + ' Operation cancelled');
+        },
+        onSubmit(_, __, { overwrite }: any = {}) {
+          if (overwrite === false) {
+            throw new Error(chalk.red('✖') + ' Operation cancelled');
+          }
+        }
       }
+    );
 
-      console.log(`\nCreating project files in ${targetDir}...`);
-
-      copyProjectFiles(targetDir, projectName);
-      updatePkg(targetDir, { name: packageName });
-
-      console.log(`\n${chalk.green('√')} Done. Continue by running:\n`);
-
-      if (targetDir !== cwd) {
-        console.log(`  cd ${relative(cwd, targetDir)}`);
-      }
-
-      const { commands } = getPkgManager();
-
-      console.log(`  ${commands.install}`);
-      console.log(`  ${commands.dev}`);
-      console.log();
-    } catch (error) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
+    if (overwrite) {
+      rmSync(targetDir, { recursive: true, force: true });
     }
-  });
+
+    console.log(`\nCreating project files in ${targetDir}...`);
+
+    copyProjectFiles(targetDir, projectName);
+    updatePkg(targetDir, { name: packageName });
+
+    console.log(`\n${chalk.green('√')} Done. Continue by running:\n`);
+
+    if (targetDir !== cwd) {
+      console.log(`  cd ${relative(cwd, targetDir)}`);
+    }
+
+    const { commands } = getPkgManager();
+
+    console.log(`  ${commands.install}`);
+    console.log(`  ${commands.dev}`);
+    console.log();
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(error.message);
+    }
+  }
+});
 
 program.parse();
 

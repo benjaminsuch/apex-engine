@@ -12,9 +12,7 @@ program
     .name(createApexPkg.name)
     .description(createApexPkg.description)
     .version(createApexPkg.version);
-program
-    .argument('[name]', 'Name of your project.')
-    .action(async (initialDir = '', { skipOptional }) => {
+program.argument('[name]', 'Name of your project.').action(async (initialDir = '') => {
     let targetDir = resolve(initialDir === '.' ? '' : initialDir);
     if (initialDir[0] === '~') {
         targetDir = join(homedir(), initialDir.substring(1));
@@ -45,12 +43,6 @@ program
                 validate(val) {
                     return isValidPackageName(val) || 'Invalid package name';
                 }
-            },
-            {
-                type: skipOptional ? null : 'confirm',
-                name: 'installBlender',
-                message: 'Do you want to install Blender with the ApexEngine add-on?',
-                initial: false
             }
         ], {
             onCancel() {
