@@ -1,0 +1,14 @@
+{
+  "exclude": ["node_modules"],
+  "include": ["*.ts"],
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "jsx": "preserve",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "removeComments": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "esnext"
+  }
+}

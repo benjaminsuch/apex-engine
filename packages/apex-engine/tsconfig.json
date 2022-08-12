@@ -1,0 +1,13 @@
+{
+  "exclude": ["node_modules", "build"],
+  "include": ["**/*.ts"],
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "target": "esnext"
+  }
+}
