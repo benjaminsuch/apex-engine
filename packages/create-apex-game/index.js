@@ -58,7 +58,7 @@ program.argument('[name]', 'Name of your project.').action(async (initialDir = '
             rmSync(targetDir, { recursive: true, force: true });
         }
         console.log(`\nCreating project files in ${targetDir}...`);
-        copyProjectFiles(targetDir, projectName);
+        copyProjectFiles(targetDir, packageName);
         updatePkg(targetDir, { name: packageName });
         console.log(`\n${chalk.green('√')} Done. Continue by running:\n`);
         if (targetDir !== cwd) {
