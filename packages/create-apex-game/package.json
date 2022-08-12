@@ -1,7 +1,7 @@
 {
-  "name": "create-apex",
+  "name": "create-apex-project",
   "version": "1.0.0",
-  "description": "CLI to create apex-projects via Yarn or NPM.",
+  "description": "CLI to create games for the Apex Engine via Yarn or NPM.",
   "type": "module",
   "license": "MIT",
   "author": "Benjamin Such",
@@ -20,12 +20,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/benjaminsuch/apex-engine.git",
-    "directory": "packages/create-apex"
+    "directory": "packages/create-apex-game"
   },
   "bugs": {
     "url": "https://github.com/benjaminsuch/apex-engine/issues"
   },
-  "homepage": "https://github.com/benjaminsuch/apex-engine/tree/main/packages/create-apex#readme",
+  "homepage": "https://github.com/benjaminsuch/apex-engine/tree/main/packages/create-apex-game#readme",
   "dependencies": {
     "chalk": "^5.0.1",
     "commander": "^9.4.0",
