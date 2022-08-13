@@ -1,31 +1,39 @@
-import { build } from "esbuild";
-import { execa } from "execa";
+import { build } from 'esbuild';
+import { nodeExternalsPlugin } from 'esbuild-node-externals';
+import { execa } from 'execa';
+
+import ifdef from './ifdef.mjs';
+
+const define = { IS_CLIENT: true };
 
 build({
-  entryPoints: ["src/index.ts"],
-  outfile: "build/index.js",
+  define,
+  entryPoints: ['src/index.ts'],
+  outfile: 'build/index.js',
   bundle: true,
+  keepNames: true,
+  plugins: [nodeExternalsPlugin(), ifdef(define, process.cwd() + '/src')],
   sourcemap: true,
   watch: {
     async onRebuild(error) {
       if (error) {
-        console.error("watch build failed:", error);
+        console.error('watch build failed:', error);
       } else {
-        console.log("watching...");
+        console.log('watching...');
         await buildTypes();
       }
-    },
-  },
+    }
+  }
 })
   .then(async () => {
-    console.log("watching...");
+    console.log('watching...');
     await buildTypes();
   })
   .catch(() => process.exit(1));
 
 async function buildTypes() {
   try {
-    await execa("yarn build-types", []);
+    await execa('yarn', ['build-types']);
   } catch (error) {
     console.log(error);
   }

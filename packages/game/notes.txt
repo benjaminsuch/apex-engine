@@ -1,0 +1,10 @@
+Anforderungen für das "build" Script
+
+devdeps:
+- esbuild
+- esbuild-node-externals
+- execa
+
+Sonstiges:
+- Der vom User genutzte Package Manager muss in "packageManager" (package.json) hinterlegt werden
+- Die in "scripts" ausgeführten Scripts müssen dem "packageManager" angepasst werden
