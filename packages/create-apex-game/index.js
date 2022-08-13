@@ -59,7 +59,6 @@ program.argument('[name]', 'Name of your project.').action(async (initialDir = '
         }
         console.log(`\nCreating project files in ${targetDir}...`);
         copyProjectFiles(targetDir, packageName);
-        copyEngineFiles(targetDir);
         updatePkg(targetDir, { name: packageName });
         console.log(`\n${chalk.green('√')} Done. Continue by running:\n`);
         if (targetDir !== cwd) {
@@ -120,12 +119,6 @@ function copyProjectFiles(dest, projectName = defaultProjectName) {
     }
     copy('template', dest);
     renameSync(`${dest}/${defaultProjectName}.blend`, `${dest}/${projectName}.blend`);
-}
-function copyEngineFiles(dest) {
-    const dir = `${dest}/.apex/engine`;
-    copy(resolve('../apex-engine/src'), `${dir}/src`);
-    copy(resolve('../apex-engine/types'), `${dir}/types`);
-    copy(resolve('../apex-engine/LICENSE'), `${dir}/LICENSE`);
 }
 function copy(src, dest) {
     const stat = statSync(src);

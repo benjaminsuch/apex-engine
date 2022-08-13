@@ -10,5 +10,5 @@ Sonstiges:
 - Die in "scripts" ausgeführten Scripts müssen dem "packageManager" angepasst werden
 
 apex-engine package reference:
-- Das Package "apex-engine" wird versteckt in dem Ordner ".apex" gespeichert, da die User in der Regel keine Änderungen an der Engine selbst vornehmen
 - In der "tsconfig.json" muss ein Eintrag für "apex-engine" in "paths" hinterlegt werden, damit der `import` Befehl klappt
+

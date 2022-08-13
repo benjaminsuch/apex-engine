@@ -5,8 +5,8 @@ import path from 'node:path';
 
 const IF_DEFS = [];
 
-const ENDIF = '//#endif';
-const IFDEF = '//#ifdef';
+const ENDIF = '//endif';
+const IFDEF = '//ifdef';
 let filterList;
 let baseDir;
 
@@ -43,9 +43,10 @@ const LINE_TYPE = {
 };
 
 async function onLoadPlugin(args) {
-  let dirPath = path.relative(baseDir, args.path);
+  let dirPath = args.path;
   let hasMatch = false;
 
+  console.log('dirPath', dirPath);
   for (let filter of filterList) {
     if (dirPath.startsWith(filter)) {
       hasMatch = true;
@@ -141,31 +142,34 @@ const DEFAULT_EXCLUDE_LIST = ['dist', 'vendor', 'node_modules', '.git'];
 
 export default (env = process.env, _baseDir = process.cwd(), exclude = DEFAULT_EXCLUDE_LIST) => {
   configureStringsToSearch(env);
-
+  console.log('IF_DEFS', IF_DEFS);
   baseDir = _baseDir;
-  filterList = fs.readdirSync(baseDir).filter(dir => {
-    if (dir.includes('.')) {
-      return false;
-    }
+  console.log('baseDir', baseDir);
+  filterList = [
+    baseDir,
+    ...fs
+      .readdirSync(baseDir)
+      .filter(dir => {
+        if (dir.includes('.')) {
+          return false;
+        }
 
-    for (let excludeDir of exclude) {
-      if (excludeDir.includes(dir)) {
-        return false;
-      }
-    }
+        for (let excludeDir of exclude) {
+          if (excludeDir.includes(dir)) {
+            return false;
+          }
+        }
 
-    return true;
-  });
+        return true;
+      })
+      .map(dir => path.join(_baseDir, dir))
+  ];
+  console.log('filterList', filterList);
 
   const filter = {
-    filter: new RegExp(
-      `(${filterList
-        .map(dir => path.join(_baseDir, dir))
-        .join('|')
-        .replace(/\\/g, '\\\\')}).*\\.ts$`
-    )
+    filter: new RegExp(`(${filterList.join('|')}).*\\.ts$`)
   };
-
+  console.log('filter', filter);
   return {
     name: '#ifdef',
     setup(build) {

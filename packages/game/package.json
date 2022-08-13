@@ -11,6 +11,7 @@
     "node": "^16.0.0"
   },
   "scripts": {
+    "dev": "node scripts/watch.js",
     "build-types": "tsc -p ./ --declaration --declarationMap --emitDeclarationOnly"
   },
   "devDependencies": {

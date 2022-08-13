@@ -3,10 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "./build/index.js",
   "scripts": {
     "dev": "node scripts/watch.js"
   },
   "dependencies": {
+    "apex-engine": "file:/Users/benjaminsuch/Desktop/apex-engine/packages/apex-engine",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

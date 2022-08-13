@@ -8,10 +8,7 @@ const define = { IS_CLIENT: true };
 
 build({
   define,
-  entryPoints: {
-    engine: '.apex/engine/src/index.ts',
-    game: 'src/index.ts'
-  },
+  entryPoints: ['src/index.ts'],
   outdir: 'build',
   bundle: true,
   keepNames: true,
