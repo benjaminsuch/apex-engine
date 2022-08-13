@@ -16,7 +16,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@seawars/game@workspace:packages/game"
   dependencies:
-    apex-engine: "file:../apex-engine"
     esbuild: ^0.15.2
     esbuild-node-externals: ^1.4.1
     execa: ^6.1.0
@@ -35,15 +34,6 @@ __metadata:
   version: 2.4.0
   resolution: "@types/prompts@npm:2.4.0"
   checksum: ec75655f07fbc3cb2df60a3e3bdd13bfda0554a16f5541285c4b1cc0610756838a2863dccfc911cbb1385492054c07210512164e3dbef272ec638d631783b278
-  languageName: node
-  linkType: hard
-
-"apex-engine@file:../apex-engine::locator=%40seawars%2Fgame%40workspace%3Apackages%2Fgame":
-  version: 0.0.1
-  resolution: "apex-engine@file:../apex-engine#../apex-engine::hash=0b6ff3&locator=%40seawars%2Fgame%40workspace%3Apackages%2Fgame"
-  bin:
-    apex: bin/apex.js
-  checksum: d9b3e93c168b439f15e31dc6f0765bee627e23635b339a87f85707f16039cac30fdbaaf20ca99c51d0061a852db0484dce00ff63b2347f7d4eba2560e4fc645d
   languageName: node
   linkType: hard
 

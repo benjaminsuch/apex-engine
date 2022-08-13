@@ -8,8 +8,11 @@ const define = { IS_CLIENT: true };
 
 build({
   define,
-  entryPoints: ['src/index.ts'],
-  outfile: 'build/index.js',
+  entryPoints: {
+    engine: '.apex/engine/src/index.ts',
+    game: 'src/index.ts'
+  },
+  outdir: 'build',
   bundle: true,
   keepNames: true,
   plugins: [nodeExternalsPlugin(), ifdef(define, process.cwd() + '/src')],
@@ -20,14 +23,14 @@ build({
         console.error('watch build failed:', error);
       } else {
         console.log('watching...');
-        await buildTypes();
+        //await buildTypes();
       }
     }
   }
 })
   .then(async () => {
     console.log('watching...');
-    await buildTypes();
+    //await buildTypes();
   })
   .catch(() => process.exit(1));
 

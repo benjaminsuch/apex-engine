@@ -2,12 +2,12 @@
   "exclude": ["node_modules", "build"],
   "include": ["**/*.ts"],
   "compilerOptions": {
-    "baseUrl": ".",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "module": "esnext",
     "moduleResolution": "node",
-    "outDir": "build",
-    "paths": {
-      "apex-engine": [".apex/engine/src/index.ts"]
-    },
+    "skipLibCheck": true,
+    "sourceMap": true,
     "target": "esnext"
   }
 }
