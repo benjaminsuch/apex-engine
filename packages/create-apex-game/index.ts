@@ -74,6 +74,7 @@ program.argument('[name]', 'Name of your project.').action(async (initialDir: st
     console.log(`\nCreating project files in ${targetDir}...`);
 
     copyProjectFiles(targetDir, packageName);
+    copyEngineFiles(targetDir);
     updatePkg(targetDir, { name: packageName });
 
     console.log(`\n${chalk.green('√')} Done. Continue by running:\n`);
@@ -147,8 +148,16 @@ function copyProjectFiles(dest: string, projectName: string = defaultProjectName
     mkdirSync(dest);
   }
 
-  copyDir('template', dest);
+  copy('template', dest);
   renameSync(`${dest}/${defaultProjectName}.blend`, `${dest}/${projectName}.blend`);
+}
+
+function copyEngineFiles(dest: string) {
+  const dir = `${dest}/.apex/engine`;
+
+  copy(resolve('../apex-engine/src'), `${dir}/src`);
+  copy(resolve('../apex-engine/types'), `${dir}/types`);
+  copy(resolve('../apex-engine/LICENSE'), `${dir}/LICENSE`);
 }
 
 function copy(src: string, dest: string) {
