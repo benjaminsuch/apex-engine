@@ -23,5 +23,7 @@ build({
     }
   }
 })
-  .then(() => console.log('Waiting for changes...'))
+  .then(async () => {
+    console.log('Waiting for changes...');
+  })
   .catch(() => process.exit(1));
