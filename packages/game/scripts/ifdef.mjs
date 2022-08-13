@@ -43,10 +43,9 @@ const LINE_TYPE = {
 };
 
 async function onLoadPlugin(args) {
-  let dirPath = args.path;
+  let dirPath = path.relative(baseDir, args.path);
   let hasMatch = false;
 
-  console.log('dirPath', dirPath);
   for (let filter of filterList) {
     if (dirPath.startsWith(filter)) {
       hasMatch = true;
@@ -61,7 +60,7 @@ async function onLoadPlugin(args) {
   let text = await readFile(args.path, 'utf8');
 
   if (text.includes(IFDEF)) {
-    console.log(chalk.blue('i'), 'File:', chalk.gray(dirPath));
+    //console.log(chalk.blue('i'), 'File:', chalk.gray(dirPath))
     let lines = text.split('\n');
     let ifdefStart = -1;
     let depth = 0;
@@ -95,7 +94,9 @@ async function onLoadPlugin(args) {
         }
         if (shouldRemove) {
           hitCounter++;
-          console.log(`Expression (${expression}) found on line ${chalk.yellow(lineNumber)}`);
+          /*console.log(
+            `Expression (${expression}) found on line ${chalk.yellow(lineNumber)}`
+          )*/
         }
       } else if (lineType === LINE_TYPE.ifdef && step === MODE.find_closing) {
         depth++;
@@ -120,13 +121,13 @@ async function onLoadPlugin(args) {
 
       if (lines.length - 1 === lineNumber) {
         if (hitCounter) {
-          console.log('');
+          //console.log('')
         }
       }
     }
 
     if (!hitCounter) {
-      console.log('Nothing to remove.', '\n');
+      //console.log('Nothing to remove.', '\n')
     }
 
     return {
@@ -139,12 +140,13 @@ async function onLoadPlugin(args) {
 }
 
 const DEFAULT_EXCLUDE_LIST = ['dist', 'vendor', 'node_modules', '.git'];
+let startTime = 0;
+let endTime = 0;
 
 export default (env = process.env, _baseDir = process.cwd(), exclude = DEFAULT_EXCLUDE_LIST) => {
   configureStringsToSearch(env);
-  console.log('IF_DEFS', IF_DEFS);
+
   baseDir = _baseDir;
-  console.log('baseDir', baseDir);
   filterList = [
     baseDir,
     ...fs
@@ -164,16 +166,29 @@ export default (env = process.env, _baseDir = process.cwd(), exclude = DEFAULT_E
       })
       .map(dir => path.join(_baseDir, dir))
   ];
-  console.log('filterList', filterList);
 
   const filter = {
     filter: new RegExp(`(${filterList.join('|')}).*\\.ts$`)
   };
-  console.log('filter', filter);
+
   return {
-    name: '#ifdef',
+    name: 'ifdef',
     setup(build) {
+      build.onStart(onStart);
       build.onLoad(filter, onLoadPlugin);
+      build.onEnd(onEnd);
     }
   };
 };
+
+function onStart() {
+  startTime = Date.now();
+  console.log(`\n${chalk.blue('i')} ${'--- Starting build ---'.toUpperCase()}\n`);
+}
+
+function onEnd(result) {
+  endTime = Date.now();
+  console.log(
+    `Done with ${chalk.bold(result.errors.length)} errors in ${(endTime - startTime) / 1000}s.\n`
+  );
+}

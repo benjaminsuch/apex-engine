@@ -17,17 +17,17 @@ build({
   watch: {
     async onRebuild(error) {
       if (error) {
-        console.error('watch build failed:', error);
+        console.error('Build failed:', error);
       } else {
-        console.log('watching...');
-        //await buildTypes();
+        await buildTypes();
+        console.log('Waiting for changes...');
       }
     }
   }
 })
   .then(async () => {
-    console.log('watching...');
-    //await buildTypes();
+    await buildTypes();
+    console.log('Waiting for changes...');
   })
   .catch(() => process.exit(1));
 
