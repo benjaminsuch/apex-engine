@@ -10,11 +10,20 @@
   },
   "scripts": {
     "dev": "node scripts/watch.js",
+    "dev-browser": "node scripts/watch-browser.js",
     "build-types": "tsc -p ./ --declaration --declarationMap --emitDeclarationOnly"
   },
+  "dependencies": {
+    "apex-engine": "file:/Users/benjaminsuch/Desktop/apex-engine/packages/apex-engine",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
   "devDependencies": {
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
     "esbuild": "^0.15.2",
     "esbuild-node-externals": "^1.4.1",
+    "execa": "^6.1.0",
     "typescript": "^4.7.4"
   }
 }
