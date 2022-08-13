@@ -2,8 +2,8 @@
   "name": "seawars",
   "version": "0.0.1",
   "type": "module",
+  "private": true,
   "author": "Benjamin Such",
-  "license": "UNLICENSED",
   "main": "./build/seawars.js",
   "engines": {
     "node": "^16.0.0"

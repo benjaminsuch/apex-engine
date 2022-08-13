@@ -17,5 +17,5 @@
     "target": "esnext",
     "useDefineForClassFields": true
   },
-  "include": ["src"]
+  "include": ["src", "scripts"]
 }
