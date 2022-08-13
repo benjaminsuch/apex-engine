@@ -19,22 +19,12 @@ build({
       if (error) {
         console.error('Build failed:', error);
       } else {
-        await buildTypes();
         console.log('Waiting for changes...');
       }
     }
   }
 })
   .then(async () => {
-    await buildTypes();
     console.log('Waiting for changes...');
   })
   .catch(() => process.exit(1));
-
-async function buildTypes() {
-  try {
-    await execa('yarn', ['build-types']);
-  } catch (error) {
-    console.log(error);
-  }
-}

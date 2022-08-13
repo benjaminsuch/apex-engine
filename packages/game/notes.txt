@@ -9,6 +9,5 @@ Sonstiges:
 - Der vom User genutzte Package Manager muss in "packageManager" (package.json) hinterlegt werden
 - Die in "scripts" ausgeführten Scripts müssen dem "packageManager" angepasst werden
 
-apex-engine package reference:
-- In der "tsconfig.json" muss ein Eintrag für "apex-engine" in "paths" hinterlegt werden, damit der `import` Befehl klappt
-
+Build:
+- "buildTypes" wird nicht notwendig sein, da es sich beim Spiel um keine Library, sondern einem "Endprodukt" handelt. Das Spiel wird also nicht woanders importiert, so dass die generierten Types von Nutzen wären.
