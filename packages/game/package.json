@@ -1,12 +1,10 @@
 {
-  "name": "@seawars/game",
+  "name": "seawars",
   "version": "0.0.1",
   "type": "module",
   "author": "Benjamin Such",
   "license": "UNLICENSED",
-  "main": "./build/index.js",
-  "module": "./build/index.js",
-  "types": "./build/index.d.ts",
+  "main": "./build/seawars.js",
   "engines": {
     "node": "^16.0.0"
   },
