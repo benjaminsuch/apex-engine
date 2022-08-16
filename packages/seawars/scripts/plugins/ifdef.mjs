@@ -183,7 +183,6 @@ export default (env = process.env, _baseDir = process.cwd(), exclude = DEFAULT_E
 
 function onStart() {
   startTime = Date.now();
-  console.log(`\n${chalk.blue('i')} ${'--- Starting build ---'.toUpperCase()}\n`);
 }
 
 function onEnd(result) {

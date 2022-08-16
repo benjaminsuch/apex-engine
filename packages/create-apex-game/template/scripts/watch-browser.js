@@ -1,14 +1,15 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { build } from 'esbuild';
+import { createServer, request } from 'node:http';
+import { build, serve } from 'esbuild';
 import { nodeExternalsPlugin } from 'esbuild-node-externals';
-import { execa } from 'execa';
 
-import ifdef from './ifdef.mjs';
+import ifdef from './plugins/ifdef.mjs';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 const projectName = pkg.name.split('/').pop();
 const define = { IS_CLIENT: true };
 const buildDir = 'build/browser';
+const clients = [];
 
 prepareBrowserBuild()
   .then(() =>
@@ -17,16 +18,23 @@ prepareBrowserBuild()
       entryPoints: {
         [`${projectName}`]: 'src/index.ts'
       },
+      format: 'esm',
       outdir: buildDir,
       bundle: true,
       keepNames: true,
       plugins: [nodeExternalsPlugin(), ifdef(define, process.cwd() + '/src')],
       sourcemap: true,
+      banner: {
+        js: ' (() => new EventSource("/esbuild").onmessage = () => location.reload())();'
+      },
       watch: {
         async onRebuild(error) {
           if (error) {
             console.error('Build failed:', error);
           } else {
+            console.log(clients.slice());
+            clients.forEach(res => res.write('data: update\n\n'));
+            clients.length = 0;
             console.log('Waiting for changes...');
           }
         }
@@ -34,7 +42,47 @@ prepareBrowserBuild()
     })
   )
   .then(() => {
-    console.log('Serving game at localhost:3000');
+    console.log('Build complete');
+    return serve(
+      {
+        servedir: buildDir
+      },
+      {
+        define,
+        entryPoints: {
+          [`${projectName}`]: 'src/index.ts'
+        },
+        format: 'esm',
+        outdir: buildDir,
+        bundle: true,
+        keepNames: true
+      }
+    );
+  })
+  .then(() => {
+    createServer((req, res) => {
+      const { url, method, headers } = req;
+
+      if (req.url === '/esbuild') {
+        return clients.push(
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            Connection: 'keep-alive'
+          })
+        );
+      }
+
+      const path = ~url.split('/').pop().indexOf('.') ? url : `/index.html`; //for PWA with router
+
+      req.pipe(
+        request({ hostname: '0.0.0.0', port: 8000, path, method, headers }, prxRes => {
+          res.writeHead(prxRes.statusCode, prxRes.headers);
+          prxRes.pipe(res, { end: true });
+        }),
+        { end: true }
+      );
+    }).listen(3000);
   })
   .catch(error => {
     console.log(error);
@@ -42,20 +90,6 @@ prepareBrowserBuild()
   });
 
 async function prepareBrowserBuild() {
-  const { serve } = pkg.devDependencies;
-
-  if (!serve) {
-    console.log(`Preparing browser build. Please wait...`);
-
-    try {
-      await execa('yarn', ['add', '--dev', 'serve']);
-    } catch (error) {
-      console.log(error);
-    }
-
-    console.log('Done.');
-  }
-
   createIndexFile();
 }
 
