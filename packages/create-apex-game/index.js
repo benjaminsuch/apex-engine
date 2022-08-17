@@ -117,7 +117,7 @@ function copyProjectFiles(dest, projectName = defaultProjectName) {
     if (!existsSync(dest)) {
         mkdirSync(dest);
     }
-    copyDir('template', dest);
+    copy('template', dest);
     renameSync(`${dest}/${defaultProjectName}.blend`, `${dest}/${projectName}.blend`);
 }
 function copy(src, dest) {

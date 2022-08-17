@@ -147,7 +147,7 @@ function copyProjectFiles(dest: string, projectName: string = defaultProjectName
     mkdirSync(dest);
   }
 
-  copyDir('template', dest);
+  copy('template', dest);
   renameSync(`${dest}/${defaultProjectName}.blend`, `${dest}/${projectName}.blend`);
 }
 
