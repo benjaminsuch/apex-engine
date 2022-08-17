@@ -13,6 +13,7 @@ export default defineConfig({
   plugins: [
     react(),
     replace({
+      preventAssignment: true,
       values: {
         IS_CLIENT: 'false',
         IS_DEDICATED_SERVER: 'false',
