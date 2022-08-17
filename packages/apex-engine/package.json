@@ -6,13 +6,8 @@
   "author": "Benjamin Such",
   "license": "Apache-2.0",
   "main": "./src/index.ts",
-  "module": "./src/index.ts",
-  "types": "./src/index.ts",
   "engines": {
     "node": "^16.0.0"
-  },
-  "bin": {
-    "apex": "bin/apex.js"
   },
   "scripts": {
     "build": "tsc -p ."

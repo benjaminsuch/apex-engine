@@ -1,6 +1,6 @@
 {
   "exclude": ["node_modules", "build"],
-  "include": ["**/*.ts"],
+  "include": ["src", "types"],
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": true,
