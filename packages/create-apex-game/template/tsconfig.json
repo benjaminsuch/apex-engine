@@ -9,7 +9,7 @@
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "Node",
     "noEmit": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
@@ -18,5 +18,5 @@
     "useDefineForClassFields": true
   },
   "exclude": ["node_modules", "build"],
-  "include": ["src"]
+  "include": ["src", "types"]
 }

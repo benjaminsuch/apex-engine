@@ -8,5 +8,8 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 );
 
 export function Game() {
-  return <div>Game123</div>;
+  if (IS_CLIENT) {
+    console.log('is client');
+  }
+  return <div>Game</div>;
 }
