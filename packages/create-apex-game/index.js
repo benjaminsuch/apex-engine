@@ -118,6 +118,7 @@ function copyProjectFiles(dest, projectName = defaultProjectName) {
         mkdirSync(dest);
     }
     copy('template', dest);
+    mkdirSync(`${dest}/content/${projectName}`, { recursive: true });
     renameSync(`${dest}/${defaultProjectName}.blend`, `${dest}/${projectName}.blend`);
 }
 function copy(src, dest) {
