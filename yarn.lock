@@ -23,9 +23,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "apex-engine@workspace:packages/apex-engine"
   dependencies:
+    three: ^0.143.0
     typescript: ^4.7.4
-  bin:
-    apex: bin/apex.js
   languageName: unknown
   linkType: soft
 
@@ -85,6 +84,13 @@ __metadata:
   version: 1.0.5
   resolution: "sisteransi@npm:1.0.5"
   checksum: aba6438f46d2bfcef94cf112c835ab395172c75f67453fe05c340c770d3c402363018ae1ab4172a1026a90c47eaccf3af7b6ff6fa749a680c2929bd7fa2b37a4
+  languageName: node
+  linkType: hard
+
+"three@npm:^0.143.0":
+  version: 0.143.0
+  resolution: "three@npm:0.143.0"
+  checksum: 6fe8793a04a931c8fb86bad566ac4310a6243c9e9139678b5084e0773457a63fe254109479c4d4a2b484812d0932940eabf9baa21749c8c8d8dceb2815ca747b
   languageName: node
   linkType: hard
 
