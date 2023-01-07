@@ -10,9 +10,17 @@
     "node": "^16.0.0"
   },
   "scripts": {
-    "build": "tsc -p ."
+    "dev": "tsc --project . --watch",
+    "run-sandbox": "vite --config ./sandbox/vite.config.js"
   },
   "devDependencies": {
-    "typescript": "^4.9.4"
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
+    "@vitejs/plugin-react": "^2.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^4.9.4",
+    "vite": "^3.0.8",
+    "vite-tsconfig-paths": "^4.0.3"
   }
 }

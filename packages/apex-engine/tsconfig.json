@@ -2,6 +2,7 @@
   "exclude": ["node_modules", "build"],
   "include": ["src", "types"],
   "compilerOptions": {
+    "baseUrl": ".",
     "declaration": true,
     "emitDeclarationOnly": true,
     "module": "esnext",
