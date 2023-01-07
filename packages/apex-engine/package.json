@@ -1,6 +1,6 @@
 {
   "name": "apex-engine",
-  "description": "A multi-platform Game Engine for ReactJS.",
+  "description": "A multi-platform Game Engine written in Typescript.",
   "version": "0.0.1",
   "type": "module",
   "author": "Benjamin Such",
@@ -13,6 +13,6 @@
     "build": "tsc -p ."
   },
   "devDependencies": {
-    "typescript": "^4.7.4"
+    "typescript": "^4.9.4"
   }
 }
