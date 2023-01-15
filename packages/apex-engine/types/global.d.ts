@@ -1,7 +1,5 @@
-declare global {
-  const IS_CLIENT: boolean;
-  const IS_DEDICATED_SERVER: boolean;
-  const IS_LISTEN_SERVER: boolean;
-  const IS_SERVER: boolean;
-  const IS_STANDALONE: boolean;
-}
+declare const APEX_GAME_ENGINE_CLASS: string;
+declare const APEX_GAME_INSTANCE_CLASS: string;
+declare const APEX_GAME_DEFAULT_LEVEL: string;
+
+declare type TClass = { new (...args: any[]): {} };

@@ -1,5 +1,3 @@
-import { createRoot } from 'react-dom/client';
+import main from 'engine/launch/main';
 
-import { Game } from './Game';
-
-createRoot(document.getElementById('root') as HTMLElement).render(<Game />);
+main();

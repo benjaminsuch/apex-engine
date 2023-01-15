@@ -4,10 +4,13 @@
   "compilerOptions": {
     "baseUrl": ".",
     "declaration": true,
-    "emitDeclarationOnly": true,
+    "emitDeclarationOnly": false,
     "module": "esnext",
     "moduleResolution": "node",
+    "outDir": "build",
+    "removeComments": true,
     "skipLibCheck": true,
+    "strict": true,
     "sourceMap": true,
     "target": "esnext"
   }
