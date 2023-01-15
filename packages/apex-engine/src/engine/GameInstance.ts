@@ -5,6 +5,9 @@ export class GameInstance {
   private world?: World;
 
   public getWorld() {
+    if (!this.world) {
+      throw new Error(`No world set.`);
+    }
     return this.world;
   }
 

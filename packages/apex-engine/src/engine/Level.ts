@@ -1,7 +1,10 @@
+import { Scene } from 'three';
 import { Actor } from './Actor';
 import { World } from './World';
 
 export class Level {
+  public readonly scene: Scene = new Scene();
+
   private readonly actors: Set<Actor> = new Set();
 
   public addActor(ActorClass: typeof Actor) {

@@ -1,8 +1,19 @@
+import { WebGLRenderer } from 'three';
+
 import { EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { Level } from './Level';
 
 export class ApexEngine {
+  private static renderer?: WebGLRenderer;
+
+  public static getRenderer() {
+    if (!this.renderer) {
+      throw new Error(`No instance of Renderer available.`);
+    }
+    return this.renderer;
+  }
+
   private static instance?: ApexEngine;
 
   public static getInstance() {
@@ -15,8 +26,15 @@ export class ApexEngine {
   private gameInstance?: GameInstance;
 
   public getGameInstance() {
-    return this.gameInstance;
+    if (!this.isInitialized) {
+      throw new Error(`Cannot access GameInstance before the Engine has been initialized.`);
+    }
+    return this.gameInstance as GameInstance;
   }
+
+  public isRunning: boolean = false;
+
+  private isInitialized: boolean = false;
 
   constructor(private readonly engineLoop: EngineLoop) {
     if (ApexEngine.instance) {
@@ -27,13 +45,26 @@ export class ApexEngine {
   }
 
   public init() {
+    const renderer = new WebGLRenderer({ antialias: true, alpha: true });
+    //todo: Both "width" and "height" must be derived from the target platform.
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    //todo: Appending the `domElement` as a child is also platform specific and needs to be abstracted.
+    document.body.appendChild(renderer.domElement);
+
+    ApexEngine.renderer = renderer;
+
     this.gameInstance = new GameInstance();
     this.gameInstance.init();
+
+    this.isInitialized = true;
   }
 
   public start() {
-    this.gameInstance?.start();
+    this.isRunning = true;
+    this.getGameInstance().start();
   }
+
+  public tick() {}
 
   public async loadLevel(url: string) {
     try {
@@ -44,7 +75,7 @@ export class ApexEngine {
 
       level.postLoad();
 
-      this.gameInstance?.getWorld()?.setCurrentLevel(level);
+      this.getGameInstance().getWorld().setCurrentLevel(level);
 
       level.init();
     } catch (error) {
