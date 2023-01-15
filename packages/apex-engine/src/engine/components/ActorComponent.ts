@@ -16,6 +16,8 @@ export class ActorComponent {
     this.isInitialized = true;
   }
 
+  public tick() {}
+
   public registerWithActor(actor: Actor) {
     if (actor.hasComponent(this)) {
       throw new Error(`This instance is already registered for this actor.`);

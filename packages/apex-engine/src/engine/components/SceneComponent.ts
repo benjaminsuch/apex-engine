@@ -1,4 +1,6 @@
 import { Object3D } from 'three';
+
+import { Renderer } from 'src/renderer';
 import { ActorComponent } from './ActorComponent';
 
 export class SceneComponent extends ActorComponent {
@@ -8,5 +10,9 @@ export class SceneComponent extends ActorComponent {
     super();
 
     this.object3D = new Object3D();
+  }
+
+  protected onRegister() {
+    Renderer.registerTickFunction(this);
   }
 }

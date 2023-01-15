@@ -1,19 +1,20 @@
-import { WebGLRenderer } from 'three';
-
+import { Renderer } from 'src/renderer';
 import { EngineLoop } from './EngineLoop';
+import { EngineUtils } from './EngineUtils';
 import { GameInstance } from './GameInstance';
 import { Level } from './Level';
 
-export class ApexEngine {
-  private static renderer?: WebGLRenderer;
+abstract class TickFunctions {
+  private static readonly tickFunctions: Set<Function> = new Set();
 
-  public static getRenderer() {
-    if (!this.renderer) {
-      throw new Error(`No instance of Renderer available.`);
+  public static registerTickFunction(component: object & { tick?: Function }) {
+    if (EngineUtils.hasDefinedTickMethod(component)) {
+      this.tickFunctions.add(component.tick!);
     }
-    return this.renderer;
   }
+}
 
+export class ApexEngine {
   private static instance?: ApexEngine;
 
   public static getInstance() {
@@ -45,14 +46,6 @@ export class ApexEngine {
   }
 
   public init() {
-    const renderer = new WebGLRenderer({ antialias: true, alpha: true });
-    //todo: Both "width" and "height" must be derived from the target platform.
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    //todo: Appending the `domElement` as a child is also platform specific and needs to be abstracted.
-    document.body.appendChild(renderer.domElement);
-
-    ApexEngine.renderer = renderer;
-
     this.gameInstance = new GameInstance();
     this.gameInstance.init();
 
@@ -78,6 +71,8 @@ export class ApexEngine {
       this.getGameInstance().getWorld().setCurrentLevel(level);
 
       level.init();
+
+      Renderer.getInstance().scene = level.scene;
     } catch (error) {
       console.log(error);
     }

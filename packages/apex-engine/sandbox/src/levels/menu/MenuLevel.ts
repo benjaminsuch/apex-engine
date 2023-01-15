@@ -1,11 +1,17 @@
-import { Actor, ApexEngine, Level } from 'engine/engine';
+import { Actor, Level } from 'engine/engine';
 import { ActorComponent, SceneComponent } from 'engine/engine/components';
+import { Renderer } from 'engine/renderer';
 import { BoxGeometry, Mesh, MeshBasicMaterial, PerspectiveCamera } from 'three';
 
 export class MenuLevel extends Level {
   public init() {
     super.init();
-    console.log('init level', this.owningWorld);
+
+    const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
+
+    Renderer.getInstance().camera = camera;
+
     if (this.owningWorld) {
       this.owningWorld.spawnActor(DemoActor);
     }
@@ -35,7 +41,7 @@ class DemoActor extends Actor {
       cube.rotation.x += 0.01;
       cube.rotation.y += 0.01;
 
-      ApexEngine.getRenderer().render(scene, camera);
+      //ApexEngine.getRenderer().render(scene, camera);
     }
 
     animate();

@@ -1,8 +1,13 @@
+import { Renderer } from 'src/renderer';
 import { GameEngine } from './GameEngine';
 
 export class EngineLoop {
+  private renderer?: Renderer;
+
   public preInit() {
     // Initialize platform specific code
+    this.renderer = new Renderer();
+    this.renderer.render();
   }
 
   public init() {

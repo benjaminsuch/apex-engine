@@ -1,4 +1,6 @@
 import { Actor } from './Actor';
+import { SceneComponent } from './components';
+import { EngineUtils } from './EngineUtils';
 import { GameInstance } from './GameInstance';
 import { Level } from './Level';
 
@@ -15,6 +17,9 @@ export class World {
   private currentLevel?: Level;
 
   public getCurrentLevel() {
+    if (!this.currentLevel) {
+      throw new Error(`A current level has not been set.`);
+    }
     return this.currentLevel;
   }
 
@@ -44,6 +49,24 @@ export class World {
 
     if (this.currentLevel) {
       this.currentLevel.initActors();
+    }
+  }
+
+  public tick() {
+    if (this.currentLevel) {
+      for (const actor of this.currentLevel.getActors()) {
+        if (EngineUtils.hasDefinedTickMethod(actor)) {
+          actor.tick();
+        }
+
+        for (const component of actor.getComponents()) {
+          if (!(component instanceof SceneComponent)) {
+            if (EngineUtils.hasDefinedTickMethod(component)) {
+              component.tick();
+            }
+          }
+        }
+      }
     }
   }
 
