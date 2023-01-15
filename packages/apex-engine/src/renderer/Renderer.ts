@@ -16,7 +16,7 @@ export class Renderer {
 
   public static registerTickFunction(component: SceneComponent) {
     if (EngineUtils.hasDefinedTickMethod(component)) {
-      this.tickFunctions.add(component.tick);
+      this.tickFunctions.add(component.tick.bind(component));
     }
   }
 
@@ -40,15 +40,29 @@ export class Renderer {
     this.webGLRenderer = new WebGLRenderer({ antialias: true, alpha: true });
     this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
 
+    window.addEventListener('resize', () => {
+      this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
     Renderer.instance = this;
   }
 
   public render() {
+    //todo: This should probably be moved into the "Container" file, see below.
+    document.body.style.overflow = 'hidden';
+    //todo: The container can be other than `document.body`
     document.body.appendChild(this.webGLRenderer.domElement);
+
     this.tick();
   }
 
   private tick() {
     requestAnimationFrame(this.tick.bind(this));
+
+    for (const tickFn of Array.from(Renderer.tickFunctions)) {
+      tickFn();
+    }
+
+    this.webGLRenderer.render(this.scene, this.camera);
   }
 }

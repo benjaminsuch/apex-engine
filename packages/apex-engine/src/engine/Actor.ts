@@ -24,6 +24,8 @@ export class Actor {
       this.rootComponent = component;
     }
 
+    this.components.add(component);
+
     return component;
   }
 

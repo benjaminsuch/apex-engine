@@ -13,6 +13,7 @@ export class GameInstance {
 
   public init() {
     this.world = new World(this);
+    this.world.init();
   }
 
   public start() {

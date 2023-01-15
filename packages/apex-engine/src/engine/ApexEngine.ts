@@ -9,12 +9,12 @@ abstract class TickFunctions {
 
   public static registerTickFunction(component: object & { tick?: Function }) {
     if (EngineUtils.hasDefinedTickMethod(component)) {
-      this.tickFunctions.add(component.tick!);
+      this.tickFunctions.add(component.tick!.bind(component));
     }
   }
 }
 
-export class ApexEngine {
+export abstract class ApexEngine {
   private static instance?: ApexEngine;
 
   public static getInstance() {
@@ -65,12 +65,12 @@ export class ApexEngine {
         /* @vite-ignore */ url
       );
       const level = new LoadedLevel();
+      const world = this.getGameInstance().getWorld();
 
       level.postLoad();
-
-      this.getGameInstance().getWorld().setCurrentLevel(level);
-
+      world.setCurrentLevel(level);
       level.init();
+      world.initActorsForPlay();
 
       Renderer.getInstance().scene = level.scene;
     } catch (error) {

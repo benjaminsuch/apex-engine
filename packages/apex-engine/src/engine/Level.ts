@@ -11,6 +11,7 @@ export class Level {
   public addActor(ActorClass: typeof Actor) {
     const actor = new ActorClass();
     actor.registerWithLevel(this);
+    this.actors.add(actor);
     return actor;
   }
 

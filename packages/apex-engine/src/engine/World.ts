@@ -1,6 +1,4 @@
 import { Actor } from './Actor';
-import { SceneComponent } from './components';
-import { EngineUtils } from './EngineUtils';
 import { GameInstance } from './GameInstance';
 import { Level } from './Level';
 
