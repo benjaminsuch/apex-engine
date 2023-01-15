@@ -37,7 +37,7 @@ export class Level {
 
     for (const actor of this.getActors()) {
       if (actor.rootComponent) {
-        this.scene.add(actor.rootComponent.object3D);
+        this.scene.add(actor.rootComponent.sceneObject);
       }
     }
 

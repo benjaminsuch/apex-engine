@@ -35,11 +35,14 @@ class BoxComponent extends SceneComponent {
   constructor() {
     super();
 
-    this.object3D = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00ff00 }));
+    this.sceneObject = new Mesh(
+      new BoxGeometry(1, 1, 1),
+      new MeshBasicMaterial({ color: 0x00ff00 })
+    );
   }
 
   public tick() {
-    this.object3D.rotation.x += 0.01;
-    this.object3D.rotation.y += 0.01;
+    this.sceneObject.rotation.x += 0.01;
+    this.sceneObject.rotation.y += 0.01;
   }
 }
