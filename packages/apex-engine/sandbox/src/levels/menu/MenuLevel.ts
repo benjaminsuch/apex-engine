@@ -24,26 +24,22 @@ class DemoActor extends Actor {
 
     this.addComponent(ActorComponent);
 
-    const sceneComponent = this.addComponent(SceneComponent, true) as SceneComponent;
-    const cube = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00ff00 }));
+    const rootComponent = this.addComponent(SceneComponent, true) as SceneComponent;
+    const boxComponent = this.addComponent(BoxComponent) as BoxComponent;
 
-    sceneComponent.object3D.add(cube);
+    boxComponent.attachToParent(rootComponent);
+  }
+}
 
-    const scene = this.getLevel().scene;
-    scene.add(sceneComponent.object3D);
+class BoxComponent extends SceneComponent {
+  constructor() {
+    super();
 
-    const camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
+    this.object3D = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00ff00 }));
+  }
 
-    function animate() {
-      requestAnimationFrame(animate);
-
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-
-      //ApexEngine.getRenderer().render(scene, camera);
-    }
-
-    animate();
+  public tick() {
+    this.object3D.rotation.x += 0.01;
+    this.object3D.rotation.y += 0.01;
   }
 }

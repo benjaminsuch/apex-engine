@@ -47,6 +47,8 @@ export class Actor {
 
   private isInitialized: boolean = false;
 
+  public beginPlay() {}
+
   public tick() {}
 
   public preInitComponents() {}

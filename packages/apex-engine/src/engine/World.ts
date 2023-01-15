@@ -52,23 +52,7 @@ export class World {
     }
   }
 
-  public tick() {
-    if (this.currentLevel) {
-      for (const actor of this.currentLevel.getActors()) {
-        if (EngineUtils.hasDefinedTickMethod(actor)) {
-          actor.tick();
-        }
-
-        for (const component of actor.getComponents()) {
-          if (!(component instanceof SceneComponent)) {
-            if (EngineUtils.hasDefinedTickMethod(component)) {
-              component.tick();
-            }
-          }
-        }
-      }
-    }
-  }
+  public tick() {}
 
   public spawnActor(ActorClass: typeof Actor, level?: Level) {
     if (!this.currentLevel) {

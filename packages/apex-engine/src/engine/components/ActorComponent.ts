@@ -16,6 +16,8 @@ export class ActorComponent {
     this.isInitialized = true;
   }
 
+  public beginPlay() {}
+
   public tick() {}
 
   public registerWithActor(actor: Actor) {
