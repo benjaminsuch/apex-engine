@@ -1,18 +1,7 @@
 import { Renderer } from 'src/renderer';
 import { EngineLoop } from './EngineLoop';
-import { EngineUtils } from './EngineUtils';
 import { GameInstance } from './GameInstance';
 import { Level } from './Level';
-
-abstract class TickFunctions {
-  private static readonly tickFunctions: Set<Function> = new Set();
-
-  public static registerTickFunction(component: object & { tick?: Function }) {
-    if (EngineUtils.hasDefinedTickMethod(component)) {
-      this.tickFunctions.add(component.tick!.bind(component));
-    }
-  }
-}
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;

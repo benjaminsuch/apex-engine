@@ -45,6 +45,7 @@ export class Renderer {
 
     this.webGLRenderer = new WebGLRenderer({ antialias: true, alpha: true });
     this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+    this.webGLRenderer.setPixelRatio(window.devicePixelRatio);
 
     window.addEventListener('resize', this.handleWindowResize.bind(this));
 
