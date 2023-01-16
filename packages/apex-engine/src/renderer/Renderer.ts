@@ -1,4 +1,12 @@
-import { Camera, OrthographicCamera, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import {
+  Camera,
+  OrthographicCamera,
+  PCFSoftShadowMap,
+  PerspectiveCamera,
+  Scene,
+  sRGBEncoding,
+  WebGLRenderer
+} from 'three';
 
 import { EngineUtils } from 'src/engine';
 import { SceneComponent } from 'src/engine/components';
@@ -39,6 +47,8 @@ export class Renderer {
     }
 
     this.webGLRenderer = new WebGLRenderer({ antialias: true, alpha: true });
+    this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
+    this.webGLRenderer.outputEncoding = sRGBEncoding;
     this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
     this.webGLRenderer.setPixelRatio(window.devicePixelRatio);
 
@@ -49,6 +59,7 @@ export class Renderer {
 
   public render() {
     //todo: This should probably be moved into the "Container" file, see below.
+    document.body.style.margin = '0';
     document.body.style.overflow = 'hidden';
     //todo: The container can be other than `document.body`
     document.body.appendChild(this.webGLRenderer.domElement);
