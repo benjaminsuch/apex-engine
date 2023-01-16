@@ -3,7 +3,7 @@ import { ActorComponent, SceneComponent } from 'engine/engine/components';
 import { Renderer } from 'engine/renderer';
 import { BoxGeometry, Mesh, MeshBasicMaterial, PerspectiveCamera } from 'three';
 
-export class MenuLevel extends Level {
+export class StartLevel extends Level {
   public init() {
     super.init();
 
