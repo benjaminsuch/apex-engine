@@ -13,7 +13,8 @@
     "build": "tsc --project .",
     "dev": "tsc --project . --watch",
     "run-sandbox": "vite --config ./sandbox/vite.config.js",
-    "build-sandbox": "vite build --config ./sandbox/vite.config.js"
+    "build-sandbox": "vite build --config ./sandbox/vite.config.js",
+    "preview-sandbox": "vite preview --config ./sandbox/vite.config.js"
   },
   "devDependencies": {
     "@types/react": "^18.0.17",
