@@ -1,6 +1,7 @@
+import { Camera, OrthographicCamera, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+
 import { EngineUtils } from 'src/engine';
 import { SceneComponent } from 'src/engine/components';
-import { Camera, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
 export class Renderer {
   private static instance?: Renderer;
@@ -22,7 +23,12 @@ export class Renderer {
 
   private readonly webGLRenderer: WebGLRenderer;
 
-  public camera: Camera = new PerspectiveCamera();
+  public camera: Camera = new PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
 
   public scene: Scene = new Scene();
 
@@ -40,9 +46,7 @@ export class Renderer {
     this.webGLRenderer = new WebGLRenderer({ antialias: true, alpha: true });
     this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
 
-    window.addEventListener('resize', () => {
-      this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    window.addEventListener('resize', this.handleWindowResize.bind(this));
 
     Renderer.instance = this;
   }
@@ -64,5 +68,24 @@ export class Renderer {
     }
 
     this.webGLRenderer.render(this.scene, this.camera);
+  }
+
+  private handleWindowResize() {
+    const { innerHeight, innerWidth } = window;
+
+    this.webGLRenderer.setSize(innerWidth, innerHeight);
+
+    if (this.camera instanceof PerspectiveCamera) {
+      this.camera.aspect = innerWidth / innerHeight;
+      this.camera.updateProjectionMatrix();
+      this.camera.updateMatrixWorld();
+    }
+
+    if (this.camera instanceof OrthographicCamera) {
+      this.camera.left = innerWidth / 2;
+      this.camera.right = innerWidth / -2;
+      this.camera.top = innerHeight / 2;
+      this.camera.bottom = innerHeight / -2;
+    }
   }
 }
