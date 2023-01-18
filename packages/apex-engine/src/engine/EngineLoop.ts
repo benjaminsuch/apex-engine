@@ -6,8 +6,11 @@ export class EngineLoop {
 
   public preInit() {
     // Initialize platform specific code
-    this.renderer = new Renderer();
-    this.renderer.render();
+
+    if (IS_CLIENT) {
+      this.renderer = new Renderer();
+      this.renderer.render();
+    }
   }
 
   public init() {

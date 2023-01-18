@@ -2,33 +2,29 @@
   "name": "apex-engine",
   "description": "A multi-platform Game Engine written in Typescript.",
   "version": "0.0.1",
-  "type": "module",
   "author": "Benjamin Such",
   "license": "Apache-2.0",
-  "main": "./src/index.ts",
+  "type": "module",
   "engines": {
-    "node": "^18.0.0"
+    "node": "^16.0.0"
   },
   "scripts": {
     "build": "tsc --project .",
     "dev": "tsc --project . --watch",
-    "run-sandbox": "vite --config ./sandbox/vite.config.js",
-    "build-sandbox": "vite build --config ./sandbox/vite.config.js",
-    "preview-sandbox": "vite preview --config ./sandbox/vite.config.js"
+    "run-sandbox": "tsx scripts/run-sandbox.ts"
   },
   "devDependencies": {
-    "@types/react": "^18.0.17",
-    "@types/react-dom": "^18.0.6",
+    "@types/command-line-args": "^5.2.0",
     "@types/three": "^0.148.0",
-    "@vitejs/plugin-react": "^2.0.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "command-line-args": "^5.2.1",
     "three-stdlib": "^2.21.5",
+    "tsx": "^3.12.2",
     "typescript": "^4.9.4",
     "vite": "^4.0.4",
     "vite-tsconfig-paths": "^4.0.3"
   },
   "dependencies": {
+    "@tinyhttp/app": "^2.0.29",
     "three": "^0.148.0"
   }
 }

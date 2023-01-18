@@ -49,19 +49,25 @@ export abstract class ApexEngine {
   public tick() {}
 
   public async loadLevel(url: string) {
+    console.log('load level:', url);
     try {
-      const { default: LoadedLevel }: { default: typeof Level } = await import(
-        /* @vite-ignore */ url
-      );
+      const module: { default: typeof Level } = await import(/* @vite-ignore */ url);
+      console.log('');
+      console.log('loaded level module:');
+      console.log(module);
+      console.log('');
+      const { default: LoadedLevel } = module;
       const level = new LoadedLevel();
       const world = this.getGameInstance().getWorld();
+
+      if (IS_CLIENT) {
+        Renderer.getInstance().scene = level.scene;
+      }
 
       level.postLoad();
       world.setCurrentLevel(level);
       level.init();
       world.initActorsForPlay();
-
-      Renderer.getInstance().scene = level.scene;
     } catch (error) {
       console.log(error);
     }
