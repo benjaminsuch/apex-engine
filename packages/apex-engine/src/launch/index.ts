@@ -33,7 +33,5 @@ export interface LauncherConfig {
 }
 
 export function configureLauncher(config: LauncherConfig) {
-  // - load config from index.ts file
-  //   - call default export from module
-  //
+  return config;
 }

@@ -1,7 +1,7 @@
 import { Scene } from 'three';
 
-import { Actor } from './Actor';
-import { World } from './World';
+import { type Actor } from './Actor';
+import { type World } from './World';
 
 export class Level {
   public readonly scene: Scene = new Scene();

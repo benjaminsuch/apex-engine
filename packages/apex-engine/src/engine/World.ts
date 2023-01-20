@@ -1,6 +1,6 @@
-import { Actor } from './Actor';
-import { GameInstance } from './GameInstance';
-import { Level } from './Level';
+import { type Actor } from './Actor';
+import { type GameInstance } from './GameInstance';
+import { type Level } from './Level';
 
 export class World {
   /**

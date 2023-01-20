@@ -1,6 +1,6 @@
 import { ActorComponent, SceneComponent } from './components';
-import { Level } from './Level';
-import { World } from './World';
+import { type Level } from './Level';
+import { type World } from './World';
 
 export class Actor {
   public rootComponent?: SceneComponent;

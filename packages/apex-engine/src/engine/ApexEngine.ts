@@ -1,7 +1,7 @@
 import { Renderer } from 'src/renderer';
-import { EngineLoop } from './EngineLoop';
+import { type EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';
-import { Level } from './Level';
+import { type Level } from './Level';
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;

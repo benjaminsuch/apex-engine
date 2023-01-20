@@ -9,7 +9,7 @@ import {
 } from 'three';
 
 import { EngineUtils } from 'src/engine';
-import { SceneComponent } from 'src/engine/components';
+import { type SceneComponent } from 'src/engine/components';
 
 export class Renderer {
   private static instance?: Renderer;

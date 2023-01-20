@@ -5,6 +5,29 @@
   "author": "Benjamin Such",
   "license": "Apache-2.0",
   "type": "module",
+  "exports": {
+    "./engine": {
+      "types": "./build/engine/index.d.ts",
+      "import": "./build/engine/index.js"
+    },
+    "./launch": {
+      "types": "./build/launch/index.d.ts",
+      "import": "./build/launch/index.js"
+    },
+    "./renderer": {
+      "types": "./build/renderer/index.d.ts",
+      "import": "./build/renderer/index.js"
+    },
+    "./three": {
+      "types": "./build/three/index.d.ts",
+      "import": "./build/three/index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "build",
+    "types"
+  ],
   "engines": {
     "node": "^16.0.0"
   },
@@ -12,14 +35,18 @@
     "abt": "./bin/abt.js"
   },
   "scripts": {
-    "build": "tsc --project .",
+    "build": "yarn rollup --config rollup.config.ts --configPlugin typescript",
     "dev": "tsc --project . --watch"
   },
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-typescript": "^11.0.0",
     "@types/node": "^18.11.18",
     "@types/three": "^0.148.0",
     "cac": "^6.7.14",
+    "rollup": "^3.10.0",
     "three-stdlib": "^2.21.5",
+    "tslib": "^2.4.1",
     "tsx": "^3.12.2",
     "typescript": "^4.9.4"
   },
