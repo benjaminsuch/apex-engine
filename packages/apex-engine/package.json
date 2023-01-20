@@ -7,15 +7,19 @@
   "type": "module",
   "exports": {
     "./engine": {
-      "types": "./build/engine/index.d.ts",
+      "types": "./build/types/engine/index.d.ts",
       "import": "./build/engine/index.js"
     },
+    "./engine/components": {
+      "types": "./build/types/engine/components/index.d.ts",
+      "import": "./build/engine/components/index.js"
+    },
     "./launch": {
-      "types": "./build/launch/index.d.ts",
+      "types": "./build/types/launch/index.d.ts",
       "import": "./build/launch/index.js"
     },
     "./renderer": {
-      "types": "./build/renderer/index.d.ts",
+      "types": "./build/types/renderer/index.d.ts",
       "import": "./build/renderer/index.js"
     },
     "./three": {
@@ -36,6 +40,7 @@
   },
   "scripts": {
     "build": "yarn rollup --config rollup.config.ts --configPlugin typescript",
+    "build-types": "yarn rollup --config rollup.types.config.ts --configPlugin typescript",
     "dev": "tsc --project . --watch"
   },
   "devDependencies": {
@@ -45,6 +50,7 @@
     "@types/three": "^0.148.0",
     "cac": "^6.7.14",
     "rollup": "^3.10.0",
+    "rollup-plugin-dts": "^5.1.1",
     "three-stdlib": "^2.21.5",
     "tslib": "^2.4.1",
     "tsx": "^3.12.2",
