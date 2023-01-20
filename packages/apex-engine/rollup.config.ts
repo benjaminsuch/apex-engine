@@ -4,6 +4,7 @@ import { defineConfig } from 'rollup';
 
 export default defineConfig({
   input: {
+    'core/index': 'src/core/index.ts',
     'engine/index': 'src/engine/index.ts',
     'engine/components/index': 'src/engine/components/index.ts',
     'launch/index': 'src/launch/index.ts',

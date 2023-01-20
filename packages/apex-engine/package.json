@@ -41,7 +41,7 @@
   "scripts": {
     "build": "yarn rollup --config rollup.config.ts --configPlugin typescript",
     "build-types": "yarn rollup --config rollup.types.config.ts --configPlugin typescript",
-    "dev": "tsc --project . --watch"
+    "dev": "yarn build --watch"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.0.1",
