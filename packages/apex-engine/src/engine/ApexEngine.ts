@@ -49,14 +49,12 @@ export abstract class ApexEngine {
   public tick() {}
 
   public async loadLevel(url: string) {
-    console.log('load level:', url);
+    console.log('loading level:', url);
     try {
-      const module: { default: typeof Level } = await import(/* @vite-ignore */ url);
-      console.log('');
-      console.log('loaded level module:');
-      console.log(module);
-      console.log('');
-      const { default: LoadedLevel } = module;
+      const { default: LoadedLevel }: { default: typeof Level } = await import(
+        /* @vite-ignore */ url
+      );
+      console.log('level loaded');
       const level = new LoadedLevel();
       const world = this.getGameInstance().getWorld();
 

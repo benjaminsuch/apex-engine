@@ -23,7 +23,14 @@ export class Level {
     return this.actors.has(actor);
   }
 
-  public owningWorld?: World;
+  public world?: World;
+
+  public getWorld() {
+    if (!this.world) {
+      throw new Error(`This level has not been assigned to a world yet.`);
+    }
+    return this.world;
+  }
 
   private isInitialized: boolean = false;
 
@@ -55,7 +62,7 @@ export class Level {
   public beginPlay() {}
 
   public isCurrentLevel() {
-    return this.owningWorld?.getCurrentLevel() === this;
+    return this.world?.getCurrentLevel() === this;
   }
 
   public postLoad() {}

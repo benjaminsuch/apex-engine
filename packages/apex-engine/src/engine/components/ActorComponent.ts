@@ -8,7 +8,14 @@ export class ActorComponent {
     return this.owner;
   }
 
-  private world?: World;
+  public world?: World;
+
+  public getWorld() {
+    if (!this.world) {
+      throw new Error(`This actor is not part of a world.`);
+    }
+    return this.world;
+  }
 
   private isInitialized: boolean = false;
 
@@ -26,8 +33,6 @@ export class ActorComponent {
     }
 
     this.owner = actor;
-    this.world = actor.getWorld();
-
     this.onRegister();
   }
 

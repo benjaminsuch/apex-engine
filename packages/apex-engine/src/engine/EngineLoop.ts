@@ -6,7 +6,6 @@ export class EngineLoop {
 
   public preInit() {
     // Initialize platform specific code
-
     if (IS_CLIENT) {
       this.renderer = new Renderer();
       this.renderer.render();

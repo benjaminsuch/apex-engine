@@ -41,7 +41,7 @@ export class Actor {
   private world?: World;
 
   public getWorld() {
-    if (!this.level) {
+    if (!this.world) {
       throw new Error(`This actor is not part of a world.`);
     }
     return this.world;
@@ -53,7 +53,11 @@ export class Actor {
 
   public tick() {}
 
-  public preInitComponents() {}
+  public preInitComponents() {
+    for (const component of this.getComponents()) {
+      component.world = this.getWorld();
+    }
+  }
 
   public initComponents() {}
 
@@ -67,7 +71,7 @@ export class Actor {
     }
 
     this.level = level;
-    this.world = level.owningWorld;
+    this.world = level.world;
 
     this.onRegister();
   }

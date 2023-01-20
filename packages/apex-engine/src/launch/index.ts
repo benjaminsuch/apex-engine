@@ -2,7 +2,7 @@ import { ApexEngine, EngineLoop, GameInstance } from 'src/engine';
 
 const isEngineExitRequested = () => false;
 
-export function main() {
+function main() {
   const engineLoop = new EngineLoop();
 
   engineLoop.preInit();
@@ -32,6 +32,11 @@ export interface LauncherConfig {
   plugins?: Record<string, any>[];
 }
 
-export function configureLauncher(config: LauncherConfig) {
-  return config;
+export function configureLauncher({
+  gameEngineClass = ApexEngine,
+  gameInstanceClass = GameInstance,
+  defaultLevel
+}: LauncherConfig) {
+  console.log('IS_CLIENT', IS_CLIENT, 'IS_SERVER', IS_SERVER);
+  main();
 }

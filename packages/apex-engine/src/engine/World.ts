@@ -24,7 +24,7 @@ export class World {
   public setCurrentLevel(level: Level) {
     if (this.currentLevel !== level) {
       this.currentLevel = level;
-      this.currentLevel.owningWorld = this;
+      this.currentLevel.world = this;
     }
   }
 
