@@ -1,6 +1,6 @@
 {
   "name": "apex-engine",
-  "description": "A multi-platform Game Engine written in Typescript.",
+  "description": "A cross-platform compatible game engine written in Typescript.",
   "version": "0.1.0",
   "author": "Benjamin Such",
   "license": "Apache-2.0",
