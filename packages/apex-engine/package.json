@@ -11,11 +11,7 @@
   "bin": {
     "abt": "./bin/abt.js"
   },
-  "scripts": {
-    "build": "yarn rollup --config rollup.config.ts --configPlugin typescript",
-    "build-types": "yarn rollup --config rollup.types.config.ts --configPlugin typescript",
-    "dev": "yarn build --watch"
-  },
+  "scripts": {},
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-typescript": "^11.0.0",
