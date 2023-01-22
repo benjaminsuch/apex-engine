@@ -1,6 +1,6 @@
 import { Object3D } from 'three';
 
-import { Renderer } from 'src/renderer';
+import { Renderer } from '../../renderer';
 import { ActorComponent } from './ActorComponent';
 
 export class SceneComponent extends ActorComponent {

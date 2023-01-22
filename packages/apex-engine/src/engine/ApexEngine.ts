@@ -1,4 +1,4 @@
-import { Renderer } from 'src/renderer';
+import { Renderer } from '../renderer';
 import { type EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
@@ -35,7 +35,7 @@ export abstract class ApexEngine {
   }
 
   public init() {
-    this.gameInstance = new GameInstance();
+    this.gameInstance = new GameInstance(this);
     this.gameInstance.init();
 
     this.isInitialized = true;

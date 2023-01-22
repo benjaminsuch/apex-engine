@@ -8,8 +8,8 @@ import {
   WebGLRenderer
 } from 'three';
 
-import { EngineUtils } from 'src/engine';
-import { type SceneComponent } from 'src/engine/components';
+import { EngineUtils } from '../engine';
+import { type SceneComponent } from '../engine/components';
 
 export class Renderer {
   private static instance?: Renderer;

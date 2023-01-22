@@ -1,4 +1,4 @@
-import { ActorComponent, SceneComponent } from './components';
+import { type ActorComponent, SceneComponent } from './components';
 import { type Level } from './Level';
 import { type World } from './World';
 

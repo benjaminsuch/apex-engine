@@ -1,4 +1,4 @@
-import { GameEngine } from './GameEngine';
+import { ApexEngine } from './ApexEngine';
 import { World } from './World';
 
 export class GameInstance {
@@ -11,12 +11,15 @@ export class GameInstance {
     return this.world;
   }
 
+  constructor(private readonly engine: ApexEngine) {}
+
   public init() {
     this.world = new World(this);
     this.world.init();
   }
 
   public start() {
-    GameEngine.getInstance().loadLevel(APEX_GAME_DEFAULT_LEVEL);
+    this.engine.loadLevel(APEX_GAME_DEFAULT_LEVEL);
+    //this.engine.loadLevel('/src/game/levels/start');
   }
 }

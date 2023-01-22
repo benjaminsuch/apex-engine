@@ -1,4 +1,4 @@
-import { Renderer } from 'src/renderer';
+import { Renderer } from '../renderer';
 import { GameEngine } from './GameEngine';
 
 export class EngineLoop {

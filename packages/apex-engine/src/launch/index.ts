@@ -1,4 +1,4 @@
-import { ApexEngine, EngineLoop, GameInstance } from 'src/engine';
+import { ApexEngine, EngineLoop, GameInstance } from '../engine';
 
 const isEngineExitRequested = () => false;
 
