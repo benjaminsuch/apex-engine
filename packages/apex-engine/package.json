@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "@tinyhttp/app": "^2.0.29",
+    "socket.io": "^4.5.4",
+    "socket.io-client": "^4.5.4",
     "three": "^0.148.0"
   }
 }

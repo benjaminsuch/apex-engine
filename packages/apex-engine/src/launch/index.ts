@@ -1,6 +1,4 @@
-import { ApexEngine, EngineLoop, GameInstance } from '../engine';
-import { configureBrowserLauncher } from './configureBrowserLauncher';
-import { configureServerLauncher } from './configureServerLauncher';
+import { EngineLoop } from '../engine';
 
 const isEngineExitRequested = () => false;
 
@@ -15,30 +13,18 @@ function main() {
   }
 }
 
-export interface LauncherConfig {
-  /**
-   * Overrides the default GameEngine class.
-   */
-  gameEngineClass?: typeof ApexEngine;
-  /**
-   * Overrides the default GameInstance class.
-   */
-  gameInstanceClass?: typeof GameInstance;
-  /**
-   * The relative path to your level.
-   */
-  defaultLevel: string;
-  /**
-   * You can define plugins to enhance the engine with features.
-   */
-  plugins?: Record<string, any>[];
-}
+const configureServerLauncher = IS_SERVER
+  ? (await import('./configureServerLauncher')).configureServerLauncher
+  : undefined;
+const configureBrowserLauncher = IS_CLIENT
+  ? (await import('./configureBrowserLauncher')).configureBrowserLauncher
+  : undefined;
 
 export function launch() {
   if (IS_SERVER) {
-    return configureServerLauncher(main);
+    return configureServerLauncher?.(main);
   }
   if (IS_CLIENT) {
-    return configureBrowserLauncher(main)();
+    return configureBrowserLauncher?.(main)();
   }
 }
