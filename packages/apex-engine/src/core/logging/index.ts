@@ -39,5 +39,5 @@ export function log<T extends string>(
   message: string,
   ...args: unknown[]
 ) {
-  readerController.enqueue(`[${category}] [${verbosity}] ${message}`);
+  readerController.enqueue(`[${verbosity}] [${category}] ${message}`);
 }

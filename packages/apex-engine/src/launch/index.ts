@@ -35,7 +35,6 @@ export interface LauncherConfig {
 }
 
 export function launch() {
-  console.log('IS_CLIENT', IS_CLIENT, 'IS_SERVER', IS_SERVER);
   if (IS_SERVER) {
     return configureServerLauncher(main);
   }
