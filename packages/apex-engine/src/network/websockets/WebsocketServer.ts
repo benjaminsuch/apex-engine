@@ -1,4 +1,12 @@
-import { Server } from 'socket.io';
+import type { Server as TServer } from 'socket.io';
+
+const Server = IS_SERVER
+  ? (await import('socket.io')).Server
+  : (class {
+      constructor() {
+        throw new Error(`The client cannot create an instance of WebsocketServer.`);
+      }
+    } as typeof TServer);
 
 export class WebsocketServer extends Server {
   private static instance?: WebsocketServer;

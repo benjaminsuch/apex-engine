@@ -7,19 +7,14 @@ const port = 8080;
 export function configureServerLauncher(main: Function) {
   log('LauncherConfiguration', 'log', 'Configuring server launcher');
 
-  //const server = new HttpServer();
-  const io = new WebsocketServer(8081, {
+  const io = new WebsocketServer(port, {
     cors: {
       origin: '*'
     }
   });
 
-  return (middlewares: any) => {
+  return (callback: (server: WebsocketServer | HttpServer) => void) => {
+    callback(io);
     main();
-    /*server.use(middlewares);
-    server.listen(port, () => {
-      log('HttpServer', 'log', `Server listening on port ${port}`);
-      main();
-    });*/
   };
 }
