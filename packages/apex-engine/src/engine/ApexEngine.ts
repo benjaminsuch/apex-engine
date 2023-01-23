@@ -1,3 +1,4 @@
+import { log } from '../core/logging';
 import { Renderer } from '../renderer';
 import { type EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';
@@ -49,12 +50,15 @@ export abstract class ApexEngine {
   public tick() {}
 
   public async loadLevel(url: string) {
-    console.log('loading level:', url);
+    log('LoadingLevel', 'log', `Trying to load level: ${url}`);
+
     try {
       const { default: LoadedLevel }: { default: typeof Level } = await import(
         /* @vite-ignore */ url
       );
-      console.log('level loaded');
+
+      log('LoadingLevel', 'log', `Successfully loaded level: ${url}`);
+
       const level = new LoadedLevel();
       const world = this.getGameInstance().getWorld();
 

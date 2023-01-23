@@ -1,4 +1,6 @@
 import { ApexEngine, EngineLoop, GameInstance } from '../engine';
+import { configureBrowserLauncher } from './configureBrowserLauncher';
+import { configureServerLauncher } from './configureServerLauncher';
 
 const isEngineExitRequested = () => false;
 
@@ -32,11 +34,12 @@ export interface LauncherConfig {
   plugins?: Record<string, any>[];
 }
 
-export function configureLauncher({
-  gameEngineClass = ApexEngine,
-  gameInstanceClass = GameInstance,
-  defaultLevel
-}: LauncherConfig) {
+export function launch() {
   console.log('IS_CLIENT', IS_CLIENT, 'IS_SERVER', IS_SERVER);
-  main();
+  if (IS_SERVER) {
+    return configureServerLauncher(main);
+  }
+  if (IS_CLIENT) {
+    return configureBrowserLauncher(main)();
+  }
 }
