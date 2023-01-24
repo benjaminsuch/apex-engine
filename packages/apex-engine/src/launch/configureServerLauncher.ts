@@ -13,8 +13,8 @@ export function configureServerLauncher(main: Function) {
     }
   });
 
-  return (callback: (server: WebsocketServer | HttpServer) => void) => {
-    callback(io);
+  return (callback?: (server: WebsocketServer | HttpServer) => void) => {
+    callback?.(io);
     main();
   };
 }

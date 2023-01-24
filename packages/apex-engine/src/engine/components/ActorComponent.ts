@@ -5,6 +5,9 @@ export class ActorComponent {
   private owner?: Actor;
 
   public getOwner() {
+    if (!this.owner) {
+      throw new Error(`No owner found.`)
+    }
     return this.owner;
   }
 
@@ -12,7 +15,7 @@ export class ActorComponent {
 
   public getWorld() {
     if (!this.world) {
-      throw new Error(`This actor is not part of a world.`);
+      throw new Error(`This component is not part of a world.`);
     }
     return this.world;
   }

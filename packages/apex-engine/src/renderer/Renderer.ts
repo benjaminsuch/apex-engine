@@ -1,4 +1,5 @@
 import {
+  ACESFilmicToneMapping,
   Camera,
   OrthographicCamera,
   PCFSoftShadowMap,
@@ -29,7 +30,7 @@ export class Renderer {
     }
   }
 
-  private readonly webGLRenderer: WebGLRenderer;
+  public readonly webGLRenderer: WebGLRenderer;
 
   public camera: Camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight);
 
@@ -49,6 +50,7 @@ export class Renderer {
     this.webGLRenderer = new WebGLRenderer({ antialias: true, alpha: true });
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.outputEncoding = sRGBEncoding;
+    this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
     this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
     this.webGLRenderer.setPixelRatio(window.devicePixelRatio);
 
