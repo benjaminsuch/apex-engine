@@ -1,26 +1,38 @@
-import replace from '@rollup/plugin-replace';
-import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import nodeResolve from '@rollup/plugin-node-resolve';
+import { defineConfig, loadEnv, Plugin } from 'vite';
+import resolvePaths from 'vite-tsconfig-paths';
 
-// https://vitejs.dev/config/
+const envPrefix = 'APEX_';
+
+function apexLaunchPlugin(): Plugin {
+  return {
+    name: 'apex-launch',
+    config(config, { mode }) {
+      config.define = { ...config.define, IS_CLIENT: false, IS_SERVER: false };
+
+      if (mode === 'browser') {
+        config.appType = 'spa';
+        config.define.IS_CLIENT = true;
+      }
+
+      if (mode === 'server') {
+        config.define.IS_SERVER = true;
+      }
+
+      const envs = loadEnv(mode, './', envPrefix);
+
+      for (const key in envs) {
+        config.define[key] = JSON.stringify(envs[key]);
+      }
+    }
+  };
+}
+
 export default defineConfig({
-  build: {
-    outDir: 'build/browser'
-  },
+  appType: 'spa',
+  envPrefix,
   server: {
     port: 3000
   },
-  plugins: [
-    react(),
-    replace({
-      preventAssignment: true,
-      values: {
-        IS_CLIENT: 'false',
-        IS_DEDICATED_SERVER: 'false',
-        IS_LISTEN_SERVER: 'false',
-        IS_SERVER: 'false',
-        IS_STANDALONE: 'false'
-      }
-    })
-  ]
+  plugins: [nodeResolve(), resolvePaths(), apexLaunchPlugin()]
 });

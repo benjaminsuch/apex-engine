@@ -3,25 +3,32 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./build/index.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "dev-server": "tsx ./server.ts"
   },
   "dependencies": {
-    "@react-three/fiber": "^8.3.1",
-    "@vitejs/plugin-react": "^2.0.1",
-    "apex-engine": "file:/Users/benjaminsuch/Desktop/apex-engine/packages/apex-engine",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "three": "^0.143.0",
-    "vite": "^3.0.8"
+    "apex-engine": "file:C:/Users/benjaminsuch/Desktop/apex-engine/packages/apex-engine",
+    "cac": "^6.7.14",
+    "socket.io": "^4.5.4",
+    "socket.io-client": "^4.5.4",
+    "three": "^0.148.0",
+    "three-stdlib": "^2.21.6"
   },
   "devDependencies": {
-    "@types/react": "^18.0.17",
-    "@types/react-dom": "^18.0.6",
-    "@types/three": "^0.143.1",
-    "typescript": "^4.7.4"
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-replace": "^5.0.2",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@tinyhttp/app": "^2.0.29",
+    "@types/node": "^18.11.18",
+    "@types/three": "^0.148.0",
+    "rollup-plugin-jscc": "^2.0.0",
+    "tslib": "^2.4.1",
+    "typescript": "^4.9.4",
+    "vite": "^4.0.4",
+    "vite-tsconfig-paths": "^4.0.5"
+  },
+  "resolutions": {
+    "three": "^0.148.0"
   }
 }

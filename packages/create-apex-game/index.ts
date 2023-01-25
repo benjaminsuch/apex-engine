@@ -9,7 +9,6 @@ import chalk from 'chalk';
 import prompts from 'prompts';
 
 const createApexPkg = JSON.parse(readFileSync('package.json', 'utf-8'));
-
 const defaultProjectName = 'my-project';
 const program = new Command();
 
