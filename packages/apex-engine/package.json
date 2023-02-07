@@ -8,6 +8,16 @@
   "engines": {
     "node": "^16.0.0"
   },
+  "bin": {
+    "abt": "bin/abt.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benjaminsuch/apex-engine.git"
+  },
+  "scripts": {
+    "dev": ""
+  },
   "devDependencies": {
     "@tinyhttp/app": "^2.0.29",
     "@types/node": "^18.11.18",

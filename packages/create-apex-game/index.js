@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import chalk from 'chalk';
@@ -119,7 +119,6 @@ function copyProjectFiles(dest, projectName = defaultProjectName) {
     }
     copy('template', dest);
     mkdirSync(`${dest}/content/${projectName}`, { recursive: true });
-    renameSync(`${dest}/${defaultProjectName}.blend`, `${dest}/${projectName}.blend`);
 }
 function copy(src, dest) {
     const stat = statSync(src);
