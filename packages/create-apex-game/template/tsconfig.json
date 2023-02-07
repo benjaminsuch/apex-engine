@@ -3,7 +3,8 @@
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
-    "esModuleInterop": false,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": false,
     "jsx": "react-jsx",
@@ -11,16 +12,12 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "noEmit": true,
-    "paths": {
-      "apex-engine/*": ["node_modules/apex-engine/*"],
-      "engine/*": ["src/engine/*"],
-      "game/*": ["src/game/*"]
-    },
+    "noImplicitOverride": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
     "useDefineForClassFields": true
   },
-  "include": ["node_modules/apex-engine/src/**/*", "src", "types"]
+  "include": ["src", "types"]
 }

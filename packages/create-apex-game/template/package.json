@@ -3,27 +3,32 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "build/electron/index.js",
   "scripts": {
     "dev": "vite",
-    "dev-server": "tsx ./server.ts"
+    "dev-server": "tsx watch build/node/index.js",
+    "dev-desktop": "electron-vite dev",
+    "build-server": "rollup --config rollup.config.ts --configPlugin typescript"
   },
   "dependencies": {
+    "@types/node": "^18.11.18",
+    "@types/three": "^0.148.1",
     "apex-engine": "file:C:/Users/benjaminsuch/Desktop/apex-engine/packages/apex-engine",
-    "cac": "^6.7.14",
     "socket.io": "^4.5.4",
     "socket.io-client": "^4.5.4",
-    "three": "^0.148.0",
-    "three-stdlib": "^2.21.6"
+    "three": "^0.149.0"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-replace": "^5.0.2",
     "@rollup/plugin-typescript": "^11.0.0",
-    "@tinyhttp/app": "^2.0.29",
-    "@types/node": "^18.11.18",
-    "@types/three": "^0.148.0",
-    "rollup-plugin-jscc": "^2.0.0",
-    "tslib": "^2.4.1",
+    "cac": "^6.7.14",
+    "electron": "^22.2.0",
+    "electron-vite": "^1.0.18",
+    "rollup": "^3.12.0",
+    "tsc": "^2.0.4",
+    "tslib": "^2.5.0",
+    "tsx": "^3.12.2",
     "typescript": "^4.9.4",
     "vite": "^4.0.4",
     "vite-tsconfig-paths": "^4.0.5"
