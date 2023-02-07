@@ -4,12 +4,18 @@
   "version": "0.1.0",
   "author": "Benjamin Such",
   "license": "Apache-2.0",
+  "main": "src/index.ts",
   "type": "module",
   "engines": {
     "node": "^16.0.0"
   },
   "bin": {
     "abt": "bin/abt.js"
+  },
+  "exports": {
+    "./engine": {
+      "import": "./src/engine/index.ts"
+    }
   },
   "repository": {
     "type": "git",

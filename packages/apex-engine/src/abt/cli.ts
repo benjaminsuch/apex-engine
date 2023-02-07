@@ -7,7 +7,7 @@ cli
   .alias('dev')
   .alias('serve')
   .action(async () => {
-    console.log('Hallo Welt');
+    console.log('Hallo Welt 123', process.cwd());
   });
 
 cli.parse();
