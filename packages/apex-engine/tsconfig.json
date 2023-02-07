@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["src", "types"],
+  "include": ["./rollup.config.ts", "src", "types"],
   "compilerOptions": {
     "baseUrl": ".",
     "declaration": true,

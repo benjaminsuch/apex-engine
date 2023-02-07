@@ -13,12 +13,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/benjaminsuch/apex-engine.git"
+    "url": "git+https://github.com/benjaminsuch/apex-engine.git",
+    "directory": "packages/apex-engine"
   },
   "scripts": {
-    "dev": ""
+    "build-bundle": "rollup --config rollup.config.ts --configPlugin typescript"
+  },
+  "dependencies": {
+    "cac": "^6.7.14",
+    "esbuild": "^0.17.6",
+    "rollup": "^3.14.0"
   },
   "devDependencies": {
+    "@rollup/plugin-typescript": "^11.0.0",
     "@tinyhttp/app": "^2.0.29",
     "@types/node": "^18.11.18",
     "@types/three": "^0.148.0",
@@ -26,6 +33,7 @@
     "socket.io-client": "^4.5.4",
     "three": "^0.148.0",
     "three-stdlib": "^2.21.5",
+    "tslib": "^2.5.0",
     "tsx": "^3.12.2",
     "typescript": "^4.9.4"
   },

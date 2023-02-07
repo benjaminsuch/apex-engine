@@ -593,29 +593,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"apex-build-tool@workspace:packages/apex-build-tool":
-  version: 0.0.0-use.local
-  resolution: "apex-build-tool@workspace:packages/apex-build-tool"
-  dependencies:
-    "@rollup/plugin-typescript": ^11.0.0
-    cac: ^6.7.14
-    esbuild: ^0.17.6
-  bin:
-    abt: bin/abt.js
-  languageName: unknown
-  linkType: soft
-
 "apex-engine@workspace:packages/apex-engine":
   version: 0.0.0-use.local
   resolution: "apex-engine@workspace:packages/apex-engine"
   dependencies:
+    "@rollup/plugin-typescript": ^11.0.0
     "@tinyhttp/app": ^2.0.29
     "@types/node": ^18.11.18
     "@types/three": ^0.148.0
+    cac: ^6.7.14
+    esbuild: ^0.17.6
+    rollup: ^3.14.0
     socket.io: ^4.5.4
     socket.io-client: ^4.5.4
     three: ^0.148.0
     three-stdlib: ^2.21.5
+    tslib: ^2.5.0
     tsx: ^3.12.2
     typescript: ^4.9.4
   peerDependencies:
@@ -623,6 +616,8 @@ __metadata:
     socket.io: ^4.5.4
     socket.io-client: ^4.5.4
     three: ^0.148.0
+  bin:
+    abt: bin/abt.js
   languageName: unknown
   linkType: soft
 
@@ -1931,6 +1926,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"rollup@npm:^3.14.0":
+  version: 3.14.0
+  resolution: "rollup@npm:3.14.0"
+  dependencies:
+    fsevents: ~2.3.2
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  bin:
+    rollup: dist/bin/rollup
+  checksum: 48f4da224753b8022529256243b74b3f6f41d9b4358ba079ac42f2a2cf07e4bd01b5d94579338194238e3c575487974ca508e144cf6195123293e7fdf82506cb
+  languageName: node
+  linkType: hard
+
 "root@workspace:.":
   version: 0.0.0-use.local
   resolution: "root@workspace:."
@@ -2169,6 +2178,13 @@ __metadata:
   version: 1.0.3
   resolution: "tiny-inflate@npm:1.0.3"
   checksum: 4086a1f8938dafa4a20c63b099aeb47bf8fef5aca991bf4ea4b35dd2684fa52363b2c19b3e76660311e7613cb7c4f063bc48751b9bdf9555e498d997c30bc2d6
+  languageName: node
+  linkType: hard
+
+"tslib@npm:^2.5.0":
+  version: 2.5.0
+  resolution: "tslib@npm:2.5.0"
+  checksum: ae3ed5f9ce29932d049908ebfdf21b3a003a85653a9a140d614da6b767a93ef94f460e52c3d787f0e4f383546981713f165037dc2274df212ea9f8a4541004e1
   languageName: node
   linkType: hard
 
