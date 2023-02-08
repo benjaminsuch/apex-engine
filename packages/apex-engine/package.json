@@ -4,7 +4,6 @@
   "version": "0.1.0",
   "author": "Benjamin Such",
   "license": "Apache-2.0",
-  "main": "src/index.ts",
   "type": "module",
   "engines": {
     "node": "^16.0.0"
@@ -35,6 +34,7 @@
     "@tinyhttp/app": "^2.0.29",
     "@types/node": "^18.11.18",
     "@types/three": "^0.148.0",
+    "chokidar": "^3.5.3",
     "socket.io": "^4.5.4",
     "socket.io-client": "^4.5.4",
     "three": "^0.148.0",
