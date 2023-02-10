@@ -33,8 +33,7 @@ export default (args: any): RollupOptions => {
     },
     plugins: [
       typescript({
-        tsconfig: resolve(__dirname, 'src/abt/tsconfig.json'),
-        sourceMap: !isProduction
+        tsconfig: resolve(__dirname, 'src/abt/tsconfig.json')
       })
     ]
   });

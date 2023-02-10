@@ -1,5 +1,5 @@
 /**
- * This file contains code from the Vite project:
+ * Parts contain code from the Vite project:
  *
  * Repository: https://github.com/vitejs/vite/tree/main/packages/vite
  * License: https://github.com/vitejs/vite/blob/main/packages/vite/LICENSE.md
@@ -10,7 +10,9 @@
  */
 
 import { cac } from 'cac';
+import * as path from 'node:path';
 
+import { resolveConfig } from './config';
 import { createServer } from './server';
 
 interface CLIOptions {
@@ -27,26 +29,26 @@ cli
   .option('-p, --platform <platform>', 'browser | electron | node', { default: 'electron' });
 
 cli
-  .command('[file]', '[string] An optional path to a .target.js file.')
+  .command('serve')
   .alias('dev')
-  .alias('serve')
-  .action(async (targetFile: string, options: CLIOptions) => {
+  .action(async (options: CLIOptions) => {
     filterDuplicateOptions(options);
 
-    const { platform, target } = options;
-
-    if (platform === 'browser') {
+    const { config: configFile = path.resolve('apex.config.ts'), platform, target } = options;
+    console.log(configFile);
+    await resolveConfig({ configFile });
+    /*if (platform === 'browser') {
       if (target === 'server') {
-        throw new Error(`Invalid target: "browser" cannot host a server.`);
+        throw new Error(`Invalid target: The browser cannot host a server.`);
       }
 
-      const server = await createServer({ target });
+      const server = await createServer({ configFile, target });
 
       try {
       } catch (error) {
         console.error(error);
       }
-    }
+    }*/
   });
 
 cli.parse();

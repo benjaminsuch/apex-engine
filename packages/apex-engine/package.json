@@ -11,11 +11,6 @@
   "bin": {
     "abt": "bin/abt.js"
   },
-  "exports": {
-    "./engine": {
-      "import": "./src/engine/index.ts"
-    }
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/benjaminsuch/apex-engine.git",
@@ -31,10 +26,13 @@
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^11.0.0",
+    "@rollup/pluginutils": "^5.0.2",
     "@tinyhttp/app": "^2.0.29",
     "@types/node": "^18.11.18",
+    "@types/resolve": "^1",
     "@types/three": "^0.148.0",
     "chokidar": "^3.5.3",
+    "resolve": "^1.22.1",
     "socket.io": "^4.5.4",
     "socket.io-client": "^4.5.4",
     "three": "^0.148.0",
