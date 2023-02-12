@@ -118,7 +118,6 @@ function copyProjectFiles(dest, projectName = defaultProjectName) {
         mkdirSync(dest);
     }
     copy('template', dest);
-    mkdirSync(`${dest}/content/${projectName}`, { recursive: true });
 }
 function copy(src, dest) {
     const stat = statSync(src);
