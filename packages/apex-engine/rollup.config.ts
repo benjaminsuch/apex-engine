@@ -1,3 +1,4 @@
+import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -32,8 +33,10 @@ export default (args: any): RollupOptions => {
       tryCatchDeoptimization: false
     },
     plugins: [
+      nodeResolve({ preferBuiltins: true }),
       typescript({
-        tsconfig: resolve(__dirname, 'src/abt/tsconfig.json')
+        tsconfig: resolve(__dirname, 'src/abt/tsconfig.json'),
+        sourceMap: !isProduction
       })
     ]
   });

@@ -17,14 +17,17 @@
     "directory": "packages/apex-engine"
   },
   "scripts": {
+    "dev": "yarn build-bundle -w",
     "build-bundle": "rollup --config rollup.config.ts --configPlugin typescript"
   },
   "dependencies": {
     "cac": "^6.7.14",
     "esbuild": "^0.17.6",
-    "rollup": "^3.14.0"
+    "rollup": "^3.14.0",
+    "vite": "^4.1.1"
   },
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-typescript": "^11.0.0",
     "@rollup/pluginutils": "^5.0.2",
     "@tinyhttp/app": "^2.0.29",

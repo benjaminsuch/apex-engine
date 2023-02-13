@@ -1,19 +1,6 @@
-/**
- * Parts contain code from the Vite project:
- *
- * Repository: https://github.com/vitejs/vite/tree/main/packages/vite
- * License: https://github.com/vitejs/vite/blob/main/packages/vite/LICENSE.md
- *
- * MIT License
- *
- * Copyright (c) 2019-present, Yuxi (Evan) You and Vite contributors
- */
-
 import { cac } from 'cac';
-import * as path from 'node:path';
-
-import { resolveConfig } from './config';
-import { createServer } from './server';
+import { resolveConfig } from 'vite';
+import { loadConfigFromFile } from './config';
 
 interface CLIOptions {
   config?: string;
@@ -34,9 +21,9 @@ cli
   .action(async (options: CLIOptions) => {
     filterDuplicateOptions(options);
 
-    const { config: configFile = path.resolve('apex.config.ts'), platform, target } = options;
-    console.log(configFile);
-    await resolveConfig({ configFile });
+    const { config: configFile, platform, target } = options;
+    await loadConfigFromFile(configFile);
+    //await resolveConfig({ configFile });
     /*if (platform === 'browser') {
       if (target === 'server') {
         throw new Error(`Invalid target: The browser cannot host a server.`);

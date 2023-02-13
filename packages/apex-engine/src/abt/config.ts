@@ -1,25 +1,10 @@
-/**
- * Parts contain code from the Vite project:
- *
- * Repository: https://github.com/vitejs/vite/tree/main/packages/vite
- * License: https://github.com/vitejs/vite/blob/main/packages/vite/LICENSE.md
- *
- * MIT License
- *
- * Copyright (c) 2019-present, Yuxi (Evan) You and Vite contributors
- */
-
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as url from 'node:url';
 import { build } from 'esbuild';
+import { existsSync, promises, unlinkSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { Plugin } from 'rollup';
 
-import {
-  tryNodeResolve,
-  type InternalResolveOptionsWithOverrideConditions
-} from './plugins/resolve';
-import { isBuiltin } from './utils';
+import { dynamicImport, isBuiltin } from './utils';
 
 export type PluginOption =
   | Plugin
@@ -56,8 +41,10 @@ export interface InlineConfig {
   target?: Target;
 }
 
-export async function resolveConfig(inlineConfig: InlineConfig): Promise<ResolvedConfig> {
-  const result = await loadConfigFromFile(inlineConfig.configFile);
+const CONFIG_FILE_NAME = 'apex.config';
+
+export function defineConfig(config: ApexConfig) {
+  return config;
 }
 
 export async function loadConfigFromFile(
@@ -67,83 +54,120 @@ export async function loadConfigFromFile(
   let resolvedPath: string | undefined;
 
   if (configFile) {
-    resolvedPath = path.resolve(configFile);
+    resolvedPath = resolve(configFile);
   } else {
-    resolvedPath = path.resolve(root, 'apex.config.ts');
+    resolvedPath = resolve(root, CONFIG_FILE_NAME + '.ts');
   }
 
-  if (!fs.existsSync(resolvedPath)) {
+  if (!existsSync(resolvedPath)) {
     throw new Error(`Unable to find configuration file ${resolvedPath}.`);
   }
 
+  // electron does not support adding type: "module" to package.json
+  let isESM = false;
+  if (/\.m[jt]s$/.test(resolvedPath) || resolvedPath.endsWith('.ts')) {
+    isESM = true;
+  }
+
   try {
-    const bundled = await bundleConfigFile(resolvedPath);
-  } catch (error) {}
+    const bundled = await bundleConfigFile(resolvedPath, isESM);
+    const loadedConfig = await loadConfigFromBundledFile(root, resolvedPath, bundled.code, isESM);
+    const config = await (typeof loadedConfig === 'function' ? loadedConfig() : loadedConfig);
+
+    if (typeof config !== 'object' || Array.isArray(config)) {
+      throw new Error(`Invalid config: Your configuration file must return an object.`);
+    }
+  } catch (error) {
+    console.log(error);
+  }
 }
 
-export function defineConfig(config: ApexConfig) {
-  return config;
-}
+async function bundleConfigFile(fileName: string, isESM: boolean) {
+  const dirnameVarName = '__abt_injected_dirname';
+  const filenameVarName = '__abt_injected_filename';
+  const importMetaUrlVarName = '__abt_injected_import_meta_url';
 
-async function bundleConfigFile(fileName: string) {
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
-    outfile: 'out.js',
     write: false,
     target: ['node16'],
     platform: 'node',
     bundle: true,
-    format: 'esm',
-    mainFields: ['main'],
+    format: isESM ? 'esm' : 'cjs',
     sourcemap: 'inline',
     metafile: true,
+    define: {
+      __dirname: dirnameVarName,
+      __filename: filenameVarName,
+      'import.meta.url': importMetaUrlVarName
+    },
+    banner: {
+      js: [
+        'import { createRequire } from "module";',
+        'const require = createRequire(import.meta.url);'
+      ].join('\n')
+    },
     plugins: [
       {
         name: 'externalize-deps',
         setup(build) {
-          const options: InternalResolveOptionsWithOverrideConditions = {
-            root: path.dirname(fileName),
-            isBuild: true,
-            isProduction: true,
-            preferRelative: false,
-            tryIndex: true,
-            mainFields: [],
-            browserField: false,
-            conditions: [],
-            overrideConditions: ['node'],
-            dedupe: [],
-            extensions: ['.ts'],
-            preserveSymlinks: false
-          };
-
-          build.onResolve({ filter: /^[^.].*/ }, async ({ path: id, importer, kind }) => {
-            if (kind === 'entry-point' || path.isAbsolute(id) || isBuiltin(id)) {
+          build.onResolve({ filter: /^[^.].*/ }, ({ path: id }) => {
+            if (isAbsolute(id) || isBuiltin(id)) {
               return;
             }
-
-            if (id.startsWith('npm:')) {
-              return { external: true };
-            }
-
-            let idFsPath = tryNodeResolve(
-              id,
-              importer,
-              { ...options, isRequire: false },
-              false
-            )?.id;
-
-            if (idFsPath) {
-              idFsPath = url.pathToFileURL(idFsPath).href;
-            }
+            return null;
+          });
+        }
+      },
+      {
+        name: 'replace-import-meta',
+        setup(build) {
+          build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async args => {
+            const contents = await promises.readFile(args.path, 'utf8');
+            const injectValues =
+              `const ${dirnameVarName} = ${JSON.stringify(dirname(args.path))};` +
+              `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
+              `const ${importMetaUrlVarName} = ${JSON.stringify(pathToFileURL(args.path).href)};`;
 
             return {
-              path: idFsPath,
-              external: true
+              loader: args.path.endsWith('ts') ? 'ts' : 'js',
+              contents: injectValues + contents
             };
           });
         }
       }
     ]
   });
+
+  const { text } = result.outputFiles[0];
+
+  return {
+    code: text,
+    dependencies: result.metafile ? Object.keys(result.metafile.inputs) : []
+  };
+}
+
+async function loadConfigFromBundledFile(
+  root: string,
+  configFile: string,
+  bundledCode: string,
+  isESM: boolean
+) {
+  if (isESM) {
+    const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
+
+    writeFileSync(fileNameTmp, bundledCode);
+
+    const fileUrl = pathToFileURL(fileNameTmp);
+
+    try {
+      return (await dynamicImport(fileUrl)).default;
+    } finally {
+      try {
+        unlinkSync(fileNameTmp);
+      } catch {}
+    }
+  } else {
+  }
 }
