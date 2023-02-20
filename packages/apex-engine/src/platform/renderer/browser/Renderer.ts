@@ -9,9 +9,9 @@ import {
   WebGLRenderer
 } from 'three';
 
-import { EngineUtils } from 'src/engine';
-import { SceneComponent } from 'src/engine/components';
-import { IConsoleLogger } from 'src/platform/logging/common';
+import { EngineUtils } from '../../../engine';
+import { SceneComponent } from '../../../engine/components';
+import { IConsoleLogger } from '../../../platform/logging/common';
 
 export class Renderer {
   private static instance?: Renderer;

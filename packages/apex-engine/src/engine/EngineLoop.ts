@@ -1,6 +1,6 @@
-import { type InstantiationService } from 'src/platform/di/common';
-import { IConsoleLogger } from 'src/platform/logging/common';
-import { type Renderer } from 'src/platform/renderer/browser';
+import { type InstantiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
+import { type Renderer } from '../platform/renderer/browser';
 import { GameEngine } from './GameEngine';
 
 /**
@@ -15,11 +15,7 @@ export class EngineLoop {
     private readonly instantiationService: InstantiationService,
     public readonly renderer: Renderer | null = null,
     @IConsoleLogger private readonly logger: IConsoleLogger
-  ) {
-    if (IS_CLIENT && !renderer) {
-      this.logger.warn(`Missing renderer for client.`);
-    }
-  }
+  ) {}
 
   public init() {
     if (this.renderer) {

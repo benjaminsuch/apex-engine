@@ -1,7 +1,7 @@
-import { EngineLoop } from 'src/engine';
-import { InstantiationService, ServiceCollection } from 'src/platform/di/common';
-import { ConsoleLogger, IConsoleLogger } from 'src/platform/logging/common';
-import { Renderer } from 'src/platform/renderer/browser';
+import { EngineLoop } from '../../engine';
+import { InstantiationService, ServiceCollection } from '../../platform/di/common';
+import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
+import { Renderer } from '../../platform/renderer/browser';
 
 export class WindowMain {
   private readonly instantiationService: InstantiationService;

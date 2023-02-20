@@ -1,4 +1,4 @@
-import { InstantiationService } from 'src/platform/di/common';
+import { InstantiationService } from '../../../platform/di/common';
 import { AbstractLogger } from './AbstractLogger';
 import { ILogger } from './types';
 

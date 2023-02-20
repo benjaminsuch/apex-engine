@@ -1,7 +1,6 @@
-import { EngineLoop } from 'src/engine';
-import { InstantiationService, ServiceCollection } from 'src/platform/di/common';
-import { ConsoleLogger, IConsoleLogger } from 'src/platform/logging/common';
-import { WebsocketServer } from 'src/platform/websocket/node';
+import { EngineLoop } from '../../engine';
+import { InstantiationService, ServiceCollection } from '../../platform/di/common';
+import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 
 const port = 8080;
 
@@ -17,19 +16,6 @@ export class CliMain {
   }
 
   public init() {
-    if (IS_SERVER) {
-      const server = this.instantiationService.createInstance(WebsocketServer, port, {
-        cors: {
-          origin: '*'
-        }
-      });
-
-      server.on('connection', socket => {
-        console.log('client connected');
-        socket.on('hello', data => console.log('received "hello":', data));
-      });
-    }
-
     const engineLoop = this.instantiationService.createInstance(
       EngineLoop,
       this.instantiationService,

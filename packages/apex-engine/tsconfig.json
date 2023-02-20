@@ -2,8 +2,9 @@
   "extends": "./tsconfig.base.json",
   "include": ["./rollup.config.ts", "src", "types"],
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
-    "declaration": true,
-    "outDir": "build"
+    "noEmit": true,
+    "outDir": "dist"
   }
 }

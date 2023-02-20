@@ -1,4 +1,4 @@
-import { IConsoleLogger } from 'src/platform/logging/common';
+import { IConsoleLogger } from '../platform/logging/common';
 import { type EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';

@@ -1,7 +1,8 @@
 import { BrowserWindow } from 'electron';
+import { join } from 'node:path';
 
-import { InstantiationService, ServiceCollection } from 'src/platform/di/common';
-import { ConsoleLogger, IConsoleLogger } from 'src/platform/logging/common';
+import { InstantiationService, ServiceCollection } from '../../platform/di/common';
+import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 
 export class DesktopMain {
   private readonly instantiationService: InstantiationService;
@@ -39,6 +40,8 @@ export class DesktopMain {
 
     if (process.env['ELECTRON_RENDERER_URL']) {
       this.window.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    } else {
+      this.window.loadURL(join(process.cwd(), 'build/electron/index.html'));
     }
   }
 }
