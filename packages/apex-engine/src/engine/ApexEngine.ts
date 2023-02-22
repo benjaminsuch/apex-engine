@@ -72,9 +72,7 @@ export abstract class ApexEngine {
     this.logger.info(`Attempt to load level: ${url}`);
 
     try {
-      const { default: LoadedLevel }: { default: typeof Level } = await import(
-        /* @vite-ignore */ url
-      );
+      const { default: LoadedLevel }: { default: typeof Level } = await import(url);
 
       this.logger.info(`Level loaded: ${url}`);
 
@@ -90,7 +88,7 @@ export abstract class ApexEngine {
       level.init();
       world.initActorsForPlay();
     } catch (error) {
-      console.error(error);
+      console.log(error);
     }
   }
 }

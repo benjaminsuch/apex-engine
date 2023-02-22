@@ -4,12 +4,14 @@ import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
 import { cac } from 'cac';
 import glob from 'glob';
+import mime from 'mime';
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { createServer } from 'node:http';
+import { existsSync, readFile, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { createServer, Server } from 'node:http';
 import { createRequire } from 'node:module';
-import { dirname, extname, join, relative, resolve } from 'node:path';
+import { dirname, extname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { rimraf } from 'rimraf';
 import { rollup, watch } from 'rollup';
 
 import { ApexConfig, CONFIG_FILE_NAME, TargetConfig } from './config';
@@ -41,6 +43,9 @@ cli
     for (const targetConfig of targets) {
       if (targetConfig.platform === 'browser') {
         await serveBrowserTarget(targetConfig);
+      }
+      if (targetConfig.platform === 'electron') {
+        await serveElectronTarget(targetConfig);
       }
     }
   });
@@ -127,7 +132,7 @@ async function loadConfigFromBundledFile(root: string, bundledCode: string): Pro
 }
 
 function startElectron(): ChildProcessWithoutNullStreams {
-  const ps = spawn(getElectronPath(), ['.']);
+  const ps = spawn(getElectronPath(), ['./build/electron/main.js']);
 
   ps.stdout.on('data', chunk => {
     console.log(chunk.toString());
@@ -151,7 +156,7 @@ function getElectronPath() {
 
     if (existsSync(pathFile)) {
       const execPath = readFileSync(pathFile, 'utf-8');
-      const electronExecPath = join(electronPath, 'dist', execPath);
+      electronExecPath = join(electronPath, 'dist', execPath);
       process.env.ELECTRON_EXEC_PATH = electronExecPath;
     }
   }
@@ -250,8 +255,7 @@ async function buildElectronTarget(target: TargetConfig) {
   try {
     mainBundle = await rollup({
       input: {
-        main: getLauncherPath('electron-main'),
-        ...getGameMaps()
+        main: getLauncherPath('electron-main')
       },
       plugins: [
         replace({
@@ -444,13 +448,36 @@ async function buildTarget(config: TargetConfig) {
   }
 }
 
+let server: Server;
+
 async function serveBrowserTarget(target: TargetConfig) {
+  server = createServer((req, res) => {
+    const unsafePath = decodeURI((req.url ?? '').split('?')[0]);
+    const urlPath = posix.normalize(unsafePath);
+
+    readFileFromContentBase(
+      resolve(process.cwd(), 'build/browser'),
+      urlPath,
+      (error, content, filePath) => {
+        if (!error) {
+          res.writeHead(200, { 'Content-Type': mime.getType(filePath) ?? 'text/plain' });
+          res.end(content, 'utf-8');
+        } else {
+          console.log(error);
+        }
+      }
+    );
+  });
+
+  closeServerOnTermination();
+
   const watcher = watch({
     input: {
       index: getLauncherPath('browser'),
       ...getGameMaps()
     },
     output: {
+      dir: resolve(process.cwd(), 'build/browser'),
       exports: 'named',
       format: 'esm',
       externalLiveBindings: false,
@@ -466,7 +493,43 @@ async function serveBrowserTarget(target: TargetConfig) {
       }),
       nodeResolve({ preferBuiltins: true }),
       typescript({ outDir: 'build/browser' }),
-      html()
+      html({
+        template(options) {
+          if (!options) {
+            return '';
+          }
+
+          const { attributes, files, meta, publicPath, title } = options;
+
+          const links = (files.css || [])
+            .map(({ fileName }) => {
+              const attrs = makeHtmlAttributes(attributes.link);
+              return `<link href="${publicPath}${fileName}" rel="stylesheet"${attrs}>`;
+            })
+            .join('\n');
+
+          const metas = meta
+            .map(input => {
+              const attrs = makeHtmlAttributes(input);
+              return `<meta${attrs}>`;
+            })
+            .join('\n');
+
+          return `
+<!doctype html>
+<html${makeHtmlAttributes(attributes.html)}>
+<head>
+  ${metas}
+  <title>${title}</title>
+  ${links}
+</head>
+<body>
+  <script type="module" src="./index.js"></script>
+</body>
+</html>
+          `;
+        }
+      })
     ],
     onwarn(warning, warn) {
       if (warning.message.includes('Circular dependency')) {
@@ -478,6 +541,9 @@ async function serveBrowserTarget(target: TargetConfig) {
 
   watcher.on('event', event => {
     console.log('watcher event:', event.code);
+    if (event.code === 'ERROR') {
+      console.log(event.error);
+    }
   });
 
   watcher.on('change', () => {
@@ -490,5 +556,189 @@ async function serveBrowserTarget(target: TargetConfig) {
 
   watcher.on('close', () => {
     console.log('watcher closes');
+  });
+
+  server.listen(3000, 'localhost', () => {
+    console.log('Local: http://localhost:3000');
+  });
+}
+
+async function serveElectronTarget(target: TargetConfig) {
+  const watcherMain = watch({
+    input: {
+      main: getLauncherPath('electron-main')
+    },
+    output: {
+      dir: resolve(process.cwd(), 'build/electron'),
+      exports: 'named',
+      format: 'cjs',
+      externalLiveBindings: false,
+      freeze: false,
+      sourcemap: false
+    },
+    plugins: [
+      replace({
+        preventAssignment: true,
+        values: {
+          DEFAULT_LEVEL: JSON.stringify(target.defaultLevel)
+        }
+      }),
+      nodeResolve({
+        preferBuiltins: true
+      }),
+      typescript({ outDir: 'build/electron' })
+    ],
+    external: ['electron'],
+    onwarn(warning, warn) {
+      if (warning.message.includes('Circular dependency')) {
+        return;
+      }
+      warn(warning);
+    }
+  });
+
+  watcherMain.on('event', event => {
+    console.log('electron watcherMain event:', event.code);
+    if (event.code === 'ERROR') {
+      console.log(event.error);
+    }
+  });
+
+  watcherMain.on('change', () => {
+    console.log('electron watcherMain change detected');
+  });
+
+  watcherMain.on('restart', () => {
+    console.log('electron watcherMain is restarting');
+  });
+
+  watcherMain.on('close', () => {
+    console.log('electron watcherMain closes');
+  });
+
+  const watcherSandbox = watch({
+    input: {
+      sandbox: getLauncherPath('electron-sandbox'),
+      ...getGameMaps()
+    },
+    output: {
+      dir: resolve(process.cwd(), 'build/electron'),
+      exports: 'named',
+      format: 'esm',
+      externalLiveBindings: false,
+      freeze: false,
+      sourcemap: false
+    },
+    plugins: [
+      replace({
+        preventAssignment: true,
+        values: {
+          DEFAULT_LEVEL: JSON.stringify(target.defaultLevel)
+        }
+      }),
+      nodeResolve(),
+      typescript({ outDir: 'build/electron' }),
+      html({
+        meta: [
+          {
+            'http-equiv': 'Content-Security-Policy',
+            content: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+          }
+        ],
+        template(options) {
+          if (!options) {
+            return '';
+          }
+
+          const { attributes, files, meta, publicPath, title } = options;
+
+          const links = (files.css || [])
+            .map(({ fileName }) => {
+              const attrs = makeHtmlAttributes(attributes.link);
+              return `<link href="${publicPath}${fileName}" rel="stylesheet"${attrs}>`;
+            })
+            .join('\n');
+
+          const metas = meta
+            .map(input => {
+              const attrs = makeHtmlAttributes(input);
+              return `<meta${attrs}>`;
+            })
+            .join('\n');
+
+          return `
+<!doctype html>
+<html${makeHtmlAttributes(attributes.html)}>
+<head>
+  ${metas}
+  <title>${title}</title>
+  ${links}
+</head>
+<body>
+  <script type="module" src="./sandbox.js"></script>
+</body>
+</html>
+          `;
+        }
+      })
+    ],
+    onwarn(warning, warn) {
+      if (warning.message.includes('Circular dependency')) {
+        return;
+      }
+      warn(warning);
+    }
+  });
+
+  watcherSandbox.on('event', event => {
+    console.log('electron watcherSandbox event:', event.code);
+    if (event.code === 'ERROR') {
+      console.log(event.error);
+    }
+    if (event.code === 'END') {
+      startElectron();
+    }
+  });
+
+  watcherSandbox.on('change', () => {
+    console.log('electron watcherSandbox change detected');
+  });
+
+  watcherSandbox.on('restart', () => {
+    console.log('electron watcherSandbox is restarting');
+  });
+
+  watcherSandbox.on('close', () => {
+    console.log('electron watcherSandbox closes');
+  });
+}
+
+function readFileFromContentBase(
+  contentBase: string,
+  urlPath: string,
+  callback: (err: NodeJS.ErrnoException | null, data: Buffer, filePath: string) => void
+) {
+  let filePath = resolve(contentBase, '.' + urlPath);
+
+  if (urlPath.endsWith('/')) {
+    filePath = resolve(filePath, 'index.html');
+  }
+  console.log('reading file:', filePath);
+  readFile(filePath, (error, content) => {
+    callback(error, content, filePath);
+  });
+}
+
+function closeServerOnTermination() {
+  const terminationSignals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP'];
+  terminationSignals.forEach(signal => {
+    process.on(signal, () => {
+      console.log('process signal', signal);
+      if (server) {
+        console.log('close server on termination');
+        server.close();
+        process.exit();
+      }
+    });
   });
 }
