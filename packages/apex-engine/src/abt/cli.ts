@@ -19,6 +19,7 @@ import { ApexConfig, CONFIG_FILE_NAME, TargetConfig } from './config';
 
 interface CLIOptions {
   config?: string;
+  debug?: boolean;
   platform?: 'browser' | 'electron' | 'node';
   target?: 'client' | 'game' | 'server';
 }
@@ -27,6 +28,12 @@ const apexDir = join(fileURLToPath(import.meta.url), '../../../.apex');
 const _require = createRequire(import.meta.url);
 
 const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
+const { log, warn } = console;
+
+let isDebugModeOn = false;
+
+const debug = (...args: Parameters<typeof console.debug>) =>
+  isDebugModeOn && console.debug('DEBUG', ...args);
 
 wss.on('connection', ws => {
   console.log('client connected');
@@ -36,6 +43,7 @@ wss.on('connection', ws => {
 const cli = cac('apex-build-tool').version('0.1.0').help();
 
 cli
+  .option('-d, --debug', 'Shows debug messages when enabled.')
   .option('-c, --config', '[string] An optional path to the apex-config file.')
   .option('-t, --target <target>', 'client | game | server')
   .option('-p, --platform <platform>', 'browser | electron | node');
@@ -46,8 +54,12 @@ cli
   .action(async (options: CLIOptions) => {
     filterDuplicateOptions(options);
 
-    const { config: configFile, platform } = options;
+    const { config: configFile, debug, platform } = options;
     const { targets } = await getApexConfig();
+
+    if (debug) {
+      isDebugModeOn = true;
+    }
 
     if (!existsSync(apexDir)) {
       mkdirSync(apexDir);
@@ -69,8 +81,12 @@ cli
 cli.command('build').action(async (options: CLIOptions) => {
   filterDuplicateOptions(options);
 
-  const { config: configFile, platform } = options;
+  const { config: configFile, debug, platform } = options;
   const { targets } = await getApexConfig();
+
+  if (debug) {
+    isDebugModeOn = true;
+  }
 
   for (const targetConfig of targets) {
     if (platform && targetConfig.platform !== platform) {
@@ -576,39 +592,42 @@ async function serveBrowserTarget(target: TargetConfig) {
   });
 
   server.listen(3000, 'localhost', () => {
-    console.log('Local: http://localhost:3000');
+    log('Local: http://localhost:3000');
   });
 
   watcher.on('event', event => {
-    console.log('watcher event:', event.code);
-    if (event.code === 'ERROR') {
-      console.log(event.error);
-    }
+    log('[browser:watcher]', event.code);
+
     if (event.code === 'BUNDLE_END') {
-      // send message to electron-main to reload (via MessageChannel)
+      wss.clients.forEach(socket => {
+        socket.send(JSON.stringify({ type: 'update' }));
+      });
     }
   });
 
-  watcher.on('change', () => {
-    console.log('file change detected');
+  watcher.on('change', file => {
+    log('[browser:watcher]', 'File changed');
+    debug(file);
   });
 
-  watcher.on('restart', () => {
-    console.log('watcher is restarting');
-  });
+  watcher.on('restart', () => {});
 
-  watcher.on('close', () => {
-    console.log('watcher closes');
-  });
+  watcher.on('close', () => {});
 }
 
 async function serveElectronTarget(target: TargetConfig) {
+  const buildDir = resolve(apexDir, 'build/electron');
+
+  if (existsSync(buildDir)) {
+    await rimraf(buildDir);
+  }
+
   const watcherMain = watch({
     input: {
       main: getLauncherPath('electron-main')
     },
     output: {
-      dir: resolve('build/electron'),
+      dir: buildDir,
       exports: 'named',
       format: 'cjs',
       externalLiveBindings: false,
@@ -625,7 +644,7 @@ async function serveElectronTarget(target: TargetConfig) {
       nodeResolve({
         preferBuiltins: true
       }),
-      typescript({ outDir: 'build/electron' })
+      typescript({ outDir: buildDir })
     ],
     external: ['electron'],
     onwarn(warning, warn) {
@@ -637,23 +656,21 @@ async function serveElectronTarget(target: TargetConfig) {
   });
 
   watcherMain.on('event', event => {
-    console.log('electron watcherMain event:', event.code);
+    log('[electron-main:watcher]', event.code);
+
     if (event.code === 'ERROR') {
       console.log(event.error);
     }
   });
 
-  watcherMain.on('change', () => {
-    console.log('electron watcherMain change detected');
+  watcherMain.on('change', file => {
+    log('[electron-main:watcher]', 'File changed');
+    debug(file);
   });
 
-  watcherMain.on('restart', () => {
-    console.log('electron watcherMain is restarting');
-  });
+  watcherMain.on('restart', () => {});
 
-  watcherMain.on('close', () => {
-    console.log('electron watcherMain closes');
-  });
+  watcherMain.on('close', () => {});
 
   const watcherSandbox = watch({
     input: {
@@ -661,7 +678,7 @@ async function serveElectronTarget(target: TargetConfig) {
       ...getGameMaps()
     },
     output: {
-      dir: resolve('build/electron'),
+      dir: buildDir,
       exports: 'named',
       format: 'esm',
       externalLiveBindings: false,
@@ -676,7 +693,7 @@ async function serveElectronTarget(target: TargetConfig) {
         }
       }),
       nodeResolve(),
-      typescript({ outDir: 'build/electron' }),
+      typescript({ outDir: buildDir }),
       html({
         meta: [
           {
@@ -732,14 +749,10 @@ async function serveElectronTarget(target: TargetConfig) {
   let isRunning = false;
 
   watcherSandbox.on('event', event => {
-    console.log('electron watcherSandbox event:', event.code);
-    if (event.code === 'ERROR') {
-      console.log(event.error);
-    }
+    log('[electron-sandbox:watcher]', event.code);
+
     if (event.code === 'BUNDLE_END') {
-      wss.clients.forEach(socket => {
-        socket.send(JSON.stringify({ type: 'update' }));
-      });
+      // send message to electron-main to reload (via MessageChannel)
     }
     if (event.code === 'END' && !isRunning) {
       startElectron();
@@ -747,17 +760,14 @@ async function serveElectronTarget(target: TargetConfig) {
     }
   });
 
-  watcherSandbox.on('change', () => {
-    console.log('electron watcherSandbox change detected');
+  watcherSandbox.on('change', file => {
+    log('[electron-sandbox:watcher]', 'File changed');
+    debug(file);
   });
 
-  watcherSandbox.on('restart', () => {
-    console.log('electron watcherSandbox is restarting');
-  });
+  watcherSandbox.on('restart', () => {});
 
-  watcherSandbox.on('close', () => {
-    console.log('electron watcherSandbox closes');
-  });
+  watcherSandbox.on('close', () => {});
 }
 
 function readFileFromContentBase(
@@ -770,7 +780,9 @@ function readFileFromContentBase(
   if (urlPath.endsWith('/')) {
     filePath = resolve(filePath, 'index.html');
   }
-  console.log('reading file:', filePath);
+
+  debug('reading file:', filePath);
+
   readFile(filePath, (error, content) => {
     callback(error, content, filePath);
   });
@@ -780,9 +792,11 @@ function closeServerOnTermination() {
   const terminationSignals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP'];
   terminationSignals.forEach(signal => {
     process.on(signal, () => {
-      console.log('process signal', signal);
+      debug('process signal:', signal);
+
       if (server) {
-        console.log('close server on termination');
+        debug('closing server...');
+
         server.close();
         process.exit();
       }

@@ -19,6 +19,8 @@ export class GameInstance {
   }
 
   public start() {
+    // The Apex Build Tool shows a warning `@rollup/plugin-typescript TS2304: Cannot find name 'DEFAULT_LEVEL'`
+    // @ts-ignore
     this.engine.loadLevel(DEFAULT_LEVEL);
   }
 }
