@@ -13,6 +13,7 @@ import { dirname, extname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
 import { rollup, watch } from 'rollup';
+import { WebSocketServer } from 'ws';
 
 import { ApexConfig, CONFIG_FILE_NAME, TargetConfig } from './config';
 
@@ -24,6 +25,13 @@ interface CLIOptions {
 
 const apexDir = join(fileURLToPath(import.meta.url), '../../../.apex');
 const _require = createRequire(import.meta.url);
+
+const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
+
+wss.on('connection', ws => {
+  console.log('client connected');
+  ws.on('error', console.error);
+});
 
 const cli = cac('apex-build-tool').version('0.1.0').help();
 
@@ -46,11 +54,14 @@ cli
     }
 
     for (const targetConfig of targets) {
+      if (platform && targetConfig.platform !== platform) {
+        continue;
+      }
       if (targetConfig.platform === 'browser') {
         await serveBrowserTarget(targetConfig);
       }
       if (targetConfig.platform === 'electron') {
-        //await serveElectronTarget(targetConfig);
+        await serveElectronTarget(targetConfig);
       }
     }
   });
@@ -532,6 +543,24 @@ async function serveBrowserTarget(target: TargetConfig) {
 </head>
 <body>
   <script type="module" src="./index.js"></script>
+  <script type="module">
+    const ws = new WebSocket('ws://localhost:24678')
+    ws.addEventListener('open', () => {
+      console.log('connection open')
+      ws.send('message from client')
+    })
+    ws.addEventListener('message', async ({data}) => {
+      let parsed
+
+      try {
+        parsed = JSON.parse(String(data))
+      } catch {}
+
+      if (parsed && parsed.type === 'update') {
+        window.location.reload()
+      }
+    })
+  </script>
 </body>
 </html>
           `;
@@ -546,15 +575,22 @@ async function serveBrowserTarget(target: TargetConfig) {
     }
   });
 
+  server.listen(3000, 'localhost', () => {
+    console.log('Local: http://localhost:3000');
+  });
+
   watcher.on('event', event => {
     console.log('watcher event:', event.code);
     if (event.code === 'ERROR') {
       console.log(event.error);
     }
+    if (event.code === 'BUNDLE_END') {
+      // send message to electron-main to reload (via MessageChannel)
+    }
   });
 
   watcher.on('change', () => {
-    console.log('watcher change detected');
+    console.log('file change detected');
   });
 
   watcher.on('restart', () => {
@@ -563,10 +599,6 @@ async function serveBrowserTarget(target: TargetConfig) {
 
   watcher.on('close', () => {
     console.log('watcher closes');
-  });
-
-  server.listen(3000, 'localhost', () => {
-    console.log('Local: http://localhost:3000');
   });
 }
 
@@ -697,13 +729,21 @@ async function serveElectronTarget(target: TargetConfig) {
     }
   });
 
+  let isRunning = false;
+
   watcherSandbox.on('event', event => {
     console.log('electron watcherSandbox event:', event.code);
     if (event.code === 'ERROR') {
       console.log(event.error);
     }
-    if (event.code === 'END') {
+    if (event.code === 'BUNDLE_END') {
+      wss.clients.forEach(socket => {
+        socket.send(JSON.stringify({ type: 'update' }));
+      });
+    }
+    if (event.code === 'END' && !isRunning) {
       startElectron();
+      isRunning = true;
     }
   });
 

@@ -530,7 +530,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/ws@npm:^8":
+"@types/ws@npm:^8.5.4":
   version: 8.5.4
   resolution: "@types/ws@npm:8.5.4"
   dependencies:
@@ -625,7 +625,7 @@ __metadata:
     "@types/mime": ^3.0.1
     "@types/node": ^18.11.18
     "@types/three": ^0.148.0
-    "@types/ws": ^8
+    "@types/ws": ^8.5.4
     cac: ^6.7.14
     electron: ^23.1.0
     glob: ^8.1.0
