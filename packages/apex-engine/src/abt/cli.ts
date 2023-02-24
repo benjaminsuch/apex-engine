@@ -6,7 +6,7 @@ import { cac } from 'cac';
 import glob from 'glob';
 import mime from 'mime';
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
-import { existsSync, readFile, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFile, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createServer, Server } from 'node:http';
 import { createRequire } from 'node:module';
 import { dirname, extname, join, posix, relative, resolve } from 'node:path';
@@ -22,6 +22,7 @@ interface CLIOptions {
   target?: 'client' | 'game' | 'server';
 }
 
+const apexDir = join(fileURLToPath(import.meta.url), '../../../.apex');
 const _require = createRequire(import.meta.url);
 
 const cli = cac('apex-build-tool').version('0.1.0').help();
@@ -40,12 +41,16 @@ cli
     const { config: configFile, platform } = options;
     const { targets } = await getApexConfig();
 
+    if (!existsSync(apexDir)) {
+      mkdirSync(apexDir);
+    }
+
     for (const targetConfig of targets) {
       if (targetConfig.platform === 'browser') {
         await serveBrowserTarget(targetConfig);
       }
       if (targetConfig.platform === 'electron') {
-        await serveElectronTarget(targetConfig);
+        //await serveElectronTarget(targetConfig);
       }
     }
   });
@@ -142,7 +147,7 @@ function startElectron(): ChildProcessWithoutNullStreams {
     console.log(chunk.toString());
   });
 
-  ps.on('close', process.exit);
+  //ps.on('close', process.exit);
 
   return ps;
 }
@@ -230,7 +235,7 @@ async function buildBrowserTarget(target: TargetConfig) {
     });
 
     await bundle.write({
-      dir: resolve(process.cwd(), 'build/browser'),
+      dir: resolve('build/browser'),
       exports: 'named',
       format: 'esm',
       externalLiveBindings: false,
@@ -345,7 +350,7 @@ async function buildElectronTarget(target: TargetConfig) {
     });
 
     await mainBundle.write({
-      dir: resolve(process.cwd(), 'build/electron'),
+      dir: resolve('build/electron'),
       exports: 'named',
       format: 'cjs',
       externalLiveBindings: false,
@@ -353,7 +358,7 @@ async function buildElectronTarget(target: TargetConfig) {
       sourcemap: 'inline'
     });
     await sandboxBundle.write({
-      dir: resolve(process.cwd(), 'build/electron'),
+      dir: resolve('build/electron'),
       exports: 'named',
       format: 'esm',
       externalLiveBindings: false,
@@ -402,7 +407,7 @@ async function buildNodeTarget(target: TargetConfig) {
     });
 
     await bundle.write({
-      dir: resolve(process.cwd(), 'build/node'),
+      dir: resolve('build/node'),
       entryFileNames: `[name].mjs`,
       chunkFileNames: '[name]-[hash].mjs',
       exports: 'named',
@@ -451,22 +456,24 @@ async function buildTarget(config: TargetConfig) {
 let server: Server;
 
 async function serveBrowserTarget(target: TargetConfig) {
+  const buildDir = resolve(apexDir, 'build/browser');
+
+  if (existsSync(buildDir)) {
+    await rimraf(buildDir);
+  }
+
   server = createServer((req, res) => {
     const unsafePath = decodeURI((req.url ?? '').split('?')[0]);
     const urlPath = posix.normalize(unsafePath);
 
-    readFileFromContentBase(
-      resolve(process.cwd(), 'build/browser'),
-      urlPath,
-      (error, content, filePath) => {
-        if (!error) {
-          res.writeHead(200, { 'Content-Type': mime.getType(filePath) ?? 'text/plain' });
-          res.end(content, 'utf-8');
-        } else {
-          console.log(error);
-        }
+    readFileFromContentBase(buildDir, urlPath, (error, content, filePath) => {
+      if (!error) {
+        res.writeHead(200, { 'Content-Type': mime.getType(filePath) ?? 'text/plain' });
+        res.end(content, 'utf-8');
+      } else {
+        console.log(error);
       }
-    );
+    });
   });
 
   closeServerOnTermination();
@@ -477,7 +484,7 @@ async function serveBrowserTarget(target: TargetConfig) {
       ...getGameMaps()
     },
     output: {
-      dir: resolve(process.cwd(), 'build/browser'),
+      dir: buildDir,
       exports: 'named',
       format: 'esm',
       externalLiveBindings: false,
@@ -492,7 +499,7 @@ async function serveBrowserTarget(target: TargetConfig) {
         }
       }),
       nodeResolve({ preferBuiltins: true }),
-      typescript({ outDir: 'build/browser' }),
+      typescript({ outDir: buildDir }),
       html({
         template(options) {
           if (!options) {
@@ -569,7 +576,7 @@ async function serveElectronTarget(target: TargetConfig) {
       main: getLauncherPath('electron-main')
     },
     output: {
-      dir: resolve(process.cwd(), 'build/electron'),
+      dir: resolve('build/electron'),
       exports: 'named',
       format: 'cjs',
       externalLiveBindings: false,
@@ -622,7 +629,7 @@ async function serveElectronTarget(target: TargetConfig) {
       ...getGameMaps()
     },
     output: {
-      dir: resolve(process.cwd(), 'build/electron'),
+      dir: resolve('build/electron'),
       exports: 'named',
       format: 'esm',
       externalLiveBindings: false,
