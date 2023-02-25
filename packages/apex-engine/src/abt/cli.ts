@@ -2,24 +2,19 @@ import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
 import { cac } from 'cac';
+import glob from 'glob';
 import mime from 'mime';
-import { existsSync, mkdirSync, readFile } from 'node:fs';
+import { existsSync, mkdirSync, readFile, unlinkSync, writeFileSync } from 'node:fs';
 import { createServer, Server } from 'node:http';
-import { posix, resolve } from 'node:path';
+import { extname, posix, relative, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
-import { OutputOptions, rollup, watch } from 'rollup';
+import { type OutputOptions, rollup, watch, type RollupOptions } from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import {
-  APEX_DIR,
-  CONFIG_FILE_NAME,
-  type TargetConfig,
-  createRollupPlugins,
-  createRollupConfig,
-  loadConfigFromBundledFile
-} from './config';
+import { APEX_DIR, CONFIG_FILE_NAME, type ApexConfig, type TargetConfig } from './config';
 import { startElectron } from './electron';
-import { getLauncherPath, htmlPlugin } from './utils';
+import { dynamicImport, getLauncherPath, htmlPlugin, type Launcher } from './utils';
 
 interface CLIOptions {
   config?: string;
@@ -66,7 +61,7 @@ cli
       mkdirSync(APEX_DIR);
     }
 
-    /*for (const targetConfig of targets) {
+    for (const targetConfig of targets) {
       if (platform && targetConfig.platform !== platform) {
         continue;
       }
@@ -74,9 +69,9 @@ cli
         await serveBrowserTarget(targetConfig);
       }
       if (targetConfig.platform === 'electron') {
-        await serveElectronTarget(targetConfig);
+        //await serveElectronTarget(targetConfig);
       }
-    }*/
+    }
   });
 
 cli.command('build').action(async (options: CLIOptions) => {
@@ -473,4 +468,71 @@ function closeServerOnTermination() {
       }
     });
   });
+}
+
+function getGameMaps() {
+  return Object.fromEntries(
+    glob
+      .sync('src/game/maps/**/*.ts')
+      .map(file => [
+        relative('src/game', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file)))
+      ])
+  );
+}
+
+function createRollupConfig(
+  launcher: Launcher,
+  { output, ...options }: RollupOptions = {}
+): RollupOptions {
+  return {
+    input: {
+      index: getLauncherPath(launcher),
+      ...getGameMaps()
+    },
+    output: {
+      exports: 'named',
+      format: 'esm',
+      externalLiveBindings: false,
+      freeze: false,
+      sourcemap: 'inline',
+      ...output
+    },
+    onwarn(warning, warn) {
+      if (warning.message.includes('Circular dependency')) {
+        return;
+      }
+      warn(warning);
+    },
+    ...options
+  };
+}
+
+function createRollupPlugins(buildDir: string, defaultLevel: string) {
+  return [
+    replace({
+      preventAssignment: true,
+      values: {
+        DEFAULT_LEVEL: JSON.stringify(defaultLevel)
+      }
+    }),
+    nodeResolve({ preferBuiltins: true }),
+    typescript({ outDir: buildDir })
+  ];
+}
+
+async function loadConfigFromBundledFile(root: string, bundledCode: string): Promise<ApexConfig> {
+  const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
+
+  writeFileSync(fileNameTmp, bundledCode);
+
+  const fileUrl = pathToFileURL(fileNameTmp);
+
+  try {
+    return (await dynamicImport(fileUrl)).default;
+  } finally {
+    try {
+      unlinkSync(fileNameTmp);
+    } catch {}
+  }
 }
