@@ -69,7 +69,7 @@ cli
         await serveBrowserTarget(targetConfig);
       }
       if (targetConfig.platform === 'electron') {
-        //await serveElectronTarget(targetConfig);
+        await serveElectronTarget(targetConfig);
       }
     }
   });

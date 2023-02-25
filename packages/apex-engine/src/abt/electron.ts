@@ -33,7 +33,5 @@ export function startElectron(): ChildProcessWithoutNullStreams {
     console.log(chunk.toString());
   });
 
-  //ps.on('close', process.exit);
-
   return ps;
 }
