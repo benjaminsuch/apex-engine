@@ -21,8 +21,8 @@ export class ConsoleLogger extends AbstractLogger implements IConsoleLogger {
   }
 }
 
-export const IConsoleLogger = InstantiationService.createDecorator<IConsoleLogger>('consoleLogger');
-
 export interface IConsoleLogger extends ILogger {
   readonly _injectibleService: undefined;
 }
+
+export const IConsoleLogger = InstantiationService.createDecorator<IConsoleLogger>('consoleLogger');

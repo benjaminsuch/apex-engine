@@ -1,7 +1,7 @@
 import type { ServiceIdentifier } from './types';
 
 export class ServiceCollection {
-  private readonly entries = new Map<ServiceIdentifier<any>, any>();
+  private readonly entries = new WeakMap<ServiceIdentifier<any>, any>();
 
   constructor(...entries: [ServiceIdentifier<any>, any][]) {
     for (const [id, service] of entries) {

@@ -14,9 +14,9 @@ export class EngineLoop {
 
   constructor(
     private readonly instantiationService: InstantiationService,
+    public readonly renderer: Renderer | null = null,
     @IWorker private readonly gameWorker: IWorker,
     @IWorker private readonly renderWorker: IWorker,
-    public readonly renderer: Renderer | null = null,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {}
 
