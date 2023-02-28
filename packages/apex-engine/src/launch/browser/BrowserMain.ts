@@ -1,4 +1,5 @@
 import { EngineLoop } from '../../engine';
+import { WorkerThread } from '../../platform/core/worker/browser';
 import { InstantiationService, ServiceCollection } from '../../platform/di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { Renderer } from '../../platform/renderer/browser';
@@ -18,6 +19,11 @@ export class BrowserMain {
     const engineLoop = this.instantiationService.createInstance(
       EngineLoop,
       this.instantiationService,
+      this.instantiationService.createInstance(WorkerThread, '../../platform/engine/game/browser'),
+      this.instantiationService.createInstance(
+        WorkerThread,
+        '../../platform/engine/rendering/browser'
+      ),
       this.instantiationService.createInstance(Renderer)
     );
 

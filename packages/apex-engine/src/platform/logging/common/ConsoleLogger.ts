@@ -1,6 +1,5 @@
 import { InstantiationService } from '../../../platform/di/common';
-import { AbstractLogger } from './AbstractLogger';
-import { ILogger } from './types';
+import { AbstractLogger, type ILogger } from './AbstractLogger';
 
 export class ConsoleLogger extends AbstractLogger implements IConsoleLogger {
   declare readonly _injectibleService: undefined;

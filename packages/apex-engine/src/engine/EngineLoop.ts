@@ -1,5 +1,6 @@
-import { type InstantiationService } from '../platform/di/common';
+import { IWorker } from '../platform/core/worker/common';
 import { IConsoleLogger } from '../platform/logging/common';
+import { type InstantiationService } from '../platform/di/common';
 import { type Renderer } from '../platform/renderer/browser';
 import { GameEngine } from './GameEngine';
 
@@ -13,6 +14,8 @@ export class EngineLoop {
 
   constructor(
     private readonly instantiationService: InstantiationService,
+    @IWorker private readonly gameWorker: IWorker,
+    @IWorker private readonly renderWorker: IWorker,
     public readonly renderer: Renderer | null = null,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {}
