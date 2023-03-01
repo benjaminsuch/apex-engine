@@ -1,4 +1,4 @@
-import { IWorker } from '../../../core/worker/common';
+import { IWorker } from '../../../worker/common';
 import { InstantiationService } from '../../../di/common';
 
 export interface IRenderWorker extends IWorker {}
