@@ -9,10 +9,10 @@ import { createServer, Server } from 'node:http';
 import { extname, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
-import { type OutputOptions, rollup, watch, type RollupOptions } from 'rollup';
+import { type OutputOptions, rollup, watch, type RollupOptions, type Plugin } from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import { APEX_DIR, CONFIG_FILE_NAME, type ApexConfig, type TargetConfig } from './config';
+import { APEX_DIR, CONFIG_FILE_NAME, Platform, type ApexConfig, type TargetConfig } from './config';
 import { startElectron } from './electron';
 import { dynamicImport, getLauncherPath, htmlPlugin, type Launcher } from './utils';
 
@@ -303,6 +303,8 @@ async function serveBrowserTarget(target: TargetConfig) {
 
   closeServerOnTermination();
 
+  await buildEngineWorkers('browser');
+
   const watcher = watch({
     ...createRollupConfig('browser', {
       output: {
@@ -508,7 +510,7 @@ function createRollupConfig(
   };
 }
 
-function createRollupPlugins(buildDir: string, defaultLevel: string) {
+function createRollupPlugins(buildDir: string, defaultLevel: string): Plugin[] {
   return [
     replace({
       preventAssignment: true,
@@ -534,5 +536,40 @@ async function loadConfigFromBundledFile(root: string, bundledCode: string): Pro
     try {
       unlinkSync(fileNameTmp);
     } catch {}
+  }
+}
+
+async function buildEngineWorkers(
+  platform: Exclude<Platform, 'electron'> | 'electron-main' | 'electron-sandbox'
+) {
+  const input = {
+    gameWorker: fileURLToPath(
+      new URL(`../src/platform/engine/game/${platform}/gameWorker.ts`, import.meta.url)
+    ),
+    renderWorker: fileURLToPath(
+      new URL(`../src/platform/engine/rendering/${platform}/renderWorker.ts`, import.meta.url)
+    )
+  };
+  const buildDir = resolve(APEX_DIR, 'build/browser/workers');
+
+  let bundle;
+
+  try {
+    bundle = await rollup({ input });
+
+    await bundle.write({
+      dir: buildDir,
+      exports: 'named',
+      format: 'esm',
+      externalLiveBindings: false,
+      freeze: false,
+      sourcemap: 'inline'
+    });
+  } catch (error) {
+    debug(error);
+  }
+
+  if (bundle) {
+    await bundle.close();
   }
 }

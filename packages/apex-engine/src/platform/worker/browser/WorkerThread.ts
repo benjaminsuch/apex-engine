@@ -7,5 +7,6 @@ export class WorkerThread implements IWorker {
 
   constructor(file: string) {
     this.internalWorker = new Worker(file, { type: 'module' });
+    console.log('thread worker:', this.internalWorker);
   }
 }

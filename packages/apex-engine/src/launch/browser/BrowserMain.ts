@@ -1,5 +1,5 @@
 import { EngineLoop } from '../../engine';
-import { WorkerThread } from '../../platform/core/worker/browser';
+import { WorkerThread } from '../../platform/worker/browser';
 import { InstantiationService, ServiceCollection } from '../../platform/di/common';
 import { IGameWorker } from '../../platform/engine/game/common';
 import { IRenderWorker } from '../../platform/engine/rendering/common';

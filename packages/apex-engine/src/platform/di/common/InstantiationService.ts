@@ -76,7 +76,7 @@ export class InstantiationService {
 
       if (!service) {
         throw new Error(
-          `[createInstance] ${Constructor.name} depends on UNKNOWN service ${dependency.id}.`
+          `[createInstance] ${Constructor.name} depends on UNKNOWN service "${dependency.id}".`
         );
       }
 
