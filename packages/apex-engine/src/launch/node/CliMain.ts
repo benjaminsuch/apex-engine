@@ -18,8 +18,8 @@ export class CliMain {
   public init() {
     const engineLoop = this.instantiationService.createInstance(
       EngineLoop,
-      this.instantiationService,
-      null
+      this.instantiationService
+      //null
     );
 
     engineLoop.init();

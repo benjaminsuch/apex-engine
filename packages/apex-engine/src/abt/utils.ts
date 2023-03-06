@@ -39,6 +39,7 @@ export function htmlPlugin(
   body: string = ''
 ) {
   return html({
+    title: 'Apex Engine',
     ...options,
     template(options) {
       if (!options) {
@@ -70,6 +71,7 @@ export function htmlPlugin(
     ${links}
   </head>
   <body>
+  <canvas id="canvas"></canvas>
     <script type="module" src="${entryFile}"></script>
     ${body}
   </body>

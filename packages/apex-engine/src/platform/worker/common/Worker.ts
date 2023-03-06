@@ -1,6 +1,6 @@
 import { InstantiationService } from '../../di/common';
 
-export interface IWorker {
+export interface IWorker extends DedicatedWorkerGlobalScope {
   readonly _injectibleService: undefined;
 }
 

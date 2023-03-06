@@ -188,7 +188,7 @@ async function buildElectronTarget(target: TargetConfig) {
     sandboxBundle = await rollup({
       ...createRollupConfig('electron-sandbox', {
         input: {
-          main: getLauncherPath('electron-main')
+          sandbox: getLauncherPath('electron-sandbox')
         },
         plugins: [
           ...createRollupPlugins(buildDir, target.defaultLevel),
@@ -303,7 +303,7 @@ async function serveBrowserTarget(target: TargetConfig) {
 
   closeServerOnTermination();
 
-  await buildEngineWorkers('browser');
+  await buildEngineWorkers('browser', target);
 
   const watcher = watch({
     ...createRollupConfig('browser', {
@@ -346,7 +346,7 @@ async function serveBrowserTarget(target: TargetConfig) {
     log('Local: http://localhost:3000');
   });
 
-  watcher.on('event', event => {
+  watcher.on('event', async event => {
     log('[browser:watcher]', event.code);
 
     if (event.code === 'BUNDLE_END') {
@@ -407,6 +407,9 @@ async function serveElectronTarget(target: TargetConfig) {
 
   const watcherSandbox = watch({
     ...createRollupConfig('electron-sandbox', {
+      input: {
+        sandbox: getLauncherPath('electron-sandbox')
+      },
       output: {
         dir: buildDir
       },
@@ -423,7 +426,7 @@ async function serveElectronTarget(target: TargetConfig) {
       // send message to electron-main to reload (via MessageChannel)
     }
     if (event.code === 'END' && !isRunning) {
-      startElectron();
+      startElectron(buildDir + '/main.js');
       isRunning = true;
     }
   });
@@ -515,7 +518,8 @@ function createRollupPlugins(buildDir: string, defaultLevel: string): Plugin[] {
     replace({
       preventAssignment: true,
       values: {
-        DEFAULT_LEVEL: JSON.stringify(defaultLevel)
+        DEFAULT_LEVEL: JSON.stringify(defaultLevel),
+        IS_DEV: 'true'
       }
     }),
     nodeResolve({ preferBuiltins: true }),
@@ -540,7 +544,8 @@ async function loadConfigFromBundledFile(root: string, bundledCode: string): Pro
 }
 
 async function buildEngineWorkers(
-  platform: Exclude<Platform, 'electron'> | 'electron-main' | 'electron-sandbox'
+  platform: Exclude<Platform, 'electron'> | 'electron-main' | 'electron-sandbox',
+  target: TargetConfig
 ) {
   const input = {
     gameWorker: fileURLToPath(
@@ -550,12 +555,26 @@ async function buildEngineWorkers(
       new URL(`../src/platform/engine/rendering/${platform}/renderWorker.ts`, import.meta.url)
     )
   };
+
   const buildDir = resolve(APEX_DIR, 'build/browser/workers');
 
   let bundle;
 
   try {
-    bundle = await rollup({ input });
+    bundle = await rollup({
+      input,
+      preserveEntrySignatures: false,
+      plugins: [
+        replace({
+          preventAssignment: true,
+          values: {
+            DEFAULT_LEVEL: JSON.stringify(target.defaultLevel)
+          }
+        }),
+        nodeResolve({ preferBuiltins: true }),
+        typescript({ outDir: buildDir })
+      ]
+    });
 
     await bundle.write({
       dir: buildDir,

@@ -22,8 +22,10 @@ export function getElectronPath() {
   return electronExecPath;
 }
 
-export function startElectron(): ChildProcessWithoutNullStreams {
-  const ps = spawn(getElectronPath(), ['./build/electron/main.js']);
+export function startElectron(
+  path: string = './build/electron/main.js'
+): ChildProcessWithoutNullStreams {
+  const ps = spawn(getElectronPath(), [path]);
 
   ps.stdout.on('data', chunk => {
     console.log(chunk.toString());

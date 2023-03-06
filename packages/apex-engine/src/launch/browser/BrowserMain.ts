@@ -1,4 +1,3 @@
-import { EngineLoop } from '../../engine';
 import { WorkerThread } from '../../platform/worker/browser';
 import { InstantiationService, ServiceCollection } from '../../platform/di/common';
 import { IGameWorker } from '../../platform/engine/game/common';
@@ -9,27 +8,27 @@ import { Renderer } from '../../platform/renderer/browser';
 export class BrowserMain {
   private readonly instantiationService: InstantiationService;
 
+  private readonly gameWorker = new WorkerThread('./workers/gameWorker.js');
+
+  private readonly renderWorker = new WorkerThread('./workers/renderWorker.js');
+
   constructor() {
     const services = new ServiceCollection();
 
     services.set(IConsoleLogger, new ConsoleLogger());
-    services.set(IGameWorker, new WorkerThread('./workers/gameWorker.js'));
-    services.set(IRenderWorker, new WorkerThread('./workers/renderWorker.js'));
+    services.set(IGameWorker, this.gameWorker);
+    services.set(IRenderWorker, this.renderWorker);
 
     this.instantiationService = new InstantiationService(services);
   }
 
   public init() {
-    const engineLoop = this.instantiationService.createInstance(
-      EngineLoop,
-      this.instantiationService,
-      this.instantiationService.createInstance(Renderer)
-    );
+    const renderer = this.instantiationService.createInstance(Renderer);
+    const canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
 
-    engineLoop.init();
-
-    if (!engineLoop.isEngineExitRequested()) {
-      engineLoop.tick();
+    if (canvas) {
+      const offscreenCanvas = canvas.transferControlToOffscreen();
+      this.renderWorker.postMessage({ type: 'init', canvas: offscreenCanvas }, [offscreenCanvas]);
     }
   }
 }

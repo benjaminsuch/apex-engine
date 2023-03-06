@@ -1,3 +1,5 @@
+import { IGameWorker } from '../platform/engine/game/common';
+import { IRenderWorker } from '../platform/engine/rendering/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { type EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';
@@ -72,16 +74,12 @@ export abstract class ApexEngine {
     this.logger.info(`Attempt to load level: ${url}`);
 
     try {
-      const { default: LoadedLevel }: { default: typeof Level } = await import(url);
+      const { default: LoadedLevel }: { default: typeof Level } = await import(`../${url}`);
 
       this.logger.info(`Level loaded: ${url}`);
 
       const level = new LoadedLevel();
       const world = this.getGameInstance().getWorld();
-
-      if (this.engineLoop.renderer) {
-        this.engineLoop.renderer.scene = level.scene;
-      }
 
       level.postLoad();
       world.setCurrentLevel(level);

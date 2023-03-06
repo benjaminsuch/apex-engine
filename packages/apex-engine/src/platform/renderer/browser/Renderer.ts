@@ -11,6 +11,7 @@ import {
 
 import { EngineUtils } from '../../../engine';
 import { SceneComponent } from '../../../engine/components';
+import { IRenderWorker } from '../../../platform/engine/rendering/common';
 import { IConsoleLogger } from '../../../platform/logging/common';
 
 export class Renderer {
@@ -37,7 +38,10 @@ export class Renderer {
 
   public scene: Scene = new Scene();
 
-  constructor(@IConsoleLogger private readonly logger: IConsoleLogger) {
+  constructor(
+    @IRenderWorker private readonly renderWorker: IRenderWorker,
+    @IConsoleLogger private readonly logger: IConsoleLogger
+  ) {
     if (typeof window === 'undefined') {
       throw new Error(
         `Cannot create an instance of Renderer: requestAnimationFrame() is not available.`
@@ -49,37 +53,26 @@ export class Renderer {
     }
 
     this.webGLRenderer = new WebGLRenderer({ antialias: true, alpha: true });
+
+    Renderer.instance = this;
+  }
+
+  public init() {
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.outputEncoding = sRGBEncoding;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
     this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
     this.webGLRenderer.setPixelRatio(window.devicePixelRatio);
 
-    window.addEventListener('resize', this.handleWindowResize.bind(this));
-
-    Renderer.instance = this;
-  }
-
-  public render() {
-    this.logger.info(`Renderer start`);
-
-    //todo: This should probably be moved into the "Container" file, see below.
     document.body.style.margin = '0';
     document.body.style.overflow = 'hidden';
-    //todo: The container can be other than `document.body`
-    document.body.appendChild(this.webGLRenderer.domElement);
 
-    this.tick();
+    window.addEventListener('resize', this.handleWindowResize.bind(this));
   }
 
-  private tick() {
-    requestAnimationFrame(this.tick.bind(this));
-
-    for (const tickFn of Array.from(Renderer.tickFunctions)) {
-      tickFn();
-    }
-
-    this.webGLRenderer.render(this.scene, this.camera);
+  public tick() {
+    console.log(1);
+    requestAnimationFrame(this.tick);
   }
 
   private handleWindowResize() {

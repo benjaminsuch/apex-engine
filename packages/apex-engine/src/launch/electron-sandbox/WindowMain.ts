@@ -17,8 +17,8 @@ export class WindowMain {
   public init() {
     const engineLoop = this.instantiationService.createInstance(
       EngineLoop,
-      this.instantiationService,
-      this.instantiationService.createInstance(Renderer)
+      this.instantiationService
+      //this.instantiationService.createInstance(Renderer)
     );
 
     engineLoop.init();
