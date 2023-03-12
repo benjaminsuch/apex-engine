@@ -21,8 +21,18 @@ function onInitMessage(event: MessageEvent<InitEventData>) {
 }
 
 function onInit(canvas: OffscreenCanvas) {
-  // Es sollten nur RenderThread-relevanter Code geladen/ausgeführt werden
   const renderer = new Renderer(canvas);
+
+  renderer.init();
+  renderer.start();
+
+  function onMessage(event: MessageEvent<unknown>) {
+    if (typeof event.data !== 'object') {
+      return;
+    }
+  }
+
+  self.addEventListener('message', onMessage);
 }
 
 function startRenderWorker() {

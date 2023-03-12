@@ -1,7 +1,6 @@
 import { type InstantiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { Renderer } from '../platform/renderer/browser';
-import { WorkerThread } from '../platform/worker/browser';
 import { GameEngine } from './GameEngine';
 
 export class EngineLoop {
