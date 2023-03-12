@@ -548,11 +548,8 @@ async function buildEngineWorkers(
   target: TargetConfig
 ) {
   const input = {
-    gameWorker: fileURLToPath(
-      new URL(`../src/platform/engine/game/${platform}/gameWorker.ts`, import.meta.url)
-    ),
     renderWorker: fileURLToPath(
-      new URL(`../src/platform/engine/rendering/${platform}/renderWorker.ts`, import.meta.url)
+      new URL(`../src/platform/renderer/${platform}/renderWorker.ts`, import.meta.url)
     )
   };
 

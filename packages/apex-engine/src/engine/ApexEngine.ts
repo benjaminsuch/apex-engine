@@ -1,5 +1,3 @@
-import { IGameWorker } from '../platform/engine/game/common';
-import { IRenderWorker } from '../platform/engine/rendering/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { type EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';

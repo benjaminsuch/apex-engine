@@ -1,5 +1,7 @@
-import { IConsoleLogger } from '../platform/logging/common';
 import { type InstantiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
+import { Renderer } from '../platform/renderer/browser';
+import { WorkerThread } from '../platform/worker/browser';
 import { GameEngine } from './GameEngine';
 
 export class EngineLoop {
@@ -7,10 +9,15 @@ export class EngineLoop {
 
   constructor(
     private readonly instantiationService: InstantiationService,
+    private readonly renderer: Renderer | null,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {}
 
   public init() {
+    if (this.renderer) {
+      this.renderer.init();
+    }
+
     const engine = this.instantiationService.createInstance(GameEngine, this);
 
     engine.init();

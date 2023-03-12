@@ -1,21 +1,9 @@
-import {
-  ACESFilmicToneMapping,
-  Camera,
-  OrthographicCamera,
-  PCFSoftShadowMap,
-  PerspectiveCamera,
-  Scene,
-  sRGBEncoding,
-  WebGLRenderer
-} from 'three';
-
-import { EngineUtils } from '../../../engine';
-import { SceneComponent } from '../../../engine/components';
-import { IRenderWorker } from '../../../platform/engine/rendering/common';
-import { IConsoleLogger } from '../../../platform/logging/common';
+import { WorkerThread } from '../../../platform/worker/browser';
 
 export class Renderer {
   private static instance?: Renderer;
+
+  private renderWorker: WorkerThread;
 
   public static getInstance() {
     if (!this.instance) {
@@ -24,45 +12,27 @@ export class Renderer {
     return this.instance;
   }
 
-  private static readonly tickFunctions: Set<Function> = new Set();
-
-  public static registerTickFunction(component: SceneComponent) {
-    if (EngineUtils.hasDefinedTickMethod(component)) {
-      this.tickFunctions.add(component.tick.bind(component));
-    }
-  }
-
-  public readonly webGLRenderer: WebGLRenderer;
-
-  public camera: Camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight);
-
-  public scene: Scene = new Scene();
-
-  constructor(
-    @IRenderWorker private readonly renderWorker: IRenderWorker,
-    @IConsoleLogger private readonly logger: IConsoleLogger
-  ) {
+  constructor() {
     if (typeof window === 'undefined') {
-      throw new Error(
-        `Cannot create an instance of Renderer: requestAnimationFrame() is not available.`
-      );
+      throw new Error(`An instance of the renderer already exists.`);
     }
 
     if (Renderer.instance) {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
-    this.webGLRenderer = new WebGLRenderer({ antialias: true, alpha: true });
+    this.renderWorker = new WorkerThread('./workers/renderWorker.js');
 
     Renderer.instance = this;
   }
 
-  public init() {
-    this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
-    this.webGLRenderer.outputEncoding = sRGBEncoding;
-    this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
-    this.webGLRenderer.setSize(window.innerWidth, window.innerHeight);
-    this.webGLRenderer.setPixelRatio(window.devicePixelRatio);
+  public async init() {
+    const canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
+
+    if (canvas) {
+      const offscreenCanvas = canvas.transferControlToOffscreen();
+      this.renderWorker.postMessage({ type: 'init', canvas: offscreenCanvas }, [offscreenCanvas]);
+    }
 
     document.body.style.margin = '0';
     document.body.style.overflow = 'hidden';
@@ -70,17 +40,12 @@ export class Renderer {
     window.addEventListener('resize', this.handleWindowResize.bind(this));
   }
 
-  public tick() {
-    console.log(1);
-    requestAnimationFrame(this.tick);
-  }
-
   private handleWindowResize() {
     const { innerHeight, innerWidth } = window;
 
-    this.webGLRenderer.setSize(innerWidth, innerHeight);
+    this.renderWorker.postMessage({ type: 'resize', height: innerHeight, width: innerWidth });
 
-    if (this.camera instanceof PerspectiveCamera) {
+    /*if (this.camera instanceof PerspectiveCamera) {
       this.camera.aspect = innerWidth / innerHeight;
       this.camera.updateProjectionMatrix();
       this.camera.updateMatrixWorld();
@@ -91,6 +56,6 @@ export class Renderer {
       this.camera.right = innerWidth / -2;
       this.camera.top = innerHeight / 2;
       this.camera.bottom = innerHeight / -2;
-    }
+    }*/
   }
 }
