@@ -14,7 +14,7 @@ export class Renderer {
 
   constructor() {
     if (typeof window === 'undefined') {
-      throw new Error(`An instance of the renderer already exists.`);
+      throw new Error(`Cannot create an instance of Renderer: "window" is undefined.`);
     }
 
     if (Renderer.instance) {
