@@ -4,6 +4,11 @@ declare global {
   var IS_SERVER: boolean;
   var DEFAULT_LEVEL: string;
   var IS_DEV: string;
+
+  enum Thread {
+    Game = 'game',
+    Render = 'render'
+  }
 }
 
 export {};

@@ -1,11 +1,8 @@
-import { Scene } from 'three';
-
+import { IRenderer } from '../platform/renderer/common';
 import { type Actor } from './Actor';
 import { type World } from './World';
 
 export class Level {
-  public readonly scene: Scene = new Scene();
-
   private readonly actors: Set<Actor> = new Set();
 
   public addActor(ActorClass: typeof Actor) {
@@ -34,6 +31,8 @@ export class Level {
 
   private isInitialized: boolean = false;
 
+  constructor(@IRenderer private readonly renderer: IRenderer) {}
+
   public init() {
     this.isInitialized = true;
   }
@@ -45,7 +44,8 @@ export class Level {
 
     for (const actor of this.getActors()) {
       if (actor.rootComponent) {
-        this.scene.add(actor.rootComponent.sceneObject);
+        //this.renderer.send({})
+        //this.scene.add(actor.rootComponent.sceneObject);
       }
     }
 

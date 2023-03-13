@@ -4,17 +4,8 @@ import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 
 export enum EngineTarget {
-  /**
-   * A client that runs the game with a renderer and listens to a dedicated server.
-   */
   Client = 'client',
-  /**
-   * Runs both, the client and a listen server on the local machine.
-   */
   Game = 'game',
-  /**
-   * A dedicated server that allows clients to connect.
-   */
   Server = 'server'
 }
 

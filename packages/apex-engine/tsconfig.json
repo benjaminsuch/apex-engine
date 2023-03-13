@@ -4,6 +4,7 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
+    "lib": ["DOM"],
     "noEmit": true,
     "outDir": "dist"
   }

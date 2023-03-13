@@ -1,6 +1,6 @@
 import { type InstantiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { Renderer } from '../platform/renderer/browser';
+import { IRenderer } from '../platform/renderer/common';
 import { GameEngine } from './GameEngine';
 
 export class EngineLoop {
@@ -8,7 +8,7 @@ export class EngineLoop {
 
   constructor(
     private readonly instantiationService: InstantiationService,
-    private readonly renderer: Renderer | null,
+    @IRenderer private readonly renderer: IRenderer,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {}
 

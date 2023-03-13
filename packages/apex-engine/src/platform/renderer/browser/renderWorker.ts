@@ -5,6 +5,7 @@ console.log('loaded: renderWorker.js');
 interface InitEventData {
   type: 'init';
   canvas: OffscreenCanvas;
+  messagePort: MessagePort;
 }
 
 function onInitMessage(event: MessageEvent<InitEventData>) {
