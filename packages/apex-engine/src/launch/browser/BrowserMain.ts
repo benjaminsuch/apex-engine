@@ -17,11 +17,6 @@ export class BrowserMain {
   }
 
   public init() {
-    const engineLoop = this.instantiationService.createInstance(
-      EngineLoop,
-      this.instantiationService
-    );
-
-    engineLoop.init();
+    this.instantiationService.createInstance(EngineLoop).init();
   }
 }

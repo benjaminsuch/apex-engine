@@ -1,7 +1,6 @@
 import { EngineLoop } from '../../engine';
 import { InstantiationService, ServiceCollection } from '../../platform/di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
-import { Renderer } from '../../platform/renderer/browser';
 
 export class WindowMain {
   private readonly instantiationService: InstantiationService;
@@ -15,16 +14,6 @@ export class WindowMain {
   }
 
   public init() {
-    const engineLoop = this.instantiationService.createInstance(
-      EngineLoop,
-      this.instantiationService
-      //this.instantiationService.createInstance(Renderer)
-    );
-
-    engineLoop.init();
-
-    if (!engineLoop.isEngineExitRequested()) {
-      engineLoop.tick();
-    }
+    this.instantiationService.createInstance(EngineLoop).init();
   }
 }

@@ -1,3 +1,4 @@
+import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { type EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';
@@ -34,6 +35,7 @@ export abstract class ApexEngine {
 
   constructor(
     private readonly engineLoop: EngineLoop,
+    @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
     if (ApexEngine.instance) {
@@ -67,7 +69,7 @@ export abstract class ApexEngine {
 
       this.logger.info(`Level loaded: ${url}`);
 
-      const level = new LoadedLevel();
+      const level = this.instantiationService.createInstance(LoadedLevel);
       const world = this.getGameInstance().getWorld();
 
       level.postLoad();

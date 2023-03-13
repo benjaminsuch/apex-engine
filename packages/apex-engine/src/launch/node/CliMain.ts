@@ -16,16 +16,6 @@ export class CliMain {
   }
 
   public init() {
-    const engineLoop = this.instantiationService.createInstance(
-      EngineLoop,
-      this.instantiationService
-      //null
-    );
-
-    engineLoop.init();
-
-    if (!engineLoop.isEngineExitRequested()) {
-      engineLoop.tick();
-    }
+    this.instantiationService.createInstance(EngineLoop).init();
   }
 }

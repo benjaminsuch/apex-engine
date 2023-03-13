@@ -10,7 +10,17 @@ import type {
 const DI_TARGET = '$di$target';
 const DI_DEPENDENCIES = '$di$dependencies';
 
-export class InstantiationService {
+export interface IInstatiationService {
+  readonly _injectibleService: undefined;
+  createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(
+    Constructor: C,
+    ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
+  ): R;
+}
+
+export class InstantiationService implements IInstatiationService {
+  declare readonly _injectibleService: undefined;
+
   private static readonly registeredServices = new Map<string, ServiceIdentifier<any>>();
 
   private static registerServiceDependency(id: Function, target: Function, index: number): void {
@@ -60,7 +70,9 @@ export class InstantiationService {
     return this.singletonRegistry;
   }
 
-  constructor(private readonly services: ServiceCollection = new ServiceCollection()) {}
+  constructor(private readonly services: ServiceCollection = new ServiceCollection()) {
+    this.services.set(IInstatiationService, this);
+  }
 
   public createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(
     Constructor: C,
@@ -109,3 +121,6 @@ export class InstantiationService {
     );
   }
 }
+
+export const IInstatiationService =
+  InstantiationService.createDecorator<IInstatiationService>('instantiationService');
