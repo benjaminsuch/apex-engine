@@ -8,7 +8,9 @@
   "main": "index.js",
   "bin": "index.js",
   "files": [
-    "index.js"
+    "template",
+    "index.js",
+    "package.json"
   ],
   "engines": {
     "node": "^16.0.0"
