@@ -1,7 +1,14 @@
-declare const IS_CLIENT: boolean;
-declare const IS_SERVER: boolean;
-declare const APEX_GAME_ENGINE_CLASS: string;
-declare const APEX_GAME_INSTANCE_CLASS: string;
-declare const APEX_GAME_DEFAULT_LEVEL: string;
+declare global {
+  var IS_CLIENT: boolean;
+  var IS_GAME: boolean;
+  var IS_SERVER: boolean;
+  var DEFAULT_LEVEL: string;
+  var IS_DEV: string;
 
-declare type TClass = { new (...args: any[]): {} };
+  enum Thread {
+    Game = 'game',
+    Render = 'render'
+  }
+}
+
+export {};

@@ -1,4 +1,4 @@
-import { ApexEngine } from './ApexEngine';
+import { type ApexEngine } from './ApexEngine';
 import { World } from './World';
 
 export class GameInstance {
@@ -19,7 +19,8 @@ export class GameInstance {
   }
 
   public start() {
-    this.engine.loadLevel(APEX_GAME_DEFAULT_LEVEL);
-    //this.engine.loadLevel('/src/game/levels/start');
+    // The Apex Build Tool shows a warning `@rollup/plugin-typescript TS2304: Cannot find name 'DEFAULT_LEVEL'`
+    // @ts-ignore
+    this.engine.loadLevel(DEFAULT_LEVEL);
   }
 }

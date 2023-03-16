@@ -1,31 +1,35 @@
-import { Renderer } from '../renderer';
+import { IInstatiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
+import { IRenderer } from '../platform/renderer/common';
 import { GameEngine } from './GameEngine';
 
 export class EngineLoop {
-  private renderer?: Renderer;
+  private isExitRequested: boolean = false;
 
-  public preInit() {
-    // Initialize platform specific code
-    if (IS_CLIENT) {
-      this.renderer = new Renderer();
-      this.renderer.render();
-    }
-  }
+  constructor(
+    @IInstatiationService private readonly instantiationService: IInstatiationService,
+    @IRenderer private readonly renderer: IRenderer,
+    @IConsoleLogger private readonly logger: IConsoleLogger
+  ) {}
 
   public init() {
-    const engine = new GameEngine(this);
+    if (this.renderer) {
+      this.renderer.init();
+    }
+
+    const engine = this.instantiationService.createInstance(GameEngine, this);
 
     engine.init();
     engine.start();
   }
 
-  public tick() {
-    if (typeof window === 'undefined') {
-      setImmediate(this.tick.bind(this));
-    } else {
-      setTimeout(this.tick.bind(this), 1000 / 60);
-    }
+  public tick() {}
 
-    GameEngine.getInstance().tick();
+  public isEngineExitRequested() {
+    return this.isExitRequested;
+  }
+
+  public requestExit() {
+    this.isExitRequested = true;
   }
 }

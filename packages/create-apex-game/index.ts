@@ -2,20 +2,19 @@
 import { Command } from 'commander';
 
 // prettier-ignore
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import chalk from 'chalk';
 import prompts from 'prompts';
 
-const createApexPkg = JSON.parse(readFileSync('package.json', 'utf-8'));
 const defaultProjectName = 'my-project';
 const program = new Command();
 
 program
-  .name(createApexPkg.name)
-  .description(createApexPkg.description)
-  .version(createApexPkg.version);
+  .name('create-apex-game')
+  .description('CLI to create games for the Apex Engine via Yarn or NPM.')
+  .version('1.0.2');
 
 program.argument('[name]', 'Name of your project.').action(async (initialDir: string = '') => {
   let targetDir = resolve(initialDir === '.' ? '' : initialDir);
@@ -147,8 +146,6 @@ function copyProjectFiles(dest: string, projectName: string = defaultProjectName
   }
 
   copy('template', dest);
-  mkdirSync(`${dest}/content/${projectName}`, { recursive: true });
-  renameSync(`${dest}/${defaultProjectName}.blend`, `${dest}/${projectName}.blend`);
 }
 
 function copy(src: string, dest: string) {

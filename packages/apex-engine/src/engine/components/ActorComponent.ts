@@ -6,7 +6,7 @@ export class ActorComponent {
 
   public getOwner() {
     if (!this.owner) {
-      throw new Error(`No owner found.`)
+      throw new Error(`No owner found.`);
     }
     return this.owner;
   }

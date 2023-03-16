@@ -1,6 +1,6 @@
 {
   "name": "create-apex-game",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "CLI to create games for the Apex Engine via Yarn or NPM.",
   "type": "module",
   "license": "MIT",
@@ -8,7 +8,9 @@
   "main": "index.js",
   "bin": "index.js",
   "files": [
-    "index.js"
+    "template",
+    "index.js",
+    "package.json"
   ],
   "engines": {
     "node": "^16.0.0"

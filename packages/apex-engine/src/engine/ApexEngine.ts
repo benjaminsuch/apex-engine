@@ -1,15 +1,21 @@
-import { log } from '../core/logging';
-import { Renderer } from '../renderer';
+import { IInstatiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
 import { type EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
+
+export enum EngineTarget {
+  Client = 'client',
+  Game = 'game',
+  Server = 'server'
+}
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;
 
   public static getInstance() {
     if (!this.instance) {
-      throw new Error(`Please create an instance before you call getInstance().`);
+      throw new Error(`No instance of GameEngine available.`);
     }
     return this.instance;
   }
@@ -27,9 +33,13 @@ export abstract class ApexEngine {
 
   private isInitialized: boolean = false;
 
-  constructor(private readonly engineLoop: EngineLoop) {
+  constructor(
+    private readonly engineLoop: EngineLoop,
+    @IInstatiationService private readonly instantiationService: IInstatiationService,
+    @IConsoleLogger private readonly logger: IConsoleLogger
+  ) {
     if (ApexEngine.instance) {
-      throw new Error(`An instance of the engine already exists.`);
+      throw new Error(`An instance of the GameEngine already exists.`);
     }
 
     ApexEngine.instance = this;
@@ -42,29 +52,25 @@ export abstract class ApexEngine {
     this.isInitialized = true;
   }
 
+  public tick() {}
+
   public start() {
     this.isRunning = true;
     this.getGameInstance().start();
   }
 
-  public tick() {}
+  public exit() {}
 
   public async loadLevel(url: string) {
-    log('LoadingLevel', 'log', `Trying to load level: ${url}`);
+    this.logger.info(`Attempt to load level: ${url}`);
 
     try {
-      const { default: LoadedLevel }: { default: typeof Level } = await import(
-        /* @vite-ignore */ url
-      );
+      const { default: LoadedLevel }: { default: typeof Level } = await import(`../${url}`);
 
-      log('LoadingLevel', 'log', `Successfully loaded level: ${url}`);
+      this.logger.info(`Level loaded: ${url}`);
 
-      const level = new LoadedLevel();
+      const level = this.instantiationService.createInstance(LoadedLevel);
       const world = this.getGameInstance().getWorld();
-
-      if (IS_CLIENT) {
-        Renderer.getInstance().scene = level.scene;
-      }
 
       level.postLoad();
       world.setCurrentLevel(level);
