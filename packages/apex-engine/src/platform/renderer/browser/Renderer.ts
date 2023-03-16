@@ -1,5 +1,3 @@
-import { WorkerThread } from '../../../platform/worker/browser';
-
 import { IRenderer } from '../common';
 
 export class Renderer implements IRenderer {
@@ -14,7 +12,7 @@ export class Renderer implements IRenderer {
     return this.instance;
   }
 
-  private readonly renderWorker = new WorkerThread('./workers/renderWorker.js');
+  private readonly renderWorker = new Worker('./workers/renderWorker.js', { type: 'module' });
 
   private readonly messageChannel = new MessageChannel();
 
