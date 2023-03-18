@@ -1,14 +1,8 @@
-import { Renderer } from '../common/Renderer';
+import { Renderer, TRenderWorkerInitMessage, TRenderComponentMessage } from '../common/Renderer';
 
 console.log('loaded: renderWorker.js');
 
-interface InitEventData {
-  type: 'init';
-  canvas: OffscreenCanvas;
-  messagePort: MessagePort;
-}
-
-function onInitMessage(event: MessageEvent<InitEventData>) {
+function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   if (typeof event.data !== 'object') {
     return;
   }
@@ -27,9 +21,14 @@ function onInit(canvas: OffscreenCanvas) {
   renderer.init();
   renderer.start();
 
-  function onMessage(event: MessageEvent<unknown>) {
+  function onMessage(event: MessageEvent<TRenderComponentMessage>) {
     if (typeof event.data !== 'object') {
       return;
+    }
+
+    const { type } = event.data;
+
+    if (type === 'component') {
     }
   }
 

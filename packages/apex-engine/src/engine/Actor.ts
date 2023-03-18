@@ -1,9 +1,28 @@
+import { IRenderer, type TRenderComponentMessage } from '../platform/renderer/common';
 import { type ActorComponent, SceneComponent } from './components';
 import { type Level } from './Level';
 import { type World } from './World';
 
 export class Actor {
-  public rootComponent?: SceneComponent;
+  private rootComponent?: SceneComponent;
+
+  public setRootComponent(component: SceneComponent) {
+    //todo: Dispose previous root component
+    //todo: Send message to render-thread
+    this.rootComponent = component;
+
+    this.renderer.send<TRenderComponentMessage>({
+      type: 'component',
+      component: this.rootComponent
+    });
+  }
+
+  public getRootComponent() {
+    if (!this.rootComponent) {
+      throw new Error(`A root component has not been set yet.`);
+    }
+    return this.rootComponent;
+  }
 
   private readonly components: Set<ActorComponent> = new Set();
 
@@ -15,11 +34,17 @@ export class Actor {
     return this.components.has(component);
   }
 
-  public addComponent(ComponentClass: typeof ActorComponent, setAsRootComponent: boolean = false) {
-    const component = new ComponentClass();
+  public addComponent<T extends typeof ActorComponent>(
+    ComponentClass: T,
+    setAsRootComponent: boolean = false
+  ): InstanceType<T> {
+    const component = new ComponentClass() as InstanceType<T>;
 
     component.registerWithActor(this);
 
+    //? What should we do, if `rootComponent` already exists? We have to dispose
+    //? the previous `rootComponent` before assigning a new component. Can the
+    //? disposal fail? And if so, how do we handle that?
     if (setAsRootComponent && component instanceof SceneComponent) {
       this.rootComponent = component;
     }
@@ -48,6 +73,8 @@ export class Actor {
   }
 
   private isInitialized: boolean = false;
+
+  constructor(@IRenderer private readonly renderer: IRenderer) {}
 
   public beginPlay() {}
 

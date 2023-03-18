@@ -1,4 +1,10 @@
-import { IRenderer } from '../common';
+import {
+  IRenderer,
+  type TRenderMessage,
+  type TRenderMessageData,
+  type TRenderMessageType,
+  type TRenderWorkerInitMessage
+} from '../common';
 
 export class Renderer implements IRenderer {
   declare readonly _injectibleService: undefined;
@@ -16,6 +22,8 @@ export class Renderer implements IRenderer {
 
   private readonly messageChannel = new MessageChannel();
 
+  private isInitialized = false;
+
   constructor() {
     if (typeof window === 'undefined') {
       throw new Error(`Cannot create an instance of Renderer: "window" is undefined.`);
@@ -25,19 +33,25 @@ export class Renderer implements IRenderer {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
-    this.messageChannel.port1.addEventListener('message', this.handleRenderMessage.bind(this));
+    this.messageChannel.port1.addEventListener('message', event => {
+      console.log('Renderer received message:', event);
+    });
 
     Renderer.instance = this;
   }
 
   public async init() {
+    if (this.isInitialized) {
+      return;
+    }
+
     const canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
 
     if (canvas) {
       const offscreenCanvas = canvas.transferControlToOffscreen();
       const messagePort = this.messageChannel.port2;
 
-      this.renderWorker.postMessage({ type: 'init', canvas: offscreenCanvas, messagePort }, [
+      this.send<TRenderWorkerInitMessage>({ type: 'init', canvas: offscreenCanvas, messagePort }, [
         offscreenCanvas,
         messagePort
       ]);
@@ -46,15 +60,22 @@ export class Renderer implements IRenderer {
     document.body.style.margin = '0';
     document.body.style.overflow = 'hidden';
 
-    window.addEventListener('resize', this.handleWindowResize.bind(this));
+    window.addEventListener('resize', event => {});
+
+    this.isInitialized = true;
   }
 
-  public send(message: any, transferList?: Transferable[]) {
-    this.messageChannel.port1.postMessage(message, transferList);
-  }
-
-  private handleRenderMessage(event: MessageEvent) {
-    console.log('message received:', event);
+  /**
+   * Sends messages to the render worker.
+   *
+   * @param message
+   * @param transferList
+   */
+  public send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
+    message: T,
+    transferList?: Transferable[]
+  ) {
+    this.messageChannel.port2.postMessage(message, transferList);
   }
 
   private handleWindowResize() {
