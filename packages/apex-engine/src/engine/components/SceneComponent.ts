@@ -1,11 +1,12 @@
-import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
+import { Euler, Matrix4, Quaternion } from 'three';
 
+import { Vector3 } from '../math';
 import { ActorComponent } from './ActorComponent';
 
 export class SceneComponent extends ActorComponent {
   private readonly position: Vector3 = new Vector3();
 
-  private readonly scale: Vector3 = new Vector3(1, 1, 1);
+  private readonly scale: Vector3 = new Vector3();
 
   private readonly rotation: Euler = new Euler();
 
@@ -22,10 +23,4 @@ export class SceneComponent extends ActorComponent {
   public attachToParent(parent: SceneComponent) {
     parent.children.add(this);
   }
-
-  constructor() {
-    super();
-  }
-
-  public toJSON() {}
 }

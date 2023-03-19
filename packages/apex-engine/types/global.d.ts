@@ -9,6 +9,12 @@ declare global {
     Game = 'game',
     Render = 'render'
   }
+
+  enum EngineTarget {
+    Client = 'client',
+    Game = 'game',
+    Server = 'server'
+  }
 }
 
 export {};

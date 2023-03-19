@@ -75,7 +75,8 @@ export class Renderer implements IRenderer {
     message: T,
     transferList?: Transferable[]
   ) {
-    this.messageChannel.port2.postMessage(message, transferList);
+    console.log('post message to renderWorker:', message);
+    this.messageChannel.port1.postMessage(message, transferList);
   }
 
   private handleWindowResize() {

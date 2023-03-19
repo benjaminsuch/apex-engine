@@ -46,7 +46,7 @@ export class Actor {
     //? the previous `rootComponent` before assigning a new component. Can the
     //? disposal fail? And if so, how do we handle that?
     if (setAsRootComponent && component instanceof SceneComponent) {
-      this.rootComponent = component;
+      this.setRootComponent(component);
     }
 
     this.components.add(component);

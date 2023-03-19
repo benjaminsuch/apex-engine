@@ -213,10 +213,6 @@ export class Vector3 {
     return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
   }
 
-  public toJSON() {
-    return this.data;
-  }
-
   *[Symbol.iterator]() {
     yield this.x;
     yield this.y;

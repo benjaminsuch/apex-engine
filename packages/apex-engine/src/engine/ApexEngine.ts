@@ -4,12 +4,6 @@ import { type EngineLoop } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 
-export enum EngineTarget {
-  Client = 'client',
-  Game = 'game',
-  Server = 'server'
-}
-
 export abstract class ApexEngine {
   private static instance?: ApexEngine;
 

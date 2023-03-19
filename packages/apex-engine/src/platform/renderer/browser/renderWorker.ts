@@ -22,6 +22,7 @@ function onInit(canvas: OffscreenCanvas) {
   renderer.start();
 
   function onMessage(event: MessageEvent<TRenderComponentMessage>) {
+    console.log('message received:', event);
     if (typeof event.data !== 'object') {
       return;
     }
