@@ -23,4 +23,17 @@ export class SceneComponent extends ActorComponent {
   public attachToParent(parent: SceneComponent) {
     parent.children.add(this);
   }
+
+  public toJSON(): any {
+    return {
+      position: this.position,
+      scale: this.scale,
+      rotation: this.rotation,
+      quaternion: this.quaternion,
+      matrix: this.matrix,
+      matrixWorld: this.matrixWorld,
+      visible: this.visible,
+      children: [...this.children].map(child => child.toJSON())
+    };
+  }
 }

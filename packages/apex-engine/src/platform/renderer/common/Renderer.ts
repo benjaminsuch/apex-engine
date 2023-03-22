@@ -1,4 +1,12 @@
-import { ACESFilmicToneMapping, PCFSoftShadowMap, Scene, sRGBEncoding, WebGLRenderer } from 'three';
+import {
+  ACESFilmicToneMapping,
+  Camera,
+  PCFSoftShadowMap,
+  PerspectiveCamera,
+  Scene,
+  sRGBEncoding,
+  WebGLRenderer
+} from 'three';
 
 import { type SceneComponent } from '../../../engine/components';
 import { InstantiationService } from '../../di/common';
@@ -36,7 +44,9 @@ export const IRenderer = InstantiationService.createDecorator<IRenderer>('render
 export class Renderer {
   private readonly webGLRenderer: WebGLRenderer;
 
-  private readonly scene: Scene = new Scene();
+  public readonly scene: Scene = new Scene();
+
+  public camera: Camera = new PerspectiveCamera(75, 1.0712468193384224, 0.1, 1000);
 
   constructor(canvas: OffscreenCanvas) {
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -52,5 +62,7 @@ export class Renderer {
     this.webGLRenderer.setAnimationLoop(() => this.tick());
   }
 
-  private tick() {}
+  private tick() {
+    this.webGLRenderer.render(this.scene, this.camera);
+  }
 }

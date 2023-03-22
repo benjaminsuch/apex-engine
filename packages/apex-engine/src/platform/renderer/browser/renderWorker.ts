@@ -1,3 +1,4 @@
+import { BoxGeometry, Mesh, MeshBasicMaterial } from 'three';
 import { Renderer, TRenderWorkerInitMessage, TRenderComponentMessage } from '../common/Renderer';
 
 console.log('loaded: renderWorker.js');
@@ -10,14 +11,17 @@ function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   const { type } = event.data;
 
   if (type === 'init') {
+    const { canvas, messagePort } = event.data;
+
     self.removeEventListener('message', onInitMessage);
-    onInit(event.data.canvas);
+    onInit(canvas, messagePort);
   }
 }
 
-function onInit(canvas: OffscreenCanvas) {
-  const renderer = new Renderer(canvas);
+let renderer: Renderer;
 
+function onInit(canvas: OffscreenCanvas, messagePort: MessagePort) {
+  renderer = new Renderer(canvas);
   renderer.init();
   renderer.start();
 
@@ -30,10 +34,12 @@ function onInit(canvas: OffscreenCanvas) {
     const { type } = event.data;
 
     if (type === 'component') {
+      handleComponentMessage(event.data.component);
     }
   }
 
-  self.addEventListener('message', onMessage);
+  messagePort.addEventListener('message', onMessage);
+  messagePort.start();
 }
 
 function startRenderWorker() {
@@ -41,3 +47,12 @@ function startRenderWorker() {
 }
 
 startRenderWorker();
+
+//////////////////////////////////////////////////////////////////////
+
+function handleComponentMessage(component: TRenderComponentMessage['component']) {
+  renderer.scene.add(
+    new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00aaff }))
+  );
+  renderer.camera.position.z = 5;
+}

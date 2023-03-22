@@ -17,6 +17,8 @@ export class BrowserMain {
   }
 
   public init() {
-    this.instantiationService.createInstance(EngineLoop).init();
+    setTimeout(() => {
+      this.instantiationService.createInstance(EngineLoop).init();
+    }, 750);
   }
 }

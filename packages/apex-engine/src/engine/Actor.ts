@@ -13,7 +13,7 @@ export class Actor {
 
     this.renderer.send<TRenderComponentMessage>({
       type: 'component',
-      component: this.rootComponent
+      component: this.rootComponent.toJSON()
     });
   }
 

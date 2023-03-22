@@ -51,7 +51,8 @@ export class Renderer implements IRenderer {
       const offscreenCanvas = canvas.transferControlToOffscreen();
       const messagePort = this.messageChannel.port2;
 
-      this.send<TRenderWorkerInitMessage>({ type: 'init', canvas: offscreenCanvas, messagePort }, [
+      // The init message has to be sent via `postMessage` (to deliver `messagePort`)
+      this.renderWorker.postMessage({ type: 'init', canvas: offscreenCanvas, messagePort }, [
         offscreenCanvas,
         messagePort
       ]);
