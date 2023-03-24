@@ -2,8 +2,7 @@ import {
   IRenderer,
   type TRenderMessage,
   type TRenderMessageData,
-  type TRenderMessageType,
-  type TRenderWorkerInitMessage
+  type TRenderMessageType
 } from '../common';
 
 export class Renderer implements IRenderer {
@@ -21,6 +20,8 @@ export class Renderer implements IRenderer {
   private readonly renderWorker = new Worker('./workers/renderWorker.js', { type: 'module' });
 
   private readonly messageChannel = new MessageChannel();
+
+  private canvas?: HTMLCanvasElement;
 
   private isInitialized = false;
 
@@ -45,23 +46,26 @@ export class Renderer implements IRenderer {
       return;
     }
 
-    const canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
+    this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
 
-    if (canvas) {
-      const offscreenCanvas = canvas.transferControlToOffscreen();
+    if (this.canvas) {
+      const offscreenCanvas = this.canvas.transferControlToOffscreen();
       const messagePort = this.messageChannel.port2;
 
       // The init message has to be sent via `postMessage` (to deliver `messagePort`)
-      this.renderWorker.postMessage({ type: 'init', canvas: offscreenCanvas, messagePort }, [
-        offscreenCanvas,
-        messagePort
-      ]);
+      this.renderWorker.postMessage(
+        {
+          type: 'init',
+          canvas: offscreenCanvas,
+          initialCanvasHeight: this.canvas.clientHeight,
+          initialCanvasWidth: this.canvas.clientWidth,
+          messagePort
+        },
+        [offscreenCanvas, messagePort]
+      );
     }
 
-    document.body.style.margin = '0';
-    document.body.style.overflow = 'hidden';
-
-    window.addEventListener('resize', event => {});
+    window.addEventListener('resize', this.handleWindowResize.bind(this));
 
     this.isInitialized = true;
   }
@@ -81,10 +85,10 @@ export class Renderer implements IRenderer {
   }
 
   private handleWindowResize() {
-    const { innerHeight, innerWidth } = window;
-
-    this.renderWorker.postMessage({ type: 'resize', height: innerHeight, width: innerWidth });
-
+    if (this.canvas) {
+      const { clientHeight, clientWidth } = this.canvas;
+      this.send({ type: 'viewport-resize', height: clientHeight, width: clientWidth });
+    }
     /*if (this.camera instanceof PerspectiveCamera) {
       this.camera.aspect = innerWidth / innerHeight;
       this.camera.updateProjectionMatrix();
