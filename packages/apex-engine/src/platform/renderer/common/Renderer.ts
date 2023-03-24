@@ -1,6 +1,5 @@
 import {
   ACESFilmicToneMapping,
-  Camera,
   PCFSoftShadowMap,
   PerspectiveCamera,
   Scene,
