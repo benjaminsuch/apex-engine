@@ -46,7 +46,9 @@ export abstract class ApexEngine {
     this.isInitialized = true;
   }
 
-  public tick() {}
+  public tick() {
+    this.getGameInstance().getWorld().tick();
+  }
 
   public start() {
     this.isRunning = true;

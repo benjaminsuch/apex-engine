@@ -46,6 +46,10 @@ export class Vector3 {
     this.data = new Float32Array(this.#buffer);
   }
 
+  public toJSON() {
+    return this.#buffer;
+  }
+
   public fromArray(array: ArrayLike<number>) {
     this.data.set(array);
     return this;

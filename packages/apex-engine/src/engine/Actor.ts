@@ -1,4 +1,4 @@
-import { IRenderer, type TRenderComponentMessage } from '../platform/renderer/common';
+import { IRenderer } from '../platform/renderer/common';
 import { type ActorComponent, SceneComponent } from './components';
 import { type Level } from './Level';
 import { type World } from './World';
@@ -10,11 +10,6 @@ export class Actor {
     //todo: Dispose previous root component
     //todo: Send message to render-thread
     this.rootComponent = component;
-
-    this.renderer.send<TRenderComponentMessage>({
-      type: 'component',
-      component: this.rootComponent.toJSON()
-    });
   }
 
   public getRootComponent() {
@@ -46,6 +41,7 @@ export class Actor {
     //? the previous `rootComponent` before assigning a new component. Can the
     //? disposal fail? And if so, how do we handle that?
     if (setAsRootComponent && component instanceof SceneComponent) {
+      console.log(component);
       this.setRootComponent(component);
     }
 
@@ -74,11 +70,15 @@ export class Actor {
 
   private isInitialized: boolean = false;
 
-  constructor(@IRenderer private readonly renderer: IRenderer) {}
+  constructor(@IRenderer public readonly renderer: IRenderer) {}
 
   public beginPlay() {}
 
-  public tick() {}
+  public tick() {
+    for (const component of this.getComponents()) {
+      component.tick();
+    }
+  }
 
   public preInitComponents() {
     for (const component of this.getComponents()) {
@@ -86,7 +86,11 @@ export class Actor {
     }
   }
 
-  public initComponents() {}
+  public initComponents() {
+    for (const component of this.getComponents()) {
+      component.init();
+    }
+  }
 
   public postInitComponents() {
     this.isInitialized = true;

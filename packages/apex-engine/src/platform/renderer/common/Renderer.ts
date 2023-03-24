@@ -1,3 +1,4 @@
+import { SceneProxy } from 'src/engine/SceneProxy';
 import {
   ACESFilmicToneMapping,
   PCFSoftShadowMap,
@@ -10,7 +11,7 @@ import {
 import { type SceneComponent } from '../../../engine/components';
 import { InstantiationService } from '../../di/common';
 
-export type TRenderMessageType = 'component' | 'init' | 'viewport-resize';
+export type TRenderMessageType = 'init' | 'init-scene-proxy' | 'viewport-resize';
 
 export type TRenderMessageData<T = { [k: string]: unknown }> = {
   [P in keyof T]: T[P];
@@ -21,10 +22,6 @@ export type TRenderMessage<Type extends TRenderMessageType, Data> = {
 } & (Data extends TRenderMessageData
   ? TRenderMessageData<Data>
   : `Invalid type: 'Data' has to be of type 'object'.`);
-
-export type TRenderComponentData = TRenderMessageData<{ component: SceneComponent }>;
-
-export type TRenderComponentMessage = TRenderMessage<'component', TRenderComponentData>;
 
 export interface TRenderWorkerInitData {
   canvas: OffscreenCanvas;
@@ -45,6 +42,13 @@ export type TRenderViewportResizeMessage = TRenderMessage<
   TRenderViewportResizeData
 >;
 
+export type TRenderSceneProxyInitData = TRenderMessageData<{ component: Record<string, any> }>;
+
+export type TRenderSceneProxyInitMessage = TRenderMessage<
+  'init-scene-proxy',
+  TRenderSceneProxyInitData
+>;
+
 export interface IRenderer {
   readonly _injectibleService: undefined;
   init(): void;
@@ -59,7 +63,9 @@ export const IRenderer = InstantiationService.createDecorator<IRenderer>('render
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;
 
-  public readonly scene: Scene = new Scene();
+  private readonly scene: Scene = new Scene();
+
+  private readonly proxies: SceneProxy[] = [];
 
   public camera: PerspectiveCamera = new PerspectiveCamera();
 
@@ -83,7 +89,17 @@ export class Renderer {
     this.webGLRenderer.setSize(width, height, false);
   }
 
+  public addSceneProxy(proxy: SceneProxy) {
+    this.proxies.push(proxy);
+    this.scene.add(proxy.mesh);
+    console.log(this.scene);
+  }
+
   private tick() {
+    for (const proxy of this.proxies) {
+      proxy.tick();
+    }
+
     this.webGLRenderer.render(this.scene, this.camera);
   }
 }

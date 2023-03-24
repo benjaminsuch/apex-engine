@@ -1,14 +1,17 @@
 import { Euler, Matrix4, Quaternion } from 'three';
 
+import { TRenderSceneProxyInitMessage } from '../../platform/renderer/common';
 import { Vector3 } from '../math';
 import { ActorComponent } from './ActorComponent';
+
+export interface SceneComponentJSON {}
 
 export class SceneComponent extends ActorComponent {
   private readonly position: Vector3 = new Vector3();
 
   private readonly scale: Vector3 = new Vector3();
 
-  private readonly rotation: Euler = new Euler();
+  private readonly rotation: Vector3 = new Vector3();
 
   private readonly quaternion: Quaternion = new Quaternion();
 
@@ -20,15 +23,29 @@ export class SceneComponent extends ActorComponent {
 
   private readonly children: Set<SceneComponent> = new Set();
 
+  public override init() {
+    this.getOwner().renderer.send<TRenderSceneProxyInitMessage>({
+      type: 'init-scene-proxy',
+      component: this.toJSON()
+    });
+
+    super.init();
+  }
+
+  public override tick(): void {
+    this.rotation.x += 0.01;
+    this.rotation.y += 0.01;
+  }
+
   public attachToParent(parent: SceneComponent) {
     parent.children.add(this);
   }
 
   public toJSON(): any {
     return {
-      position: this.position,
-      scale: this.scale,
-      rotation: this.rotation,
+      position: this.position.toJSON(),
+      scale: this.scale.toJSON(),
+      rotation: this.rotation.toJSON(),
       quaternion: this.quaternion,
       matrix: this.matrix,
       matrixWorld: this.matrixWorld,

@@ -1,10 +1,9 @@
-import { BoxGeometry, Mesh, MeshBasicMaterial } from 'three';
-
+import { SceneProxy } from '../../../engine/SceneProxy';
 import {
   Renderer,
+  type TRenderSceneProxyInitMessage,
   type TRenderWorkerInitData,
   type TRenderWorkerInitMessage,
-  type TRenderComponentMessage,
   type TRenderViewportResizeData,
   type TRenderViewportResizeMessage
 } from '../common/Renderer';
@@ -37,7 +36,9 @@ function onInit({
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();
 
-  function onMessage(event: MessageEvent<TRenderComponentMessage | TRenderViewportResizeMessage>) {
+  function onMessage(
+    event: MessageEvent<TRenderSceneProxyInitMessage | TRenderViewportResizeMessage>
+  ) {
     console.log('message received:', event);
     if (typeof event.data !== 'object') {
       return;
@@ -45,8 +46,8 @@ function onInit({
 
     const { type } = event.data;
 
-    if (type === 'component') {
-      handleComponentMessage(event.data.component);
+    if (type === 'init-scene-proxy') {
+      handleInitSceneProxy(event.data.component);
     }
     if (type === 'viewport-resize') {
       const { height, width } = event.data;
@@ -66,11 +67,11 @@ startRenderWorker();
 
 ////////////////////////////////////////////////////////////////////
 
-function handleComponentMessage(component: TRenderComponentMessage['component']) {
-  renderer.scene.add(
-    new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00aaff }))
-  );
+function handleInitSceneProxy(component: TRenderSceneProxyInitMessage['component']) {
+  const proxy = new SceneProxy(component);
+  renderer.addSceneProxy(proxy);
   renderer.camera.position.z = 5;
+  console.log(proxy);
 }
 
 function handleViewportResize(
