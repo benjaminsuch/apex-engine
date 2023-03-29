@@ -1,14 +1,16 @@
-import { Renderer } from '../common/Renderer';
+import { SceneProxy } from '../../../engine/SceneProxy';
+import {
+  Renderer,
+  type TRenderSceneProxyInitMessage,
+  type TRenderWorkerInitData,
+  type TRenderWorkerInitMessage,
+  type TRenderViewportResizeData,
+  type TRenderViewportResizeMessage
+} from '../common/Renderer';
 
 console.log('loaded: renderWorker.js');
 
-interface InitEventData {
-  type: 'init';
-  canvas: OffscreenCanvas;
-  messagePort: MessagePort;
-}
-
-function onInitMessage(event: MessageEvent<InitEventData>) {
+function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   if (typeof event.data !== 'object') {
     return;
   }
@@ -17,23 +19,44 @@ function onInitMessage(event: MessageEvent<InitEventData>) {
 
   if (type === 'init') {
     self.removeEventListener('message', onInitMessage);
-    onInit(event.data.canvas);
+    onInit(event.data);
   }
 }
 
-function onInit(canvas: OffscreenCanvas) {
-  const renderer = new Renderer(canvas);
+let renderer: Renderer;
 
+function onInit({
+  canvas,
+  initialCanvasHeight,
+  initialCanvasWidth,
+  messagePort
+}: TRenderWorkerInitData) {
+  renderer = new Renderer(canvas);
   renderer.init();
+  renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();
 
-  function onMessage(event: MessageEvent<unknown>) {
+  function onMessage(
+    event: MessageEvent<TRenderSceneProxyInitMessage | TRenderViewportResizeMessage>
+  ) {
+    console.log('message received:', event);
     if (typeof event.data !== 'object') {
       return;
     }
+
+    const { type } = event.data;
+
+    if (type === 'init-scene-proxy') {
+      handleInitSceneProxy(event.data.component);
+    }
+    if (type === 'viewport-resize') {
+      const { height, width } = event.data;
+      handleViewportResize(height, width);
+    }
   }
 
-  self.addEventListener('message', onMessage);
+  messagePort.addEventListener('message', onMessage);
+  messagePort.start();
 }
 
 function startRenderWorker() {
@@ -41,3 +64,19 @@ function startRenderWorker() {
 }
 
 startRenderWorker();
+
+////////////////////////////////////////////////////////////////////
+
+function handleInitSceneProxy(component: TRenderSceneProxyInitMessage['component']) {
+  const proxy = new SceneProxy(component);
+  renderer.addSceneProxy(proxy);
+  renderer.camera.position.z = 5;
+  console.log(proxy);
+}
+
+function handleViewportResize(
+  height: TRenderViewportResizeData['height'],
+  width: TRenderViewportResizeData['width']
+) {
+  renderer.setSize(height, width);
+}

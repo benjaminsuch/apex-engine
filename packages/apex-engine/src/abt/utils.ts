@@ -69,9 +69,20 @@ export function htmlPlugin(
     ${metas}
     <title>${title}</title>
     ${links}
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+
+      #canvas {
+        height: 100vh;
+        width: 100vw;
+      }
+    </style>
   </head>
   <body>
-  <canvas id="canvas"></canvas>
+    <canvas id="canvas"></canvas>
     <script type="module" src="${entryFile}"></script>
     ${body}
   </body>

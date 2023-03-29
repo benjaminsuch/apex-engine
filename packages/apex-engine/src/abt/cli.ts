@@ -293,7 +293,11 @@ async function serveBrowserTarget(target: TargetConfig) {
 
     readFileFromContentBase(buildDir, urlPath, (error, content, filePath) => {
       if (!error) {
-        res.writeHead(200, { 'Content-Type': mime.getType(filePath) ?? 'text/plain' });
+        res.writeHead(200, {
+          'Content-Type': mime.getType(filePath) ?? 'text/plain',
+          'Cross-Origin-Opener-Policy': 'same-origin',
+          'Cross-Origin-Embedder-Policy': 'require-corp'
+        });
         res.end(content, 'utf-8');
       } else {
         console.log(error);

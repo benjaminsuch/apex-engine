@@ -23,7 +23,10 @@ export class EngineLoop {
     engine.start();
   }
 
-  public tick() {}
+  public tick() {
+    GameEngine.getInstance().tick();
+    setTimeout(() => this.tick(), 1000 / 60);
+  }
 
   public isEngineExitRequested() {
     return this.isExitRequested;

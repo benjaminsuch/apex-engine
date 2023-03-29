@@ -50,7 +50,11 @@ export class World {
     }
   }
 
-  public tick() {}
+  public tick() {
+    for (const actor of this.getActors()) {
+      actor.tick();
+    }
+  }
 
   public spawnActor(ActorClass: typeof Actor, level?: Level) {
     if (!this.currentLevel) {

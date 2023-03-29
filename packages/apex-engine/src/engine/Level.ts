@@ -1,3 +1,4 @@
+import { IInstatiationService } from '../platform/di/common';
 import { IRenderer } from '../platform/renderer/common';
 import { type Actor } from './Actor';
 import { type World } from './World';
@@ -6,7 +7,7 @@ export class Level {
   private readonly actors: Set<Actor> = new Set();
 
   public addActor(ActorClass: typeof Actor) {
-    const actor = new ActorClass();
+    const actor = this.instantiationService.createInstance(ActorClass);
     actor.registerWithLevel(this);
     this.actors.add(actor);
     return actor;
@@ -31,7 +32,10 @@ export class Level {
 
   private isInitialized: boolean = false;
 
-  constructor(@IRenderer private readonly renderer: IRenderer) {}
+  constructor(
+    @IInstatiationService private readonly instantiationService: IInstatiationService,
+    @IRenderer private readonly renderer: IRenderer
+  ) {}
 
   public init() {
     this.isInitialized = true;
@@ -40,13 +44,6 @@ export class Level {
   public initActors() {
     if (!this.isInitialized) {
       throw new Error(`Level has not been initialized.`);
-    }
-
-    for (const actor of this.getActors()) {
-      if (actor.rootComponent) {
-        //this.renderer.send({})
-        //this.scene.add(actor.rootComponent.sceneObject);
-      }
     }
 
     for (const actor of this.getActors()) {

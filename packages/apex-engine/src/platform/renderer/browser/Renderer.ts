@@ -1,4 +1,9 @@
-import { IRenderer } from '../common';
+import {
+  IRenderer,
+  type TRenderMessage,
+  type TRenderMessageData,
+  type TRenderMessageType
+} from '../common';
 
 export class Renderer implements IRenderer {
   declare readonly _injectibleService: undefined;
@@ -16,6 +21,10 @@ export class Renderer implements IRenderer {
 
   private readonly messageChannel = new MessageChannel();
 
+  private canvas?: HTMLCanvasElement;
+
+  private isInitialized = false;
+
   constructor() {
     if (typeof window === 'undefined') {
       throw new Error(`Cannot create an instance of Renderer: "window" is undefined.`);
@@ -25,43 +34,61 @@ export class Renderer implements IRenderer {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
-    this.messageChannel.port1.addEventListener('message', this.handleRenderMessage.bind(this));
+    this.messageChannel.port1.addEventListener('message', event => {
+      console.log('Renderer received message:', event);
+    });
 
     Renderer.instance = this;
   }
 
   public async init() {
-    const canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
-
-    if (canvas) {
-      const offscreenCanvas = canvas.transferControlToOffscreen();
-      const messagePort = this.messageChannel.port2;
-
-      this.renderWorker.postMessage({ type: 'init', canvas: offscreenCanvas, messagePort }, [
-        offscreenCanvas,
-        messagePort
-      ]);
+    if (this.isInitialized) {
+      return;
     }
 
-    document.body.style.margin = '0';
-    document.body.style.overflow = 'hidden';
+    this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
+
+    if (this.canvas) {
+      const offscreenCanvas = this.canvas.transferControlToOffscreen();
+      const messagePort = this.messageChannel.port2;
+
+      // The init message has to be sent via `postMessage` (to deliver `messagePort`)
+      this.renderWorker.postMessage(
+        {
+          type: 'init',
+          canvas: offscreenCanvas,
+          initialCanvasHeight: this.canvas.clientHeight,
+          initialCanvasWidth: this.canvas.clientWidth,
+          messagePort
+        },
+        [offscreenCanvas, messagePort]
+      );
+    }
 
     window.addEventListener('resize', this.handleWindowResize.bind(this));
+
+    this.isInitialized = true;
   }
 
-  public send(message: any, transferList?: Transferable[]) {
+  /**
+   * Sends messages to the render worker.
+   *
+   * @param message
+   * @param transferList
+   */
+  public send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
+    message: T,
+    transferList?: Transferable[]
+  ) {
+    console.log('post message to renderWorker:', message);
     this.messageChannel.port1.postMessage(message, transferList);
   }
 
-  private handleRenderMessage(event: MessageEvent) {
-    console.log('message received:', event);
-  }
-
   private handleWindowResize() {
-    const { innerHeight, innerWidth } = window;
-
-    this.renderWorker.postMessage({ type: 'resize', height: innerHeight, width: innerWidth });
-
+    if (this.canvas) {
+      const { clientHeight, clientWidth } = this.canvas;
+      this.send({ type: 'viewport-resize', height: clientHeight, width: clientWidth });
+    }
     /*if (this.camera instanceof PerspectiveCamera) {
       this.camera.aspect = innerWidth / innerHeight;
       this.camera.updateProjectionMatrix();
