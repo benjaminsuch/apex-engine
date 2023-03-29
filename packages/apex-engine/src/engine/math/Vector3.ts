@@ -6,44 +6,44 @@
 export class Vector3 {
   readonly #buffer: ArrayBufferLike;
 
-  private readonly data: Float32Array;
+  readonly #data: Float32Array;
 
   #x: number = 0;
 
   get x() {
-    return this.data[0];
+    return this.#data[0];
   }
 
   set x(val) {
-    this.data.set([val]);
-    this.#x = this.data[0];
+    this.#data.set([val]);
+    this.#x = this.#data[0];
   }
 
   #y: number = 0;
 
   get y() {
-    return this.data[1];
+    return this.#data[1];
   }
 
   set y(val) {
-    this.data.set([this.data[0], val]);
-    this.#y = this.data[1];
+    this.#data.set([this.#data[0], val]);
+    this.#y = this.#data[1];
   }
 
   #z: number = 0;
 
   get z() {
-    return this.data[2];
+    return this.#data[2];
   }
 
   set z(val) {
-    this.data.set([this.data[0], this.data[1], val]);
-    this.#z = this.data[2];
+    this.#data.set([this.#data[0], this.#data[1], val]);
+    this.#z = this.#data[2];
   }
 
   constructor(buffer: ArrayBufferLike = new SharedArrayBuffer(3 * Float32Array.BYTES_PER_ELEMENT)) {
     this.#buffer = buffer;
-    this.data = new Float32Array(this.#buffer);
+    this.#data = new Float32Array(this.#buffer);
   }
 
   public toJSON() {
@@ -51,12 +51,12 @@ export class Vector3 {
   }
 
   public fromArray(array: ArrayLike<number>) {
-    this.data.set(array);
+    this.#data.set(array);
     return this;
   }
 
   public toArray() {
-    return Array.from(this.data) as [number, number, number];
+    return Array.from(this.#data) as [number, number, number];
   }
 
   public set(x: Vector3['x'], y: Vector3['y'], z: Vector3['z']) {

@@ -1,4 +1,3 @@
-import { SceneProxy } from 'src/engine/SceneProxy';
 import {
   ACESFilmicToneMapping,
   PCFSoftShadowMap,
@@ -8,7 +7,7 @@ import {
   WebGLRenderer
 } from 'three';
 
-import { type SceneComponent } from '../../../engine/components';
+import { type SceneProxy } from '../../../engine/SceneProxy';
 import { InstantiationService } from '../../di/common';
 
 export type TRenderMessageType = 'init' | 'init-scene-proxy' | 'viewport-resize';
@@ -92,7 +91,6 @@ export class Renderer {
   public addSceneProxy(proxy: SceneProxy) {
     this.proxies.push(proxy);
     this.scene.add(proxy.mesh);
-    console.log(this.scene);
   }
 
   private tick() {

@@ -28,10 +28,8 @@ export class SceneProxy {
   }
 
   public tick() {
-    //this.mesh.position.fromArray(this.position.toArray());
     this.mesh.rotation.x = this.rotation.x;
     this.mesh.rotation.y = this.rotation.y;
     this.mesh.rotation.z = this.rotation.z;
-    //this.mesh.scale.fromArray(this.scale.toArray());
   }
 }
