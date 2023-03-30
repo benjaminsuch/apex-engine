@@ -34,6 +34,22 @@ export class DesktopMain {
       }
     });
 
+    this.window.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+      if (!details.url.includes('index.html')) {
+        callback(details);
+        return;
+      }
+
+      if (!details.responseHeaders) {
+        details.responseHeaders = {};
+      }
+
+      details.responseHeaders['Cross-Origin-Opener-Policy'] = ['same-origin'];
+      details.responseHeaders['Cross-Origin-Embedder-Policy'] = ['require-corp'];
+
+      callback({ responseHeaders: details.responseHeaders });
+    });
+
     this.window.on('ready-to-show', () => {
       this.window?.show();
     });
