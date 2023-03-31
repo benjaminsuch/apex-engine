@@ -78,7 +78,7 @@ export class Renderer implements IRenderer {
    */
   public send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
     message: T,
-    transferList?: Transferable[]
+    transferList: Transferable[] = []
   ) {
     console.log('post message to renderWorker:', message);
     this.messageChannel.port1.postMessage(message, transferList);

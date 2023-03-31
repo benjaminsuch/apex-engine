@@ -48,7 +48,7 @@
     "three": "^0.148.0",
     "three-stdlib": "^2.21.5",
     "tslib": "^2.5.0",
-    "typescript": "^4.9.4"
+    "typescript": "^5.0.3"
   },
   "peerDependencies": {
     "@tinyhttp/app": "^2.0.29",

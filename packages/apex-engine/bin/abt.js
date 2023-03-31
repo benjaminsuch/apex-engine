@@ -1,2 +1,2 @@
-#!/usr/bin/env -S node --experimental-specifier-resolution=node
+#!/usr/bin/env node
 import('../dist/abt.js');

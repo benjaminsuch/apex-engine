@@ -90,6 +90,8 @@ cli.command('build').action(async (options: CLIOptions) => {
     }
     await buildTarget(targetConfig);
   }
+
+  process.exit();
 });
 
 cli.parse();
@@ -143,6 +145,10 @@ async function getApexConfig() {
 async function buildBrowserTarget(target: TargetConfig) {
   const buildDir = resolve('build/browser');
 
+  if (existsSync(buildDir)) {
+    await rimraf(buildDir);
+  }
+
   let bundle;
 
   try {
@@ -150,6 +156,8 @@ async function buildBrowserTarget(target: TargetConfig) {
       ...createRollupConfig('browser'),
       plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin()]
     });
+
+    await buildEngineWorkers('browser', target);
 
     await bundle.write({
       dir: buildDir,
