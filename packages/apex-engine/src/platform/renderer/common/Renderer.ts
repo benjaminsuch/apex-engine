@@ -62,11 +62,11 @@ export const IRenderer = InstantiationService.createDecorator<IRenderer>('render
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;
 
+  private readonly camera: PerspectiveCamera = new PerspectiveCamera();
+
   private readonly scene: Scene = new Scene();
 
   private readonly proxies: SceneProxy[] = [];
-
-  public camera: PerspectiveCamera = new PerspectiveCamera();
 
   constructor(canvas: OffscreenCanvas) {
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -83,8 +83,6 @@ export class Renderer {
   }
 
   public setSize(height: number, width: number) {
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
     this.webGLRenderer.setSize(width, height, false);
   }
 

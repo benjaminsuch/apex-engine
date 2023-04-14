@@ -33,8 +33,8 @@ export class Level {
   private isInitialized: boolean = false;
 
   constructor(
-    @IInstatiationService private readonly instantiationService: IInstatiationService,
-    @IRenderer private readonly renderer: IRenderer
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IRenderer protected readonly renderer: IRenderer
   ) {}
 
   public init() {

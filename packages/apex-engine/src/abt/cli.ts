@@ -508,6 +508,14 @@ function createRollupConfig(
   return {
     input: {
       index: getLauncherPath(launcher),
+      ...Object.fromEntries(
+        glob
+          .sync('src/engine/**/*.ts')
+          .map(file => [
+            relative('src/engine', file.slice(0, file.length - extname(file).length)),
+            fileURLToPath(pathToFileURL(resolve(file)))
+          ])
+      ),
       ...getGameMaps()
     },
     output: {

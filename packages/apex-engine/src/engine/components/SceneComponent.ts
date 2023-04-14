@@ -32,11 +32,6 @@ export class SceneComponent extends ActorComponent {
     super.init();
   }
 
-  public override tick(): void {
-    this.rotation.x += 0.01;
-    this.rotation.y += 0.01;
-  }
-
   public attachToParent(parent: SceneComponent) {
     parent.children.add(this);
   }

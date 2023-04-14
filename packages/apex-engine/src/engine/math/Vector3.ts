@@ -1,3 +1,7 @@
+import { Euler } from './Euler';
+import { Matrix3 } from './Matrix3';
+import { Matrix4 } from './Matrix4';
+
 /**
  * Most of the code is from: https://github.com/mrdoob/three.js/blob/dev/src/math/Vector3.js
  *
@@ -26,7 +30,7 @@ export class Vector3 {
   }
 
   set y(val) {
-    this.#data.set([this.#data[0], val]);
+    this.#data.set([val], 1);
     this.#y = this.#data[1];
   }
 
@@ -37,9 +41,11 @@ export class Vector3 {
   }
 
   set z(val) {
-    this.#data.set([this.#data[0], this.#data[1], val]);
+    this.#data.set([val], 2);
     this.#z = this.#data[2];
   }
+
+  public isVector3: boolean = true;
 
   constructor(buffer: ArrayBufferLike = new SharedArrayBuffer(3 * Float32Array.BYTES_PER_ELEMENT)) {
     this.#buffer = buffer;
@@ -50,8 +56,8 @@ export class Vector3 {
     return this.#buffer;
   }
 
-  public fromArray(array: ArrayLike<number>) {
-    this.#data.set(array);
+  public fromArray(array: ArrayLike<number>, offset = 0) {
+    this.#data.set(array, offset);
     return this;
   }
 
@@ -213,8 +219,70 @@ export class Vector3 {
     return this;
   }
 
+  public roundToZero() {
+    this.x = this.x < 0 ? Math.ceil(this.x) : Math.floor(this.x);
+    this.y = this.y < 0 ? Math.ceil(this.y) : Math.floor(this.y);
+    this.z = this.z < 0 ? Math.ceil(this.z) : Math.floor(this.z);
+
+    return this;
+  }
+
+  public negate() {
+    this.x = -this.x;
+    this.y = -this.y;
+    this.z = -this.z;
+
+    return this;
+  }
+
+  public dot(v: Vector3) {
+    return this.x * v.x + this.y * v.y + this.z * v.z;
+  }
+
   public length() {
     return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+  }
+
+  public setFromMatrixColumn(matrix: Matrix4, index: number) {
+    return this.fromArray(matrix.elements, index * 4);
+  }
+
+  public setFromMatrix3Column(matrix: Matrix3, index: number) {
+    return this.fromArray(matrix.elements, index * 3);
+  }
+
+  public setFromEuler(euler: Euler) {
+    this.x = euler.x;
+    this.y = euler.y;
+    this.z = euler.z;
+
+    return this;
+  }
+
+  public equals(vector: Vector3) {
+    return vector.x === this.x && vector.y === this.y && vector.z === this.z;
+  }
+
+  public random() {
+    this.x = Math.random();
+    this.y = Math.random();
+    this.z = Math.random();
+
+    return this;
+  }
+
+  public randomDirection() {
+    // Derived from https://mathworld.wolfram.com/SpherePointPicking.html
+
+    const u = (Math.random() - 0.5) * 2;
+    const t = Math.random() * Math.PI * 2;
+    const f = Math.sqrt(1 - u ** 2);
+
+    this.x = f * Math.cos(t);
+    this.y = f * Math.sin(t);
+    this.z = u;
+
+    return this;
   }
 
   *[Symbol.iterator]() {
