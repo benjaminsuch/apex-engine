@@ -284,6 +284,10 @@ export class Matrix3 {
     return array;
   }
 
+  public toJSON() {
+    return this.#buffer;
+  }
+
   public clone() {
     return new Matrix3().fromArray(Array.from(this.elements));
   }

@@ -36,11 +36,11 @@ export class World {
 
   constructor(private readonly gameInstance: GameInstance) {}
 
-  public init() {
+  public init(): void {
     this.isInitialized = true;
   }
 
-  public initActorsForPlay() {
+  public initActorsForPlay(): void {
     if (!this.isInitialized) {
       throw new Error(`World has not been initialized.`);
     }
@@ -50,13 +50,20 @@ export class World {
     }
   }
 
-  public tick() {
+  public beginPlay(): void {
+    console.log('World::beginPlay');
+    for (const actor of this.getActors()) {
+      actor.beginPlay();
+    }
+  }
+
+  public tick(): void {
     for (const actor of this.getActors()) {
       actor.tick();
     }
   }
 
-  public spawnActor(ActorClass: typeof Actor, level?: Level) {
+  public spawnActor<T extends typeof Actor>(ActorClass: T, level?: Level): InstanceType<T> {
     if (!this.currentLevel) {
       throw new Error(`Cannot spawn actor: Please set a current level before spawning actors.`);
     }

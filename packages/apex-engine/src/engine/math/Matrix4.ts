@@ -941,4 +941,8 @@ export class Matrix4 {
     }
     return array;
   }
+
+  public toJSON() {
+    return this.#buffer;
+  }
 }

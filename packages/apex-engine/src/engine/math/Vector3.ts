@@ -50,6 +50,12 @@ export class Vector3 {
   constructor(buffer: ArrayBufferLike = new SharedArrayBuffer(3 * Float32Array.BYTES_PER_ELEMENT)) {
     this.#buffer = buffer;
     this.#data = new Float32Array(this.#buffer);
+
+    const [x, y, z] = this.#data;
+
+    this.#x = x;
+    this.#y = y;
+    this.#z = z;
   }
 
   public toJSON() {
@@ -57,7 +63,10 @@ export class Vector3 {
   }
 
   public fromArray(array: ArrayLike<number>, offset = 0) {
-    this.#data.set(array, offset);
+    this.x = array[offset + 0];
+    this.y = array[offset + 1];
+    this.z = array[offset + 2];
+
     return this;
   }
 

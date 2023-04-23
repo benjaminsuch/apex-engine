@@ -546,7 +546,7 @@ function createRollupPlugins(buildDir: string, defaultLevel: string): Plugin[] {
       }
     }),
     nodeResolve({ preferBuiltins: true }),
-    typescript({ outDir: buildDir })
+    typescript({ tsconfig: 'tsconfig.abt.json', outDir: buildDir })
   ];
 }
 

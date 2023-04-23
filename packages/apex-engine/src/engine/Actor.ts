@@ -71,7 +71,12 @@ export class Actor {
 
   constructor(@IRenderer public readonly renderer: IRenderer) {}
 
-  public beginPlay() {}
+  public beginPlay() {
+    console.log('Actor::beginPlay');
+    for (const component of this.getComponents()) {
+      component.beginPlay();
+    }
+  }
 
   public tick() {
     for (const component of this.getComponents()) {

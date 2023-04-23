@@ -61,6 +61,13 @@ export class Euler {
   constructor(buffer: ArrayBufferLike = new SharedArrayBuffer(4 * Float32Array.BYTES_PER_ELEMENT)) {
     this.#buffer = buffer;
     this.#data = new Float32Array(this.#buffer);
+
+    const [x, y, z, order] = this.#data;
+
+    this.#x = x;
+    this.#y = y;
+    this.#z = z;
+    this.#order = Euler.ORDER_LIST[order];
   }
 
   public set(x: Euler['x'], y: Euler['y'], z: Euler['z'], order: Euler['order']) {
@@ -115,6 +122,10 @@ export class Euler {
     array[offset + 3] = Euler.ORDER_LIST.indexOf(this.order);
 
     return array;
+  }
+
+  public toJSON() {
+    return this.#buffer;
   }
 
   *[Symbol.iterator]() {

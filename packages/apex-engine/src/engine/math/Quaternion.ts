@@ -167,6 +167,13 @@ export class Quaternion {
   constructor(buffer: ArrayBufferLike = new SharedArrayBuffer(4 * Float32Array.BYTES_PER_ELEMENT)) {
     this.#buffer = buffer;
     this.#data = new Float32Array(this.#buffer);
+
+    const [x, y, z, w] = this.#data;
+
+    this.#x = x;
+    this.#y = y;
+    this.#z = z;
+    this.#w = w;
   }
 
   set(x: number, y: number, z: number, w: number) {
@@ -566,5 +573,16 @@ export class Quaternion {
     this.w = attribute.getW(index);
 
     return this;
+  }
+
+  public toJSON() {
+    return this.#buffer;
+  }
+
+  *[Symbol.iterator]() {
+    yield this.x;
+    yield this.y;
+    yield this.z;
+    yield this.w;
   }
 }

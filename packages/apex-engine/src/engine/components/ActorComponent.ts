@@ -1,7 +1,10 @@
+import { MathUtils } from 'three';
 import { Actor } from '../Actor';
 import { World } from '../World';
 
 export class ActorComponent {
+  public readonly uuid: string = MathUtils.generateUUID();
+
   private owner?: Actor;
 
   public getOwner() {
