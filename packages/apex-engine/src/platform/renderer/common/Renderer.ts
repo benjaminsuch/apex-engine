@@ -4,7 +4,6 @@ import {
   Mesh,
   MeshBasicMaterial,
   PCFSoftShadowMap,
-  PerspectiveCamera,
   Scene,
   sRGBEncoding,
   WebGLRenderer
@@ -75,7 +74,6 @@ export const IRenderer = InstantiationService.createDecorator<IRenderer>('render
 
 const box = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00ff00 }));
 box.position.z = -5;
-const camera = new PerspectiveCamera();
 
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;

@@ -1,7 +1,8 @@
-import { SceneProxy } from '../../../engine/SceneProxy';
+import { type CameraProxyConstructorData, CameraSceneProxy, SceneProxy } from '../../../engine';
 import {
   Renderer,
   type TRenderSceneProxyInitMessage,
+  type TRenderSetCameraMessage,
   type TRenderWorkerInitData,
   type TRenderWorkerInitMessage,
   type TRenderViewportResizeData,
@@ -37,7 +38,9 @@ function onInit({
   renderer.start();
 
   function onMessage(
-    event: MessageEvent<TRenderSceneProxyInitMessage | TRenderViewportResizeMessage>
+    event: MessageEvent<
+      TRenderSceneProxyInitMessage | TRenderSetCameraMessage | TRenderViewportResizeMessage
+    >
   ) {
     console.log('message received:', event);
     if (typeof event.data !== 'object') {
@@ -52,6 +55,9 @@ function onInit({
     if (type === 'viewport-resize') {
       const { height, width } = event.data;
       handleViewportResize(height, width);
+    }
+    if (type === 'set-camera') {
+      handleSetCamera(event.data.camera);
     }
   }
 
@@ -68,10 +74,20 @@ startRenderWorker();
 ////////////////////////////////////////////////////////////////////
 
 function handleInitSceneProxy(component: TRenderSceneProxyInitMessage['component']) {
-  const proxy = new SceneProxy(component);
+  let proxy: SceneProxy;
+
+  switch (component.objectType) {
+    case 'PerspectiveCamera':
+      {
+        proxy = new CameraSceneProxy(component as CameraProxyConstructorData);
+      }
+      break;
+    default: {
+      proxy = new SceneProxy(component);
+    }
+  }
+
   renderer.addSceneProxy(proxy);
-  renderer.camera.position.z = 5;
-  console.log(proxy);
 }
 
 function handleViewportResize(
@@ -79,4 +95,9 @@ function handleViewportResize(
   width: TRenderViewportResizeData['width']
 ) {
   renderer.setSize(height, width);
+}
+
+function handleSetCamera(camera: TRenderSetCameraMessage['camera']) {
+  const proxy = renderer.getSceneProxy<CameraSceneProxy>(camera.uuid);
+  renderer.camera = proxy ?? new CameraSceneProxy(camera);
 }
