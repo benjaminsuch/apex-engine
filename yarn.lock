@@ -643,7 +643,7 @@ __metadata:
     three: ^0.148.0
     three-stdlib: ^2.21.5
     tslib: ^2.5.0
-    typescript: ^5.0.3
+    typescript: ^4.9.4
     ws: ^8.12.1
   peerDependencies:
     "@tinyhttp/app": ^2.0.29
@@ -2512,7 +2512,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:>=5.0.2, typescript@npm:^5.0.3":
+"typescript@npm:>=5.0.2":
   version: 5.0.4
   resolution: "typescript@npm:5.0.4"
   bin:
@@ -2522,7 +2522,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^4.7.4":
+"typescript@npm:^4.7.4, typescript@npm:^4.9.4":
   version: 4.9.5
   resolution: "typescript@npm:4.9.5"
   bin:
@@ -2532,7 +2532,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@>=5.0.2#~builtin<compat/typescript>, typescript@patch:typescript@^5.0.3#~builtin<compat/typescript>":
+"typescript@patch:typescript@>=5.0.2#~builtin<compat/typescript>":
   version: 5.0.4
   resolution: "typescript@patch:typescript@npm%3A5.0.4#~builtin<compat/typescript>::version=5.0.4&hash=f456af"
   bin:
@@ -2542,7 +2542,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@^4.7.4#~builtin<compat/typescript>":
+"typescript@patch:typescript@^4.7.4#~builtin<compat/typescript>, typescript@patch:typescript@^4.9.4#~builtin<compat/typescript>":
   version: 4.9.5
   resolution: "typescript@patch:typescript@npm%3A4.9.5#~builtin<compat/typescript>::version=4.9.5&hash=f456af"
   bin:

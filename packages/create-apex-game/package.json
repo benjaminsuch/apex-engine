@@ -1,6 +1,6 @@
 {
   "name": "create-apex-game",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "CLI to create games for the Apex Engine via Yarn or NPM.",
   "type": "module",
   "license": "MIT",
