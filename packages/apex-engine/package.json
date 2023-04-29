@@ -1,7 +1,7 @@
 {
   "name": "apex-engine",
   "description": "A cross-platform game engine written in Typescript.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Benjamin Such",
   "license": "Apache-2.0",
   "type": "module",
@@ -33,7 +33,7 @@
   "scripts": {
     "dev": "yarn build -w",
     "build": "rollup --config rollup.config.ts --configPlugin typescript",
-    "build-dt": "dts-bundle-generator --project ./tsconfig.types.json --out-file apex-engine.d.ts src/engine/index.ts"
+    "build-dt": "dts-bundle-generator --no-banner --project ./tsconfig.types.json --out-file apex-engine.d.ts src/engine/index.ts"
   },
   "dependencies": {
     "@rollup/plugin-html": "^1.0.2",
