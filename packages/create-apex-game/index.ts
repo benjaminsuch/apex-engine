@@ -5,16 +5,18 @@ import { Command } from 'commander';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import prompts from 'prompts';
 
 const defaultProjectName = 'my-project';
+const createApexGameDir = resolve(fileURLToPath(import.meta.url), '../');
 const program = new Command();
 
 program
   .name('create-apex-game')
   .description('CLI to create games for the Apex Engine via Yarn or NPM.')
-  .version('1.0.2');
+  .version('1.0.3');
 
 program.argument('[name]', 'Name of your project.').action(async (initialDir: string = '') => {
   let targetDir = resolve(initialDir === '.' ? '' : initialDir);
@@ -97,9 +99,13 @@ program.parse();
 function getPkgManager() {
   const { npm_config_user_agent = '' } = process.env;
   const [manager] = npm_config_user_agent.split(' ');
-  const [name, version] = manager.split('/');
+  let [name, version] = manager.split('/');
 
-  const commands: Record<string, any> = {
+  if (!name) {
+    name = 'npm';
+  }
+
+  const commands: Record<string, { install: string; dev: string }> = {
     yarn: {
       install: 'yarn',
       dev: 'yarn dev'
@@ -134,7 +140,7 @@ function isValidPackageName(name: string) {
   return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(name);
 }
 
-function updatePkg(dir: string, content: Record<string, any>) {
+function updatePkg(dir: string, content: Record<string, unknown>) {
   const pkg = JSON.parse(readFileSync(join(dir, `package.json`), 'utf-8'));
 
   writeFileSync(join(dir, `package.json`), JSON.stringify({ ...pkg, ...content }, null, 2));
@@ -145,7 +151,7 @@ function copyProjectFiles(dest: string, projectName: string = defaultProjectName
     mkdirSync(dest);
   }
 
-  copy('template', dest);
+  copy(join(createApexGameDir, 'template'), dest);
 }
 
 function copy(src: string, dest: string) {

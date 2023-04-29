@@ -3,15 +3,16 @@ import { Command } from 'commander';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import prompts from 'prompts';
-const createApexPkg = JSON.parse(readFileSync('package.json', 'utf-8'));
 const defaultProjectName = 'my-project';
+const rootDir = resolve(fileURLToPath(import.meta.url), '../');
 const program = new Command();
 program
-    .name(createApexPkg.name)
-    .description(createApexPkg.description)
-    .version(createApexPkg.version);
+    .name('create-apex-game')
+    .description('CLI to create games for the Apex Engine via Yarn or NPM.')
+    .version('1.0.3');
 program.argument('[name]', 'Name of your project.').action(async (initialDir = '') => {
     let targetDir = resolve(initialDir === '.' ? '' : initialDir);
     if (initialDir[0] === '~') {
@@ -79,7 +80,10 @@ program.parse();
 function getPkgManager() {
     const { npm_config_user_agent = '' } = process.env;
     const [manager] = npm_config_user_agent.split(' ');
-    const [name, version] = manager.split('/');
+    let [name, version] = manager.split('/');
+    if (!name) {
+        name = 'npm';
+    }
     const commands = {
         yarn: {
             install: 'yarn',
@@ -117,7 +121,7 @@ function copyProjectFiles(dest, projectName = defaultProjectName) {
     if (!existsSync(dest)) {
         mkdirSync(dest);
     }
-    copy('template', dest);
+    copy(join(rootDir, 'template'), dest);
 }
 function copy(src, dest) {
     const stat = statSync(src);
