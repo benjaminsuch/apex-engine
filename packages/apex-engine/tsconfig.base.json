@@ -4,6 +4,7 @@
     "experimentalDecorators": true,
     "module": "ESNext",
     "moduleResolution": "Node",
+    "noImplicitAny": false,
     "noImplicitOverride": true,
     "removeComments": false,
     "skipLibCheck": true,
