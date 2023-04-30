@@ -10,7 +10,7 @@
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Node16",
     "noEmit": true,
     "noImplicitOverride": true,
     "resolveJsonModule": true,
@@ -19,5 +19,5 @@
     "target": "ESNext",
     "useDefineForClassFields": true
   },
-  "include": ["src", "types"]
+  "include": ["node_modules/apex-engine", "src", "types"]
 }

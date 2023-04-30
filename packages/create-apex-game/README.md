@@ -1,4 +1,4 @@
-# create-apex
+# create-apex-game
 
 A CLI to scaffold a game for the Apex Engine.
 
