@@ -4,5 +4,6 @@ export * from './ApexEngine';
 export * from './EngineLoop';
 export * from './EngineUtils';
 export * from './GameInstance';
+export * from './SceneProxy';
 export * from './Level';
 export * from './World';

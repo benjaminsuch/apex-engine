@@ -11,19 +11,21 @@
   "bin": {
     "abt": "bin/abt.js"
   },
+  "types": "./apex-engine.d.ts",
   "exports": {
     ".": {
-      "import": "./src/*",
-      "types": "./apex-engine.d.ts"
-    },
-    "./engine/*": "./src/engine/*",
-    "./platform/*": "./src/platform/*"
+      "types": "./apex-engine.d.ts",
+      "import": "./src/engine/index.ts",
+      "require": "./src/engine/index.ts"
+    }
   },
   "files": [
     "bin",
+    "dist",
     "src",
     "types",
-    "apex-engine.d.ts"
+    "apex-engine.d.ts",
+    "package.json"
   ],
   "repository": {
     "type": "git",

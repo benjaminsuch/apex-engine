@@ -19,5 +19,5 @@
     "target": "ESNext",
     "useDefineForClassFields": true
   },
-  "include": ["src", "types"]
+  "include": ["node_modules/apex-engine", "src", "types"]
 }
