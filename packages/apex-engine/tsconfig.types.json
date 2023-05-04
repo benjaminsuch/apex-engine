@@ -5,6 +5,8 @@
     "baseUrl": ".",
     "outDir": "build",
     "declaration": true,
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": true,
+    "removeComments": true,
+    "sourceMap": false
   }
 }

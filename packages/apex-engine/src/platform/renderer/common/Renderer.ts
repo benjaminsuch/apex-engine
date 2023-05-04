@@ -10,8 +10,8 @@ import {
 } from 'three';
 
 import {
-  type CameraProxyConstructorData,
   CameraSceneProxy,
+  type CameraProxyConstructorData,
   type SceneProxy,
   type SceneProxyConstructorData
 } from '../../../engine';
@@ -109,7 +109,6 @@ export class Renderer {
   }
 
   public getSceneProxy<T extends SceneProxy>(uuid: T['uuid']): T | undefined {
-    console.log(this.proxyObjects);
     return this.proxyObjects.find(proxy => proxy.uuid === uuid) as T | undefined;
   }
 

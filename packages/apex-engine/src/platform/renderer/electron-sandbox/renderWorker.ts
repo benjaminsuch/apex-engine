@@ -42,7 +42,6 @@ function onInit({
       TRenderSceneProxyInitMessage | TRenderSetCameraMessage | TRenderViewportResizeMessage
     >
   ) {
-    console.log('message received:', event);
     if (typeof event.data !== 'object') {
       return;
     }

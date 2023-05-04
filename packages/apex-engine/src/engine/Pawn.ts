@@ -1,1 +1,3 @@
-export class Pawn {}
+import { Actor } from './Actor';
+
+export class Pawn extends Actor {}

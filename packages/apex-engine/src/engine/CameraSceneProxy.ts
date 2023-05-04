@@ -1,7 +1,6 @@
 import { PerspectiveCamera } from 'three';
-import { type SceneProxyConstructorData } from 'apex-engine/src/engine';
 
-import { SceneProxy } from './SceneProxy';
+import { SceneProxy, type SceneProxyConstructorData } from './SceneProxy';
 
 export interface CameraProxyConstructorData extends SceneProxyConstructorData {
   buffer: ArrayBufferLike;

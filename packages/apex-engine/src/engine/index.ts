@@ -11,3 +11,6 @@ export * from './Pawn';
 export * from './PlayerController';
 export * from './SceneProxy';
 export * from './World';
+
+export * from './components';
+export * from './math';

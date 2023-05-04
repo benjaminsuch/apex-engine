@@ -51,7 +51,6 @@ export class World {
   }
 
   public beginPlay(): void {
-    console.log('World::beginPlay');
     for (const actor of this.getActors()) {
       actor.beginPlay();
     }

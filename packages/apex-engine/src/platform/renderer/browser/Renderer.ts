@@ -5,14 +5,14 @@ import {
   type TRenderMessageType
 } from '../common';
 
-export class Renderer implements IRenderer {
+export class BrowserRenderer implements IRenderer {
   declare readonly _injectibleService: undefined;
 
-  private static instance?: Renderer;
+  private static instance?: BrowserRenderer;
 
   public static getInstance() {
     if (!this.instance) {
-      throw new Error(`No instance of Renderer available.`);
+      throw new Error(`No instance of BrowserRenderer available.`);
     }
     return this.instance;
   }
@@ -30,7 +30,7 @@ export class Renderer implements IRenderer {
       throw new Error(`Cannot create an instance of Renderer: "window" is undefined.`);
     }
 
-    if (Renderer.instance) {
+    if (BrowserRenderer.instance) {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
@@ -38,7 +38,7 @@ export class Renderer implements IRenderer {
       console.log('Renderer received message:', event);
     });
 
-    Renderer.instance = this;
+    BrowserRenderer.instance = this;
   }
 
   public async init() {
@@ -80,7 +80,6 @@ export class Renderer implements IRenderer {
     message: T,
     transferList: Transferable[] = []
   ) {
-    console.log('post message to renderWorker:', message);
     this.messageChannel.port1.postMessage(message, transferList);
   }
 
@@ -89,17 +88,5 @@ export class Renderer implements IRenderer {
       const { clientHeight, clientWidth } = this.canvas;
       this.send({ type: 'viewport-resize', height: clientHeight, width: clientWidth });
     }
-    /*if (this.camera instanceof PerspectiveCamera) {
-      this.camera.aspect = innerWidth / innerHeight;
-      this.camera.updateProjectionMatrix();
-      this.camera.updateMatrixWorld();
-    }
-
-    if (this.camera instanceof OrthographicCamera) {
-      this.camera.left = innerWidth / 2;
-      this.camera.right = innerWidth / -2;
-      this.camera.top = innerHeight / 2;
-      this.camera.bottom = innerHeight / -2;
-    }*/
   }
 }
