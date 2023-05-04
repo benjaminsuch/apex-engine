@@ -9,8 +9,6 @@ import {
   type TRenderViewportResizeMessage
 } from '../common/Renderer';
 
-console.log('loaded: renderWorker.js');
-
 function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   if (typeof event.data !== 'object') {
     return;
