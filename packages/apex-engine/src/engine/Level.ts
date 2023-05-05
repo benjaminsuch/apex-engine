@@ -6,11 +6,11 @@ import { type World } from './World';
 export class Level {
   private readonly actors: Set<Actor> = new Set();
 
-  public addActor(ActorClass: typeof Actor) {
-    const actor = this.instantiationService.createInstance(ActorClass);
+  public addActor<T extends typeof Actor>(ActorClass: T): InstanceType<T> {
+    const actor = this.instantiationService.createInstance(ActorClass as typeof Actor);
     actor.registerWithLevel(this);
     this.actors.add(actor);
-    return actor;
+    return actor as InstanceType<T>;
   }
 
   public getActors() {
@@ -33,8 +33,8 @@ export class Level {
   private isInitialized: boolean = false;
 
   constructor(
-    @IInstatiationService private readonly instantiationService: IInstatiationService,
-    @IRenderer private readonly renderer: IRenderer
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IRenderer protected readonly renderer: IRenderer
   ) {}
 
   public init() {

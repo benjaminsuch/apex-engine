@@ -74,6 +74,22 @@ export class InstantiationService implements IInstatiationService {
     this.services.set(IInstatiationService, this);
   }
 
+  /**
+   * Creates an instance of a class and inject services defined in the constructor parameters.
+   *
+   * If you have non-injectible services in your constructor parameters, make sure to list them first:
+   *
+   * ```js
+   * class MyClass {
+   *   constructor(someArg: any, @ILogger logger: ILogger) {}
+   * }
+   *
+   * instantiationService.createInstance(MyClass, someArgVal)
+   * ```
+   *
+   * @param Constructor The class to create an instance from.
+   * @param args Constructor parameters of that class.
+   */
   public createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(
     Constructor: C,
     ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>

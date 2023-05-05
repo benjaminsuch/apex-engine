@@ -21,7 +21,12 @@ export default defineConfig([
       sourcemap: 'inline'
     },
     external: [...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies)],
-    plugins: [nodeResolve({ preferBuiltins: true }), typescript(), commonjs(), json()],
+    plugins: [
+      nodeResolve({ preferBuiltins: true }),
+      typescript({ tsconfig: './tsconfig.abt.json' }),
+      commonjs(),
+      json()
+    ],
     onwarn(warning, warn) {
       if (warning.message.includes('Circular dependency')) {
         return;

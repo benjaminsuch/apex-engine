@@ -1,16 +1,24 @@
 import {
   ACESFilmicToneMapping,
+  BoxGeometry,
+  Mesh,
+  MeshBasicMaterial,
   PCFSoftShadowMap,
-  PerspectiveCamera,
   Scene,
   sRGBEncoding,
   WebGLRenderer
 } from 'three';
 
-import { type SceneProxy } from '../../../engine/SceneProxy';
+import {
+  CameraSceneProxy,
+  type CameraProxyConstructorData,
+  type SceneProxy,
+  type SceneProxyConstructorData
+} from '../../../engine';
 import { InstantiationService } from '../../di/common';
+import { IConsoleLogger } from '../../logging/common';
 
-export type TRenderMessageType = 'init' | 'init-scene-proxy' | 'viewport-resize';
+export type TRenderMessageType = 'init' | 'init-scene-proxy' | 'set-camera' | 'viewport-resize';
 
 export type TRenderMessageData<T = { [k: string]: unknown }> = {
   [P in keyof T]: T[P];
@@ -41,12 +49,18 @@ export type TRenderViewportResizeMessage = TRenderMessage<
   TRenderViewportResizeData
 >;
 
-export type TRenderSceneProxyInitData = TRenderMessageData<{ component: Record<string, any> }>;
+export type TRenderSceneProxyInitData = TRenderMessageData<{
+  component: SceneProxyConstructorData;
+}>;
 
 export type TRenderSceneProxyInitMessage = TRenderMessage<
   'init-scene-proxy',
   TRenderSceneProxyInitData
 >;
+
+export type TRenderSetCameraData = TRenderMessageData<{ camera: CameraProxyConstructorData }>;
+
+export type TRenderSetCameraMessage = TRenderMessage<'set-camera', TRenderSetCameraData>;
 
 export interface IRenderer {
   readonly _injectibleService: undefined;
@@ -59,16 +73,19 @@ export interface IRenderer {
 
 export const IRenderer = InstantiationService.createDecorator<IRenderer>('renderer');
 
+const box = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00ff00 }));
+box.position.z = -5;
+
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;
 
+  public camera?: CameraSceneProxy;
+
   private readonly scene: Scene = new Scene();
 
-  private readonly proxies: SceneProxy[] = [];
+  private readonly proxyObjects: SceneProxy[] = [];
 
-  public camera: PerspectiveCamera = new PerspectiveCamera();
-
-  constructor(canvas: OffscreenCanvas) {
+  constructor(canvas: OffscreenCanvas, @IConsoleLogger private readonly logger: IConsoleLogger) {
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
   }
 
@@ -76,6 +93,7 @@ export class Renderer {
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.outputEncoding = sRGBEncoding;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
+    this.scene.add(box);
   }
 
   public start() {
@@ -83,21 +101,38 @@ export class Renderer {
   }
 
   public setSize(height: number, width: number) {
+    this.webGLRenderer.setSize(width, height, false);
+
+    if (!this.camera) {
+      this.logger.warn(`The renderer has no camera proxy assigned.`);
+      return;
+    }
+
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    this.webGLRenderer.setSize(width, height, false);
+    this.camera.updateMatrixWorld();
   }
 
   public addSceneProxy(proxy: SceneProxy) {
-    this.proxies.push(proxy);
-    this.scene.add(proxy.mesh);
+    this.proxyObjects.push(proxy);
+    this.scene.add(proxy.sceneObject);
+  }
+
+  public getSceneProxy<T extends SceneProxy>(uuid: T['uuid']): T | undefined {
+    return this.proxyObjects.find(proxy => proxy.uuid === uuid) as T | undefined;
   }
 
   private tick() {
-    for (const proxy of this.proxies) {
-      proxy.tick();
-    }
+    if (this.camera) {
+      for (const proxy of this.proxyObjects) {
+        proxy.tick();
+      }
 
-    this.webGLRenderer.render(this.scene, this.camera);
+      box.rotation.x += 0.01;
+      box.rotation.y += 0.01;
+      box.rotation.z += 0.01;
+
+      this.webGLRenderer.render(this.scene, this.camera.sceneObject);
+    }
   }
 }

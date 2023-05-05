@@ -10,7 +10,7 @@
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "ESNext",
-    "moduleResolution": "Node16",
+    "moduleResolution": "Node",
     "noEmit": true,
     "noImplicitOverride": true,
     "resolveJsonModule": true,

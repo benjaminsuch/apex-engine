@@ -1,29 +1,36 @@
-import { Euler, Matrix4, Quaternion } from 'three';
-
-import { TRenderSceneProxyInitMessage } from '../../platform/renderer/common';
-import { Vector3 } from '../math';
+import { type TRenderSceneProxyInitMessage } from '../../platform/renderer/common';
+import { SceneProxyConstructorData } from '../SceneProxy';
+import { Euler, Matrix4, Quaternion, Vector3 } from '../math';
 import { ActorComponent } from './ActorComponent';
 
-export interface SceneComponentJSON {}
+export type SceneObjectType = 'Object3D' | 'PerspectiveCamera';
 
 export class SceneComponent extends ActorComponent {
-  private readonly position: Vector3 = new Vector3();
+  public readonly position: Vector3 = new Vector3();
 
-  private readonly scale: Vector3 = new Vector3();
+  public readonly scale: Vector3 = new Vector3();
 
-  private readonly rotation: Vector3 = new Vector3();
+  public readonly rotation: Euler = new Euler();
 
-  private readonly quaternion: Quaternion = new Quaternion();
+  public readonly quaternion: Quaternion = new Quaternion();
 
-  private readonly matrix: Matrix4 = new Matrix4();
+  public readonly matrix: Matrix4 = new Matrix4();
 
-  private readonly matrixWorld: Matrix4 = new Matrix4();
+  public readonly matrixWorld: Matrix4 = new Matrix4();
 
-  private visible: boolean = true;
+  public visible: boolean = true;
 
   private readonly children: Set<SceneComponent> = new Set();
 
-  public override init() {
+  public readonly objectType: SceneObjectType = 'Object3D';
+
+  constructor() {
+    super();
+
+    this.scale.set(1, 1, 1);
+  }
+
+  public override init(): void {
     this.getOwner().renderer.send<TRenderSceneProxyInitMessage>({
       type: 'init-scene-proxy',
       component: this.toJSON()
@@ -32,23 +39,20 @@ export class SceneComponent extends ActorComponent {
     super.init();
   }
 
-  public override tick(): void {
-    this.rotation.x += 0.01;
-    this.rotation.y += 0.01;
-  }
-
   public attachToParent(parent: SceneComponent) {
     parent.children.add(this);
   }
 
-  public toJSON(): any {
+  public toJSON(): SceneProxyConstructorData {
     return {
+      uuid: this.uuid,
+      objectType: this.objectType,
       position: this.position.toJSON(),
       scale: this.scale.toJSON(),
       rotation: this.rotation.toJSON(),
-      quaternion: this.quaternion,
-      matrix: this.matrix,
-      matrixWorld: this.matrixWorld,
+      quaternion: this.quaternion.toJSON(),
+      matrix: this.matrix.toJSON(),
+      matrixWorld: this.matrixWorld.toJSON(),
       visible: this.visible,
       children: [...this.children].map(child => child.toJSON())
     };

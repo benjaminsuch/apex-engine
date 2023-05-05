@@ -1,7 +1,7 @@
 import { EngineLoop } from '../../engine';
 import { InstantiationService, ServiceCollection } from '../../platform/di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
-import { Renderer } from '../../platform/renderer/browser';
+import { BrowserRenderer } from '../../platform/renderer/browser';
 import { IRenderer } from '../../platform/renderer/common';
 
 export class BrowserMain {
@@ -11,7 +11,7 @@ export class BrowserMain {
     const services = new ServiceCollection();
 
     services.set(IConsoleLogger, new ConsoleLogger());
-    services.set(IRenderer, new Renderer());
+    services.set(IRenderer, new BrowserRenderer());
 
     this.instantiationService = new InstantiationService(services);
   }

@@ -90,6 +90,8 @@ cli.command('build').action(async (options: CLIOptions) => {
     }
     await buildTarget(targetConfig);
   }
+
+  process.exit();
 });
 
 cli.parse();
@@ -143,6 +145,10 @@ async function getApexConfig() {
 async function buildBrowserTarget(target: TargetConfig) {
   const buildDir = resolve('build/browser');
 
+  if (existsSync(buildDir)) {
+    await rimraf(buildDir);
+  }
+
   let bundle;
 
   try {
@@ -150,6 +156,8 @@ async function buildBrowserTarget(target: TargetConfig) {
       ...createRollupConfig('browser'),
       plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin()]
     });
+
+    await buildEngineWorkers('browser', target);
 
     await bundle.write({
       dir: buildDir,
@@ -377,6 +385,8 @@ async function serveElectronTarget(target: TargetConfig) {
     await rimraf(buildDir);
   }
 
+  await buildEngineWorkers('electron-sandbox', target);
+
   const watcherMain = watch({
     ...createRollupConfig('electron-main', {
       input: {
@@ -412,7 +422,8 @@ async function serveElectronTarget(target: TargetConfig) {
   const watcherSandbox = watch({
     ...createRollupConfig('electron-sandbox', {
       input: {
-        sandbox: getLauncherPath('electron-sandbox')
+        sandbox: getLauncherPath('electron-sandbox'),
+        ...getGameMaps()
       },
       output: {
         dir: buildDir
@@ -497,6 +508,14 @@ function createRollupConfig(
   return {
     input: {
       index: getLauncherPath(launcher),
+      ...Object.fromEntries(
+        glob
+          .sync('src/engine/**/*.ts')
+          .map(file => [
+            relative('src/engine', file.slice(0, file.length - extname(file).length)),
+            fileURLToPath(pathToFileURL(resolve(file)))
+          ])
+      ),
       ...getGameMaps()
     },
     output: {
@@ -557,7 +576,10 @@ async function buildEngineWorkers(
     )
   };
 
-  const buildDir = resolve(APEX_DIR, 'build/browser/workers');
+  const buildDir = resolve(
+    APEX_DIR,
+    `build/${platform.includes('electron') ? 'electron' : platform}/workers`
+  );
 
   let bundle;
 
