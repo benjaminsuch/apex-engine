@@ -34,6 +34,14 @@ export class CameraSceneProxy extends SceneProxy {
     this.sceneObject = new PerspectiveCamera(fov, aspect, near, far);
   }
 
+  public updateProjectionMatrix() {
+    this.sceneObject.updateProjectionMatrix();
+  }
+
+  public updateMatrixWorld(force?: boolean) {
+    this.sceneObject.updateMatrixWorld(force);
+  }
+
   public override tick(): void {
     super.tick();
 

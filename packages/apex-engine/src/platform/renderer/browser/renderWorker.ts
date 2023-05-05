@@ -1,4 +1,6 @@
 import { type CameraProxyConstructorData, CameraSceneProxy, SceneProxy } from '../../../engine';
+import { InstantiationService, ServiceCollection } from '../../di/common';
+import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
 import {
   Renderer,
   type TRenderSceneProxyInitMessage,
@@ -23,6 +25,7 @@ function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
 }
 
 let renderer: Renderer;
+let instantiationService: InstantiationService;
 
 function onInit({
   canvas,
@@ -30,7 +33,13 @@ function onInit({
   initialCanvasWidth,
   messagePort
 }: TRenderWorkerInitData) {
-  renderer = new Renderer(canvas);
+  const services = new ServiceCollection();
+
+  services.set(IConsoleLogger, new ConsoleLogger());
+
+  instantiationService = new InstantiationService(services);
+
+  renderer = instantiationService.createInstance(Renderer, canvas);
   renderer.init();
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();

@@ -16,6 +16,7 @@ import {
   type SceneProxyConstructorData
 } from '../../../engine';
 import { InstantiationService } from '../../di/common';
+import { IConsoleLogger } from '../../logging/common';
 
 export type TRenderMessageType = 'init' | 'init-scene-proxy' | 'set-camera' | 'viewport-resize';
 
@@ -84,7 +85,7 @@ export class Renderer {
 
   private readonly proxyObjects: SceneProxy[] = [];
 
-  constructor(canvas: OffscreenCanvas) {
+  constructor(canvas: OffscreenCanvas, @IConsoleLogger private readonly logger: IConsoleLogger) {
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
   }
 
@@ -101,6 +102,15 @@ export class Renderer {
 
   public setSize(height: number, width: number) {
     this.webGLRenderer.setSize(width, height, false);
+
+    if (!this.camera) {
+      this.logger.warn(`The renderer has no camera proxy assigned.`);
+      return;
+    }
+
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.camera.updateMatrixWorld();
   }
 
   public addSceneProxy(proxy: SceneProxy) {
