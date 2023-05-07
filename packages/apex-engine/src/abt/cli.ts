@@ -9,7 +9,14 @@ import { createServer, Server } from 'node:http';
 import { extname, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
-import { type OutputOptions, rollup, watch, type RollupOptions, type Plugin } from 'rollup';
+import {
+  rollup,
+  watch,
+  type OutputOptions,
+  type Plugin,
+  type RollupBuild,
+  type RollupOptions
+} from 'rollup';
 import { WebSocketServer } from 'ws';
 
 import { APEX_DIR, CONFIG_FILE_NAME, Platform, type ApexConfig, type TargetConfig } from './config';
@@ -105,8 +112,8 @@ function filterDuplicateOptions<T extends object>(options: T) {
 }
 
 async function getApexConfig() {
-  let bundle;
-  let config;
+  let bundle: RollupBuild | undefined;
+  let config: ApexConfig | undefined;
 
   try {
     bundle = await rollup({

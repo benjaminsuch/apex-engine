@@ -11,12 +11,13 @@
   "bin": {
     "abt": "bin/abt.js"
   },
-  "types": "./apex-engine.d.ts",
+  "module": "./dist/apex-engine.js",
+  "types": "./dist/apex-engine.d.ts",
   "exports": {
     ".": {
-      "types": "./apex-engine.d.ts",
-      "import": "./src/engine/index.ts",
-      "require": "./src/engine/index.ts"
+      "types": "./dist/apex-engine.d.ts",
+      "import": "./dist/apex-engine.js",
+      "require": "./dist/apex-engine.js"
     }
   },
   "files": [
@@ -24,7 +25,6 @@
     "dist",
     "src",
     "types",
-    "apex-engine.d.ts",
     "package.json"
   ],
   "repository": {
@@ -35,7 +35,7 @@
   "scripts": {
     "dev": "yarn build -w",
     "build": "rollup --config rollup.config.ts --configPlugin typescript",
-    "build-dt": "dts-bundle-generator --no-banner --project ./tsconfig.types.json --out-file apex-engine.d.ts src/index.ts"
+    "build-dt": "dts-bundle-generator --no-banner --project ./tsconfig.types.json --out-file dist/apex-engine.d.ts src/index.ts"
   },
   "dependencies": {
     "@rollup/plugin-html": "^1.0.2",

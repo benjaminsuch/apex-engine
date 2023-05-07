@@ -2,16 +2,11 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Plugin } from 'rollup';
 
-export type PluginOption =
-  | Plugin
-  | false
-  | null
-  | undefined
-  | PluginOption[]
-  | Promise<Plugin | false | null | undefined | PluginOption[]>;
+export type BuildPlugin = Plugin | Promise<Plugin>;
 
 export interface BuildConfig {
   outDir?: string;
+  plugins?: BuildPlugin[];
 }
 
 export type Platform = 'browser' | 'electron' | 'node';
@@ -22,7 +17,6 @@ export interface TargetConfig {
   defaultLevel: string;
   platform: Platform;
   target: Target;
-  plugins?: PluginOption[];
 }
 
 export interface ApexConfig {

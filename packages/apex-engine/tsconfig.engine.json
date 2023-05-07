@@ -1,11 +1,10 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["./rollup.config.ts", "src/abt", "types"],
+  "include": ["src", "types"],
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "lib": ["DOM"],
-    "noEmit": true,
-    "outDir": "dist"
+    "noEmit": true
   }
 }

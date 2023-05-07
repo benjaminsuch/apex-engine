@@ -10,7 +10,8 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)).
 export default defineConfig([
   {
     input: {
-      abt: 'src/abt/cli.ts'
+      abt: 'src/abt/cli.ts',
+      'apex-engine': 'src/engine/index.ts'
     },
     output: {
       dir: 'dist',
@@ -23,7 +24,7 @@ export default defineConfig([
     external: [...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies)],
     plugins: [
       nodeResolve({ preferBuiltins: true }),
-      typescript({ tsconfig: './tsconfig.abt.json' }),
+      typescript({ tsconfig: './tsconfig.engine.json' }),
       commonjs(),
       json()
     ],

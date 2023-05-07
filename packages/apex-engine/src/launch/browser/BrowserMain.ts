@@ -17,6 +17,13 @@ export class BrowserMain {
   }
 
   public init() {
+    //! This will be removed later, as it is just a hotfix.
+    //
+    //  Web workers can be loaded via file or inline. Loading a file will take roughly
+    //  500ms and will result in our web workers not being ready, when the engine loop
+    //  is started.
+    //
+    //  At some point we will load the web workers inline and remove the timeout.
     setTimeout(() => {
       const engineLoop = this.instantiationService.createInstance(EngineLoop);
 
