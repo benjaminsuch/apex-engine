@@ -328,6 +328,9 @@ async function serveBrowserTarget(target: TargetConfig) {
         });
         res.end(content, 'utf-8');
       } else {
+        if (filePath.includes('favicon')) {
+          return;
+        }
         console.log(error);
       }
     });
