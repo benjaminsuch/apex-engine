@@ -4,9 +4,17 @@ import typescript from '@rollup/plugin-typescript';
 import { cac } from 'cac';
 import glob from 'glob';
 import mime from 'mime';
-import { existsSync, mkdirSync, readFile, unlinkSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readdirSync,
+  readFile,
+  unlinkSync,
+  writeFileSync
+} from 'node:fs';
 import { createServer, Server } from 'node:http';
-import { extname, posix, relative, resolve } from 'node:path';
+import { dirname, extname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
 import {
@@ -118,7 +126,8 @@ async function getApexConfig() {
   try {
     bundle = await rollup({
       input: resolve(`${CONFIG_FILE_NAME}.ts`),
-      plugins: [nodeResolve({ preferBuiltins: true }), typescript()]
+      plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+      onwarn() {}
     });
 
     const result = await bundle.generate({
@@ -161,7 +170,8 @@ async function buildBrowserTarget(target: TargetConfig) {
   try {
     bundle = await rollup({
       ...createRollupConfig('browser'),
-      plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin()]
+      plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin()],
+      onwarn() {}
     });
 
     await buildEngineWorkers('browser', target);
@@ -196,7 +206,8 @@ async function buildElectronTarget(target: TargetConfig) {
           main: getLauncherPath('electron-main')
         },
         plugins: createRollupPlugins(buildDir, target.defaultLevel),
-        external: ['electron']
+        external: ['electron'],
+        onwarn() {}
       })
     });
 
@@ -215,7 +226,8 @@ async function buildElectronTarget(target: TargetConfig) {
               }
             ]
           })
-        ]
+        ],
+        onwarn() {}
       })
     });
 
@@ -259,7 +271,8 @@ async function buildNodeTarget(target: TargetConfig) {
         }),
         nodeResolve({ preferBuiltins: true }),
         typescript({ esModuleInterop: true, outDir: buildDir })
-      ]
+      ],
+      onwarn() {}
     });
 
     await bundle.write({
@@ -357,7 +370,8 @@ async function serveBrowserTarget(target: TargetConfig) {
 </script>
         `
         )
-      ]
+      ],
+      onwarn() {}
     })
   });
 
@@ -392,7 +406,7 @@ async function serveElectronTarget(target: TargetConfig) {
     await rimraf(buildDir);
   }
 
-  await buildEngineWorkers('electron-sandbox', target);
+  await buildEngineWorkers('electron', target);
 
   const watcherMain = watch({
     ...createRollupConfig('electron-main', {
@@ -405,7 +419,8 @@ async function serveElectronTarget(target: TargetConfig) {
         sourcemap: false
       },
       plugins: createRollupPlugins(buildDir, target.defaultLevel),
-      external: ['electron']
+      external: ['electron'],
+      onwarn() {}
     })
   });
 
@@ -435,7 +450,8 @@ async function serveElectronTarget(target: TargetConfig) {
       output: {
         dir: buildDir
       },
-      plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin('./sandbox.js')]
+      plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin('./sandbox.js')],
+      onwarn() {}
     })
   });
 
@@ -573,22 +589,18 @@ async function loadConfigFromBundledFile(root: string, bundledCode: string): Pro
   }
 }
 
-async function buildEngineWorkers(
-  platform: Exclude<Platform, 'electron'> | 'electron-main' | 'electron-sandbox',
-  target: TargetConfig
-) {
-  const input = {
-    renderWorker: fileURLToPath(
-      new URL(`../src/platform/renderer/${platform}/renderWorker.ts`, import.meta.url)
-    )
-  };
-
-  const buildDir = resolve(
-    APEX_DIR,
-    `build/${platform.includes('electron') ? 'electron' : platform}/workers`
+async function buildEngineWorkers(platform: Platform, target: TargetConfig) {
+  const baseDir = resolve(dirname(fileURLToPath(import.meta.url)), '../src');
+  const buildDir = resolve(APEX_DIR, `build/${platform}/workers`);
+  const input = getAllWorkerFiles(baseDir, []).filter(
+    val => val.includes('platform') && (val.includes(platform) || val.includes('common'))
   );
 
-  let bundle;
+  let bundle: RollupBuild | undefined;
+
+  if (!input.length) {
+    return;
+  }
 
   try {
     bundle = await rollup({
@@ -603,7 +615,8 @@ async function buildEngineWorkers(
         }),
         nodeResolve({ preferBuiltins: true }),
         typescript({ outDir: buildDir })
-      ]
+      ],
+      onwarn() {}
     });
 
     await bundle.write({
@@ -612,7 +625,8 @@ async function buildEngineWorkers(
       format: 'esm',
       externalLiveBindings: false,
       freeze: false,
-      sourcemap: 'inline'
+      sourcemap: false
+      //entryFileNames: '[name]-[hash].js'
     });
   } catch (error) {
     debug(error);
@@ -621,4 +635,23 @@ async function buildEngineWorkers(
   if (bundle) {
     await bundle.close();
   }
+}
+
+function getAllWorkerFiles(path: string, files: string[] = []): string[] {
+  const dir = readdirSync(path);
+
+  for (const fileOrDir of dir) {
+    const fullPath = join(path, fileOrDir);
+    const isDir = lstatSync(fullPath).isDirectory();
+
+    if (isDir) {
+      getAllWorkerFiles(fullPath, files);
+    }
+
+    if (fullPath.endsWith('.worker.ts')) {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
 }

@@ -10,16 +10,16 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)).
 export default defineConfig([
   {
     input: {
-      abt: 'src/abt/cli.ts',
-      'apex-engine': 'src/engine/index.ts'
+      abt: 'src/abt/cli.ts'
     },
     output: {
-      dir: 'dist',
+      dir: 'bin',
       exports: 'named',
       format: 'esm',
       externalLiveBindings: false,
       freeze: false,
-      sourcemap: 'inline'
+      sourcemap: false,
+      banner: '#!/usr/bin/env node'
     },
     external: [...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies)],
     plugins: [

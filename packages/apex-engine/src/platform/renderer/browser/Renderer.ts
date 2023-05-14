@@ -17,7 +17,7 @@ export class BrowserRenderer implements IRenderer {
     return this.instance;
   }
 
-  private readonly renderWorker = new Worker('./workers/renderWorker.js', { type: 'module' });
+  private readonly renderWorker = new Worker('./workers/render.worker.js', { type: 'module' });
 
   private readonly messageChannel = new MessageChannel();
 
