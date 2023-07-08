@@ -15,8 +15,13 @@
   "exports": {
     ".": {
       "types": "./apex-engine.d.ts",
-      "import": "./src/engine/index.ts",
-      "require": "./src/engine/index.ts"
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    },
+    "./abt": {
+      "types": "./src/abt/index.ts",
+      "import": "./src/abt/index.ts",
+      "require": "./src/abt/index.ts"
     }
   },
   "files": [

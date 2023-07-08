@@ -14,6 +14,7 @@ import {
   writeFileSync
 } from 'node:fs';
 import { createServer, Server } from 'node:http';
+import { createRequire } from 'node:module';
 import { dirname, extname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
@@ -23,13 +24,23 @@ import {
   type OutputOptions,
   type Plugin,
   type RollupBuild,
-  type RollupOptions
+  type RollupOptions,
+  InputOptions,
+  InputOption
 } from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import { APEX_DIR, CONFIG_FILE_NAME, Platform, type ApexConfig, type TargetConfig } from './config';
+import {
+  APEX_DIR,
+  CONFIG_FILE_NAME,
+  Platform,
+  type ApexConfig,
+  type TargetConfig,
+  getApexConfig
+} from './config';
 import { startElectron } from './electron';
-import { dynamicImport, getLauncherPath, htmlPlugin, type Launcher } from './utils';
+import { htmlPlugin } from './plugins';
+import { dynamicImport, filterDuplicateOptions, getLauncherPath, type Launcher } from './utils';
 
 interface CLIOptions {
   config?: string;
@@ -66,7 +77,7 @@ cli
     filterDuplicateOptions(options);
 
     const { config: configFile, debug, platform } = options;
-    const { targets } = await getApexConfig();
+    const { targets } = await getApexConfig(configFile);
 
     if (debug) {
       isDebugModeOn = true;
@@ -111,53 +122,6 @@ cli.command('build').action(async (options: CLIOptions) => {
 
 cli.parse();
 
-function filterDuplicateOptions<T extends object>(options: T) {
-  for (const [key, value] of Object.entries(options)) {
-    if (Array.isArray(value)) {
-      options[key as keyof T] = value[value.length - 1];
-    }
-  }
-}
-
-async function getApexConfig() {
-  let bundle: RollupBuild | undefined;
-  let config: ApexConfig | undefined;
-
-  try {
-    bundle = await rollup({
-      input: resolve(`${CONFIG_FILE_NAME}.ts`),
-      plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
-      onwarn() {}
-    });
-
-    const result = await bundle.generate({
-      exports: 'named',
-      format: 'esm',
-      externalLiveBindings: false,
-      freeze: false,
-      sourcemap: 'inline'
-    });
-    const chunkOrAsset = result.output[0];
-
-    if (chunkOrAsset.type === 'chunk') {
-      config = await loadConfigFromBundledFile(process.cwd(), chunkOrAsset.code);
-    }
-  } catch (error) {
-    console.log(error);
-    debug(error);
-  }
-
-  if (bundle) {
-    await bundle.close();
-  }
-
-  if (!config) {
-    throw new Error(`No config found.`);
-  }
-
-  return config;
-}
-
 async function buildBrowserTarget(target: TargetConfig) {
   const buildDir = resolve('build/browser');
 
@@ -196,8 +160,12 @@ async function buildBrowserTarget(target: TargetConfig) {
 async function buildElectronTarget(target: TargetConfig) {
   const buildDir = resolve('build/electron');
 
-  let mainBundle;
-  let sandboxBundle;
+  if (existsSync(buildDir)) {
+    await rimraf(buildDir);
+  }
+
+  let mainBundle: RollupBuild | undefined;
+  let sandboxBundle: RollupBuild | undefined;
 
   try {
     mainBundle = await rollup({
@@ -240,7 +208,7 @@ async function buildElectronTarget(target: TargetConfig) {
       sourcemap: 'inline'
     };
 
-    await mainBundle.write({ ...outputOptions, format: 'cjs' });
+    await mainBundle.write({ ...outputOptions, entryFileNames: '[name].cjs', format: 'cjs' });
     await sandboxBundle.write(outputOptions);
   } catch (error) {
     debug(error);
@@ -390,6 +358,10 @@ async function serveBrowserTarget(target: TargetConfig) {
         socket.send(JSON.stringify({ type: 'update' }));
       });
     }
+
+    if (event.code === 'ERROR') {
+      console.log(event);
+    }
   });
 
   watcher.on('change', file => {
@@ -531,19 +503,22 @@ function createRollupConfig(
   launcher: Launcher,
   { output, ...options }: RollupOptions = {}
 ): RollupOptions {
+  const input = {
+    index: getLauncherPath(launcher),
+    ...Object.fromEntries(
+      glob
+        .sync('src/engine/**/*.ts')
+        .map(file => [
+          relative('src', file.slice(0, file.length - extname(file).length)),
+          fileURLToPath(pathToFileURL(resolve(file)))
+        ])
+    ),
+    ...getGameMaps()
+  };
+  console.log(input);
+
   return {
-    input: {
-      index: getLauncherPath(launcher),
-      ...Object.fromEntries(
-        glob
-          .sync('src/engine/**/*.ts')
-          .map(file => [
-            relative('src/engine', file.slice(0, file.length - extname(file).length)),
-            fileURLToPath(pathToFileURL(resolve(file)))
-          ])
-      ),
-      ...getGameMaps()
-    },
+    input,
     output: {
       exports: 'named',
       format: 'esm',
@@ -574,22 +549,6 @@ function createRollupPlugins(buildDir: string, defaultLevel: string): Plugin[] {
     nodeResolve({ preferBuiltins: true }),
     typescript({ outDir: buildDir })
   ];
-}
-
-async function loadConfigFromBundledFile(root: string, bundledCode: string): Promise<ApexConfig> {
-  const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
-
-  writeFileSync(fileNameTmp, bundledCode);
-
-  const fileUrl = pathToFileURL(fileNameTmp);
-
-  try {
-    return (await dynamicImport(fileUrl)).default;
-  } finally {
-    try {
-      unlinkSync(fileNameTmp);
-    } catch {}
-  }
 }
 
 async function buildEngineWorkers(platform: Platform, target: TargetConfig) {

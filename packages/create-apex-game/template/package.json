@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "build/electron/index.js",
+  "main": "build/electron/index.cjs",
   "scripts": {
     "dev": "abt serve"
   },

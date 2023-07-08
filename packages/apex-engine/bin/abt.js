@@ -5,19 +5,95 @@ import typescript from '@rollup/plugin-typescript';
 import { cac } from 'cac';
 import glob from 'glob';
 import mime from 'mime';
-import { existsSync, readFileSync, mkdirSync, readFile, writeFileSync, unlinkSync, readdirSync, lstatSync } from 'node:fs';
+import { writeFileSync, unlinkSync, existsSync, readFileSync, mkdirSync, readFile, readdirSync, lstatSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { join, dirname, resolve, posix, relative, extname } from 'node:path';
+import { resolve, dirname, join, posix, relative, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
 import { rollup, watch } from 'rollup';
 import { WebSocketServer } from 'ws';
+import { builtinModules, createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
-import { createRequire, builtinModules } from 'node:module';
 import html, { makeHtmlAttributes } from '@rollup/plugin-html';
 
+new Set([
+    ...builtinModules,
+    'assert/strict',
+    'diagnostics_channel',
+    'dns/promises',
+    'fs/promises',
+    'path/posix',
+    'path/win32',
+    'readline/promises',
+    'stream/consumers',
+    'stream/promises',
+    'stream/web',
+    'timers/promises',
+    'util/types',
+    'wasi'
+]);
+const dynamicImport = new Function('file', 'return import(file)');
+function getLauncherPath(launcher) {
+    return fileURLToPath(new URL(`../src/launch/${launcher}/index.ts`, import.meta.url));
+}
+function filterDuplicateOptions(options) {
+    for (const [key, value] of Object.entries(options)) {
+        if (Array.isArray(value)) {
+            options[key] = value[value.length - 1];
+        }
+    }
+}
+
 const CONFIG_FILE_NAME = 'apex.config';
-const APEX_DIR = join(fileURLToPath(import.meta.url), '../../../.apex');
+const APEX_DIR = resolve('.apex');
+async function loadConfigFromBundledFile(root, bundledCode) {
+    const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
+    writeFileSync(fileNameTmp, bundledCode);
+    const fileUrl = pathToFileURL(fileNameTmp);
+    try {
+        return (await dynamicImport(fileUrl)).default;
+    }
+    finally {
+        try {
+            unlinkSync(fileNameTmp);
+        }
+        catch { }
+    }
+}
+async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
+    let bundle;
+    let config;
+    console.log('configFile', configFile);
+    try {
+        bundle = await rollup({
+            input: configFile,
+            plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+            onwarn() { }
+        });
+        const result = await bundle.generate({
+            exports: 'named',
+            format: 'esm',
+            externalLiveBindings: false,
+            freeze: false,
+            sourcemap: false
+        });
+        const [chunkOrAsset] = result.output;
+        if (chunkOrAsset.type === 'chunk') {
+            config = await loadConfigFromBundledFile(process.cwd(), chunkOrAsset.code);
+        }
+    }
+    catch (error) {
+        console.log(error);
+        //debug(error);
+    }
+    if (bundle) {
+        await bundle.close();
+    }
+    if (!config) {
+        throw new Error(`No config found.`);
+    }
+    return config;
+}
 
 const _require = createRequire(import.meta.url);
 function getElectronPath() {
@@ -44,26 +120,6 @@ function startElectron(path = './build/electron/main.js') {
     return ps;
 }
 
-new Set([
-    ...builtinModules,
-    'assert/strict',
-    'diagnostics_channel',
-    'dns/promises',
-    'fs/promises',
-    'path/posix',
-    'path/win32',
-    'readline/promises',
-    'stream/consumers',
-    'stream/promises',
-    'stream/web',
-    'timers/promises',
-    'util/types',
-    'wasi'
-]);
-const dynamicImport = new Function('file', 'return import(file)');
-function getLauncherPath(launcher) {
-    return fileURLToPath(new URL(`../src/launch/${launcher}/index.ts`, import.meta.url));
-}
 function htmlPlugin(entryFile = './index.js', options, body = '') {
     return html({
         title: 'Apex Engine',
@@ -74,43 +130,35 @@ function htmlPlugin(entryFile = './index.js', options, body = '') {
             }
             const { attributes, files, meta, publicPath, title } = options;
             const links = (files.css || [])
-                .map(({ fileName }) => {
-                const attrs = makeHtmlAttributes(attributes.link);
-                return `<link href="${publicPath}${fileName}" rel="stylesheet"${attrs}>`;
-            })
+                .map(({ fileName }) => `<link href="${publicPath}${fileName}" rel="stylesheet"${makeHtmlAttributes(attributes.link)}>`)
                 .join('\n');
-            const metas = meta
-                .map(input => {
-                const attrs = makeHtmlAttributes(input);
-                return `<meta${attrs}>`;
-            })
-                .join('\n');
-            return `
-<!doctype html>
-<html${makeHtmlAttributes(attributes.html)}>
-  <head>
-    ${metas}
-    <title>${title}</title>
-    ${links}
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-      }
-
-      #canvas {
-        height: 100vh;
-        width: 100vw;
-      }
-    </style>
-  </head>
-  <body>
-    <canvas id="canvas"></canvas>
-    <script type="module" src="${entryFile}"></script>
-    ${body}
-  </body>
-</html>
-      `;
+            const metas = meta.map(input => `<meta${makeHtmlAttributes(input)}>`).join('\n');
+            return [
+                `<!doctype html>`,
+                `<html${makeHtmlAttributes(attributes.html)}>`,
+                `  <head>`,
+                `    ${metas}`,
+                `    <title>${title}</title>`,
+                `    ${links}`,
+                `    <style>`,
+                `      body {`,
+                `        margin: 0;`,
+                `        overflow: hidden;`,
+                `      }`,
+                ``,
+                `      #canvas {`,
+                `        height: 100vh;`,
+                `        width: 100vw;`,
+                `      }`,
+                `    </style>`,
+                `  </head>`,
+                `  <body>`,
+                `    <canvas id="canvas"></canvas>`,
+                `    <script type="module" src="${entryFile}"></script>`,
+                `    ${body}`,
+                `  </body>`,
+                `</html>`
+            ].join('\n');
         }
     });
 }
@@ -135,7 +183,7 @@ cli
     .action(async (options) => {
     filterDuplicateOptions(options);
     const { config: configFile, debug, platform } = options;
-    const { targets } = await getApexConfig();
+    const { targets } = await getApexConfig(configFile);
     if (debug) {
         isDebugModeOn = true;
     }
@@ -170,46 +218,6 @@ cli.command('build').action(async (options) => {
     process.exit();
 });
 cli.parse();
-function filterDuplicateOptions(options) {
-    for (const [key, value] of Object.entries(options)) {
-        if (Array.isArray(value)) {
-            options[key] = value[value.length - 1];
-        }
-    }
-}
-async function getApexConfig() {
-    let bundle;
-    let config;
-    try {
-        bundle = await rollup({
-            input: resolve(`${CONFIG_FILE_NAME}.ts`),
-            plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
-            onwarn() { }
-        });
-        const result = await bundle.generate({
-            exports: 'named',
-            format: 'esm',
-            externalLiveBindings: false,
-            freeze: false,
-            sourcemap: 'inline'
-        });
-        const chunkOrAsset = result.output[0];
-        if (chunkOrAsset.type === 'chunk') {
-            config = await loadConfigFromBundledFile(process.cwd(), chunkOrAsset.code);
-        }
-    }
-    catch (error) {
-        console.log(error);
-        debug(error);
-    }
-    if (bundle) {
-        await bundle.close();
-    }
-    if (!config) {
-        throw new Error(`No config found.`);
-    }
-    return config;
-}
 async function buildBrowserTarget(target) {
     const buildDir = resolve('build/browser');
     if (existsSync(buildDir)) {
@@ -241,6 +249,9 @@ async function buildBrowserTarget(target) {
 }
 async function buildElectronTarget(target) {
     const buildDir = resolve('build/electron');
+    if (existsSync(buildDir)) {
+        await rimraf(buildDir);
+    }
     let mainBundle;
     let sandboxBundle;
     try {
@@ -281,7 +292,7 @@ async function buildElectronTarget(target) {
             freeze: false,
             sourcemap: 'inline'
         };
-        await mainBundle.write({ ...outputOptions, format: 'cjs' });
+        await mainBundle.write({ ...outputOptions, entryFileNames: '[name].cjs', format: 'cjs' });
         await sandboxBundle.write(outputOptions);
     }
     catch (error) {
@@ -360,6 +371,9 @@ async function serveBrowserTarget(target) {
                 res.end(content, 'utf-8');
             }
             else {
+                if (filePath.includes('favicon')) {
+                    return;
+                }
                 console.log(error);
             }
         });
@@ -408,6 +422,9 @@ async function serveBrowserTarget(target) {
             wss.clients.forEach(socket => {
                 socket.send(JSON.stringify({ type: 'update' }));
             });
+        }
+        if (event.code === 'ERROR') {
+            console.log(event);
         }
     });
     watcher.on('change', file => {
@@ -511,17 +528,19 @@ function getGameMaps() {
     ]));
 }
 function createRollupConfig(launcher, { output, ...options } = {}) {
+    const input = {
+        index: getLauncherPath(launcher),
+        ...Object.fromEntries(glob
+            .sync('src/engine/**/*.ts')
+            .map(file => [
+            relative('src', file.slice(0, file.length - extname(file).length)),
+            fileURLToPath(pathToFileURL(resolve(file)))
+        ])),
+        ...getGameMaps()
+    };
+    console.log(input);
     return {
-        input: {
-            index: getLauncherPath(launcher),
-            ...Object.fromEntries(glob
-                .sync('src/engine/**/*.ts')
-                .map(file => [
-                relative('src/engine', file.slice(0, file.length - extname(file).length)),
-                fileURLToPath(pathToFileURL(resolve(file)))
-            ])),
-            ...getGameMaps()
-        },
+        input,
         output: {
             exports: 'named',
             format: 'esm',
@@ -551,20 +570,6 @@ function createRollupPlugins(buildDir, defaultLevel) {
         nodeResolve({ preferBuiltins: true }),
         typescript({ outDir: buildDir })
     ];
-}
-async function loadConfigFromBundledFile(root, bundledCode) {
-    const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
-    writeFileSync(fileNameTmp, bundledCode);
-    const fileUrl = pathToFileURL(fileNameTmp);
-    try {
-        return (await dynamicImport(fileUrl)).default;
-    }
-    finally {
-        try {
-            unlinkSync(fileNameTmp);
-        }
-        catch { }
-    }
 }
 async function buildEngineWorkers(platform, target) {
     const baseDir = resolve(dirname(fileURLToPath(import.meta.url)), '../src');

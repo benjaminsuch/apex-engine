@@ -1,6 +1,11 @@
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { type Plugin } from 'rollup';
+import nodeResolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
+import { unlinkSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { rollup, type Plugin, type RollupBuild } from 'rollup';
+
+import { dynamicImport } from './utils';
 
 export type BuildPlugin = Plugin | Promise<Plugin>;
 
@@ -32,8 +37,67 @@ export interface InlineConfig {
 }
 
 export const CONFIG_FILE_NAME = 'apex.config';
-export const APEX_DIR = join(fileURLToPath(import.meta.url), '../../../.apex');
+export const APEX_DIR = resolve('.apex');
 
-export function defineConfig(config: ApexConfig) {
+// Using defineConfig in apex.config.ts leads to an MISSING_EXPORTS error for some dependencies :shrug:
+/*export function defineConfig(config: ApexConfig) {
+  return config;
+}*/
+
+export async function loadConfigFromBundledFile(
+  root: string,
+  bundledCode: string
+): Promise<ApexConfig> {
+  const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
+
+  writeFileSync(fileNameTmp, bundledCode);
+
+  const fileUrl = pathToFileURL(fileNameTmp);
+
+  try {
+    return (await dynamicImport(fileUrl)).default;
+  } finally {
+    try {
+      unlinkSync(fileNameTmp);
+    } catch {}
+  }
+}
+
+export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_NAME}.ts`)) {
+  let bundle: RollupBuild | undefined;
+  let config: ApexConfig | undefined;
+  console.log('configFile', configFile);
+  try {
+    bundle = await rollup({
+      input: configFile,
+      plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+      onwarn() {}
+    });
+
+    const result = await bundle.generate({
+      exports: 'named',
+      format: 'esm',
+      externalLiveBindings: false,
+      freeze: false,
+      sourcemap: false
+    });
+    const [chunkOrAsset] = result.output;
+
+    if (chunkOrAsset.type === 'chunk') {
+      config = await loadConfigFromBundledFile(process.cwd(), chunkOrAsset.code);
+    }
+  } catch (error) {
+    console.log(error);
+    //debug(error);
+  }
+
+  if (bundle) {
+    await bundle.close();
+  }
+
+  if (!config) {
+    throw new Error(`No config found.`);
+  }
+
   return config;
 }

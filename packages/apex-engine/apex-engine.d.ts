@@ -1,23 +1,5 @@
-import { Plugin } from 'rollup';
 import { Object3D, PerspectiveCamera } from 'three';
 
-export type BuildPlugin = Plugin | Promise<Plugin>;
-export interface BuildConfig {
-	outDir?: string;
-	plugins?: BuildPlugin[];
-}
-export type Platform = "browser" | "electron" | "node";
-export type Target = "client" | "game" | "server";
-export interface TargetConfig {
-	defaultLevel: string;
-	platform: Platform;
-	target: Target;
-}
-export interface ApexConfig {
-	build?: BuildConfig;
-	targets: TargetConfig[];
-}
-export declare function defineConfig(config: ApexConfig): ApexConfig;
 export interface ILogger {
 	debug(message: string, ...args: any[]): void;
 	error(message: string, ...args: any[]): void;
