@@ -1,7 +1,7 @@
 {
   "name": "apex-engine",
   "description": "A cross-platform game engine written in Typescript.",
-  "version": "0.2.0-0",
+  "version": "0.2.1-0",
   "author": "Benjamin Such",
   "license": "Apache-2.0",
   "type": "module",
@@ -11,22 +11,8 @@
   "bin": {
     "abt": "bin/abt.js"
   },
-  "types": "./apex-engine.d.ts",
-  "exports": {
-    ".": {
-      "types": "./apex-engine.d.ts",
-      "import": "./src/index.ts",
-      "require": "./src/index.ts"
-    },
-    "./abt": {
-      "types": "./src/abt/index.ts",
-      "import": "./src/abt/index.ts",
-      "require": "./src/abt/index.ts"
-    }
-  },
   "files": [
     "bin",
-    "dist",
     "src",
     "types",
     "package.json"
@@ -60,7 +46,6 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^24.0.1",
     "@rollup/plugin-json": "^6.0.0",
-    "@tinyhttp/app": "^2.0.29",
     "@types/node": "^18.11.18",
     "@types/three": "^0.153.0",
     "dts-bundle-generator": "^8.0.1",
@@ -73,7 +58,6 @@
     "typescript": "^5.0.3"
   },
   "peerDependencies": {
-    "@tinyhttp/app": "^2.0.29",
     "electron": "^23.1.0",
     "socket.io": "^4.7.1",
     "socket.io-client": "^4.7.1",

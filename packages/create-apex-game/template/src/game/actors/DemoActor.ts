@@ -1,4 +1,5 @@
-import { Actor, ActorComponent, SceneComponent } from 'apex-engine';
+import { Actor } from 'apex-engine/src/engine';
+import { ActorComponent, SceneComponent } from 'apex-engine/src/engine/components';
 
 export class DemoActor extends Actor {
   protected override onRegister(): void {

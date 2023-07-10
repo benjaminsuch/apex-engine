@@ -1,6 +1,4 @@
-import { defineConfig } from 'apex-engine';
-
-export default defineConfig({
+export default {
   targets: [
     {
       target: 'client',
@@ -13,4 +11,4 @@ export default defineConfig({
       defaultLevel: 'electron/maps/index.js'
     }
   ]
-});
+};

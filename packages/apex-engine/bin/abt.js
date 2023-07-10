@@ -383,6 +383,7 @@ async function buildElectronTarget(target) {
     }
     let mainBundle;
     let sandboxBundle;
+    process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), 'build/electron/index.html');
     try {
         mainBundle = await rollup({
             ...createRollupConfig('electron-main', {
@@ -566,6 +567,7 @@ async function serveElectronTarget(target) {
     if (existsSync(buildDir)) {
         await rimraf(buildDir);
     }
+    process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
     const watcherMain = watch({
         ...createRollupConfig('electron-main', {
             input: {
@@ -602,7 +604,11 @@ async function serveElectronTarget(target) {
             output: {
                 dir: buildDir
             },
-            plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin('./sandbox.js')],
+            plugins: [
+                workersPlugin(),
+                ...createRollupPlugins(buildDir, target.defaultLevel),
+                htmlPlugin('./sandbox.js')
+            ],
             onwarn() { }
         })
     });

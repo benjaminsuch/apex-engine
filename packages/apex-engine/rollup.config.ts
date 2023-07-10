@@ -24,7 +24,7 @@ export default defineConfig([
     external: [...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies)],
     plugins: [
       nodeResolve({ preferBuiltins: true }),
-      typescript({ tsconfig: './tsconfig.engine.json' }),
+      typescript({ exclude: ['node_modules', 'rollup.config.ts'] }),
       commonjs(),
       json()
     ],
