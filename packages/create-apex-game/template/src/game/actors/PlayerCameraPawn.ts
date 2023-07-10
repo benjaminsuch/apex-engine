@@ -1,4 +1,4 @@
-import { CameraComponent, Pawn } from 'apex-engine';
+import { CameraComponent, Pawn } from 'apex-engine/src/engine';
 
 export class PlayerCamera extends Pawn {
   protected override onRegister(): void {

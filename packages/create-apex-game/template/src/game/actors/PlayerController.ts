@@ -1,7 +1,5 @@
-import {
-  PlayerController as BasePlayerController,
-  type TRenderSetCameraMessage
-} from 'apex-engine';
+import { PlayerController as BasePlayerController } from 'apex-engine/src/engine';
+import { type TRenderSetCameraMessage } from 'apex-engine/src/platform/renderer/common';
 
 export class PlayerController extends BasePlayerController {
   public override beginPlay(): void {
