@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import prompts from 'prompts';
 const defaultProjectName = 'my-project';
-const rootDir = resolve(fileURLToPath(import.meta.url), '../');
+const createApexGameDir = resolve(fileURLToPath(import.meta.url), '../');
 const program = new Command();
 program
     .name('create-apex-game')
@@ -121,7 +121,7 @@ function copyProjectFiles(dest, projectName = defaultProjectName) {
     if (!existsSync(dest)) {
         mkdirSync(dest);
     }
-    copy(join(rootDir, 'template'), dest);
+    copy(join(createApexGameDir, 'template'), dest);
 }
 function copy(src, dest) {
     const stat = statSync(src);

@@ -1,8 +1,8 @@
-import { Level } from 'apex-engine';
+import { Level } from 'apex-engine/src/engine';
 
-import { DemoActor } from '../actors/DemoActor';
-import { PlayerCamera } from '../actors/PlayerCameraPawn';
-import { PlayerController } from '../actors/PlayerController';
+import { PlayerController } from 'engine/PlayerController';
+import { DemoActor } from 'game/actors/DemoActor';
+import { PlayerCamera } from 'game/actors/PlayerCameraPawn';
 
 export default class PacificOceanLevel extends Level {
   public override init() {
