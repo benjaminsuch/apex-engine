@@ -6,7 +6,7 @@ import glob from 'glob';
 import mime from 'mime';
 import { existsSync, mkdirSync, readFile } from 'node:fs';
 import { createServer, Server } from 'node:http';
-import { extname, posix, relative, resolve } from 'node:path';
+import { extname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
 import {
@@ -157,6 +157,8 @@ async function buildElectronTarget(target: TargetConfig) {
 
   let mainBundle: RollupBuild | undefined;
   let sandboxBundle: RollupBuild | undefined;
+
+  process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), 'build/electron/index.html');
 
   try {
     mainBundle = await rollup({
@@ -368,6 +370,8 @@ async function serveElectronTarget(target: TargetConfig) {
     await rimraf(buildDir);
   }
 
+  process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
+
   const watcherMain = watch({
     ...createRollupConfig('electron-main', {
       input: {
@@ -410,7 +414,11 @@ async function serveElectronTarget(target: TargetConfig) {
       output: {
         dir: buildDir
       },
-      plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin('./sandbox.js')],
+      plugins: [
+        workersPlugin(),
+        ...createRollupPlugins(buildDir, target.defaultLevel),
+        htmlPlugin('./sandbox.js')
+      ],
       onwarn() {}
     })
   });
