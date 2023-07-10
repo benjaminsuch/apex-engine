@@ -1,34 +1,14 @@
-import { Plugin } from 'rollup';
-import { Object3D, PerspectiveCamera, WebGLRenderer } from 'three';
+import { Object3D, PerspectiveCamera } from 'three';
 
-export type PluginOption = Plugin | false | null | undefined | PluginOption[] | Promise<Plugin | false | null | undefined | PluginOption[]>;
-export interface BuildConfig {
-	outDir?: string;
+export interface ILogger {
+	debug(message: string, ...args: any[]): void;
+	error(message: string, ...args: any[]): void;
+	info(message: string, ...args: any[]): void;
+	warn(message: string, ...args: any[]): void;
 }
-export type Platform = "browser" | "electron" | "node";
-export type Target = "client" | "game" | "server";
-export interface TargetConfig {
-	defaultLevel: string;
-	platform: Platform;
-	target: Target;
-	plugins?: PluginOption[];
-}
-export interface ApexConfig {
-	build?: BuildConfig;
-	targets: TargetConfig[];
-}
-export declare function defineConfig(config: ApexConfig): ApexConfig;
 export interface ServiceIdentifier<T> {
 	(...args: any[]): void;
 }
-export type ServiceDependencies = {
-	id: ServiceIdentifier<any>;
-	index: number;
-	optional: boolean;
-};
-export type TClass = {
-	new (...args: any[]): void;
-};
 export type RegisteredService = {
 	_injectibleService: undefined;
 };
@@ -38,38 +18,15 @@ export type GetLeadingNonServiceArgs<TArgs extends any[]> = TArgs extends [
 	...infer TFirst,
 	RegisteredService
 ] ? GetLeadingNonServiceArgs<TFirst> : TArgs;
-export type SingletonRegistry = [
-	ServiceIdentifier<any>,
-	new (...services: any[]) => any
-][];
-export declare class ServiceCollection {
-	private readonly entries;
-	constructor(...entries: [
-		ServiceIdentifier<any>,
-		any
-	][]);
-	set<T>(id: ServiceIdentifier<T>, instance: T): T;
-	has(id: ServiceIdentifier<any>): boolean;
-	get<T>(id: ServiceIdentifier<T>): T;
+export interface IConsoleLogger extends ILogger {
+	readonly _injectibleService: undefined;
 }
+declare const IConsoleLogger: ServiceIdentifier<IConsoleLogger>;
 export interface IInstatiationService {
 	readonly _injectibleService: undefined;
 	createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(Constructor: C, ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>): R;
 }
-export declare class InstantiationService implements IInstatiationService {
-	private readonly services;
-	readonly _injectibleService: undefined;
-	private static readonly registeredServices;
-	private static registerServiceDependency;
-	private static getServiceDependencies;
-	static createDecorator<T>(serviceId: string): ServiceIdentifier<T>;
-	private static readonly singletonRegistry;
-	static registerSingleton<T, Services extends RegisteredService[]>(id: ServiceIdentifier<T>, Constructor: new (...services: Services) => T): void;
-	static getSingletonServices(): SingletonRegistry;
-	constructor(services?: ServiceCollection);
-	createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(Constructor: C, ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>): R;
-}
-export declare const IInstatiationService: ServiceIdentifier<IInstatiationService>;
+declare const IInstatiationService: ServiceIdentifier<IInstatiationService>;
 export type TRenderMessageType = "init" | "init-scene-proxy" | "set-camera" | "viewport-resize";
 export type TRenderMessageData<T = {
 	[k: string]: unknown;
@@ -79,68 +36,12 @@ export type TRenderMessageData<T = {
 export type TRenderMessage<Type extends TRenderMessageType, Data> = {
 	type: Type;
 } & (Data extends TRenderMessageData ? TRenderMessageData<Data> : `Invalid type: 'Data' has to be of type 'object'.`);
-export interface TRenderWorkerInitData {
-	canvas: OffscreenCanvas;
-	initialCanvasHeight: number;
-	initialCanvasWidth: number;
-	messagePort: MessagePort;
-}
-export type TRenderWorkerInitMessage = TRenderMessage<"init", TRenderWorkerInitData>;
-export type TRenderViewportResizeData = TRenderMessageData<{
-	height: number;
-	width: number;
-}>;
-export type TRenderViewportResizeMessage = TRenderMessage<"viewport-resize", TRenderViewportResizeData>;
-export type TRenderSceneProxyInitData = TRenderMessageData<{
-	component: SceneProxyConstructorData;
-}>;
-export type TRenderSceneProxyInitMessage = TRenderMessage<"init-scene-proxy", TRenderSceneProxyInitData>;
-export type TRenderSetCameraData = TRenderMessageData<{
-	camera: CameraProxyConstructorData;
-}>;
-export type TRenderSetCameraMessage = TRenderMessage<"set-camera", TRenderSetCameraData>;
 export interface IRenderer {
 	readonly _injectibleService: undefined;
 	init(): void;
 	send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(message: T, transferList?: Transferable[]): void;
 }
-export declare const IRenderer: ServiceIdentifier<IRenderer>;
-export declare class Renderer {
-	readonly webGLRenderer: WebGLRenderer;
-	camera?: CameraSceneProxy;
-	private readonly scene;
-	private readonly proxyObjects;
-	constructor(canvas: OffscreenCanvas);
-	init(): void;
-	start(): void;
-	setSize(height: number, width: number): void;
-	addSceneProxy(proxy: SceneProxy): void;
-	getSceneProxy<T extends SceneProxy>(uuid: T["uuid"]): T | undefined;
-	private tick;
-}
-export interface ILogger {
-	debug(message: string, ...args: any[]): void;
-	error(message: string, ...args: any[]): void;
-	info(message: string, ...args: any[]): void;
-	warn(message: string, ...args: any[]): void;
-}
-export declare abstract class AbstractLogger implements ILogger {
-	abstract debug(message: string, ...args: any[]): void;
-	abstract error(message: string, ...args: any[]): void;
-	abstract info(message: string, ...args: any[]): void;
-	abstract warn(message: string, ...args: any[]): void;
-}
-export declare class ConsoleLogger extends AbstractLogger implements IConsoleLogger {
-	readonly _injectibleService: undefined;
-	debug(message: string, ...args: any[]): void;
-	error(message: string, ...args: any[]): void;
-	info(message: string, ...args: any[]): void;
-	warn(message: string, ...args: any[]): void;
-}
-export interface IConsoleLogger extends ILogger {
-	readonly _injectibleService: undefined;
-}
-export declare const IConsoleLogger: ServiceIdentifier<IConsoleLogger>;
+declare const IRenderer: ServiceIdentifier<IRenderer>;
 export declare class EngineLoop {
 	private readonly instantiationService;
 	private readonly renderer;
@@ -240,8 +141,8 @@ export declare class Euler {
 	set y(val: number);
 	get z(): number;
 	set z(val: number);
-	get order(): "XYZ" | "XZY" | "YZX" | "YXZ" | "ZXY" | "ZYX";
-	set order(val: "XYZ" | "XZY" | "YZX" | "YXZ" | "ZXY" | "ZYX");
+	get order(): "XYZ" | "YXZ" | "ZXY" | "ZYX" | "YZX" | "XZY";
+	set order(val: "XYZ" | "YXZ" | "ZXY" | "ZYX" | "YZX" | "XZY");
 	isEuler: boolean;
 	constructor(buffer?: ArrayBufferLike);
 	set(x: Euler["x"], y: Euler["y"], z: Euler["z"], order: Euler["order"]): this;
@@ -255,7 +156,7 @@ export declare class Euler {
 	fromArray(array: number[]): this;
 	toArray(array?: number[], offset?: number): number[];
 	toJSON(): ArrayBufferLike;
-	[Symbol.iterator](): Generator<number | "XYZ" | "XZY" | "YZX" | "YXZ" | "ZXY" | "ZYX", void, unknown>;
+	[Symbol.iterator](): Generator<number | "XYZ" | "YXZ" | "ZXY" | "ZYX" | "YZX" | "XZY", void, unknown>;
 }
 export declare class Vector3 {
 	#private;
@@ -456,6 +357,8 @@ export declare class CameraSceneProxy extends SceneProxy {
 	near: number;
 	sceneObject: PerspectiveCamera;
 	constructor({ buffer, ...data }: CameraProxyConstructorData);
+	updateProjectionMatrix(): void;
+	updateMatrixWorld(force?: boolean): void;
 	tick(): void;
 }
 export type SceneObjectType = "Object3D" | "PerspectiveCamera";
@@ -523,19 +426,6 @@ export declare class PlayerController extends Actor {
 	protected camera?: CameraComponent;
 	getPawn(): Pawn | undefined;
 	setPawn(pawn: Pawn): void;
-}
-export declare class BrowserRenderer implements IRenderer {
-	readonly _injectibleService: undefined;
-	private static instance?;
-	static getInstance(): BrowserRenderer;
-	private readonly renderWorker;
-	private readonly messageChannel;
-	private canvas?;
-	private isInitialized;
-	constructor();
-	init(): Promise<void>;
-	send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(message: T, transferList?: Transferable[]): void;
-	private handleWindowResize;
 }
 
 export {};

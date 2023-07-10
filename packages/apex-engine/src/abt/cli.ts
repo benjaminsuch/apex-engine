@@ -4,17 +4,25 @@ import typescript from '@rollup/plugin-typescript';
 import { cac } from 'cac';
 import glob from 'glob';
 import mime from 'mime';
-import { existsSync, mkdirSync, readFile, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFile } from 'node:fs';
 import { createServer, Server } from 'node:http';
 import { extname, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
-import { type OutputOptions, rollup, watch, type RollupOptions, type Plugin } from 'rollup';
+import {
+  rollup,
+  watch,
+  type OutputOptions,
+  type Plugin,
+  type RollupBuild,
+  type RollupOptions
+} from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import { APEX_DIR, CONFIG_FILE_NAME, Platform, type ApexConfig, type TargetConfig } from './config';
+import { APEX_DIR, type TargetConfig, getApexConfig } from './config';
 import { startElectron } from './electron';
-import { dynamicImport, getLauncherPath, htmlPlugin, type Launcher } from './utils';
+import { htmlPlugin, workersPlugin } from './plugins';
+import { filterDuplicateOptions, getLauncherPath, type Launcher } from './utils';
 
 interface CLIOptions {
   config?: string;
@@ -32,7 +40,6 @@ const debug = (...args: Parameters<typeof console.debug>) =>
   isDebugModeOn && console.debug('DEBUG', ...args);
 
 wss.on('connection', ws => {
-  console.log('client connected');
   ws.on('error', console.error);
 });
 
@@ -51,7 +58,7 @@ cli
     filterDuplicateOptions(options);
 
     const { config: configFile, debug, platform } = options;
-    const { targets } = await getApexConfig();
+    const { targets } = await getApexConfig(configFile);
 
     if (debug) {
       isDebugModeOn = true;
@@ -78,7 +85,7 @@ cli.command('build').action(async (options: CLIOptions) => {
   filterDuplicateOptions(options);
 
   const { config: configFile, debug, platform } = options;
-  const { targets } = await getApexConfig();
+  const { targets } = await getApexConfig(configFile);
 
   if (debug) {
     isDebugModeOn = true;
@@ -88,59 +95,21 @@ cli.command('build').action(async (options: CLIOptions) => {
     if (platform && targetConfig.platform !== platform) {
       continue;
     }
-    await buildTarget(targetConfig);
+    if (targetConfig.platform === 'browser') {
+      await buildBrowserTarget(targetConfig);
+    }
+    if (targetConfig.platform === 'electron') {
+      await buildElectronTarget(targetConfig);
+    }
+    if (targetConfig.platform === 'node') {
+      await buildNodeTarget(targetConfig);
+    }
   }
 
   process.exit();
 });
 
 cli.parse();
-
-function filterDuplicateOptions<T extends object>(options: T) {
-  for (const [key, value] of Object.entries(options)) {
-    if (Array.isArray(value)) {
-      options[key as keyof T] = value[value.length - 1];
-    }
-  }
-}
-
-async function getApexConfig() {
-  let bundle;
-  let config;
-
-  try {
-    bundle = await rollup({
-      input: resolve(`${CONFIG_FILE_NAME}.ts`),
-      plugins: [nodeResolve({ preferBuiltins: true }), typescript()]
-    });
-
-    const result = await bundle.generate({
-      exports: 'named',
-      format: 'esm',
-      externalLiveBindings: false,
-      freeze: false,
-      sourcemap: 'inline'
-    });
-    const chunkOrAsset = result.output[0];
-
-    if (chunkOrAsset.type === 'chunk') {
-      config = await loadConfigFromBundledFile(process.cwd(), chunkOrAsset.code);
-    }
-  } catch (error) {
-    console.log(error);
-    debug(error);
-  }
-
-  if (bundle) {
-    await bundle.close();
-  }
-
-  if (!config) {
-    throw new Error(`No config found.`);
-  }
-
-  return config;
-}
 
 async function buildBrowserTarget(target: TargetConfig) {
   const buildDir = resolve('build/browser');
@@ -149,15 +118,18 @@ async function buildBrowserTarget(target: TargetConfig) {
     await rimraf(buildDir);
   }
 
-  let bundle;
+  let bundle: RollupBuild | undefined;
 
   try {
     bundle = await rollup({
       ...createRollupConfig('browser'),
-      plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin()]
+      plugins: [
+        workersPlugin(),
+        ...createRollupPlugins(buildDir, target.defaultLevel),
+        htmlPlugin()
+      ],
+      onwarn() {}
     });
-
-    await buildEngineWorkers('browser', target);
 
     await bundle.write({
       dir: buildDir,
@@ -179,8 +151,12 @@ async function buildBrowserTarget(target: TargetConfig) {
 async function buildElectronTarget(target: TargetConfig) {
   const buildDir = resolve('build/electron');
 
-  let mainBundle;
-  let sandboxBundle;
+  if (existsSync(buildDir)) {
+    await rimraf(buildDir);
+  }
+
+  let mainBundle: RollupBuild | undefined;
+  let sandboxBundle: RollupBuild | undefined;
 
   try {
     mainBundle = await rollup({
@@ -188,8 +164,10 @@ async function buildElectronTarget(target: TargetConfig) {
         input: {
           main: getLauncherPath('electron-main')
         },
-        plugins: createRollupPlugins(buildDir, target.defaultLevel),
-        external: ['electron']
+        // Our worker plugin doesn't support nodejs workers yet
+        plugins: [/*workersPlugin(),*/ ...createRollupPlugins(buildDir, target.defaultLevel)],
+        external: ['electron'],
+        onwarn() {}
       })
     });
 
@@ -199,6 +177,7 @@ async function buildElectronTarget(target: TargetConfig) {
           sandbox: getLauncherPath('electron-sandbox')
         },
         plugins: [
+          workersPlugin(),
           ...createRollupPlugins(buildDir, target.defaultLevel),
           htmlPlugin('./sandbox.js', {
             meta: [
@@ -208,7 +187,8 @@ async function buildElectronTarget(target: TargetConfig) {
               }
             ]
           })
-        ]
+        ],
+        onwarn() {}
       })
     });
 
@@ -221,7 +201,7 @@ async function buildElectronTarget(target: TargetConfig) {
       sourcemap: 'inline'
     };
 
-    await mainBundle.write({ ...outputOptions, format: 'cjs' });
+    await mainBundle.write({ ...outputOptions, entryFileNames: '[name].cjs', format: 'cjs' });
     await sandboxBundle.write(outputOptions);
   } catch (error) {
     debug(error);
@@ -238,12 +218,14 @@ async function buildElectronTarget(target: TargetConfig) {
 async function buildNodeTarget(target: TargetConfig) {
   const buildDir = resolve('build/node');
 
-  let bundle;
+  let bundle: RollupBuild | undefined;
 
   try {
     bundle = await rollup({
       ...createRollupConfig('node'),
       plugins: [
+        // Our worker plugin doesn't support nodejs workers yet
+        /*workersPlugin(),*/
         replace({
           preventAssignment: true,
           values: {
@@ -252,7 +234,8 @@ async function buildNodeTarget(target: TargetConfig) {
         }),
         nodeResolve({ preferBuiltins: true }),
         typescript({ esModuleInterop: true, outDir: buildDir })
-      ]
+      ],
+      onwarn() {}
     });
 
     await bundle.write({
@@ -271,18 +254,6 @@ async function buildNodeTarget(target: TargetConfig) {
 
   if (bundle) {
     await bundle.close();
-  }
-}
-
-async function buildTarget(config: TargetConfig) {
-  if (config.platform === 'browser') {
-    await buildBrowserTarget(config);
-  }
-  if (config.platform === 'electron') {
-    await buildElectronTarget(config);
-  }
-  if (config.platform === 'node') {
-    await buildNodeTarget(config);
   }
 }
 
@@ -308,6 +279,9 @@ async function serveBrowserTarget(target: TargetConfig) {
         });
         res.end(content, 'utf-8');
       } else {
+        if (filePath.includes('favicon')) {
+          return;
+        }
         console.log(error);
       }
     });
@@ -315,56 +289,65 @@ async function serveBrowserTarget(target: TargetConfig) {
 
   closeServerOnTermination();
 
-  await buildEngineWorkers('browser', target);
-
   const watcher = watch({
     ...createRollupConfig('browser', {
       output: {
         dir: buildDir
       },
       plugins: [
+        workersPlugin(),
         ...createRollupPlugins(buildDir, target.defaultLevel),
         htmlPlugin(
           './index.js',
           {},
-          `
-<script type="module">
-  const ws = new WebSocket('ws://localhost:24678')
-
-  ws.addEventListener('open', () => {
-    console.log('connection open')
-    ws.send('message from client')
-  })
-
-  ws.addEventListener('message', async ({data}) => {
-    let parsed
-
-    try {
-      parsed = JSON.parse(String(data))
-    } catch {}
-
-    if (parsed && parsed.type === 'update') {
-      window.location.reload()
-    }
-  })
-</script>
-        `
+          [
+            `<script type="module">`,
+            `  const ws = new WebSocket('ws://localhost:24678')`,
+            ``,
+            `  ws.addEventListener('open', () => {`,
+            `    console.log('connection open')`,
+            `    ws.send('message from client')`,
+            `  })`,
+            ``,
+            `  ws.addEventListener('message', async ({data}) => {`,
+            ``,
+            `    let parsed`,
+            ``,
+            `    try {`,
+            `      parsed = JSON.parse(String(data))`,
+            `    } catch {}`,
+            ``,
+            `    if (parsed && parsed.type === 'update') {`,
+            `      window.location.reload()`,
+            `    }`,
+            `  })`,
+            `</script>`
+          ].join('\n')
         )
-      ]
+      ],
+      onwarn() {}
     })
-  });
-
-  server.listen(3000, 'localhost', () => {
-    log('Local: http://localhost:3000');
   });
 
   watcher.on('event', async event => {
     log('[browser:watcher]', event.code);
 
+    if (event.code === 'END') {
+      if (!server.listening) {
+        server.listen(3000, 'localhost', () => {
+          log('\nLocal: http://localhost:3000');
+        });
+      }
+    }
+
     if (event.code === 'BUNDLE_END') {
       wss.clients.forEach(socket => {
         socket.send(JSON.stringify({ type: 'update' }));
       });
+    }
+
+    if (event.code === 'ERROR') {
+      console.log(event);
     }
   });
 
@@ -385,8 +368,6 @@ async function serveElectronTarget(target: TargetConfig) {
     await rimraf(buildDir);
   }
 
-  await buildEngineWorkers('electron-sandbox', target);
-
   const watcherMain = watch({
     ...createRollupConfig('electron-main', {
       input: {
@@ -398,7 +379,8 @@ async function serveElectronTarget(target: TargetConfig) {
         sourcemap: false
       },
       plugins: createRollupPlugins(buildDir, target.defaultLevel),
-      external: ['electron']
+      external: ['electron'],
+      onwarn() {}
     })
   });
 
@@ -428,7 +410,8 @@ async function serveElectronTarget(target: TargetConfig) {
       output: {
         dir: buildDir
       },
-      plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin('./sandbox.js')]
+      plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin('./sandbox.js')],
+      onwarn() {}
     })
   });
 
@@ -490,6 +473,17 @@ function closeServerOnTermination() {
   });
 }
 
+function getEngineSourceFiles() {
+  return Object.fromEntries(
+    glob
+      .sync('src/engine/**/*.ts')
+      .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file)))
+      ])
+  );
+}
+
 function getGameMaps() {
   return Object.fromEntries(
     glob
@@ -505,19 +499,14 @@ function createRollupConfig(
   launcher: Launcher,
   { output, ...options }: RollupOptions = {}
 ): RollupOptions {
+  const input = {
+    index: getLauncherPath(launcher),
+    ...getEngineSourceFiles(),
+    ...getGameMaps()
+  };
+
   return {
-    input: {
-      index: getLauncherPath(launcher),
-      ...Object.fromEntries(
-        glob
-          .sync('src/engine/**/*.ts')
-          .map(file => [
-            relative('src/engine', file.slice(0, file.length - extname(file).length)),
-            fileURLToPath(pathToFileURL(resolve(file)))
-          ])
-      ),
-      ...getGameMaps()
-    },
+    input,
     output: {
       exports: 'named',
       format: 'esm',
@@ -548,70 +537,4 @@ function createRollupPlugins(buildDir: string, defaultLevel: string): Plugin[] {
     nodeResolve({ preferBuiltins: true }),
     typescript({ outDir: buildDir })
   ];
-}
-
-async function loadConfigFromBundledFile(root: string, bundledCode: string): Promise<ApexConfig> {
-  const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
-
-  writeFileSync(fileNameTmp, bundledCode);
-
-  const fileUrl = pathToFileURL(fileNameTmp);
-
-  try {
-    return (await dynamicImport(fileUrl)).default;
-  } finally {
-    try {
-      unlinkSync(fileNameTmp);
-    } catch {}
-  }
-}
-
-async function buildEngineWorkers(
-  platform: Exclude<Platform, 'electron'> | 'electron-main' | 'electron-sandbox',
-  target: TargetConfig
-) {
-  const input = {
-    renderWorker: fileURLToPath(
-      new URL(`../src/platform/renderer/${platform}/renderWorker.ts`, import.meta.url)
-    )
-  };
-
-  const buildDir = resolve(
-    APEX_DIR,
-    `build/${platform.includes('electron') ? 'electron' : platform}/workers`
-  );
-
-  let bundle;
-
-  try {
-    bundle = await rollup({
-      input,
-      preserveEntrySignatures: false,
-      plugins: [
-        replace({
-          preventAssignment: true,
-          values: {
-            DEFAULT_LEVEL: JSON.stringify(target.defaultLevel)
-          }
-        }),
-        nodeResolve({ preferBuiltins: true }),
-        typescript({ outDir: buildDir })
-      ]
-    });
-
-    await bundle.write({
-      dir: buildDir,
-      exports: 'named',
-      format: 'esm',
-      externalLiveBindings: false,
-      freeze: false,
-      sourcemap: 'inline'
-    });
-  } catch (error) {
-    debug(error);
-  }
-
-  if (bundle) {
-    await bundle.close();
-  }
 }

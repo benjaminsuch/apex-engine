@@ -13,17 +13,18 @@ export default defineConfig([
       abt: 'src/abt/cli.ts'
     },
     output: {
-      dir: 'dist',
+      dir: 'bin',
       exports: 'named',
       format: 'esm',
       externalLiveBindings: false,
       freeze: false,
-      sourcemap: 'inline'
+      sourcemap: false,
+      banner: '#!/usr/bin/env node'
     },
     external: [...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies)],
     plugins: [
       nodeResolve({ preferBuiltins: true }),
-      typescript({ tsconfig: './tsconfig.abt.json' }),
+      typescript({ tsconfig: './tsconfig.engine.json' }),
       commonjs(),
       json()
     ],

@@ -1,4 +1,3 @@
-import html, { makeHtmlAttributes, type RollupHtmlOptions } from '@rollup/plugin-html';
 import { builtinModules } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
@@ -33,61 +32,10 @@ export function getLauncherPath(
   return fileURLToPath(new URL(`../src/launch/${launcher}/index.ts`, import.meta.url));
 }
 
-export function htmlPlugin(
-  entryFile: string = './index.js',
-  options?: RollupHtmlOptions,
-  body: string = ''
-) {
-  return html({
-    title: 'Apex Engine',
-    ...options,
-    template(options) {
-      if (!options) {
-        return '';
-      }
-
-      const { attributes, files, meta, publicPath, title } = options;
-
-      const links = (files.css || [])
-        .map(({ fileName }) => {
-          const attrs = makeHtmlAttributes(attributes.link);
-          return `<link href="${publicPath}${fileName}" rel="stylesheet"${attrs}>`;
-        })
-        .join('\n');
-
-      const metas = meta
-        .map(input => {
-          const attrs = makeHtmlAttributes(input);
-          return `<meta${attrs}>`;
-        })
-        .join('\n');
-
-      return `
-<!doctype html>
-<html${makeHtmlAttributes(attributes.html)}>
-  <head>
-    ${metas}
-    <title>${title}</title>
-    ${links}
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-      }
-
-      #canvas {
-        height: 100vh;
-        width: 100vw;
-      }
-    </style>
-  </head>
-  <body>
-    <canvas id="canvas"></canvas>
-    <script type="module" src="${entryFile}"></script>
-    ${body}
-  </body>
-</html>
-      `;
+export function filterDuplicateOptions<T extends object>(options: T) {
+  for (const [key, value] of Object.entries(options)) {
+    if (Array.isArray(value)) {
+      options[key as keyof T] = value[value.length - 1];
     }
-  });
+  }
 }

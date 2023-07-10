@@ -1,12 +1,15 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["../src"],
+  "include": ["src", "src/abt/index.ts"],
+  "exclude": ["src/abt"],
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "outDir": "build",
     "declaration": true,
     "emitDeclarationOnly": true,
     "removeComments": true,
+    "skipLibCheck": false,
     "sourceMap": false
   }
 }

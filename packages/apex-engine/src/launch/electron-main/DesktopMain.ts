@@ -55,6 +55,7 @@ export class DesktopMain {
     });
 
     if (process.env['ELECTRON_RENDERER_URL']) {
+      console.log('url', process.env['ELECTRON_RENDERER_URL']);
       this.window.loadURL(process.env['ELECTRON_RENDERER_URL']);
     } else if (IS_DEV) {
       this.window.loadURL(join(process.cwd(), 'node_modules/.apex/build/electron/index.html'));
