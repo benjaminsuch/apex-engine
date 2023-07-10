@@ -4,16 +4,16 @@ import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
 import { cac } from 'cac';
 import glob from 'glob';
-import mime from 'mime';
-import { writeFileSync, unlinkSync, existsSync, readFileSync, mkdirSync, readFile, readdirSync, lstatSync } from 'node:fs';
-import { createServer } from 'node:http';
+import 'mime';
+import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'node:fs';
+import 'node:http';
 import { resolve, dirname, join, isAbsolute, extname, basename, posix, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
-import { rollup, watch } from 'rollup';
+import { rollup } from 'rollup';
 import { WebSocketServer } from 'ws';
 import { builtinModules, createRequire } from 'node:module';
-import { spawn } from 'node:child_process';
+import 'node:child_process';
 import html, { makeHtmlAttributes } from '@rollup/plugin-html';
 
 new Set([
@@ -98,30 +98,7 @@ async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
     return config;
 }
 
-const _require$1 = createRequire(import.meta.url);
-function getElectronPath() {
-    let electronExecPath = process.env.ELECTRON_EXEC_PATH ?? '';
-    if (!electronExecPath) {
-        const electronPath = dirname(_require$1.resolve('electron'));
-        const pathFile = join(electronPath, 'path.txt');
-        if (existsSync(pathFile)) {
-            const execPath = readFileSync(pathFile, 'utf-8');
-            electronExecPath = join(electronPath, 'dist', execPath);
-            process.env.ELECTRON_EXEC_PATH = electronExecPath;
-        }
-    }
-    return electronExecPath;
-}
-function startElectron(path = './build/electron/main.js') {
-    const ps = spawn(getElectronPath(), [path]);
-    ps.stdout.on('data', chunk => {
-        console.log(chunk.toString());
-    });
-    ps.stderr.on('data', chunk => {
-        console.log(chunk.toString());
-    });
-    return ps;
-}
+createRequire(import.meta.url);
 
 function htmlPlugin(entryFile = './index.js', options, body = '') {
     return html({
@@ -283,7 +260,6 @@ function workersPlugin(options = { inline: false }) {
 }
 
 const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
-const { log } = console;
 let isDebugModeOn = false;
 const debug = (...args) => isDebugModeOn && console.debug('DEBUG', ...args);
 wss.on('connection', ws => {
@@ -312,18 +288,13 @@ cli
         if (platform && targetConfig.platform !== platform) {
             continue;
         }
-        if (targetConfig.platform === 'browser') {
-            await serveBrowserTarget(targetConfig);
-        }
-        if (targetConfig.platform === 'electron') {
-            await serveElectronTarget(targetConfig);
-        }
+        await buildTarget(targetConfig);
     }
 });
 cli.command('build').action(async (options) => {
     filterDuplicateOptions(options);
     const { config: configFile, debug, platform } = options;
-    const { targets } = await getApexConfig();
+    const { targets } = await getApexConfig(configFile);
     if (debug) {
         isDebugModeOn = true;
     }
@@ -345,10 +316,13 @@ async function buildBrowserTarget(target) {
     try {
         bundle = await rollup({
             ...createRollupConfig('browser'),
-            plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin()],
+            plugins: [
+                workersPlugin(),
+                ...createRollupPlugins(buildDir, target.defaultLevel),
+                htmlPlugin()
+            ],
             onwarn() { }
         });
-        await buildEngineWorkers('browser', target);
         await bundle.write({
             dir: buildDir,
             exports: 'named',
@@ -378,7 +352,8 @@ async function buildElectronTarget(target) {
                 input: {
                     main: getLauncherPath('electron-main')
                 },
-                plugins: createRollupPlugins(buildDir, target.defaultLevel),
+                // Our worker plugin doesn't support nodejs workers yet
+                plugins: [/*workersPlugin(),*/ ...createRollupPlugins(buildDir, target.defaultLevel)],
                 external: ['electron'],
                 onwarn() { }
             })
@@ -389,6 +364,7 @@ async function buildElectronTarget(target) {
                     sandbox: getLauncherPath('electron-sandbox')
                 },
                 plugins: [
+                    workersPlugin(),
                     ...createRollupPlugins(buildDir, target.defaultLevel),
                     htmlPlugin('./sandbox.js', {
                         meta: [
@@ -430,6 +406,8 @@ async function buildNodeTarget(target) {
         bundle = await rollup({
             ...createRollupConfig('node'),
             plugins: [
+                // Our worker plugin doesn't support nodejs workers yet
+                /*workersPlugin(),*/
                 replace({
                     preventAssignment: true,
                     values: {
@@ -469,173 +447,6 @@ async function buildTarget(config) {
     if (config.platform === 'node') {
         await buildNodeTarget(config);
     }
-}
-let server;
-async function serveBrowserTarget(target) {
-    const buildDir = resolve(APEX_DIR, 'build/browser');
-    if (existsSync(buildDir)) {
-        await rimraf(buildDir);
-    }
-    server = createServer((req, res) => {
-        const unsafePath = decodeURI((req.url ?? '').split('?')[0]);
-        const urlPath = posix.normalize(unsafePath);
-        readFileFromContentBase(buildDir, urlPath, (error, content, filePath) => {
-            if (!error) {
-                res.writeHead(200, {
-                    'Content-Type': mime.getType(filePath) ?? 'text/plain',
-                    'Cross-Origin-Opener-Policy': 'same-origin',
-                    'Cross-Origin-Embedder-Policy': 'require-corp'
-                });
-                res.end(content, 'utf-8');
-            }
-            else {
-                if (filePath.includes('favicon')) {
-                    return;
-                }
-                console.log(error);
-            }
-        });
-    });
-    closeServerOnTermination();
-    //await buildEngineWorkers('browser', target);
-    const watcher = watch({
-        ...createRollupConfig('browser', {
-            output: {
-                dir: buildDir
-            },
-            plugins: [
-                workersPlugin(),
-                ...createRollupPlugins(buildDir, target.defaultLevel),
-                htmlPlugin('./index.js', {}, `
-<script type="module">
-  const ws = new WebSocket('ws://localhost:24678')
-
-  ws.addEventListener('open', () => {
-    console.log('connection open')
-    ws.send('message from client')
-  })
-
-  ws.addEventListener('message', async ({data}) => {
-    let parsed
-
-    try {
-      parsed = JSON.parse(String(data))
-    } catch {}
-
-    if (parsed && parsed.type === 'update') {
-      window.location.reload()
-    }
-  })
-</script>
-        `)
-            ],
-            onwarn() { }
-        })
-    });
-    server.listen(3000, 'localhost', () => {
-        log('Local: http://localhost:3000');
-    });
-    watcher.on('event', async (event) => {
-        log('[browser:watcher]', event.code);
-        if (event.code === 'BUNDLE_END') {
-            wss.clients.forEach(socket => {
-                socket.send(JSON.stringify({ type: 'update' }));
-            });
-        }
-        if (event.code === 'ERROR') {
-            console.log(event);
-        }
-    });
-    watcher.on('change', file => {
-        log('[browser:watcher]', 'File changed');
-        debug(file);
-    });
-    watcher.on('restart', () => { });
-    watcher.on('close', () => { });
-}
-async function serveElectronTarget(target) {
-    const buildDir = resolve(APEX_DIR, 'build/electron');
-    if (existsSync(buildDir)) {
-        await rimraf(buildDir);
-    }
-    const watcherMain = watch({
-        ...createRollupConfig('electron-main', {
-            input: {
-                main: getLauncherPath('electron-main')
-            },
-            output: {
-                dir: buildDir,
-                format: 'cjs',
-                sourcemap: false
-            },
-            plugins: createRollupPlugins(buildDir, target.defaultLevel),
-            external: ['electron'],
-            onwarn() { }
-        })
-    });
-    watcherMain.on('event', event => {
-        log('[electron-main:watcher]', event.code);
-        if (event.code === 'ERROR') {
-            console.log(event.error);
-        }
-    });
-    watcherMain.on('change', file => {
-        log('[electron-main:watcher]', 'File changed');
-        debug(file);
-    });
-    watcherMain.on('restart', () => { });
-    watcherMain.on('close', () => { });
-    const watcherSandbox = watch({
-        ...createRollupConfig('electron-sandbox', {
-            input: {
-                sandbox: getLauncherPath('electron-sandbox'),
-                ...getGameMaps()
-            },
-            output: {
-                dir: buildDir
-            },
-            plugins: [...createRollupPlugins(buildDir, target.defaultLevel), htmlPlugin('./sandbox.js')],
-            onwarn() { }
-        })
-    });
-    let isRunning = false;
-    watcherSandbox.on('event', event => {
-        log('[electron-sandbox:watcher]', event.code);
-        if (event.code === 'BUNDLE_END') ;
-        if (event.code === 'END' && !isRunning) {
-            startElectron(buildDir + '/main.js');
-            isRunning = true;
-        }
-    });
-    watcherSandbox.on('change', file => {
-        log('[electron-sandbox:watcher]', 'File changed');
-        debug(file);
-    });
-    watcherSandbox.on('restart', () => { });
-    watcherSandbox.on('close', () => { });
-}
-function readFileFromContentBase(contentBase, urlPath, callback) {
-    let filePath = resolve(contentBase, '.' + urlPath);
-    if (urlPath.endsWith('/')) {
-        filePath = resolve(filePath, 'index.html');
-    }
-    debug('reading file:', filePath);
-    readFile(filePath, (error, content) => {
-        callback(error, content, filePath);
-    });
-}
-function closeServerOnTermination() {
-    const terminationSignals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP'];
-    terminationSignals.forEach(signal => {
-        process.on(signal, () => {
-            debug('process signal:', signal);
-            if (server) {
-                debug('closing server...');
-                server.close();
-                process.exit();
-            }
-        });
-    });
 }
 function getEngineSourceFiles() {
     return Object.fromEntries(glob
@@ -690,59 +501,4 @@ function createRollupPlugins(buildDir, defaultLevel) {
         nodeResolve({ preferBuiltins: true }),
         typescript({ outDir: buildDir })
     ];
-}
-async function buildEngineWorkers(platform, target) {
-    const baseDir = resolve(dirname(fileURLToPath(import.meta.url)), '../src');
-    const buildDir = resolve(APEX_DIR, `build/${platform}/workers`);
-    const input = getAllWorkerFiles(baseDir, []).filter(val => val.includes('platform') && (val.includes(platform) || val.includes('common')));
-    let bundle;
-    if (!input.length) {
-        return;
-    }
-    try {
-        bundle = await rollup({
-            input,
-            preserveEntrySignatures: false,
-            plugins: [
-                replace({
-                    preventAssignment: true,
-                    values: {
-                        DEFAULT_LEVEL: JSON.stringify(target.defaultLevel)
-                    }
-                }),
-                nodeResolve({ preferBuiltins: true }),
-                typescript({ outDir: buildDir })
-            ],
-            onwarn() { }
-        });
-        await bundle.write({
-            dir: buildDir,
-            exports: 'named',
-            format: 'esm',
-            externalLiveBindings: false,
-            freeze: false,
-            sourcemap: false
-            //entryFileNames: '[name]-[hash].js'
-        });
-    }
-    catch (error) {
-        debug(error);
-    }
-    if (bundle) {
-        await bundle.close();
-    }
-}
-function getAllWorkerFiles(path, files = []) {
-    const dir = readdirSync(path);
-    for (const fileOrDir of dir) {
-        const fullPath = join(path, fileOrDir);
-        const isDir = lstatSync(fullPath).isDirectory();
-        if (isDir) {
-            getAllWorkerFiles(fullPath, files);
-        }
-        if (fullPath.endsWith('.worker.ts')) {
-            files.push(fullPath);
-        }
-    }
-    return files;
 }
