@@ -1,1 +1,2 @@
-export * from './htmlPlugin';
+export * from './html';
+export * from './workers';

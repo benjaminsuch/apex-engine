@@ -66,7 +66,7 @@ export async function loadConfigFromBundledFile(
 export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_NAME}.ts`)) {
   let bundle: RollupBuild | undefined;
   let config: ApexConfig | undefined;
-  console.log('configFile', configFile);
+
   try {
     bundle = await rollup({
       input: configFile,

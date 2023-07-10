@@ -39,7 +39,7 @@ import {
   getApexConfig
 } from './config';
 import { startElectron } from './electron';
-import { htmlPlugin } from './plugins';
+import { htmlPlugin, workersPlugin } from './plugins';
 import { dynamicImport, filterDuplicateOptions, getLauncherPath, type Launcher } from './utils';
 
 interface CLIOptions {
@@ -58,7 +58,6 @@ const debug = (...args: Parameters<typeof console.debug>) =>
   isDebugModeOn && console.debug('DEBUG', ...args);
 
 wss.on('connection', ws => {
-  console.log('client connected');
   ws.on('error', console.error);
 });
 
@@ -306,7 +305,7 @@ async function serveBrowserTarget(target: TargetConfig) {
 
   closeServerOnTermination();
 
-  await buildEngineWorkers('browser', target);
+  //await buildEngineWorkers('browser', target);
 
   const watcher = watch({
     ...createRollupConfig('browser', {
@@ -314,6 +313,7 @@ async function serveBrowserTarget(target: TargetConfig) {
         dir: buildDir
       },
       plugins: [
+        workersPlugin(),
         ...createRollupPlugins(buildDir, target.defaultLevel),
         htmlPlugin(
           './index.js',
@@ -380,8 +380,6 @@ async function serveElectronTarget(target: TargetConfig) {
   if (existsSync(buildDir)) {
     await rimraf(buildDir);
   }
-
-  await buildEngineWorkers('electron', target);
 
   const watcherMain = watch({
     ...createRollupConfig('electron-main', {
@@ -488,6 +486,17 @@ function closeServerOnTermination() {
   });
 }
 
+function getEngineSourceFiles() {
+  return Object.fromEntries(
+    glob
+      .sync('src/engine/**/*.ts')
+      .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file)))
+      ])
+  );
+}
+
 function getGameMaps() {
   return Object.fromEntries(
     glob
@@ -505,17 +514,9 @@ function createRollupConfig(
 ): RollupOptions {
   const input = {
     index: getLauncherPath(launcher),
-    ...Object.fromEntries(
-      glob
-        .sync('src/engine/**/*.ts')
-        .map(file => [
-          relative('src', file.slice(0, file.length - extname(file).length)),
-          fileURLToPath(pathToFileURL(resolve(file)))
-        ])
-    ),
+    ...getEngineSourceFiles(),
     ...getGameMaps()
   };
-  console.log(input);
 
   return {
     input,

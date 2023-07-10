@@ -4,6 +4,7 @@ import {
   type TRenderMessageData,
   type TRenderMessageType
 } from '../common';
+import RenderWorker from './render.worker?worker';
 
 export class BrowserRenderer implements IRenderer {
   declare readonly _injectibleService: undefined;
@@ -17,7 +18,7 @@ export class BrowserRenderer implements IRenderer {
     return this.instance;
   }
 
-  private readonly renderWorker = new Worker('./workers/render.worker.js', { type: 'module' });
+  private readonly renderWorker = new RenderWorker();
 
   private readonly messageChannel = new MessageChannel();
 

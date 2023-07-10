@@ -7,7 +7,7 @@ import glob from 'glob';
 import mime from 'mime';
 import { writeFileSync, unlinkSync, existsSync, readFileSync, mkdirSync, readFile, readdirSync, lstatSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { resolve, dirname, join, posix, relative, extname } from 'node:path';
+import { resolve, dirname, join, isAbsolute, extname, basename, posix, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
 import { rollup, watch } from 'rollup';
@@ -46,6 +46,10 @@ function filterDuplicateOptions(options) {
 
 const CONFIG_FILE_NAME = 'apex.config';
 const APEX_DIR = resolve('.apex');
+// Using defineConfig in apex.config.ts leads to an MISSING_EXPORTS error for some dependencies :shrug:
+/*export function defineConfig(config: ApexConfig) {
+  return config;
+}*/
 async function loadConfigFromBundledFile(root, bundledCode) {
     const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
     writeFileSync(fileNameTmp, bundledCode);
@@ -63,7 +67,6 @@ async function loadConfigFromBundledFile(root, bundledCode) {
 async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
     let bundle;
     let config;
-    console.log('configFile', configFile);
     try {
         bundle = await rollup({
             input: configFile,
@@ -95,11 +98,11 @@ async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
     return config;
 }
 
-const _require = createRequire(import.meta.url);
+const _require$1 = createRequire(import.meta.url);
 function getElectronPath() {
     let electronExecPath = process.env.ELECTRON_EXEC_PATH ?? '';
     if (!electronExecPath) {
-        const electronPath = dirname(_require.resolve('electron'));
+        const electronPath = dirname(_require$1.resolve('electron'));
         const pathFile = join(electronPath, 'path.txt');
         if (existsSync(pathFile)) {
             const execPath = readFileSync(pathFile, 'utf-8');
@@ -163,12 +166,127 @@ function htmlPlugin(entryFile = './index.js', options, body = '') {
     });
 }
 
+const _require = createRequire(import.meta.url);
+function workersPlugin(options = { inline: false }) {
+    const cache = new Map();
+    return {
+        name: 'workers',
+        resolveId(id, importer) {
+            const match = id.match(/(.+)\?worker/);
+            let target = null;
+            if (match) {
+                const [, fileName] = match;
+                if (!cache.has(fileName)) {
+                    if (importer) {
+                        const folder = dirname(importer);
+                        const paths = _require.resolve.paths(importer);
+                        if (paths) {
+                            paths.push(folder);
+                        }
+                        target = _require.resolve(join(folder, `${fileName}.ts`), {
+                            paths: ['.ts']
+                        });
+                    }
+                    else if (isAbsolute(fileName)) {
+                        target = fileName;
+                    }
+                    if (target) {
+                        const extension = extname(target);
+                        const workerName = basename(target, extension);
+                        cache.set(target, {
+                            id: `${workerName}.js`,
+                            target,
+                            outputPath: null,
+                            chunk: null
+                        });
+                        return target;
+                    }
+                    return null;
+                }
+            }
+        },
+        async load(id) {
+            let bundle;
+            const cacheEntry = cache.get(id);
+            if (!cacheEntry) {
+                return;
+            }
+            try {
+                bundle = await rollup({
+                    input: id,
+                    plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+                    onwarn() { }
+                });
+                const { output } = await bundle.generate({
+                    sourcemap: false
+                });
+                if (cacheEntry) {
+                    const [chunk] = output.filter((chunk) => chunk.type === 'chunk');
+                    //TODO: To support HMR we can add all the files in `chunk.modules` to a watch-list.
+                    chunk.fileName = posix.join('worker', cacheEntry.id);
+                    cacheEntry.chunk = chunk;
+                    return {
+                        code: chunk.code
+                    };
+                }
+            }
+            catch (error) {
+                console.error(error);
+            }
+            if (bundle) {
+                await bundle.close();
+            }
+        },
+        transform(code, id) {
+            const entry = cache.get(id);
+            if (entry?.chunk) {
+                if (options.inline) {
+                    return {
+                        code: `
+              const encodedJs = "${Buffer.from(`//${entry.id}\n\n${code}`).toString('base64')}";
+              const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+  
+              export default function WorkerWrapper() {
+                let objURL;
+                try {
+                  objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+                  if (!objURL) throw ''
+                  return new Worker(objURL)
+                } catch(e) {
+                  return new Worker("data:application/javascript;base64," + encodedJs, { type: 'module' });
+                } finally {
+                  objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                }
+              }
+            `,
+                        map: `{"version":3,"file":"${basename(id)}","sources":[],"sourcesContent":[],"names":[],"mappings":""}`
+                    };
+                }
+                return {
+                    code: [
+                        `export default function WorkerFactory() {`,
+                        `  return new Worker("${entry.chunk.fileName}", { type: "module" });`,
+                        `};`
+                    ].join('\n')
+                };
+            }
+        },
+        renderChunk(code, chunk, options, meta) { },
+        generateBundle(options, bundle) {
+            for (const [id, worker] of cache) {
+                if (worker.chunk) {
+                    bundle[worker.id] = worker.chunk;
+                }
+            }
+        }
+    };
+}
+
 const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
 const { log } = console;
 let isDebugModeOn = false;
 const debug = (...args) => isDebugModeOn && console.debug('DEBUG', ...args);
 wss.on('connection', ws => {
-    console.log('client connected');
     ws.on('error', console.error);
 });
 const cli = cac('apex-build-tool').version('0.1.0').help();
@@ -379,13 +497,14 @@ async function serveBrowserTarget(target) {
         });
     });
     closeServerOnTermination();
-    await buildEngineWorkers('browser', target);
+    //await buildEngineWorkers('browser', target);
     const watcher = watch({
         ...createRollupConfig('browser', {
             output: {
                 dir: buildDir
             },
             plugins: [
+                workersPlugin(),
                 ...createRollupPlugins(buildDir, target.defaultLevel),
                 htmlPlugin('./index.js', {}, `
 <script type="module">
@@ -439,7 +558,6 @@ async function serveElectronTarget(target) {
     if (existsSync(buildDir)) {
         await rimraf(buildDir);
     }
-    await buildEngineWorkers('electron', target);
     const watcherMain = watch({
         ...createRollupConfig('electron-main', {
             input: {
@@ -519,6 +637,14 @@ function closeServerOnTermination() {
         });
     });
 }
+function getEngineSourceFiles() {
+    return Object.fromEntries(glob
+        .sync('src/engine/**/*.ts')
+        .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file)))
+    ]));
+}
 function getGameMaps() {
     return Object.fromEntries(glob
         .sync('src/game/maps/**/*.ts')
@@ -530,15 +656,9 @@ function getGameMaps() {
 function createRollupConfig(launcher, { output, ...options } = {}) {
     const input = {
         index: getLauncherPath(launcher),
-        ...Object.fromEntries(glob
-            .sync('src/engine/**/*.ts')
-            .map(file => [
-            relative('src', file.slice(0, file.length - extname(file).length)),
-            fileURLToPath(pathToFileURL(resolve(file)))
-        ])),
+        ...getEngineSourceFiles(),
         ...getGameMaps()
     };
-    console.log(input);
     return {
         input,
         output: {
