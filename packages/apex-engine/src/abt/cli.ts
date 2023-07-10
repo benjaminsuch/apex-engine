@@ -72,7 +72,12 @@ cli
       if (platform && targetConfig.platform !== platform) {
         continue;
       }
-      await buildTarget(targetConfig);
+      if (targetConfig.platform === 'browser') {
+        await serveBrowserTarget(targetConfig);
+      }
+      if (targetConfig.platform === 'electron') {
+        await serveElectronTarget(targetConfig);
+      }
     }
   });
 
@@ -90,7 +95,15 @@ cli.command('build').action(async (options: CLIOptions) => {
     if (platform && targetConfig.platform !== platform) {
       continue;
     }
-    await buildTarget(targetConfig);
+    if (targetConfig.platform === 'browser') {
+      await buildBrowserTarget(targetConfig);
+    }
+    if (targetConfig.platform === 'electron') {
+      await buildElectronTarget(targetConfig);
+    }
+    if (targetConfig.platform === 'node') {
+      await buildNodeTarget(targetConfig);
+    }
   }
 
   process.exit();
@@ -241,18 +254,6 @@ async function buildNodeTarget(target: TargetConfig) {
 
   if (bundle) {
     await bundle.close();
-  }
-}
-
-async function buildTarget(config: TargetConfig) {
-  if (config.platform === 'browser') {
-    await buildBrowserTarget(config);
-  }
-  if (config.platform === 'electron') {
-    await buildElectronTarget(config);
-  }
-  if (config.platform === 'node') {
-    await buildNodeTarget(config);
   }
 }
 
