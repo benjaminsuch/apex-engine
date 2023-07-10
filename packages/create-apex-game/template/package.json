@@ -8,20 +8,19 @@
     "dev": "abt serve"
   },
   "dependencies": {
-    "@tinyhttp/app": "^2.0.29",
     "apex-engine": "latest",
     "electron": "^23.1.0",
-    "socket.io": "^4.5.4",
-    "socket.io-client": "^4.5.4",
-    "three": "^0.148.0"
+    "socket.io": "^4.7.1",
+    "socket.io-client": "^4.7.1",
+    "three": "^0.154.0"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",
-    "@types/three": "^0.148.1",
+    "@types/three": "^0.153.0",
     "tslib": "^2.5.0",
     "typescript": "^4.9.4"
   },
   "resolutions": {
-    "three": "^0.148.0"
+    "three": "^0.154.0"
   }
 }

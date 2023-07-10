@@ -60,7 +60,6 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^24.0.1",
     "@rollup/plugin-json": "^6.0.0",
-    "@tinyhttp/app": "^2.0.29",
     "@types/node": "^18.11.18",
     "@types/three": "^0.153.0",
     "dts-bundle-generator": "^8.0.1",
@@ -73,7 +72,6 @@
     "typescript": "^5.0.3"
   },
   "peerDependencies": {
-    "@tinyhttp/app": "^2.0.29",
     "electron": "^23.1.0",
     "socket.io": "^4.7.1",
     "socket.io-client": "^4.7.1",
