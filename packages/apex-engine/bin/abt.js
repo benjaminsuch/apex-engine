@@ -7,7 +7,7 @@ import glob from 'glob';
 import mime from 'mime';
 import { writeFileSync, unlinkSync, existsSync, readFileSync, mkdirSync, readFile } from 'node:fs';
 import { createServer } from 'node:http';
-import { resolve, dirname, join, isAbsolute, extname, basename, posix, relative } from 'node:path';
+import { resolve, dirname, join, isAbsolute, extname, basename, posix, sep, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
 import { rollup, watch } from 'rollup';
@@ -167,7 +167,7 @@ function htmlPlugin(entryFile = './index.js', options, body = '') {
 }
 
 const _require = createRequire(import.meta.url);
-function workersPlugin(options = { inline: false }) {
+function workersPlugin({ inline, isBuild = false, target }) {
     const cache = new Map();
     return {
         name: 'workers',
@@ -240,34 +240,50 @@ function workersPlugin(options = { inline: false }) {
         transform(code, id) {
             const entry = cache.get(id);
             if (entry?.chunk) {
-                if (options.inline) {
-                    return {
-                        code: `
-              const encodedJs = "${Buffer.from(`//${entry.id}\n\n${code}`).toString('base64')}";
-              const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-  
-              export default function WorkerWrapper() {
-                let objURL;
-                try {
-                  objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-                  if (!objURL) throw ''
-                  return new Worker(objURL)
-                } catch(e) {
-                  return new Worker("data:application/javascript;base64," + encodedJs, { type: 'module' });
-                } finally {
-                  objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                let code = [
+                    `export default function WorkerFactory() {`,
+                    `  return new Worker("${entry.chunk.fileName}", { type: "module" });`,
+                    `};`
+                ];
+                if (target.platform === 'browser') {
+                    if (inline) {
+                        return {
+                            code: `
+                const encodedJs = "${Buffer.from(`//${entry.id}\n\n${code}`).toString('base64')}";
+                const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+    
+                export default function WorkerWrapper() {
+                  let objURL;
+                  try {
+                    objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+                    if (!objURL) throw ''
+                    return new Worker(objURL)
+                  } catch(e) {
+                    return new Worker("data:application/javascript;base64," + encodedJs, { type: 'module' });
+                  } finally {
+                    objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                  }
                 }
-              }
-            `,
-                        map: `{"version":3,"file":"${basename(id)}","sources":[],"sourcesContent":[],"names":[],"mappings":""}`
-                    };
+              `,
+                            map: `{"version":3,"file":"${basename(id)}","sources":[],"sourcesContent":[],"names":[],"mappings":""}`
+                        };
+                    }
+                }
+                else {
+                    const path = isBuild
+                        ? `build/${target.platform}`
+                        : `${APEX_DIR}/build/${target.platform}`;
+                    const fileName = posix.join(path, entry.chunk.fileName).split(sep).join(posix.sep);
+                    code = [
+                        `import { Worker } from "node:worker_threads"`,
+                        ``,
+                        `export default function WorkerFactory(options) {`,
+                        `  return new Worker("${fileName}", options);`,
+                        `};`
+                    ];
                 }
                 return {
-                    code: [
-                        `export default function WorkerFactory() {`,
-                        `  return new Worker("${entry.chunk.fileName}", { type: "module" });`,
-                        `};`
-                    ].join('\n')
+                    code: code.join('\n')
                 };
             }
         },
@@ -318,6 +334,9 @@ cli
         if (targetConfig.platform === 'electron') {
             await serveElectronTarget(targetConfig);
         }
+        if (targetConfig.platform === 'node') {
+            await serveNodeTarget(targetConfig);
+        }
     }
 });
 cli.command('build').action(async (options) => {
@@ -354,7 +373,7 @@ async function buildBrowserTarget(target) {
         bundle = await rollup({
             ...createRollupConfig('browser'),
             plugins: [
-                workersPlugin(),
+                workersPlugin({ target }),
                 ...createRollupPlugins(buildDir, target.defaultLevel),
                 htmlPlugin()
             ],
@@ -390,8 +409,7 @@ async function buildElectronTarget(target) {
                 input: {
                     main: getLauncherPath('electron-main')
                 },
-                // Our worker plugin doesn't support nodejs workers yet
-                plugins: [/*workersPlugin(),*/ ...createRollupPlugins(buildDir, target.defaultLevel)],
+                plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target.defaultLevel)],
                 external: ['electron'],
                 onwarn() { }
             })
@@ -402,7 +420,8 @@ async function buildElectronTarget(target) {
                     sandbox: getLauncherPath('electron-sandbox')
                 },
                 plugins: [
-                    workersPlugin(),
+                    // electron-sandbox is a browser, so we change the platform to "browser".
+                    workersPlugin({ target: { ...target, platform: 'browser' } }),
                     ...createRollupPlugins(buildDir, target.defaultLevel),
                     htmlPlugin('./sandbox.js', {
                         meta: [
@@ -444,8 +463,7 @@ async function buildNodeTarget(target) {
         bundle = await rollup({
             ...createRollupConfig('node'),
             plugins: [
-                // Our worker plugin doesn't support nodejs workers yet
-                /*workersPlugin(),*/
+                workersPlugin({ target }),
                 replace({
                     preventAssignment: true,
                     values: {
@@ -508,7 +526,7 @@ async function serveBrowserTarget(target) {
                 dir: buildDir
             },
             plugins: [
-                workersPlugin(),
+                workersPlugin({ target }),
                 ...createRollupPlugins(buildDir, target.defaultLevel),
                 htmlPlugin('./index.js', {}, [
                     `<script type="module">`,
@@ -605,7 +623,8 @@ async function serveElectronTarget(target) {
                 dir: buildDir
             },
             plugins: [
-                workersPlugin(),
+                // electron-sandbox is a browser, so we change the platform to "browser".
+                workersPlugin({ target: { ...target, platform: 'browser' } }),
                 ...createRollupPlugins(buildDir, target.defaultLevel),
                 htmlPlugin('./sandbox.js')
             ],
@@ -627,6 +646,33 @@ async function serveElectronTarget(target) {
     });
     watcherSandbox.on('restart', () => { });
     watcherSandbox.on('close', () => { });
+}
+async function serveNodeTarget(target) {
+    const buildDir = resolve(APEX_DIR, 'build/node');
+    if (existsSync(buildDir)) {
+        await rimraf(buildDir);
+    }
+    const watcher = watch({
+        ...createRollupConfig('node', {
+            output: {
+                dir: buildDir,
+                chunkFileNames: '[name]-[hash].mjs',
+                entryFileNames: `[name].mjs`,
+                externalLiveBindings: false,
+                format: 'esm',
+                freeze: false,
+                sourcemap: false
+            },
+            plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target.defaultLevel)],
+            onwarn() { }
+        })
+    });
+    watcher.on('event', async (event) => {
+        log('[node:watcher]', event.code);
+        if (event.code === 'ERROR') {
+            console.log(event);
+        }
+    });
 }
 function readFileFromContentBase(contentBase, urlPath, callback) {
     let filePath = resolve(contentBase, '.' + urlPath);

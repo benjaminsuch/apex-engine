@@ -1,6 +1,9 @@
 declare module '*?worker' {
+  import { WorkerOptions } from 'node:worker_threads';
+
   const workerConstructor: {
-    new (): Worker;
+    new (options?: WorkerOptions): Worker;
   };
+
   export default workerConstructor;
 }
