@@ -61,7 +61,7 @@ export abstract class ApexEngine {
     this.logger.info(`Attempt to load level: ${url}`);
 
     try {
-      const { default: LoadedLevel }: { default: typeof Level } = await import(`../${url}`);
+      const { default: LoadedLevel }: { default: typeof Level } = await import(url);
 
       this.logger.info(`Level loaded: ${url}`);
 

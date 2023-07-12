@@ -19,7 +19,7 @@ export async function main(args: string[]) {
     res.end('Hello World');
   });
 
-  server.listen(PORT, HOST as any, () => {
+  server.listen(+PORT, HOST, () => {
     console.log(`Server running at http://${HOST}:${PORT}/`);
   });
 

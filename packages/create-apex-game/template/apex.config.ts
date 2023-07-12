@@ -3,12 +3,12 @@ export default {
     {
       target: 'client',
       platform: 'browser',
-      defaultLevel: 'maps/index.js'
+      defaultLevel: './maps/index.js'
     },
     {
       target: 'client',
       platform: 'electron',
-      defaultLevel: 'electron/maps/index.js'
+      defaultLevel: './maps/index.js'
     }
   ]
 };
