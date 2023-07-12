@@ -13,6 +13,10 @@
     "moduleResolution": "Node",
     "noEmit": true,
     "noImplicitOverride": true,
+    "paths": {
+      "engine/*": ["src/engine/*"],
+      "game/*": ["src/game/*"]
+    },
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,

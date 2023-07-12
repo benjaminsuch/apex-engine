@@ -78,6 +78,9 @@ cli
       if (targetConfig.platform === 'electron') {
         await serveElectronTarget(targetConfig);
       }
+      if (targetConfig.platform === 'node') {
+        await serveNodeTarget(targetConfig);
+      }
     }
   });
 
@@ -124,7 +127,7 @@ async function buildBrowserTarget(target: TargetConfig) {
     bundle = await rollup({
       ...createRollupConfig('browser'),
       plugins: [
-        workersPlugin(),
+        workersPlugin({ target }),
         ...createRollupPlugins(buildDir, target.defaultLevel),
         htmlPlugin()
       ],
@@ -166,8 +169,7 @@ async function buildElectronTarget(target: TargetConfig) {
         input: {
           main: getLauncherPath('electron-main')
         },
-        // Our worker plugin doesn't support nodejs workers yet
-        plugins: [/*workersPlugin(),*/ ...createRollupPlugins(buildDir, target.defaultLevel)],
+        plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target.defaultLevel)],
         external: ['electron'],
         onwarn() {}
       })
@@ -179,7 +181,8 @@ async function buildElectronTarget(target: TargetConfig) {
           sandbox: getLauncherPath('electron-sandbox')
         },
         plugins: [
-          workersPlugin(),
+          // electron-sandbox is a browser, so we change the platform to "browser".
+          workersPlugin({ target: { ...target, platform: 'browser' } }),
           ...createRollupPlugins(buildDir, target.defaultLevel),
           htmlPlugin('./sandbox.js', {
             meta: [
@@ -226,8 +229,7 @@ async function buildNodeTarget(target: TargetConfig) {
     bundle = await rollup({
       ...createRollupConfig('node'),
       plugins: [
-        // Our worker plugin doesn't support nodejs workers yet
-        /*workersPlugin(),*/
+        workersPlugin({ target }),
         replace({
           preventAssignment: true,
           values: {
@@ -297,7 +299,7 @@ async function serveBrowserTarget(target: TargetConfig) {
         dir: buildDir
       },
       plugins: [
-        workersPlugin(),
+        workersPlugin({ target }),
         ...createRollupPlugins(buildDir, target.defaultLevel),
         htmlPlugin(
           './index.js',
@@ -415,7 +417,8 @@ async function serveElectronTarget(target: TargetConfig) {
         dir: buildDir
       },
       plugins: [
-        workersPlugin(),
+        // electron-sandbox is a browser, so we change the platform to "browser".
+        workersPlugin({ target: { ...target, platform: 'browser' } }),
         ...createRollupPlugins(buildDir, target.defaultLevel),
         htmlPlugin('./sandbox.js')
       ],
@@ -445,6 +448,38 @@ async function serveElectronTarget(target: TargetConfig) {
   watcherSandbox.on('restart', () => {});
 
   watcherSandbox.on('close', () => {});
+}
+
+async function serveNodeTarget(target: TargetConfig) {
+  const buildDir = resolve(APEX_DIR, 'build/node');
+
+  if (existsSync(buildDir)) {
+    await rimraf(buildDir);
+  }
+
+  const watcher = watch({
+    ...createRollupConfig('node', {
+      output: {
+        dir: buildDir,
+        chunkFileNames: '[name]-[hash].mjs',
+        entryFileNames: `[name].mjs`,
+        externalLiveBindings: false,
+        format: 'esm',
+        freeze: false,
+        sourcemap: false
+      },
+      plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target.defaultLevel)],
+      onwarn() {}
+    })
+  });
+
+  watcher.on('event', async event => {
+    log('[node:watcher]', event.code);
+
+    if (event.code === 'ERROR') {
+      console.log(event);
+    }
+  });
 }
 
 function readFileFromContentBase(

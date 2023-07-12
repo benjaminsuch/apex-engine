@@ -1,13 +1,17 @@
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import { createRequire } from 'node:module';
-import { basename, dirname, extname, isAbsolute, join, posix } from 'node:path';
+import { basename, dirname, extname, isAbsolute, join, posix, sep } from 'node:path';
 import { InputPluginOption, OutputChunk, RollupBuild, rollup } from 'rollup';
+
+import { APEX_DIR, TargetConfig } from '../config';
 
 const _require = createRequire(import.meta.url);
 
 export interface WorkersPluginOptions {
   inline?: boolean;
+  isBuild?: boolean;
+  target: TargetConfig;
 }
 
 export interface WorkerCacheEntry {
@@ -17,9 +21,11 @@ export interface WorkerCacheEntry {
   chunk: null | OutputChunk;
 }
 
-export function workersPlugin(
-  options: WorkersPluginOptions = { inline: false }
-): InputPluginOption {
+export function workersPlugin({
+  inline,
+  isBuild = false,
+  target
+}: WorkersPluginOptions): InputPluginOption {
   const cache = new Map<string, WorkerCacheEntry>();
 
   return {
@@ -109,37 +115,58 @@ export function workersPlugin(
       const entry = cache.get(id);
 
       if (entry?.chunk) {
-        if (options.inline) {
-          return {
-            code: `
-              const encodedJs = "${Buffer.from(`//${entry.id}\n\n${code}`).toString('base64')}";
-              const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-  
-              export default function WorkerWrapper() {
-                let objURL;
-                try {
-                  objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-                  if (!objURL) throw ''
-                  return new Worker(objURL)
-                } catch(e) {
-                  return new Worker("data:application/javascript;base64," + encodedJs, { type: 'module' });
-                } finally {
-                  objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+        let code = [
+          `export default function WorkerFactory() {`,
+          `  return new Worker("${entry.chunk.fileName}", { type: "module" });`,
+          `};`
+        ];
+
+        if (target.platform === 'browser') {
+          if (inline) {
+            return {
+              code: `
+                const encodedJs = "${Buffer.from(`//${entry.id}\n\n${code}`).toString('base64')}";
+                const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+    
+                export default function WorkerWrapper() {
+                  let objURL;
+                  try {
+                    objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+                    if (!objURL) throw ''
+                    return new Worker(objURL)
+                  } catch(e) {
+                    return new Worker("data:application/javascript;base64," + encodedJs, { type: 'module' });
+                  } finally {
+                    objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                  }
                 }
-              }
-            `,
-            map: `{"version":3,"file":"${basename(
-              id
-            )}","sources":[],"sourcesContent":[],"names":[],"mappings":""}`
-          };
+              `,
+              map: `{"version":3,"file":"${basename(
+                id
+              )}","sources":[],"sourcesContent":[],"names":[],"mappings":""}`
+            };
+          }
+        } else {
+          if (inline) {
+            //
+          }
+
+          const path = isBuild
+            ? `build/${target.platform}`
+            : `${APEX_DIR}/build/${target.platform}`;
+          const fileName = posix.join(path, entry.chunk.fileName).split(sep).join(posix.sep);
+
+          code = [
+            `import { Worker } from "node:worker_threads"`,
+            ``,
+            `export default function WorkerFactory(options) {`,
+            `  return new Worker("${fileName}", options);`,
+            `};`
+          ];
         }
 
         return {
-          code: [
-            `export default function WorkerFactory() {`,
-            `  return new Worker("${entry.chunk.fileName}", { type: "module" });`,
-            `};`
-          ].join('\n')
+          code: code.join('\n')
         };
       }
     },
