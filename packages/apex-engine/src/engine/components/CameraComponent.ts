@@ -1,3 +1,4 @@
+import { IConsoleLogger } from '../../platform/logging/common';
 import { type CameraProxyConstructorData } from '../CameraSceneProxy';
 import { type SceneObjectType, SceneComponent } from './SceneComponent';
 
@@ -64,8 +65,8 @@ export class CameraComponent extends SceneComponent {
 
   public override readonly objectType: SceneObjectType = 'PerspectiveCamera';
 
-  constructor() {
-    super();
+  constructor(@IConsoleLogger protected override readonly logger: IConsoleLogger) {
+    super(logger);
 
     const Buffer = typeof SharedArrayBuffer !== 'undefined' ? SharedArrayBuffer : ArrayBuffer;
 

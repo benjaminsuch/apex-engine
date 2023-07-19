@@ -1,3 +1,5 @@
+import { IInstatiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
 import { type ActorComponent, SceneComponent } from './components';
 import { type Level } from './Level';
@@ -33,7 +35,11 @@ export class Actor {
     ComponentClass: T,
     setAsRootComponent: boolean = false
   ): InstanceType<T> {
-    const component = new ComponentClass() as InstanceType<T>;
+    // I cast this as typeof ActorComponent as `createInstance` expects the correct constructor arguments
+    // as a second parameter. I have to fix the type of `createInstance` (if that's possible).
+    const component = this.instantiationService.createInstance(
+      ComponentClass as typeof ActorComponent
+    ) as InstanceType<T>;
 
     component.registerWithActor(this);
 
@@ -69,7 +75,11 @@ export class Actor {
 
   private isInitialized: boolean = false;
 
-  constructor(@IRenderer public readonly renderer: IRenderer) {}
+  constructor(
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
+    @IRenderer public readonly renderer: IRenderer
+  ) {}
 
   public beginPlay() {
     for (const component of this.getComponents()) {
@@ -84,6 +94,8 @@ export class Actor {
   }
 
   public preInitComponents() {
+    this.logger.debug('Actor:', 'preInitComponents');
+
     for (const component of this.getComponents()) {
       component.world = this.getWorld();
     }

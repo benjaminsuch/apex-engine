@@ -1,3 +1,4 @@
+import { IConsoleLogger } from '../../platform/logging/common';
 import { type TRenderSceneProxyInitMessage } from '../../platform/renderer/common';
 import { SceneProxyConstructorData } from '../SceneProxy';
 import { Euler, Matrix4, Quaternion, Vector3 } from '../math';
@@ -24,13 +25,15 @@ export class SceneComponent extends ActorComponent {
 
   public readonly objectType: SceneObjectType = 'Object3D';
 
-  constructor() {
+  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {
     super();
 
     this.scale.set(1, 1, 1);
   }
 
   public override init(): void {
+    this.logger.debug(`${this.constructor.name}:`, 'init', this.uuid);
+
     this.getOwner().renderer.send<TRenderSceneProxyInitMessage>({
       type: 'init-scene-proxy',
       component: this.toJSON()
