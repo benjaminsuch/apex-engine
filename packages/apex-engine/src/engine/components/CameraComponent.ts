@@ -31,7 +31,7 @@ export class CameraComponent extends SceneComponent {
   }
 
   set aspect(val) {
-    this.#data.set([val, 1]);
+    this.#data.set([val], 1);
     this.#aspect = this.#data[1];
   }
 
@@ -45,7 +45,7 @@ export class CameraComponent extends SceneComponent {
   }
 
   set far(val) {
-    this.#data.set([val, 2]);
+    this.#data.set([val], 2);
     this.#far = this.#data[2];
   }
 
@@ -59,7 +59,7 @@ export class CameraComponent extends SceneComponent {
   }
 
   set near(val) {
-    this.#data.set([val, 3]);
+    this.#data.set([val], 3);
     this.#near = this.#data[3];
   }
 

@@ -109,7 +109,7 @@ export class Renderer {
       this.logger.warn(`The renderer has no camera proxy assigned.`);
       return;
     }
-
+    console.log('setSize', width / height);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();
