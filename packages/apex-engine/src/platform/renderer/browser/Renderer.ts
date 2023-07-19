@@ -4,7 +4,12 @@ import {
   type TRenderMessageData,
   type TRenderMessageType
 } from '../common';
+import RenderMainThread from './render.browser';
 import RenderWorker from './render.worker?worker';
+
+export interface BrowserRendererOptions {
+  runOnMainThread?: boolean;
+}
 
 export class BrowserRenderer implements IRenderer {
   declare readonly _injectibleService: undefined;
@@ -18,7 +23,7 @@ export class BrowserRenderer implements IRenderer {
     return this.instance;
   }
 
-  private readonly renderWorker = new RenderWorker();
+  private readonly renderWorker: Worker;
 
   private readonly messageChannel = new MessageChannel();
 
@@ -26,7 +31,7 @@ export class BrowserRenderer implements IRenderer {
 
   private isInitialized = false;
 
-  constructor() {
+  constructor(private readonly options: BrowserRendererOptions = { runOnMainThread: false }) {
     if (typeof window === 'undefined') {
       throw new Error(`Cannot create an instance of Renderer: "window" is undefined.`);
     }
@@ -34,6 +39,8 @@ export class BrowserRenderer implements IRenderer {
     if (BrowserRenderer.instance) {
       throw new Error(`An instance of the renderer already exists.`);
     }
+
+    this.renderWorker = this.options.runOnMainThread ? new RenderMainThread() : new RenderWorker();
 
     this.messageChannel.port1.addEventListener('message', event => {
       console.log('Renderer received message:', event);
@@ -53,7 +60,6 @@ export class BrowserRenderer implements IRenderer {
       const offscreenCanvas = this.canvas.transferControlToOffscreen();
       const messagePort = this.messageChannel.port2;
 
-      // The init message has to be sent via `postMessage` (to deliver `messagePort`)
       this.renderWorker.postMessage(
         {
           type: 'init',

@@ -95,7 +95,7 @@ export class Renderer {
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.outputEncoding = sRGBEncoding;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
-    //this.scene.add(box);
+    this.scene.add(box);
   }
 
   public start() {

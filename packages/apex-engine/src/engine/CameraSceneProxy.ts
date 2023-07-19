@@ -11,7 +11,16 @@ export class CameraSceneProxy extends SceneProxy {
 
   public fov: number;
 
-  public aspect: number;
+  private _aspect: number;
+
+  public get aspect() {
+    return this._aspect;
+  }
+
+  public set aspect(val) {
+    this._aspect = val;
+    this.sceneObject.aspect = val;
+  }
 
   public far: number;
 
@@ -27,7 +36,7 @@ export class CameraSceneProxy extends SceneProxy {
     const [fov, aspect, far, near] = this.#data;
 
     this.fov = fov;
-    this.aspect = aspect;
+    this._aspect = aspect;
     this.far = far;
     this.near = near;
 
