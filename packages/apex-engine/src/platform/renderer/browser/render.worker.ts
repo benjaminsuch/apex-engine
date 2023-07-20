@@ -25,7 +25,10 @@ function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
 }
 
 let renderer: Renderer;
-let instantiationService: InstantiationService;
+
+const logger = new ConsoleLogger();
+const services = new ServiceCollection([IConsoleLogger, logger]);
+const instantiationService = new InstantiationService(services);
 
 function onInit({
   canvas,
@@ -33,12 +36,6 @@ function onInit({
   initialCanvasWidth,
   messagePort
 }: TRenderWorkerInitData) {
-  const services = new ServiceCollection();
-
-  services.set(IConsoleLogger, new ConsoleLogger());
-
-  instantiationService = new InstantiationService(services);
-
   renderer = instantiationService.createInstance(Renderer, canvas);
   renderer.init();
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
@@ -52,6 +49,8 @@ function onInit({
     if (typeof event.data !== 'object') {
       return;
     }
+
+    logger.debug('render.worker:', 'onMessage', event.data);
 
     const { type } = event.data;
 

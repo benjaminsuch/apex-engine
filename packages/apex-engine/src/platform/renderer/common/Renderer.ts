@@ -73,9 +73,11 @@ export interface IRenderer {
 
 export const IRenderer = InstantiationService.createDecorator<IRenderer>('renderer');
 
-const box = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00ff00 }));
+const boxGeom = new BoxGeometry(1, 1, 1);
+const box = new Mesh(boxGeom, new MeshBasicMaterial({ color: 0x00ff00 }));
 box.position.z = -5;
-
+//console.log('BoxGeometry', boxGeom.toJSON());
+//console.log('MeshBasicMaterial', new MeshBasicMaterial({ color: 0x00ff00 }).toJSON());
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;
 
@@ -93,7 +95,7 @@ export class Renderer {
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.outputEncoding = sRGBEncoding;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
-    this.scene.add(box);
+    //this.scene.add(box);
   }
 
   public start() {
@@ -127,10 +129,6 @@ export class Renderer {
       for (const proxy of this.proxyObjects) {
         proxy.tick();
       }
-
-      box.rotation.x += 0.01;
-      box.rotation.y += 0.01;
-      box.rotation.z += 0.01;
 
       this.webGLRenderer.render(this.scene, this.camera.sceneObject);
     }

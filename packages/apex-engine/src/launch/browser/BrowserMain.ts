@@ -11,7 +11,7 @@ export class BrowserMain {
     const services = new ServiceCollection();
 
     services.set(IConsoleLogger, new ConsoleLogger());
-    services.set(IRenderer, new BrowserRenderer());
+    services.set(IRenderer, new BrowserRenderer({ runOnMainThread: !!RENDER_ON_MAIN_THREAD }));
 
     this.instantiationService = new InstantiationService(services);
   }

@@ -1,4 +1,5 @@
 import { MathUtils } from 'three';
+
 import { Actor } from '../Actor';
 import { World } from '../World';
 
@@ -24,6 +25,8 @@ export class ActorComponent {
   }
 
   private isInitialized: boolean = false;
+
+  constructor(...args: any[]) {}
 
   public init() {
     this.isInitialized = true;

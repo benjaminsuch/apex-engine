@@ -9,13 +9,65 @@ export interface CameraProxyConstructorData extends SceneProxyConstructorData {
 export class CameraSceneProxy extends SceneProxy {
   readonly #data: Float32Array;
 
-  public fov: number;
+  /**
+   * Buffer offset: 0
+   */
+  #fov: number;
 
-  public aspect: number;
+  get fov() {
+    return this.#data[0];
+  }
 
-  public far: number;
+  set fov(val) {
+    this.#data.set([val]);
+    this.#fov = this.#data[0];
+    this.sceneObject.fov = this.#fov;
+  }
 
-  public near: number;
+  /**
+   * Buffer offset: 1
+   */
+  #aspect: number;
+
+  public get aspect() {
+    return this.#data[1];
+  }
+
+  public set aspect(val) {
+    this.#data.set([val], 1);
+    this.#aspect = this.#data[1];
+    this.sceneObject.aspect = this.#aspect;
+  }
+
+  /**
+   * Buffer offset: 2
+   */
+  #far: number;
+
+  get far() {
+    return this.#data[2];
+  }
+
+  set far(val) {
+    this.#data.set([val], 2);
+    this.#far = this.#data[2];
+    this.sceneObject.far = this.#far;
+  }
+
+  /**
+   * Buffer offset: 3
+   */
+  #near: number;
+
+  get near() {
+    return this.#data[3];
+  }
+
+  set near(val) {
+    this.#data.set([val], 3);
+    this.#near = this.#data[3];
+    this.sceneObject.near = this.#near;
+  }
 
   public override sceneObject: PerspectiveCamera;
 
@@ -26,11 +78,10 @@ export class CameraSceneProxy extends SceneProxy {
 
     const [fov, aspect, far, near] = this.#data;
 
-    this.fov = fov;
-    this.aspect = aspect;
-    this.far = far;
-    this.near = near;
-
+    this.#fov = fov;
+    this.#aspect = aspect;
+    this.#far = far;
+    this.#near = near;
     this.sceneObject = new PerspectiveCamera(fov, aspect, near, far);
   }
 
@@ -40,14 +91,5 @@ export class CameraSceneProxy extends SceneProxy {
 
   public updateMatrixWorld(force?: boolean) {
     this.sceneObject.updateMatrixWorld(force);
-  }
-
-  public override tick(): void {
-    super.tick();
-
-    this.sceneObject.fov = this.fov;
-    this.sceneObject.aspect = this.aspect;
-    this.sceneObject.far = this.far;
-    this.sceneObject.near = this.near;
   }
 }
