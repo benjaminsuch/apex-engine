@@ -372,11 +372,7 @@ async function buildBrowserTarget(target) {
     try {
         bundle = await rollup({
             ...createRollupConfig('browser'),
-            plugins: [
-                workersPlugin({ target }),
-                ...createRollupPlugins(buildDir, target.defaultLevel),
-                htmlPlugin()
-            ],
+            plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target), htmlPlugin()],
             onwarn() { }
         });
         await bundle.write({
@@ -409,7 +405,7 @@ async function buildElectronTarget(target) {
                 input: {
                     main: getLauncherPath('electron-main')
                 },
-                plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target.defaultLevel)],
+                plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target)],
                 external: ['electron'],
                 onwarn() { }
             })
@@ -422,7 +418,7 @@ async function buildElectronTarget(target) {
                 plugins: [
                     // electron-sandbox is a browser, so we change the platform to "browser".
                     workersPlugin({ target: { ...target, platform: 'browser' } }),
-                    ...createRollupPlugins(buildDir, target.defaultLevel),
+                    ...createRollupPlugins(buildDir, target),
                     htmlPlugin('./sandbox.js', {
                         meta: [
                             {
@@ -527,7 +523,7 @@ async function serveBrowserTarget(target) {
             },
             plugins: [
                 workersPlugin({ target }),
-                ...createRollupPlugins(buildDir, target.defaultLevel),
+                ...createRollupPlugins(buildDir, target),
                 htmlPlugin('./index.js', {}, [
                     `<script type="module">`,
                     `  const ws = new WebSocket('ws://localhost:24678')`,
@@ -596,7 +592,7 @@ async function serveElectronTarget(target) {
                 format: 'cjs',
                 sourcemap: false
             },
-            plugins: createRollupPlugins(buildDir, target.defaultLevel),
+            plugins: createRollupPlugins(buildDir, target),
             external: ['electron'],
             onwarn() { }
         })
@@ -625,7 +621,7 @@ async function serveElectronTarget(target) {
             plugins: [
                 // electron-sandbox is a browser, so we change the platform to "browser".
                 workersPlugin({ target: { ...target, platform: 'browser' } }),
-                ...createRollupPlugins(buildDir, target.defaultLevel),
+                ...createRollupPlugins(buildDir, target),
                 htmlPlugin('./sandbox.js')
             ],
             onwarn() { }
@@ -663,7 +659,7 @@ async function serveNodeTarget(target) {
                 freeze: false,
                 sourcemap: false
             },
-            plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target.defaultLevel)],
+            plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target)],
             onwarn() { }
         })
     });
@@ -738,13 +734,14 @@ function createRollupConfig(launcher, { output, ...options } = {}) {
         ...options
     };
 }
-function createRollupPlugins(buildDir, defaultLevel) {
+function createRollupPlugins(buildDir, { defaultLevel, renderer }) {
     return [
         replace({
             preventAssignment: true,
             values: {
                 DEFAULT_LEVEL: JSON.stringify(defaultLevel),
-                IS_DEV: 'true'
+                IS_DEV: 'true',
+                RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
             }
         }),
         nodeResolve({ preferBuiltins: true }),

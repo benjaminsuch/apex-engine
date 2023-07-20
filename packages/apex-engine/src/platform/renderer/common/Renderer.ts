@@ -73,11 +73,11 @@ export interface IRenderer {
 
 export const IRenderer = InstantiationService.createDecorator<IRenderer>('renderer');
 
-const box = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: 0x00ff00 }));
-box.position.z = -5;
 const boxGeom = new BoxGeometry(1, 1, 1);
-console.log('BoxGeometry', boxGeom.toJSON());
-console.log('MeshBasicMaterial', new MeshBasicMaterial({ color: 0x00ff00 }).toJSON());
+const box = new Mesh(boxGeom, new MeshBasicMaterial({ color: 0x00ff00 }));
+box.position.z = -5;
+//console.log('BoxGeometry', boxGeom.toJSON());
+//console.log('MeshBasicMaterial', new MeshBasicMaterial({ color: 0x00ff00 }).toJSON());
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;
 
@@ -95,7 +95,7 @@ export class Renderer {
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.outputEncoding = sRGBEncoding;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
-    this.scene.add(box);
+    //this.scene.add(box);
   }
 
   public start() {
@@ -109,7 +109,7 @@ export class Renderer {
       this.logger.warn(`The renderer has no camera proxy assigned.`);
       return;
     }
-    console.log('setSize', width / height);
+
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();

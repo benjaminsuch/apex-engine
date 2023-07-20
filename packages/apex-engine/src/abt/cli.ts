@@ -126,11 +126,7 @@ async function buildBrowserTarget(target: TargetConfig) {
   try {
     bundle = await rollup({
       ...createRollupConfig('browser'),
-      plugins: [
-        workersPlugin({ target }),
-        ...createRollupPlugins(buildDir, target.defaultLevel),
-        htmlPlugin()
-      ],
+      plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target), htmlPlugin()],
       onwarn() {}
     });
 
@@ -169,7 +165,7 @@ async function buildElectronTarget(target: TargetConfig) {
         input: {
           main: getLauncherPath('electron-main')
         },
-        plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target.defaultLevel)],
+        plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target)],
         external: ['electron'],
         onwarn() {}
       })
@@ -183,7 +179,7 @@ async function buildElectronTarget(target: TargetConfig) {
         plugins: [
           // electron-sandbox is a browser, so we change the platform to "browser".
           workersPlugin({ target: { ...target, platform: 'browser' } }),
-          ...createRollupPlugins(buildDir, target.defaultLevel),
+          ...createRollupPlugins(buildDir, target),
           htmlPlugin('./sandbox.js', {
             meta: [
               {
@@ -300,7 +296,7 @@ async function serveBrowserTarget(target: TargetConfig) {
       },
       plugins: [
         workersPlugin({ target }),
-        ...createRollupPlugins(buildDir, target.defaultLevel),
+        ...createRollupPlugins(buildDir, target),
         htmlPlugin(
           './index.js',
           {},
@@ -384,7 +380,7 @@ async function serveElectronTarget(target: TargetConfig) {
         format: 'cjs',
         sourcemap: false
       },
-      plugins: createRollupPlugins(buildDir, target.defaultLevel),
+      plugins: createRollupPlugins(buildDir, target),
       external: ['electron'],
       onwarn() {}
     })
@@ -419,7 +415,7 @@ async function serveElectronTarget(target: TargetConfig) {
       plugins: [
         // electron-sandbox is a browser, so we change the platform to "browser".
         workersPlugin({ target: { ...target, platform: 'browser' } }),
-        ...createRollupPlugins(buildDir, target.defaultLevel),
+        ...createRollupPlugins(buildDir, target),
         htmlPlugin('./sandbox.js')
       ],
       onwarn() {}
@@ -468,7 +464,7 @@ async function serveNodeTarget(target: TargetConfig) {
         freeze: false,
         sourcemap: false
       },
-      plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target.defaultLevel)],
+      plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target)],
       onwarn() {}
     })
   });
@@ -568,13 +564,14 @@ function createRollupConfig(
   };
 }
 
-function createRollupPlugins(buildDir: string, defaultLevel: string): Plugin[] {
+function createRollupPlugins(buildDir: string, { defaultLevel, renderer }: TargetConfig): Plugin[] {
   return [
     replace({
       preventAssignment: true,
       values: {
         DEFAULT_LEVEL: JSON.stringify(defaultLevel),
-        IS_DEV: 'true'
+        IS_DEV: 'true',
+        RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
       }
     }),
     nodeResolve({ preferBuiltins: true }),

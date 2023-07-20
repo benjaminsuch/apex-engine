@@ -21,6 +21,9 @@ export type Target = 'client' | 'game' | 'server';
 export interface TargetConfig {
   defaultLevel: string;
   platform: Platform;
+  renderer?: {
+    runOnMainThread?: boolean;
+  };
   target: Target;
 }
 

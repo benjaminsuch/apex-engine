@@ -42,7 +42,7 @@ export class SceneComponent extends ActorComponent {
     super.init();
   }
 
-  public attachToParent(parent: SceneComponent) {
+  public attachToParent(parent: SceneComponent): void {
     parent.children.add(this);
   }
 
