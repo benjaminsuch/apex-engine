@@ -1,6 +1,8 @@
 import { IInstatiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
 import { type Actor } from './Actor';
+import { GameMode } from './GameMode';
 import { type World } from './World';
 
 export class Level {
@@ -32,12 +34,20 @@ export class Level {
 
   private isInitialized: boolean = false;
 
+  public readonly gameModeClass: typeof GameMode = GameMode;
+
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
     @IRenderer protected readonly renderer: IRenderer
   ) {}
 
   public init() {
+    if (this.isInitialized) {
+      this.logger.warn(this.constructor.name, 'Already initialized.');
+      return;
+    }
+
     this.isInitialized = true;
   }
 

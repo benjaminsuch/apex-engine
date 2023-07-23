@@ -1,5 +1,6 @@
 import { type Actor } from './Actor';
 import { type GameInstance } from './GameInstance';
+import { GameMode } from './GameMode';
 import { type Level } from './Level';
 
 export class World {
@@ -21,11 +22,23 @@ export class World {
     return this.currentLevel;
   }
 
-  public setCurrentLevel(level: Level) {
-    if (this.currentLevel !== level) {
-      this.currentLevel = level;
+  public setCurrentLevel(val: Level) {
+    if (!this.currentLevel) {
+      this.currentLevel = val;
       this.currentLevel.world = this;
+      this.gameMode = this.spawnActor(val.gameModeClass);
+    } else {
+      //this.currentLevel.dispose()
     }
+  }
+
+  private gameMode?: GameMode;
+
+  public getGameMode() {
+    if (!this.gameMode) {
+      throw new Error(`The game mode has not been set yet.`);
+    }
+    return this.gameMode;
   }
 
   public getGameInstance() {
@@ -48,6 +61,8 @@ export class World {
     if (this.currentLevel) {
       this.currentLevel.initActors();
     }
+
+    console.log('Init actors for play:', this.actors);
   }
 
   public beginPlay(): void {
@@ -74,5 +89,10 @@ export class World {
     this.actors.add(actor);
 
     return actor;
+  }
+
+  public spawnPlayActor() {
+    const playerController = this.getGameMode().login();
+    this.getGameMode().postLogin();
   }
 }

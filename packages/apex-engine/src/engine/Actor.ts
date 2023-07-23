@@ -94,7 +94,7 @@ export class Actor {
   }
 
   public preInitComponents() {
-    this.logger.debug('Actor:', 'preInitComponents');
+    this.logger.debug(this.constructor.name, 'preInitComponents');
 
     for (const component of this.getComponents()) {
       component.world = this.getWorld();

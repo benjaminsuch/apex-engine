@@ -1,3 +1,4 @@
+import { TRenderSetCameraMessage } from '../platform/renderer/common';
 import { CameraComponent } from './components';
 import { Actor } from './Actor';
 import { Pawn } from './Pawn';
@@ -19,5 +20,16 @@ export class PlayerController extends Actor {
         this.camera = component;
       }
     }
+  }
+
+  public override beginPlay(): void {
+    if (this.camera) {
+      this.renderer.send<TRenderSetCameraMessage>({
+        type: 'set-camera',
+        camera: this.camera.toJSON()
+      });
+    }
+
+    super.beginPlay();
   }
 }

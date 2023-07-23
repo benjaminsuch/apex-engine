@@ -75,7 +75,6 @@ export default class RenderMainThread extends EventTarget implements EventListen
     initialCanvasWidth,
     messagePort
   }: TRenderWorkerInitData) {
-    console.log('init main thread renderer');
     this.renderer = instantiationService.createInstance(Renderer, canvas);
     this.renderer.init();
     this.renderer.setSize(initialCanvasHeight, initialCanvasWidth);

@@ -2131,7 +2131,8 @@ __metadata:
     electron: ^23.1.0
     socket.io: ^4.5.4
     socket.io-client: ^4.5.4
-    three: 0.149.0
+    three: 0.154.0
+    three-stdlib: ^2.21.5
     tslib: ^2.5.0
     typescript: ^4.9.4
   languageName: unknown
@@ -2407,14 +2408,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three@npm:0.149.0":
-  version: 0.149.0
-  resolution: "three@npm:0.149.0"
-  checksum: bb11e28054ce11ecfbe94150c2f253fe149cd7532b7b9253cf0806022d234ba3711944f42d65131d146193e7396b92c9965d88cd779b979f007795e13dfb44e9
-  languageName: node
-  linkType: hard
-
-"three@npm:^0.154.0":
+"three@npm:0.154.0, three@npm:^0.154.0":
   version: 0.154.0
   resolution: "three@npm:0.154.0"
   checksum: 90ad3cafef8b866641366977ab7189d56f7352c6cdc014cbab946544e42782ec4ea7e56b959b43590433a0fcdc4bd8f8029b18a75074ba10005182c5a73bcc88

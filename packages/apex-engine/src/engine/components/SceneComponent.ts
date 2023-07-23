@@ -32,7 +32,7 @@ export class SceneComponent extends ActorComponent {
   }
 
   public override init(): void {
-    this.logger.debug(`${this.constructor.name}:`, 'init', this.uuid);
+    this.logger.debug(this.constructor.name, 'init', this.uuid);
 
     this.getOwner().renderer.send<TRenderSceneProxyInitMessage>({
       type: 'init-scene-proxy',

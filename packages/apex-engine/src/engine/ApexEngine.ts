@@ -72,6 +72,7 @@ export abstract class ApexEngine {
       world.setCurrentLevel(level);
       level.init();
       world.initActorsForPlay();
+      world.spawnPlayActor();
     } catch (error) {
       console.log(error);
     }
