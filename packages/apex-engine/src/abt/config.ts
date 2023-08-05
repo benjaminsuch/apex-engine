@@ -18,9 +18,26 @@ export type Platform = 'browser' | 'electron' | 'node';
 
 export type Target = 'client' | 'game' | 'server';
 
+export enum NetDriver {
+  WebSocket = 'WebSocketNetDriver',
+  WebRTC = 'WebRTCNetDriver'
+}
+
+export const defaultTargetConfig: TargetConfig = {
+  defaultLevel: './maps/index.js',
+  platform: 'browser',
+  net: {
+    netDriver: NetDriver.WebSocket
+  },
+  target: 'game'
+};
+
 export interface TargetConfig {
   defaultLevel: string;
   platform: Platform;
+  net?: {
+    netDriver?: string;
+  };
   renderer?: {
     runOnMainThread?: boolean;
   };

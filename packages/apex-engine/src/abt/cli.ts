@@ -19,7 +19,7 @@ import {
 } from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import { APEX_DIR, type TargetConfig, getApexConfig } from './config';
+import { APEX_DIR, type TargetConfig, getApexConfig, defaultTargetConfig } from './config';
 import { startElectron } from './electron';
 import { htmlPlugin, workersPlugin } from './plugins';
 import { filterDuplicateOptions, getLauncherPath, type Launcher } from './utils';
@@ -63,7 +63,9 @@ cli
       mkdirSync(APEX_DIR);
     }
 
-    for (const targetConfig of targets) {
+    for (let targetConfig of targets) {
+      targetConfig = { ...defaultTargetConfig, ...targetConfig };
+
       if (platform && targetConfig.platform !== platform) {
         continue;
       }
@@ -89,7 +91,9 @@ cli.command('build').action(async (options: CLIOptions) => {
     isDebugModeOn = true;
   }
 
-  for (const targetConfig of targets) {
+  for (let targetConfig of targets) {
+    targetConfig = { ...defaultTargetConfig, ...targetConfig };
+
     if (platform && targetConfig.platform !== platform) {
       continue;
     }
@@ -574,13 +578,19 @@ function createRollupConfig(
   };
 }
 
-function createRollupPlugins(buildDir: string, { defaultLevel, renderer }: TargetConfig): Plugin[] {
+function createRollupPlugins(
+  buildDir: string,
+  { defaultLevel, renderer, target }: TargetConfig
+): Plugin[] {
   return [
     replace({
       preventAssignment: true,
       values: {
         DEFAULT_LEVEL: JSON.stringify(defaultLevel),
         IS_DEV: 'true',
+        IS_CLIENT: String(target === 'client'),
+        IS_GAME: String(target === 'game'),
+        IS_SERVER: String(target === 'server'),
         RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
       }
     }),
