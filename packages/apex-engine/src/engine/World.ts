@@ -62,7 +62,7 @@ export class World {
       this.currentLevel.initActors();
     }
 
-    console.log('Init actors for play:', this.actors);
+    console.log('Init actors for play');
   }
 
   public beginPlay(): void {
