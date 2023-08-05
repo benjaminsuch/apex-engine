@@ -7,6 +7,8 @@
     "dev": "abt serve"
   },
   "dependencies": {
+    "@geckos.io/client": "^2.3.1",
+    "@geckos.io/server": "^2.3.1",
     "apex-engine": "latest",
     "electron": "^23.1.0",
     "socket.io": "^4.7.1",
