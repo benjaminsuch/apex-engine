@@ -298,13 +298,9 @@ function workersPlugin({ inline, isBuild = false, target }) {
     };
 }
 
-const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
 const { log } = console;
 let isDebugModeOn = false;
 const debug = (...args) => isDebugModeOn && console.debug('DEBUG', ...args);
-wss.on('connection', ws => {
-    ws.on('error', console.error);
-});
 const cli = cac('apex-build-tool').version('0.1.0').help();
 cli
     .option('-d, --debug', 'Shows debug messages when enabled.')
@@ -492,9 +488,13 @@ async function buildNodeTarget(target) {
 let server;
 async function serveBrowserTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/browser');
+    const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
     if (existsSync(buildDir)) {
         await rimraf(buildDir);
     }
+    wss.on('connection', ws => {
+        ws.on('error', console.error);
+    });
     server = createServer((req, res) => {
         const unsafePath = decodeURI((req.url ?? '').split('?')[0]);
         const urlPath = posix.normalize(unsafePath);
@@ -564,6 +564,7 @@ async function serveBrowserTarget(target) {
             wss.clients.forEach(socket => {
                 socket.send(JSON.stringify({ type: 'update' }));
             });
+            event.result.close();
         }
         if (event.code === 'ERROR') {
             console.log(event);
@@ -575,6 +576,7 @@ async function serveBrowserTarget(target) {
     });
     watcher.on('restart', () => { });
     watcher.on('close', () => { });
+    watcher.close();
 }
 async function serveElectronTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/electron');
@@ -668,7 +670,11 @@ async function serveNodeTarget(target) {
         if (event.code === 'ERROR') {
             console.log(event);
         }
+        if (event.code === 'BUNDLE_END') {
+            event.result.close();
+        }
     });
+    watcher.close();
 }
 function readFileFromContentBase(contentBase, urlPath, callback) {
     let filePath = resolve(contentBase, '.' + urlPath);

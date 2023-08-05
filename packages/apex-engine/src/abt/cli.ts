@@ -31,17 +31,12 @@ interface CLIOptions {
   target?: 'client' | 'game' | 'server';
 }
 
-const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
 const { log } = console;
 
 let isDebugModeOn = false;
 
 const debug = (...args: Parameters<typeof console.debug>) =>
   isDebugModeOn && console.debug('DEBUG', ...args);
-
-wss.on('connection', ws => {
-  ws.on('error', console.error);
-});
 
 const cli = cac('apex-build-tool').version('0.1.0').help();
 
@@ -261,10 +256,15 @@ let server: Server;
 
 async function serveBrowserTarget(target: TargetConfig) {
   const buildDir = resolve(APEX_DIR, 'build/browser');
+  const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
 
   if (existsSync(buildDir)) {
     await rimraf(buildDir);
   }
+
+  wss.on('connection', ws => {
+    ws.on('error', console.error);
+  });
 
   server = createServer((req, res) => {
     const unsafePath = decodeURI((req.url ?? '').split('?')[0]);
@@ -344,6 +344,8 @@ async function serveBrowserTarget(target: TargetConfig) {
       wss.clients.forEach(socket => {
         socket.send(JSON.stringify({ type: 'update' }));
       });
+
+      event.result.close();
     }
 
     if (event.code === 'ERROR') {
@@ -359,6 +361,8 @@ async function serveBrowserTarget(target: TargetConfig) {
   watcher.on('restart', () => {});
 
   watcher.on('close', () => {});
+
+  watcher.close();
 }
 
 async function serveElectronTarget(target: TargetConfig) {
@@ -475,7 +479,13 @@ async function serveNodeTarget(target: TargetConfig) {
     if (event.code === 'ERROR') {
       console.log(event);
     }
+
+    if (event.code === 'BUNDLE_END') {
+      event.result.close();
+    }
   });
+
+  watcher.close();
 }
 
 function readFileFromContentBase(

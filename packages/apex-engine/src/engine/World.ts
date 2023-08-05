@@ -48,6 +48,8 @@ export class World {
     if (this.currentLevel) {
       this.currentLevel.initActors();
     }
+
+    console.log('Init actors for play');
   }
 
   public beginPlay(): void {

@@ -20,12 +20,12 @@ export async function main(args: string[]) {
   });
 
   server.listen(+PORT, HOST, () => {
-    console.log(`Server running at http://${HOST}:${PORT}/`);
+    console.log(`\nServer running at http://${HOST}:${PORT}/\n`);
+
+    const cli = new CliMain(args);
+
+    cli.init();
   });
-
-  const cli = new CliMain(args);
-
-  cli.init();
 }
 
 main(process.argv);
