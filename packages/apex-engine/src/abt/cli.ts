@@ -1,6 +1,7 @@
 import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
+import commonjs from '@rollup/plugin-commonjs';
 import { cac } from 'cac';
 import glob from 'glob';
 import mime from 'mime';
@@ -308,11 +309,6 @@ async function serveBrowserTarget(target: TargetConfig) {
             `<script type="module">`,
             `  const ws = new WebSocket('ws://localhost:24678')`,
             ``,
-            `  ws.addEventListener('open', () => {`,
-            `    console.log('connection open')`,
-            `    ws.send('message from client')`,
-            `  })`,
-            ``,
             `  ws.addEventListener('message', async ({data}) => {`,
             ``,
             `    let parsed`,
@@ -595,6 +591,7 @@ function createRollupPlugins(
       }
     }),
     nodeResolve({ preferBuiltins: true }),
-    typescript({ outDir: buildDir })
+    typescript({ outDir: buildDir }),
+    commonjs()
   ];
 }

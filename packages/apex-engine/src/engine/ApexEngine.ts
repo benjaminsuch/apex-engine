@@ -28,9 +28,9 @@ export abstract class ApexEngine {
   private isInitialized: boolean = false;
 
   constructor(
-    private readonly engineLoop: EngineLoop,
-    @IInstatiationService private readonly instantiationService: IInstatiationService,
-    @IConsoleLogger private readonly logger: IConsoleLogger
+    protected readonly engineLoop: EngineLoop,
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the GameEngine already exists.`);
@@ -40,7 +40,7 @@ export abstract class ApexEngine {
   }
 
   public init() {
-    this.gameInstance = new GameInstance(this);
+    this.gameInstance = this.instantiationService.createInstance(GameInstance, this);
     this.gameInstance.init();
 
     this.isInitialized = true;

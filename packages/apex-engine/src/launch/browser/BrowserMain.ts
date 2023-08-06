@@ -1,6 +1,8 @@
 import { EngineLoop } from '../../engine';
 import { InstantiationService, ServiceCollection } from '../../platform/di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
+import { WebSocketNetDriver } from '../../platform/net/browser';
+import { INetDriver } from '../../platform/net/common';
 import { BrowserRenderer } from '../../platform/renderer/browser';
 import { IRenderer } from '../../platform/renderer/common';
 
@@ -9,9 +11,11 @@ export class BrowserMain {
 
   constructor() {
     const services = new ServiceCollection();
+    const consoleLogger = new ConsoleLogger();
 
-    services.set(IConsoleLogger, new ConsoleLogger());
+    services.set(IConsoleLogger, consoleLogger);
     services.set(IRenderer, new BrowserRenderer({ runOnMainThread: !!RENDER_ON_MAIN_THREAD }));
+    services.set(INetDriver, new WebSocketNetDriver(consoleLogger));
 
     this.instantiationService = new InstantiationService(services);
   }

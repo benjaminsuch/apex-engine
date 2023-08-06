@@ -2,6 +2,7 @@
 import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
+import commonjs from '@rollup/plugin-commonjs';
 import { cac } from 'cac';
 import glob from 'glob';
 import mime from 'mime';
@@ -44,6 +45,19 @@ function filterDuplicateOptions(options) {
     }
 }
 
+var NetDriver;
+(function (NetDriver) {
+    NetDriver["WebSocket"] = "WebSocketNetDriver";
+    NetDriver["WebRTC"] = "WebRTCNetDriver";
+})(NetDriver || (NetDriver = {}));
+const defaultTargetConfig = {
+    defaultLevel: './maps/index.js',
+    platform: 'browser',
+    net: {
+        netDriver: NetDriver.WebSocket
+    },
+    target: 'game'
+};
 const CONFIG_FILE_NAME = 'apex.config';
 const APEX_DIR = resolve('.apex');
 // Using defineConfig in apex.config.ts leads to an MISSING_EXPORTS error for some dependencies :shrug:
@@ -320,7 +334,8 @@ cli
     if (!existsSync(APEX_DIR)) {
         mkdirSync(APEX_DIR);
     }
-    for (const targetConfig of targets) {
+    for (let targetConfig of targets) {
+        targetConfig = { ...defaultTargetConfig, ...targetConfig };
         if (platform && targetConfig.platform !== platform) {
             continue;
         }
@@ -342,7 +357,8 @@ cli.command('build').action(async (options) => {
     if (debug) {
         isDebugModeOn = true;
     }
-    for (const targetConfig of targets) {
+    for (let targetConfig of targets) {
+        targetConfig = { ...defaultTargetConfig, ...targetConfig };
         if (platform && targetConfig.platform !== platform) {
             continue;
         }
@@ -527,11 +543,6 @@ async function serveBrowserTarget(target) {
                 htmlPlugin('./index.js', {}, [
                     `<script type="module">`,
                     `  const ws = new WebSocket('ws://localhost:24678')`,
-                    ``,
-                    `  ws.addEventListener('open', () => {`,
-                    `    console.log('connection open')`,
-                    `    ws.send('message from client')`,
-                    `  })`,
                     ``,
                     `  ws.addEventListener('message', async ({data}) => {`,
                     ``,
@@ -740,17 +751,21 @@ function createRollupConfig(launcher, { output, ...options } = {}) {
         ...options
     };
 }
-function createRollupPlugins(buildDir, { defaultLevel, renderer }) {
+function createRollupPlugins(buildDir, { defaultLevel, renderer, target }) {
     return [
         replace({
             preventAssignment: true,
             values: {
                 DEFAULT_LEVEL: JSON.stringify(defaultLevel),
                 IS_DEV: 'true',
+                IS_CLIENT: String(target === 'client'),
+                IS_GAME: String(target === 'game'),
+                IS_SERVER: String(target === 'server'),
                 RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
             }
         }),
         nodeResolve({ preferBuiltins: true }),
-        typescript({ outDir: buildDir })
+        typescript({ outDir: buildDir }),
+        commonjs()
     ];
 }

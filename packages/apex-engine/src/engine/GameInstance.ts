@@ -1,3 +1,5 @@
+import { IInstatiationService } from '../platform/di/common';
+import { INetDriver } from '../platform/net/common';
 import { type ApexEngine } from './ApexEngine';
 import { World } from './World';
 
@@ -11,11 +13,19 @@ export class GameInstance {
     return this.world;
   }
 
-  constructor(private readonly engine: ApexEngine) {}
+  constructor(
+    private readonly engine: ApexEngine,
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @INetDriver protected readonly netDriver: INetDriver
+  ) {}
 
   public init() {
-    this.world = new World(this);
+    this.world = this.instantiationService.createInstance(World, this);
     this.world.init();
+
+    this.netDriver.init();
+    this.netDriver.listen();
+    this.netDriver.connect();
   }
 
   public start() {

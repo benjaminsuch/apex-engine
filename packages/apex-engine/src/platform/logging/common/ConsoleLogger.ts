@@ -5,7 +5,7 @@ export class ConsoleLogger extends AbstractLogger implements IConsoleLogger {
   declare readonly _injectibleService: undefined;
 
   public debug(message: string, ...args: any[]): void {
-    console.log('%c DEBUG ', 'background: #888; color: #fff', message, ...args);
+    console.log('%cDEBUG', 'background: #888; color: #fff', message, ...args);
   }
 
   public error(message: string, ...args: any[]): void {
