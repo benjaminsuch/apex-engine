@@ -13,10 +13,6 @@ export class WebSocketNetDriver implements INetDriver {
   public listen() {}
 
   public connect() {
-    if (!IS_CLIENT) {
-      return;
-    }
-
     this.socket = new WebSocket(`ws://localhost:8888`);
     this.socket.addEventListener('open', this);
   }
@@ -25,11 +21,7 @@ export class WebSocketNetDriver implements INetDriver {
     this.socket?.removeEventListener('open', this);
   }
 
-  public join() {
-    if (!IS_CLIENT) {
-      return;
-    }
-  }
+  public join() {}
 
   public tick() {}
 

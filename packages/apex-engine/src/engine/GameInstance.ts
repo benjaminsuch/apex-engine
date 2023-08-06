@@ -23,9 +23,11 @@ export class GameInstance {
     this.world = this.instantiationService.createInstance(World, this);
     this.world.init();
 
-    this.netDriver.init();
-    this.netDriver.listen();
-    this.netDriver.connect();
+    if (!IS_GAME) {
+      this.netDriver.init();
+      this.netDriver.listen();
+      this.netDriver.connect();
+    }
   }
 
   public start() {

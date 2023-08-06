@@ -57,6 +57,14 @@ export abstract class ApexEngine {
 
   public exit() {}
 
+  /**
+   * Client <-> Server:
+   * 1. Client calls `loadLevel(<url>)`
+   * 2. Client must be already authenticated? Otherwise try to authenticate
+   * 3. Load level, call `postLoad`, `setCurrentLevel`, `init` and `initActorsForPlay`
+   * 4. Client replicates additional actors sent from the server
+   * @param url
+   */
   public async loadLevel(url: string) {
     this.logger.info(`Attempt to load level: ${url}`);
 
