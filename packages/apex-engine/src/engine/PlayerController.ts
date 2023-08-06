@@ -1,12 +1,10 @@
-import { TRenderSetCameraMessage } from '../platform/renderer/common';
+import { type TRenderSetCameraMessage } from '../platform/renderer/common';
 import { CameraComponent } from './components';
 import { Actor } from './Actor';
 import { Pawn } from './Pawn';
 
 export class PlayerController extends Actor {
   protected pawn?: Pawn;
-
-  protected camera?: CameraComponent;
 
   public getPawn() {
     return this.pawn;
@@ -21,6 +19,8 @@ export class PlayerController extends Actor {
       }
     }
   }
+
+  protected camera?: CameraComponent;
 
   public override beginPlay(): void {
     if (this.camera) {

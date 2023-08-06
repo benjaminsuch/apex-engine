@@ -1,6 +1,7 @@
 import { Actor } from './Actor';
 import { Pawn } from './Pawn';
 import { PlayerController } from './PlayerController';
+import { InputComponent } from './components';
 
 export class GameMode extends Actor {
   public readonly playerPawnClass: typeof Pawn = Pawn;
@@ -8,7 +9,7 @@ export class GameMode extends Actor {
   public readonly playerControllerClass: typeof PlayerController = PlayerController;
 
   public login() {
-    return this.spawnPlayerController();
+    this.spawnPlayerController();
   }
 
   public postLogin() {
@@ -24,7 +25,10 @@ export class GameMode extends Actor {
   public findPlayerStart() {}
 
   public spawnPlayerController() {
-    return this.getWorld().spawnActor(this.playerControllerClass);
+    const playerController = this.getWorld().spawnActor(this.playerControllerClass);
+    playerController.addComponent(InputComponent);
+
+    return playerController;
   }
 
   public spawnDefaultPlayerPawn() {}
