@@ -6,6 +6,7 @@ import {
   PCFSoftShadowMap,
   Scene,
   sRGBEncoding,
+  Vector2,
   WebGLRenderer
 } from 'three';
 
@@ -95,7 +96,7 @@ export class Renderer {
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.outputEncoding = sRGBEncoding;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
-    //this.scene.add(box);
+    this.scene.add(box);
   }
 
   public start() {
@@ -108,6 +109,18 @@ export class Renderer {
     if (!this.camera) {
       this.logger.warn(`The renderer has no camera proxy assigned.`);
       return;
+    }
+
+    this.updateCameraProjection(height, width);
+  }
+
+  public updateCameraProjection(height?: number, width?: number) {
+    if (!this.camera) {
+      return;
+    }
+
+    if (!width || !height) {
+      [width, height] = this.webGLRenderer.getSize(new Vector2());
     }
 
     this.camera.aspect = width / height;
@@ -129,6 +142,10 @@ export class Renderer {
       for (const proxy of this.proxyObjects) {
         proxy.tick();
       }
+
+      box.rotation.x += 0.005;
+      box.rotation.y += 0.005;
+      box.rotation.z += 0.005;
 
       this.webGLRenderer.render(this.scene, this.camera.sceneObject);
     }
