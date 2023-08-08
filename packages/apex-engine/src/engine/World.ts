@@ -93,6 +93,6 @@ export class World {
 
   public spawnPlayActor() {
     const playerController = this.getGameMode().login();
-    this.getGameMode().postLogin();
+    this.getGameMode().postLogin(playerController);
   }
 }

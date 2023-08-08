@@ -1,10 +1,11 @@
 declare global {
+  var DEFAULT_LEVEL: string;
+  var IS_BROWSER: string;
   var IS_CLIENT: boolean;
+  var IS_DEV: string;
   var IS_GAME: boolean;
   var IS_SERVER: boolean;
-  var DEFAULT_LEVEL: string;
   var RENDER_ON_MAIN_THREAD: string;
-  var IS_DEV: string;
 
   enum Thread {
     Game = 'game',
