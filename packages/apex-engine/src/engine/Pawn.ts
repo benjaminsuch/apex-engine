@@ -1,6 +1,6 @@
+import { InputComponent } from './components';
 import { Actor } from './Actor';
 import { type PlayerController } from './PlayerController';
-import { InputComponent } from './components';
 
 export class Pawn extends Actor {
   public controller: PlayerController | null = null;
@@ -19,9 +19,10 @@ export class Pawn extends Actor {
     if (this.controller) {
       if (!this.inputComponent) {
         this.inputComponent = this.addComponent(InputComponent);
-        //SetupPlayerInputComponent()
-        //InputComponent->RegisterComponent()
+        this.setupInputComponent();
       }
     }
   }
+
+  protected setupInputComponent() {}
 }

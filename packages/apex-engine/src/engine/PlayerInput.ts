@@ -1,5 +1,5 @@
 export class PlayerInput {
-  private readonly keyMappings: Map<string, Set<InputKeyMap>> = new Map();
+  private readonly keyMappings: Map<TKeys, Set<InputKeyMap>> = new Map();
 
   constructor() {
     if (IS_BROWSER) {
@@ -51,7 +51,60 @@ export class PlayerInput {
 export class InputKeyMap {
   constructor(
     public readonly name: string,
-    public readonly key: string,
+    public readonly key: TKeys,
     public readonly scale: number
   ) {}
 }
+
+export type TKeys =
+  | 'AltLeft'
+  | 'AltRight'
+  | 'ArrowDown'
+  | 'ArrowLeft'
+  | 'ArrowRight'
+  | 'ArrowUp'
+  | 'Backquote'
+  | 'ControlLeft'
+  | 'ControlRight'
+  | 'Digit1'
+  | 'Digit2'
+  | 'Digit3'
+  | 'Digit4'
+  | 'Digit5'
+  | 'Digit6'
+  | 'Digit7'
+  | 'Digit8'
+  | 'Digit9'
+  | 'Digit0'
+  | 'Equal'
+  | 'KeyA'
+  | 'KeyB'
+  | 'KeyC'
+  | 'KeyD'
+  | 'KeyE'
+  | 'KeyF'
+  | 'KeyG'
+  | 'KeyH'
+  | 'KeyI'
+  | 'KeyJ'
+  | 'KeyK'
+  | 'KeyL'
+  | 'KeyM'
+  | 'KeyN'
+  | 'KeyO'
+  | 'KeyP'
+  | 'KeyQ'
+  | 'KeyR'
+  | 'KeyS'
+  | 'KeyT'
+  | 'KeyU'
+  | 'KeyV'
+  | 'KeyW'
+  | 'KeyX'
+  | 'KeyY'
+  | 'KeyZ'
+  | 'Minus'
+  | 'MouseX'
+  | 'MouseY'
+  | 'Space'
+  | 'Tab';

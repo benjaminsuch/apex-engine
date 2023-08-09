@@ -7,7 +7,7 @@ import { Pawn } from './Pawn';
 import { PlayerInput } from './PlayerInput';
 
 export class PlayerController extends Actor {
-  protected pawn: Actor | null = null;
+  protected pawn: Pawn | null = null;
 
   public getPawn() {
     return this.pawn;
@@ -60,10 +60,7 @@ export class PlayerController extends Actor {
   }
 
   public unpossess() {
-    if (this.pawn instanceof Pawn) {
-      this.pawn.unpossessed();
-    }
-
+    this.pawn?.unpossessed();
     this.setPawn(null);
   }
 }
