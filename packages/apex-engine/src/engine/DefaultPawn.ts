@@ -4,15 +4,25 @@ import { InputKeyMap } from './PlayerInput';
 export class DefaultPawn extends Pawn {
   private inputBindingsInitialized: boolean = false;
 
-  public moveForward() {}
+  public moveForward() {
+    this.logger.debug('moveForward');
+  }
 
-  public moveRight() {}
+  public moveRight() {
+    this.logger.debug('moveRight');
+  }
 
-  public moveUp() {}
+  public moveUp() {
+    this.logger.debug('moveUp');
+  }
 
-  public turn() {}
+  public turn() {
+    this.logger.debug('turn');
+  }
 
-  public lookUp() {}
+  public lookUp() {
+    this.logger.debug('lookUp');
+  }
 
   protected override setupInputComponent() {
     this.initInputBindings();
@@ -30,6 +40,8 @@ export class DefaultPawn extends Pawn {
     this.inputComponent.bindAction('DefaultPawn_MoveUp', this, this.moveUp);
     this.inputComponent.bindAction('DefaultPawn_Turn', this, this.turn);
     this.inputComponent.bindAction('DefaultPawn_LookUp', this, this.lookUp);
+
+    this.logger.debug(this.constructor.name, `Setup input bindings`);
   }
 
   private initInputBindings() {
@@ -63,5 +75,7 @@ export class DefaultPawn extends Pawn {
     playerInput.addInputMap(new InputKeyMap('DefaultPawn_LookUp', 'MouseY', -1));
 
     this.inputBindingsInitialized = true;
+
+    this.logger.debug(this.constructor.name, `Initialized input maps`);
   }
 }

@@ -1,6 +1,6 @@
-import { InputComponent } from './components';
 import { Actor } from './Actor';
 import { type PlayerController } from './PlayerController';
+import { InputComponent } from './components';
 
 export class Pawn extends Actor {
   public controller: PlayerController | null = null;

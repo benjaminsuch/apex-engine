@@ -1,10 +1,10 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer, type TRenderSetCameraMessage } from '../platform/renderer/common';
-import { CameraComponent, InputComponent } from './components';
 import { Actor } from './Actor';
 import { Pawn } from './Pawn';
 import { PlayerInput } from './PlayerInput';
+import { CameraComponent, InputComponent } from './components';
 
 export class PlayerController extends Actor {
   protected pawn: Pawn | null = null;
@@ -39,6 +39,10 @@ export class PlayerController extends Actor {
     this.addComponent(InputComponent);
   }
 
+  public override tick(): void {
+    //
+  }
+
   public override beginPlay(): void {
     if (this.camera) {
       this.renderer.send<TRenderSetCameraMessage>({
@@ -56,6 +60,8 @@ export class PlayerController extends Actor {
     }
 
     this.setPawn(pawn);
+
+    pawn.possessBy(this);
     pawn.restart();
   }
 

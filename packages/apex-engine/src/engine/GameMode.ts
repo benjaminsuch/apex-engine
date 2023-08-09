@@ -1,10 +1,11 @@
-import { Matrix4 } from './math';
 import { Actor } from './Actor';
+import { DefaultPawn } from './DefaultPawn';
 import { Pawn } from './Pawn';
 import { PlayerController } from './PlayerController';
+import { Matrix4 } from './math';
 
 export class GameMode extends Actor {
-  public readonly playerPawnClass: typeof Pawn = Pawn;
+  public readonly playerPawnClass: typeof Pawn = DefaultPawn;
 
   public readonly playerControllerClass: typeof PlayerController = PlayerController;
 
@@ -23,7 +24,10 @@ export class GameMode extends Actor {
     player: PlayerController,
     transform: Matrix4 = this.findPlayerStartLocation()
   ) {
-    player.setPawn(this.spawnDefaultPlayerPawn());
+    this.logger.debug(this.constructor.name, `Restart player`);
+    //InitStartSpot
+    //FinishRestartPlayer
+    player.possess(this.spawnDefaultPlayerPawn());
   }
 
   public findPlayerStartLocation() {

@@ -27,6 +27,9 @@ export class PlayerInput {
   }
 
   public handleEvent(event: KeyboardEvent | MouseEvent | PointerEvent | TouchEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
     if (event.type === 'contextmenu') this.handleContextMenu(event as PointerEvent);
     if (event.type === 'mousedown') this.handleMouseDown(event as MouseEvent);
     if (event.type === 'keydown') this.handleKeyDown(event as KeyboardEvent);
