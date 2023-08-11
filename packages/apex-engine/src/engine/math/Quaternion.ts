@@ -118,7 +118,7 @@ export class Quaternion {
 
   readonly #data: Float32Array;
 
-  #x: number = 0;
+  #x: number;
 
   get x() {
     return this.#data[0];
@@ -129,7 +129,7 @@ export class Quaternion {
     this.#x = this.#data[0];
   }
 
-  #y: number = 0;
+  #y: number;
 
   get y() {
     return this.#data[1];
@@ -140,7 +140,7 @@ export class Quaternion {
     this.#y = this.#data[1];
   }
 
-  #z: number = 0;
+  #z: number;
 
   get z() {
     return this.#data[2];
@@ -151,7 +151,7 @@ export class Quaternion {
     this.#z = this.#data[2];
   }
 
-  #w: number = 0;
+  #w: number;
 
   get w() {
     return this.#data[3];
@@ -159,7 +159,7 @@ export class Quaternion {
 
   set w(val) {
     this.#data.set([val], 3);
-    this.#z = this.#data[3];
+    this.#w = this.#data[3];
   }
 
   public isQuaternion: boolean = true;
@@ -167,6 +167,8 @@ export class Quaternion {
   constructor(buffer: ArrayBufferLike = new SharedArrayBuffer(4 * Float32Array.BYTES_PER_ELEMENT)) {
     this.#buffer = buffer;
     this.#data = new Float32Array(this.#buffer);
+    // Set initial value of "w" to 1
+    this.#data.set([1], 3);
 
     const [x, y, z, w] = this.#data;
 
@@ -442,12 +444,14 @@ export class Quaternion {
       qay = a.y,
       qaz = a.z,
       qaw = a.w;
+    //console.log('qaw', qaw);
     const qbx = b.x,
       qby = b.y,
       qbz = b.z,
       qbw = b.w;
-
+    //console.log('qbx', qbx, qby, qbz, qbw);
     this.x = qax * qbw + qaw * qbx + qay * qbz - qaz * qby;
+    //console.log('x', qax * qbw, qaw * qbx, qay * qbz, qaz * qby);
     this.y = qay * qbw + qaw * qby + qaz * qbx - qax * qbz;
     this.z = qaz * qbw + qaw * qbz + qax * qby - qay * qbx;
     this.w = qaw * qbw - qax * qbx - qay * qby - qaz * qbz;

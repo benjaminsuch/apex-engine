@@ -47,15 +47,22 @@ export class SceneComponent extends ActorComponent {
   }
 
   public toJSON(): SceneProxyConstructorData {
+    const position = this.position.toJSON();
+    const quaternion = this.quaternion.toJSON();
+    const scale = this.scale.toJSON();
+    const rotation = this.rotation.toJSON();
+    const matrix = this.matrix.toJSON();
+    const matrixWorld = this.matrixWorld.toJSON();
+
     return {
       uuid: this.uuid,
       objectType: this.objectType,
-      position: this.position.toJSON(),
-      scale: this.scale.toJSON(),
-      rotation: this.rotation.toJSON(),
-      quaternion: this.quaternion.toJSON(),
-      matrix: this.matrix.toJSON(),
-      matrixWorld: this.matrixWorld.toJSON(),
+      position,
+      scale,
+      rotation,
+      quaternion,
+      matrix,
+      matrixWorld,
       visible: this.visible,
       children: [...this.children].map(child => child.toJSON())
     };

@@ -40,7 +40,7 @@ export class PlayerController extends Actor {
   }
 
   public override tick(): void {
-    //
+    //console.log(1);
   }
 
   public override beginPlay(): void {
