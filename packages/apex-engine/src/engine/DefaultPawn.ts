@@ -1,9 +1,6 @@
 import { Pawn } from './Pawn';
 import { InputAxisMap } from './PlayerInput';
 import { CameraComponent } from './components';
-import { Quaternion } from './math';
-
-const quat = new Quaternion();
 
 export class DefaultPawn extends Pawn {
   private inputBindingsInitialized: boolean = false;
@@ -25,10 +22,9 @@ export class DefaultPawn extends Pawn {
       const halfWidth = window.innerWidth / 2;
       const mouseX = this.controller.playerInput.getKeyValue('MouseX');
       const yawLeft = (mouseX.x - halfWidth) / halfWidth;
+      const { x, z } = this.cameraComponent.quaternion;
 
-      quat.set(quat.x, yawLeft * delta, -0, 1).normalize();
-
-      this.cameraComponent.quaternion.set(quat.x, quat.y, quat.z, 1);
+      this.cameraComponent.quaternion.set(x, yawLeft * delta, z, 1);
     }
   }
 
@@ -41,10 +37,9 @@ export class DefaultPawn extends Pawn {
       const halfHeight = window.innerHeight / 2;
       const mouseY = this.controller.playerInput.getKeyValue('MouseY');
       const pitchDown = (mouseY.x - halfHeight) / halfHeight;
+      const { y, z } = this.cameraComponent.quaternion;
 
-      quat.set(pitchDown * delta, quat.y, -0, 1).normalize();
-
-      this.cameraComponent.quaternion.set(quat.x, quat.y, quat.z, 1);
+      this.cameraComponent.quaternion.set(pitchDown * delta, y, z, 1);
     }
   }
 
