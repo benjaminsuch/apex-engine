@@ -10,17 +10,11 @@ export class DefaultPawn extends Pawn {
 
   private cameraComponent: CameraComponent | null = null;
 
-  public moveForward() {
-    this.logger.debug('moveForward');
-  }
+  public moveForward() {}
 
-  public moveRight() {
-    this.logger.debug('moveRight');
-  }
+  public moveRight() {}
 
-  public moveUp() {
-    this.logger.debug('moveUp');
-  }
+  public moveUp() {}
 
   public turn(delta: number) {
     if (typeof window === 'undefined') {
@@ -65,9 +59,9 @@ export class DefaultPawn extends Pawn {
       return;
     }
 
-    //this.inputComponent.bindAxis('DefaultPawn_MoveForward', this, this.moveForward);
-    //this.inputComponent.bindAxis('DefaultPawn_MoveRight', this, this.moveRight);
-    //this.inputComponent.bindAxis('DefaultPawn_MoveUp', this, this.moveUp);
+    this.inputComponent.bindAxis('DefaultPawn_MoveForward', this, this.moveForward);
+    this.inputComponent.bindAxis('DefaultPawn_MoveRight', this, this.moveRight);
+    this.inputComponent.bindAxis('DefaultPawn_MoveUp', this, this.moveUp);
     this.inputComponent.bindAxis('DefaultPawn_Turn', this, this.turn);
     this.inputComponent.bindAxis('DefaultPawn_LookUp', this, this.lookUp);
 
@@ -101,7 +95,6 @@ export class DefaultPawn extends Pawn {
 
     playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveUp', 'Space', 1));
 
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_Turn', 'MouseX', 1));
     playerInput.addAxisMap(new InputAxisMap('DefaultPawn_Turn', 'MouseX', 1));
     playerInput.addAxisMap(new InputAxisMap('DefaultPawn_LookUp', 'MouseY', 1));
 
