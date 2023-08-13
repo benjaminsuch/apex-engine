@@ -7,11 +7,7 @@ export class World {
   /**
    * Actors stored here are persistent and won't be destroyed when changing levels.
    */
-  private readonly actors: Set<Actor> = new Set();
-
-  public getActors() {
-    return Array.from(this.actors);
-  }
+  public readonly actors: Set<Actor> = new Set();
 
   private currentLevel?: Level;
 
@@ -66,13 +62,13 @@ export class World {
   }
 
   public beginPlay(): void {
-    for (const actor of this.getActors()) {
+    for (const actor of this.actors) {
       actor.beginPlay();
     }
   }
 
   public tick(): void {
-    for (const actor of this.getActors()) {
+    for (const actor of this.actors) {
       actor.tick();
     }
   }

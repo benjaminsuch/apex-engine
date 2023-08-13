@@ -4,7 +4,9 @@ import { EKeyEvent } from '../PlayerInput';
 import { ActorComponent } from './ActorComponent';
 
 export class InputComponent extends ActorComponent {
-  private readonly actionBindings: Map<string, Function> = new Map();
+  public readonly actionBindings: InputActionBinding[] = [];
+
+  public readonly axisBindings: InputAxisBinding[] = [];
 
   public blockInput: boolean = false;
 
@@ -12,15 +14,36 @@ export class InputComponent extends ActorComponent {
     super();
   }
 
+  public bindAxis<T extends Actor>(name: InputAxisBinding['name'], ref: T, fn: Function) {
+    const idx = this.axisBindings.findIndex(binding => binding.name === name);
+
+    if (idx > -1) {
+      this.logger.warn(
+        this.constructor.name,
+        `An axis binding for "${name}" already exists and will be unbound.`
+      );
+      this.unbindAxis(name);
+    }
+
+    this.axisBindings.push(new InputAxisBinding(name, fn.bind(ref)));
+  }
+
+  public unbindAxis(name: InputAxisBinding['name']) {
+    this.axisBindings.splice(
+      this.axisBindings.findIndex(binding => binding.name === name),
+      1
+    );
+  }
+
   public bindAction<T extends Actor>(
-    name: string,
+    name: InputActionBinding['name'],
     ref: T,
     fn: Function,
-    event: EKeyEvent = EKeyEvent.Pressed
+    event: EKeyEvent
   ) {
-    const binding = this.actionBindings.get(name);
+    const idx = this.axisBindings.findIndex(binding => binding.name === name);
 
-    if (binding) {
+    if (idx > -1) {
       this.logger.warn(
         this.constructor.name,
         `An action binding for "${name}" already exists and will be unbound.`
@@ -28,10 +51,29 @@ export class InputComponent extends ActorComponent {
       this.unbindAction(name);
     }
 
-    this.actionBindings.set(name, fn.bind(ref));
+    this.actionBindings.push(new InputActionBinding(name, fn.bind(ref), event));
   }
 
-  public unbindAction(name: string) {
-    this.actionBindings.delete(name);
+  public unbindAction(name: InputActionBinding['name']) {
+    this.actionBindings.splice(
+      this.actionBindings.findIndex(binding => binding.name === name),
+      1
+    );
   }
+}
+
+export class InputActionBinding {
+  constructor(
+    public readonly name: string,
+    public readonly handle: Function,
+    public readonly event: EKeyEvent
+  ) {}
+}
+
+export class InputAxisBinding {
+  constructor(
+    public readonly name: string,
+    public readonly handle: Function,
+    public value: number = 0
+  ) {}
 }
