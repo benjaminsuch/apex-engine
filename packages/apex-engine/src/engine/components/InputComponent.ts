@@ -14,6 +14,8 @@ export class InputComponent extends ActorComponent {
     super();
   }
 
+  public buildKeyMap() {}
+
   public bindAxis<T extends Actor>(name: InputAxisBinding['name'], ref: T, fn: Function) {
     const idx = this.axisBindings.findIndex(binding => binding.name === name);
 
@@ -62,14 +64,28 @@ export class InputComponent extends ActorComponent {
   }
 }
 
-export class InputActionBinding {
+export class InputBinding {
+  public consumeInput: boolean = false;
+
+  public executeWhenPaused: boolean = false;
+}
+
+export class InputActionBinding extends InputBinding {
   constructor(
     public readonly name: string,
     public readonly handle: Function,
     public readonly event: EKeyEvent
-  ) {}
+  ) {
+    super();
+  }
 }
 
-export class InputAxisBinding {
-  constructor(public readonly name: string, public readonly handle: Function) {}
+export class InputAxisBinding extends InputBinding {
+  constructor(
+    public readonly name: string,
+    public readonly handle: Function,
+    public value: number = 0
+  ) {
+    super();
+  }
 }

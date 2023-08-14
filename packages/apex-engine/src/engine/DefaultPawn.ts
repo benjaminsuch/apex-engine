@@ -11,40 +11,20 @@ export class DefaultPawn extends Pawn {
     console.log('openSomething');
   }
 
-  public moveForward() {}
-
-  public moveRight() {}
-
-  public moveUp() {}
-
-  public turn(delta: number) {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    if (this.cameraComponent && this.controller) {
-      const halfWidth = window.innerWidth / 2;
-      const mouseX = this.controller.playerInput.getKeyValue('MouseX');
-      const yawLeft = (mouseX.x - halfWidth) / halfWidth;
-      const { x, z } = this.cameraComponent.quaternion;
-
-      this.cameraComponent.quaternion.set(x, yawLeft * delta, z, 1);
-    }
+  public moveForward(value: number) {
+    //console.log('moveForward');
   }
 
-  public lookUp(delta: number) {
-    if (typeof window === 'undefined') {
-      return;
-    }
+  public moveRight(value: number) {}
 
-    if (this.cameraComponent && this.controller) {
-      const halfHeight = window.innerHeight / 2;
-      const mouseY = this.controller.playerInput.getKeyValue('MouseY');
-      const pitchDown = (mouseY.x - halfHeight) / halfHeight;
-      const { y, z } = this.cameraComponent.quaternion;
+  public moveUp(value: number) {}
 
-      this.cameraComponent.quaternion.set(pitchDown * delta, y, z, 1);
-    }
+  public turn(value: number) {
+    //console.log('turn', value);
+  }
+
+  public lookUp(value: number) {
+    //console.log('lookUp', value);
   }
 
   protected override setupInputComponent() {
@@ -83,22 +63,22 @@ export class DefaultPawn extends Pawn {
 
     const playerInput = this.controller.playerInput;
 
-    playerInput.addActionMap(new InputActionMap('OpenSomething', 'KeyW'));
+    playerInput.addMapping(new InputActionMap('OpenSomething', 'KeyW'));
 
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveForward', 'KeyW', 1));
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveForward', 'ArrowUp', 1));
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveForward', 'KeyS', -1));
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveForward', 'ArrowDown', -1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveForward', 'KeyW', 1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveForward', 'ArrowUp', 1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveForward', 'KeyS', -1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveForward', 'ArrowDown', -1));
 
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveRight', 'KeyA', -1));
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveRight', 'ArrowLeft', -1));
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveRight', 'KeyD', 1));
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveRight', 'ArrowRight', 1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveRight', 'KeyA', -1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveRight', 'ArrowLeft', -1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveRight', 'KeyD', 1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveRight', 'ArrowRight', 1));
 
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveUp', 'Space', 1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveUp', 'Space', 1));
 
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_Turn', 'MouseX', 1));
-    playerInput.addAxisMap(new InputAxisMap('DefaultPawn_LookUp', 'MouseY', 1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_Turn', 'MouseX', 1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_LookUp', 'MouseY', 1));
 
     this.inputBindingsInitialized = true;
 

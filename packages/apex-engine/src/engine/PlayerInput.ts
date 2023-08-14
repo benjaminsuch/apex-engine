@@ -1,18 +1,18 @@
-import { type InputActionBinding, type InputComponent } from './components';
+import { type InputAxisBinding, type InputActionBinding, type InputComponent } from './components';
 import { Vector3 } from './math';
 
-const keyVal = new Vector3().set(1, 0, 0);
-
 export class PlayerInput {
-  private readonly keysWithEvents: Set<TKey> = new Set();
-
   private readonly keyStates: Map<TKey, KeyState> = new Map();
 
   private readonly axisMappings: InputAxisMap[] = [];
 
+  private readonly axisKeyMap: Map<InputAxisBinding['name'], InputAxisMap[]> = new Map();
+
   private readonly actionMappings: InputActionMap[] = [];
 
   private readonly actionKeyMap: Map<InputActionBinding['name'], InputActionMap[]> = new Map();
+
+  private isKeyMapBuilt: boolean = false;
 
   constructor() {
     if (IS_BROWSER) {
@@ -26,84 +26,64 @@ export class PlayerInput {
   }
 
   public processInputStack(inputStack: InputComponent[], delta: number) {
-    for (const mapping of this.actionMappings) {
-      if (this.keysWithEvents.has(mapping.key)) {
-        const binding = this.actionKeyMap.get(mapping.name);
+    this.buildKeyMappings();
 
-        if (!binding) {
-          this.actionKeyMap.set(mapping.name, [mapping]);
-        } else {
-          binding.push(mapping);
-        }
-      }
-    }
+    const keysToConsume = new Set<TKey>();
+    const axisBindingsToExecute: InputAxisBinding[] = [];
 
     for (let i = inputStack.length - 1; i >= 0; --i) {
-      const component = inputStack[i];
+      const inputComponent = inputStack[i];
 
-      for (const axisBinding of component.axisBindings) {
-        axisBinding.handle(delta);
+      //inputComponent.buildKeyMap()
+      for (const axisBinding of inputComponent.axisBindings) {
+        axisBinding.value = this.determineAxisValue(axisBinding, keysToConsume);
+        axisBindingsToExecute.push(axisBinding);
       }
 
-      for (const actionBinding of component.actionBindings) {
-        const mappings = this.actionKeyMap.get(actionBinding.name);
+      for (const key of keysToConsume) {
+        const keyState = this.keyStates.get(key);
 
-        if (!mappings) continue;
-
-        for (const mapping of mappings) {
-          const keyState = this.keyStates.get(mapping.key) as KeyState;
-          const isPressed = actionBinding.event === EKeyEvent.Pressed && keyState.isPressed;
-          const isReleased = actionBinding.event === EKeyEvent.Released && !keyState.isPressed;
-
-          if (isPressed || isReleased) {
-            actionBinding.handle(delta);
-          }
+        if (keyState) {
+          keyState.isConsumed = true;
         }
       }
+
+      keysToConsume.clear();
     }
 
-    this.actionKeyMap.clear();
-    this.keysWithEvents.clear();
+    for (const axisBinding of axisBindingsToExecute) {
+      axisBinding.handle(axisBinding.value);
+    }
   }
 
   public getKeyValue(key: TKey) {
     const keyState = this.keyStates.get(key);
-    return keyState ? keyState.value : new Vector3();
+    return keyState ? keyState.value.x : 0;
   }
 
   public getKeyRawValue(key: TKey) {
     const keyState = this.keyStates.get(key);
-    return keyState ? keyState.rawValue : new Vector3();
+    return keyState ? keyState.rawValue.x : 0;
   }
 
-  public addAxisMap(mapping: InputAxisMap) {
-    let idx = -1;
+  public addMapping(mapping: InputActionMap | InputAxisMap) {
+    const mappings = mapping instanceof InputActionMap ? this.actionMappings : this.axisMappings;
 
-    for (let i = this.axisMappings.length - 1; i >= 0; --i) {
-      const { key, name } = this.axisMappings[i];
+    for (let i = mappings.length - 1; i >= 0; --i) {
+      const { key, name } = mappings[i];
 
-      if (idx > -1) continue;
-      if (key === mapping.key && name === mapping.name) idx = i;
+      if (key === mapping.key && name === mapping.name) {
+        return false;
+      }
     }
 
-    if (idx < 0) {
+    if (mapping instanceof InputActionMap) {
+      this.actionMappings.push(mapping);
+    } else {
       this.axisMappings.push(mapping);
     }
-  }
 
-  public addActionMap(mapping: InputActionMap) {
-    let idx = -1;
-
-    for (let i = this.actionMappings.length - 1; i >= 0; --i) {
-      const { key, name } = this.actionMappings[i];
-
-      if (idx > -1) continue;
-      if (key === mapping.key && name === mapping.name) idx = i;
-    }
-
-    if (idx < 0) {
-      this.actionMappings.push(mapping);
-    }
+    return true;
   }
 
   public handleEvent(event: KeyboardEvent | MouseEvent | PointerEvent | TouchEvent) {
@@ -120,41 +100,25 @@ export class PlayerInput {
 
   private handleContextMenu(event: PointerEvent) {}
 
-  private handleMouseMove({ pageX, pageY, movementX, movementY }: MouseEvent) {
+  private handleMouseMove({ movementX, movementY }: MouseEvent) {
     const xState = this.keyStates.get('MouseX');
     const yState = this.keyStates.get('MouseY');
 
-    let xScale = 1;
-    let yScale = 1;
-
-    for (let i = this.axisMappings.length - 1; i >= 0; --i) {
-      const map = this.axisMappings[i];
-
-      if (map.key === 'MouseX') xScale = map.scale;
-      if (map.key === 'MouseY') yScale = map.scale;
-    }
-
-    const x = [
-      new Vector3().set(pageX, movementX, 0),
-      new Vector3().set(pageX * xScale, movementX * xScale, 0)
-    ];
-    const y = [
-      new Vector3().set(pageY, movementY, 0),
-      new Vector3().set(pageY * yScale, movementY * yScale, 0)
-    ];
+    const x = new Vector3().set(movementX, 0, 0);
+    const y = new Vector3().set(movementY, 0, 0);
 
     if (!xState) {
-      this.keyStates.set('MouseX', new KeyState(x[0], x[1]));
+      this.keyStates.set('MouseX', new KeyState(x, x));
     } else {
-      xState.rawValue = x[0];
-      xState.value = x[1];
+      xState.rawValue = x;
+      xState.value = x;
     }
 
     if (!yState) {
-      this.keyStates.set('MouseY', new KeyState(y[0], y[1]));
+      this.keyStates.set('MouseY', new KeyState(y, y));
     } else {
-      yState.rawValue = y[0];
-      yState.value = y[1];
+      yState.rawValue = y;
+      yState.value = y;
     }
   }
 
@@ -165,37 +129,51 @@ export class PlayerInput {
 
   private handleMouseUp(event: MouseEvent) {}
 
-  private handleKeyDown(event: KeyboardEvent) {
-    console.log(event);
-    const key = event.code as TKey;
-    let keyState = this.keyStates.get(key);
+  private handleKeyDown(event: KeyboardEvent) {}
 
-    if (!keyState) {
-      keyState = new KeyState(keyVal, keyVal, true);
-      this.keyStates.set(key, keyState);
-    } else {
-      keyState.lastUsedTime = event.timeStamp;
-      keyState.isPressed = true;
+  private handleKeyUp(event: KeyboardEvent) {}
+
+  private determineAxisValue(axisBinding: InputAxisBinding, keysToConsume: Set<TKey>) {
+    const keyMappings = this.axisKeyMap.get(axisBinding.name);
+
+    let value = 0;
+
+    if (keyMappings) {
+      for (let i = 0; i < keyMappings.length; ++i) {
+        const { key, scale } = keyMappings[i];
+        value += this.getKeyValue(key) * scale;
+        keysToConsume.add(key);
+      }
     }
 
-    keyState.eventCount++;
-
-    this.keysWithEvents.add(key);
+    return value;
   }
 
-  private handleKeyUp(event: KeyboardEvent) {
-    const key = event.code as TKey;
-    const keyState = this.keyStates.get(key);
+  private buildKeyMappings() {
+    if (this.axisKeyMap.size === 0) {
+      for (const axisMapping of this.axisMappings) {
+        if (!this.axisKeyMap.has(axisMapping.name)) {
+          this.axisKeyMap.set(axisMapping.name, []);
+        }
 
-    // The "keyup" event can only occur when the key has been pressed down before.
-    // Therefor we won't handle the case of `keyState` being `undefined`.
-    if (keyState) {
-      keyState.lastUsedTime = event.timeStamp;
-      keyState.isPressed = false;
-      keyState.eventCount++;
+        const keyMappings = this.axisKeyMap.get(axisMapping.name) as InputAxisMap[];
 
-      this.keysWithEvents.add(key);
+        let add = true;
+
+        for (const keyMapping of keyMappings) {
+          if (keyMapping.key === axisMapping.key) {
+            add = false;
+            break;
+          }
+        }
+
+        if (add) {
+          keyMappings.push(axisMapping);
+        }
+      }
     }
+
+    this.isKeyMapBuilt = true;
   }
 }
 
