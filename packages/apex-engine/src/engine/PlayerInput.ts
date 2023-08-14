@@ -1,12 +1,18 @@
-import { type InputComponent } from './components';
+import { type InputActionBinding, type InputComponent } from './components';
 import { Vector3 } from './math';
 
+const keyVal = new Vector3().set(1, 0, 0);
+
 export class PlayerInput {
+  private readonly keysWithEvents: Set<TKey> = new Set();
+
   private readonly keyStates: Map<TKey, KeyState> = new Map();
 
   private readonly axisMappings: InputAxisMap[] = [];
 
   private readonly actionMappings: InputActionMap[] = [];
+
+  private readonly actionKeyMap: Map<InputActionBinding['name'], InputActionMap[]> = new Map();
 
   constructor() {
     if (IS_BROWSER) {
@@ -20,13 +26,44 @@ export class PlayerInput {
   }
 
   public processInputStack(inputStack: InputComponent[], delta: number) {
+    for (const mapping of this.actionMappings) {
+      if (this.keysWithEvents.has(mapping.key)) {
+        const binding = this.actionKeyMap.get(mapping.name);
+
+        if (!binding) {
+          this.actionKeyMap.set(mapping.name, [mapping]);
+        } else {
+          binding.push(mapping);
+        }
+      }
+    }
+
     for (let i = inputStack.length - 1; i >= 0; --i) {
       const component = inputStack[i];
 
       for (const axisBinding of component.axisBindings) {
         axisBinding.handle(delta);
       }
+
+      for (const actionBinding of component.actionBindings) {
+        const mappings = this.actionKeyMap.get(actionBinding.name);
+
+        if (!mappings) continue;
+
+        for (const mapping of mappings) {
+          const keyState = this.keyStates.get(mapping.key) as KeyState;
+          const isPressed = actionBinding.event === EKeyEvent.Pressed && keyState.isPressed;
+          const isReleased = actionBinding.event === EKeyEvent.Released && !keyState.isPressed;
+
+          if (isPressed || isReleased) {
+            actionBinding.handle(delta);
+          }
+        }
+      }
     }
+
+    this.actionKeyMap.clear();
+    this.keysWithEvents.clear();
   }
 
   public getKeyValue(key: TKey) {
@@ -131,25 +168,33 @@ export class PlayerInput {
   private handleKeyDown(event: KeyboardEvent) {
     console.log(event);
     const key = event.code as TKey;
-    const keyState = this.keyStates.get(key);
+    let keyState = this.keyStates.get(key);
 
     if (!keyState) {
-      const value = new Vector3().set(1, 0, 0);
-      this.keyStates.set(key, new KeyState(value, value, true));
+      keyState = new KeyState(keyVal, keyVal, true);
+      this.keyStates.set(key, keyState);
     } else {
       keyState.lastUsedTime = event.timeStamp;
       keyState.isPressed = true;
     }
+
+    keyState.eventCount++;
+
+    this.keysWithEvents.add(key);
   }
 
   private handleKeyUp(event: KeyboardEvent) {
-    const keyState = this.keyStates.get(event.code as TKey);
+    const key = event.code as TKey;
+    const keyState = this.keyStates.get(key);
 
     // The "keyup" event can only occur when the key has been pressed down before.
     // Therefor we won't handle the case of `keyState` being `undefined`.
     if (keyState) {
       keyState.lastUsedTime = event.timeStamp;
       keyState.isPressed = false;
+      keyState.eventCount++;
+
+      this.keysWithEvents.add(key);
     }
   }
 }

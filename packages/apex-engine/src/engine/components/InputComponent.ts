@@ -71,9 +71,5 @@ export class InputActionBinding {
 }
 
 export class InputAxisBinding {
-  constructor(
-    public readonly name: string,
-    public readonly handle: Function,
-    public value: number = 0
-  ) {}
+  constructor(public readonly name: string, public readonly handle: Function) {}
 }

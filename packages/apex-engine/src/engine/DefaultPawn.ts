@@ -1,11 +1,15 @@
 import { Pawn } from './Pawn';
-import { InputAxisMap } from './PlayerInput';
+import { EKeyEvent, InputActionMap, InputAxisMap } from './PlayerInput';
 import { CameraComponent } from './components';
 
 export class DefaultPawn extends Pawn {
   private inputBindingsInitialized: boolean = false;
 
   private cameraComponent: CameraComponent | null = null;
+
+  public openSomething() {
+    console.log('openSomething');
+  }
 
   public moveForward() {}
 
@@ -59,6 +63,7 @@ export class DefaultPawn extends Pawn {
     this.inputComponent.bindAxis('DefaultPawn_MoveUp', this, this.moveUp);
     this.inputComponent.bindAxis('DefaultPawn_Turn', this, this.turn);
     this.inputComponent.bindAxis('DefaultPawn_LookUp', this, this.lookUp);
+    this.inputComponent.bindAction('OpenSomething', this, this.openSomething, EKeyEvent.Pressed);
 
     this.logger.debug(this.constructor.name, `Setup action bindings`);
   }
@@ -77,6 +82,8 @@ export class DefaultPawn extends Pawn {
     }
 
     const playerInput = this.controller.playerInput;
+
+    playerInput.addActionMap(new InputActionMap('OpenSomething', 'KeyW'));
 
     playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveForward', 'KeyW', 1));
     playerInput.addAxisMap(new InputAxisMap('DefaultPawn_MoveForward', 'ArrowUp', 1));
