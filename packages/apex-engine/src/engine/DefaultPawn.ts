@@ -1,6 +1,10 @@
 import { Pawn } from './Pawn';
 import { EKeyEvent, InputActionMap, InputAxisMap } from './PlayerInput';
 import { CameraComponent } from './components';
+import { Euler } from './math';
+
+const euler = new Euler();
+euler.order = 'YXZ';
 
 export class DefaultPawn extends Pawn {
   private inputBindingsInitialized: boolean = false;
@@ -12,7 +16,7 @@ export class DefaultPawn extends Pawn {
   }
 
   public moveForward(value: number) {
-    //console.log('moveForward');
+    console.log(value);
   }
 
   public moveRight(value: number) {}
@@ -20,11 +24,26 @@ export class DefaultPawn extends Pawn {
   public moveUp(value: number) {}
 
   public turn(value: number) {
-    //console.log('turn', value);
+    if (IS_BROWSER) {
+      if (this.cameraComponent) {
+        euler.y += value * 0.002;
+        this.cameraComponent.quaternion.setFromEuler(euler);
+      }
+    }
   }
 
   public lookUp(value: number) {
-    //console.log('lookUp', value);
+    if (IS_BROWSER) {
+      if (this.cameraComponent) {
+        euler.x -= value * 0.002;
+        euler.x = Math.max(Math.PI / 2 - Math.PI, Math.min(Math.PI / 2 - 0, euler.x));
+        this.cameraComponent.quaternion.setFromEuler(euler);
+      }
+    }
+  }
+
+  public handleEvent(event: Event) {
+    console.log(event);
   }
 
   protected override setupInputComponent() {
@@ -77,7 +96,7 @@ export class DefaultPawn extends Pawn {
 
     playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveUp', 'Space', 1));
 
-    playerInput.addMapping(new InputAxisMap('DefaultPawn_Turn', 'MouseX', 1));
+    playerInput.addMapping(new InputAxisMap('DefaultPawn_Turn', 'MouseX', -1));
     playerInput.addMapping(new InputAxisMap('DefaultPawn_LookUp', 'MouseY', 1));
 
     this.inputBindingsInitialized = true;
@@ -87,5 +106,9 @@ export class DefaultPawn extends Pawn {
 
   protected override onRegister(): void {
     this.cameraComponent = this.addComponent(CameraComponent);
+
+    if (IS_BROWSER) {
+      document.body.addEventListener('mousedown', () => document.body.requestPointerLock());
+    }
   }
 }

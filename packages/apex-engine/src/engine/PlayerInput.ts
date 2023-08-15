@@ -54,6 +54,19 @@ export class PlayerInput {
     for (const axisBinding of axisBindingsToExecute) {
       axisBinding.handle(axisBinding.value);
     }
+
+    for (let i = inputStack.length - 1; i >= 0; --i) {
+      const inputComponent = inputStack[i];
+
+      for (const axisBinding of inputComponent.axisBindings) {
+        axisBinding.value = 0;
+      }
+    }
+
+    for (const keyState of this.keyStates.values()) {
+      keyState.isConsumed = false;
+      keyState.sampleCount = 0;
+    }
   }
 
   public getKeyValue(key: TKey) {
@@ -101,25 +114,31 @@ export class PlayerInput {
   private handleContextMenu(event: PointerEvent) {}
 
   private handleMouseMove({ movementX, movementY }: MouseEvent) {
-    const xState = this.keyStates.get('MouseX');
-    const yState = this.keyStates.get('MouseY');
+    let xState = this.keyStates.get('MouseX');
+    let yState = this.keyStates.get('MouseY');
 
     const x = new Vector3().set(movementX, 0, 0);
     const y = new Vector3().set(movementY, 0, 0);
 
     if (!xState) {
-      this.keyStates.set('MouseX', new KeyState(x, x));
+      xState = new KeyState(x, x);
+      this.keyStates.set('MouseX', xState);
     } else {
       xState.rawValue = x;
       xState.value = x;
     }
 
+    xState.sampleCount++;
+
     if (!yState) {
-      this.keyStates.set('MouseY', new KeyState(y, y));
+      yState = new KeyState(y, y);
+      this.keyStates.set('MouseY', yState);
     } else {
       yState.rawValue = y;
       yState.value = y;
     }
+
+    yState.sampleCount++;
   }
 
   private handleMouseDown(event: MouseEvent) {
@@ -129,7 +148,9 @@ export class PlayerInput {
 
   private handleMouseUp(event: MouseEvent) {}
 
-  private handleKeyDown(event: KeyboardEvent) {}
+  private handleKeyDown(event: KeyboardEvent) {
+    //let state = this.keyStates.get(event.code as TKey);
+  }
 
   private handleKeyUp(event: KeyboardEvent) {}
 
@@ -141,8 +162,12 @@ export class PlayerInput {
     if (keyMappings) {
       for (let i = 0; i < keyMappings.length; ++i) {
         const { key, scale } = keyMappings[i];
-        value += this.getKeyValue(key) * scale;
-        keysToConsume.add(key);
+        const keyState = this.keyStates.get(key);
+
+        if (keyState && keyState.sampleCount > 0) {
+          value += this.getKeyValue(key) * scale;
+          keysToConsume.add(key);
+        }
       }
     }
 
@@ -202,7 +227,7 @@ export class KeyState {
    */
   public lastUsedTime: number = 0;
 
-  public eventCount: number = 0;
+  public sampleCount: number = 0;
 
   constructor(
     public rawValue: Vector3,

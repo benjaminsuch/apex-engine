@@ -75,11 +75,6 @@ export class CameraComponent extends SceneComponent {
     this.#data.set([50, 1, 2000, 0.1]);
   }
 
-  public override tick(): void {
-    //super.tick()
-    //console.log(this.quaternion.x);
-  }
-
   public override toJSON(): CameraProxyConstructorData {
     return {
       ...super.toJSON(),
