@@ -1,10 +1,13 @@
 import { Pawn } from './Pawn';
 import { EKeyEvent, InputActionMap, InputAxisMap } from './PlayerInput';
 import { CameraComponent } from './components';
-import { Euler } from './math';
+import { Euler, Vector3 } from './math';
 
 const euler = new Euler();
 euler.order = 'YXZ';
+
+const vec3 = new Vector3();
+const moveScale = 0.1;
 
 export class DefaultPawn extends Pawn {
   private inputBindingsInitialized: boolean = false;
@@ -16,10 +19,23 @@ export class DefaultPawn extends Pawn {
   }
 
   public moveForward(value: number) {
-    console.log(value);
+    if (IS_BROWSER) {
+      if (this.cameraComponent) {
+        vec3.setFromMatrixColumn(this.cameraComponent.matrix, 0);
+        vec3.crossVectors(this.cameraComponent.up, vec3);
+        this.cameraComponent.position.addScaledVector(vec3, value * moveScale);
+      }
+    }
   }
 
-  public moveRight(value: number) {}
+  public moveRight(value: number) {
+    if (IS_BROWSER) {
+      if (this.cameraComponent) {
+        vec3.setFromMatrixColumn(this.cameraComponent.matrix, 0);
+        this.cameraComponent.position.addScaledVector(vec3, value * moveScale);
+      }
+    }
+  }
 
   public moveUp(value: number) {}
 
@@ -109,6 +125,12 @@ export class DefaultPawn extends Pawn {
 
     if (IS_BROWSER) {
       document.body.addEventListener('mousedown', () => document.body.requestPointerLock());
+      /*document.body.addEventListener('keydown', event => {
+        if (event.code === 'KeyW') this.moveForward(1);
+        if (event.code === 'KeyS') this.moveForward(-1);
+        if (event.code === 'KeyA') this.moveRight(-1);
+        if (event.code === 'KeyD') this.moveRight(1);
+      });*/
     }
   }
 }

@@ -35,6 +35,7 @@ export class PlayerInput {
       const inputComponent = inputStack[i];
 
       //inputComponent.buildKeyMap()
+
       for (const axisBinding of inputComponent.axisBindings) {
         axisBinding.value = this.determineAxisValue(axisBinding, keysToConsume);
         axisBindingsToExecute.push(axisBinding);
@@ -149,10 +150,30 @@ export class PlayerInput {
   private handleMouseUp(event: MouseEvent) {}
 
   private handleKeyDown(event: KeyboardEvent) {
-    //let state = this.keyStates.get(event.code as TKey);
+    const key = event.code as TKey;
+    const val = new Vector3().set(1, 0, 0);
+
+    let state = this.keyStates.get(key);
+
+    if (!state) {
+      state = new KeyState(val, val);
+      this.keyStates.set(key, state);
+    }
+
+    state.isPressed = true;
+    state.lastUsedTime = event.timeStamp;
+    state.sampleCount++;
   }
 
-  private handleKeyUp(event: KeyboardEvent) {}
+  private handleKeyUp(event: KeyboardEvent) {
+    const state = this.keyStates.get(event.code as TKey);
+
+    if (state) {
+      state.isPressed = false;
+      state.lastUsedTime = event.timeStamp;
+      //state.sampleCount++;
+    }
+  }
 
   private determineAxisValue(axisBinding: InputAxisBinding, keysToConsume: Set<TKey>) {
     const keyMappings = this.axisKeyMap.get(axisBinding.name);

@@ -19,7 +19,11 @@ export class SceneComponent extends ActorComponent {
 
   public readonly matrixWorld: Matrix4 = new Matrix4();
 
+  public readonly up: Vector3 = new Vector3();
+
   public visible: boolean = true;
+
+  private parent: SceneComponent | null = null;
 
   private readonly children: Set<SceneComponent> = new Set();
 
@@ -28,6 +32,7 @@ export class SceneComponent extends ActorComponent {
   constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {
     super();
 
+    this.up.set(0, 1, 0);
     this.scale.set(1, 1, 1);
   }
 
@@ -42,7 +47,31 @@ export class SceneComponent extends ActorComponent {
     super.init();
   }
 
+  public override tick(): void {
+    super.tick();
+    this.updateMatrixWorld();
+  }
+
+  public updateMatrix() {
+    this.matrix.compose(this.position, this.quaternion, this.scale);
+  }
+
+  public updateMatrixWorld() {
+    this.updateMatrix();
+
+    if (!this.parent) {
+      this.matrixWorld.copy(this.matrix);
+    } else {
+      this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
+    }
+
+    for (const child of this.children) {
+      child.updateMatrixWorld();
+    }
+  }
+
   public attachToParent(parent: SceneComponent): void {
+    this.parent = parent;
     parent.children.add(this);
   }
 
@@ -53,6 +82,7 @@ export class SceneComponent extends ActorComponent {
     const rotation = this.rotation.toJSON();
     const matrix = this.matrix.toJSON();
     const matrixWorld = this.matrixWorld.toJSON();
+    const up = this.up.toJSON();
 
     return {
       uuid: this.uuid,
@@ -63,6 +93,7 @@ export class SceneComponent extends ActorComponent {
       quaternion,
       matrix,
       matrixWorld,
+      up,
       visible: this.visible,
       children: [...this.children].map(child => child.toJSON())
     };
