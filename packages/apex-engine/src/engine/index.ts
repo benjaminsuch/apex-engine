@@ -9,6 +9,7 @@ export * from './SceneProxy';
 export * from './Level';
 export * from './Pawn';
 export * from './PlayerController';
+export * from './PlayerInput';
 export * from './SceneProxy';
 export * from './World';
 

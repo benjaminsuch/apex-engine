@@ -298,13 +298,9 @@ function workersPlugin({ inline, isBuild = false, target }) {
     };
 }
 
-const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
 const { log } = console;
 let isDebugModeOn = false;
 const debug = (...args) => isDebugModeOn && console.debug('DEBUG', ...args);
-wss.on('connection', ws => {
-    ws.on('error', console.error);
-});
 const cli = cac('apex-build-tool').version('0.1.0').help();
 cli
     .option('-d, --debug', 'Shows debug messages when enabled.')
@@ -418,7 +414,7 @@ async function buildElectronTarget(target) {
                 plugins: [
                     // electron-sandbox is a browser, so we change the platform to "browser".
                     workersPlugin({ target: { ...target, platform: 'browser' } }),
-                    ...createRollupPlugins(buildDir, target),
+                    ...createRollupPlugins(buildDir, { ...target, platform: 'browser' }),
                     htmlPlugin('./sandbox.js', {
                         meta: [
                             {
@@ -492,9 +488,13 @@ async function buildNodeTarget(target) {
 let server;
 async function serveBrowserTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/browser');
+    const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
     if (existsSync(buildDir)) {
         await rimraf(buildDir);
     }
+    wss.on('connection', ws => {
+        ws.on('error', console.error);
+    });
     server = createServer((req, res) => {
         const unsafePath = decodeURI((req.url ?? '').split('?')[0]);
         const urlPath = posix.normalize(unsafePath);
@@ -528,11 +528,6 @@ async function serveBrowserTarget(target) {
                     `<script type="module">`,
                     `  const ws = new WebSocket('ws://localhost:24678')`,
                     ``,
-                    `  ws.addEventListener('open', () => {`,
-                    `    console.log('connection open')`,
-                    `    ws.send('message from client')`,
-                    `  })`,
-                    ``,
                     `  ws.addEventListener('message', async ({data}) => {`,
                     ``,
                     `    let parsed`,
@@ -552,7 +547,7 @@ async function serveBrowserTarget(target) {
         })
     });
     watcher.on('event', async (event) => {
-        log('[browser:watcher]', event.code);
+        log(`[${new Date().toLocaleTimeString()}] [browser:watcher]`, event.code);
         if (event.code === 'END') {
             if (!server.listening) {
                 server.listen(3000, 'localhost', () => {
@@ -564,17 +559,19 @@ async function serveBrowserTarget(target) {
             wss.clients.forEach(socket => {
                 socket.send(JSON.stringify({ type: 'update' }));
             });
+            event.result.close();
         }
         if (event.code === 'ERROR') {
             console.log(event);
         }
     });
     watcher.on('change', file => {
-        log('[browser:watcher]', 'File changed');
+        log(`\n[${new Date().toLocaleTimeString()}] [browser:watcher]`, 'File changed');
         debug(file);
     });
     watcher.on('restart', () => { });
     watcher.on('close', () => { });
+    watcher.close();
 }
 async function serveElectronTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/electron');
@@ -621,7 +618,7 @@ async function serveElectronTarget(target) {
             plugins: [
                 // electron-sandbox is a browser, so we change the platform to "browser".
                 workersPlugin({ target: { ...target, platform: 'browser' } }),
-                ...createRollupPlugins(buildDir, target),
+                ...createRollupPlugins(buildDir, { ...target, platform: 'browser' }),
                 htmlPlugin('./sandbox.js')
             ],
             onwarn() { }
@@ -668,7 +665,11 @@ async function serveNodeTarget(target) {
         if (event.code === 'ERROR') {
             console.log(event);
         }
+        if (event.code === 'BUNDLE_END') {
+            event.result.close();
+        }
     });
+    watcher.close();
 }
 function readFileFromContentBase(contentBase, urlPath, callback) {
     let filePath = resolve(contentBase, '.' + urlPath);
@@ -734,13 +735,17 @@ function createRollupConfig(launcher, { output, ...options } = {}) {
         ...options
     };
 }
-function createRollupPlugins(buildDir, { defaultLevel, renderer }) {
+function createRollupPlugins(buildDir, { defaultLevel, platform, renderer, target }) {
     return [
         replace({
             preventAssignment: true,
             values: {
                 DEFAULT_LEVEL: JSON.stringify(defaultLevel),
                 IS_DEV: 'true',
+                IS_CLIENT: String(target === 'client'),
+                IS_GAME: String(target === 'game'),
+                IS_SERVER: String(target === 'server'),
+                IS_BROWSER: String(platform === 'browser'),
                 RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
             }
         }),

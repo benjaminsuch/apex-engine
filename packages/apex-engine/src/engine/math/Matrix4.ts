@@ -1,5 +1,9 @@
 import { Euler } from './Euler';
+import { type Quaternion } from './Quaternion';
 import { Vector3 } from './Vector3';
+
+const _one = new Vector3().set(1, 1, 1);
+const _zero = new Vector3().set(0, 0, 0);
 
 /**
  * Most of the code is from: https://github.com/mrdoob/three.js/blob/dev/src/math/Matrix4.js
@@ -310,11 +314,9 @@ export class Matrix4 {
     return this;
   }
 
-  /*public makeRotationFromQuaternion( quaternion ) {
-
-		return this.compose( _zero, q, _one );
-
-	}*/
+  public makeRotationFromQuaternion(quaternion: Quaternion) {
+    return this.compose(_zero, quaternion, _one);
+  }
 
   public multiply(matrix: Matrix4) {
     return this.multiplyMatrices(this, matrix);
@@ -757,13 +759,13 @@ export class Matrix4 {
     return this.set(1, yx, zx, 0, xy, 1, zy, 0, xz, yz, 1, 0, 0, 0, 0, 1);
   }
 
-  /*public compose(position, quaternion, scale) {
+  public compose(position: Vector3, quaternion: Quaternion, scale: Vector3) {
     const te = this.elements;
 
-    const x = quaternion._x,
-      y = quaternion._y,
-      z = quaternion._z,
-      w = quaternion._w;
+    const x = quaternion.x,
+      y = quaternion.x,
+      z = quaternion.z,
+      w = quaternion.w;
     const x2 = x + x,
       y2 = y + y,
       z2 = z + z;
@@ -802,7 +804,7 @@ export class Matrix4 {
     te[15] = 1;
 
     return this;
-  }*/
+  }
 
   /*public decompose(position, quaternion, scale) {
     const te = this.elements;

@@ -31,17 +31,12 @@ interface CLIOptions {
   target?: 'client' | 'game' | 'server';
 }
 
-const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
 const { log } = console;
 
 let isDebugModeOn = false;
 
 const debug = (...args: Parameters<typeof console.debug>) =>
   isDebugModeOn && console.debug('DEBUG', ...args);
-
-wss.on('connection', ws => {
-  ws.on('error', console.error);
-});
 
 const cli = cac('apex-build-tool').version('0.1.0').help();
 
@@ -179,7 +174,7 @@ async function buildElectronTarget(target: TargetConfig) {
         plugins: [
           // electron-sandbox is a browser, so we change the platform to "browser".
           workersPlugin({ target: { ...target, platform: 'browser' } }),
-          ...createRollupPlugins(buildDir, target),
+          ...createRollupPlugins(buildDir, { ...target, platform: 'browser' }),
           htmlPlugin('./sandbox.js', {
             meta: [
               {
@@ -261,10 +256,15 @@ let server: Server;
 
 async function serveBrowserTarget(target: TargetConfig) {
   const buildDir = resolve(APEX_DIR, 'build/browser');
+  const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
 
   if (existsSync(buildDir)) {
     await rimraf(buildDir);
   }
+
+  wss.on('connection', ws => {
+    ws.on('error', console.error);
+  });
 
   server = createServer((req, res) => {
     const unsafePath = decodeURI((req.url ?? '').split('?')[0]);
@@ -304,11 +304,6 @@ async function serveBrowserTarget(target: TargetConfig) {
             `<script type="module">`,
             `  const ws = new WebSocket('ws://localhost:24678')`,
             ``,
-            `  ws.addEventListener('open', () => {`,
-            `    console.log('connection open')`,
-            `    ws.send('message from client')`,
-            `  })`,
-            ``,
             `  ws.addEventListener('message', async ({data}) => {`,
             ``,
             `    let parsed`,
@@ -330,7 +325,7 @@ async function serveBrowserTarget(target: TargetConfig) {
   });
 
   watcher.on('event', async event => {
-    log('[browser:watcher]', event.code);
+    log(`[${new Date().toLocaleTimeString()}] [browser:watcher]`, event.code);
 
     if (event.code === 'END') {
       if (!server.listening) {
@@ -344,6 +339,8 @@ async function serveBrowserTarget(target: TargetConfig) {
       wss.clients.forEach(socket => {
         socket.send(JSON.stringify({ type: 'update' }));
       });
+
+      event.result.close();
     }
 
     if (event.code === 'ERROR') {
@@ -352,13 +349,15 @@ async function serveBrowserTarget(target: TargetConfig) {
   });
 
   watcher.on('change', file => {
-    log('[browser:watcher]', 'File changed');
+    log(`\n[${new Date().toLocaleTimeString()}] [browser:watcher]`, 'File changed');
     debug(file);
   });
 
   watcher.on('restart', () => {});
 
   watcher.on('close', () => {});
+
+  watcher.close();
 }
 
 async function serveElectronTarget(target: TargetConfig) {
@@ -415,7 +414,7 @@ async function serveElectronTarget(target: TargetConfig) {
       plugins: [
         // electron-sandbox is a browser, so we change the platform to "browser".
         workersPlugin({ target: { ...target, platform: 'browser' } }),
-        ...createRollupPlugins(buildDir, target),
+        ...createRollupPlugins(buildDir, { ...target, platform: 'browser' }),
         htmlPlugin('./sandbox.js')
       ],
       onwarn() {}
@@ -475,7 +474,13 @@ async function serveNodeTarget(target: TargetConfig) {
     if (event.code === 'ERROR') {
       console.log(event);
     }
+
+    if (event.code === 'BUNDLE_END') {
+      event.result.close();
+    }
   });
+
+  watcher.close();
 }
 
 function readFileFromContentBase(
@@ -564,13 +569,20 @@ function createRollupConfig(
   };
 }
 
-function createRollupPlugins(buildDir: string, { defaultLevel, renderer }: TargetConfig): Plugin[] {
+function createRollupPlugins(
+  buildDir: string,
+  { defaultLevel, platform, renderer, target }: TargetConfig
+): Plugin[] {
   return [
     replace({
       preventAssignment: true,
       values: {
         DEFAULT_LEVEL: JSON.stringify(defaultLevel),
         IS_DEV: 'true',
+        IS_CLIENT: String(target === 'client'),
+        IS_GAME: String(target === 'game'),
+        IS_SERVER: String(target === 'server'),
+        IS_BROWSER: String(platform === 'browser'),
         RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
       }
     }),

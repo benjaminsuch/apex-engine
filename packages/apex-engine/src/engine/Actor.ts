@@ -21,10 +21,14 @@ export class Actor {
     return this.rootComponent;
   }
 
-  private readonly components: Set<ActorComponent> = new Set();
+  public readonly components: Set<ActorComponent> = new Set();
 
-  public getComponents() {
-    return Array.from(this.components);
+  public getComponent<T extends typeof ActorComponent>(ComponentClass: T) {
+    for (const component of this.components) {
+      if (component instanceof ComponentClass) {
+        return component as InstanceType<T>;
+      }
+    }
   }
 
   public hasComponent(component: ActorComponent) {
@@ -82,27 +86,27 @@ export class Actor {
   ) {}
 
   public beginPlay() {
-    for (const component of this.getComponents()) {
+    for (const component of this.components) {
       component.beginPlay();
     }
   }
 
   public tick() {
-    for (const component of this.getComponents()) {
+    for (const component of this.components) {
       component.tick();
     }
   }
 
   public preInitComponents() {
-    this.logger.debug('Actor:', 'preInitComponents');
+    this.logger.debug(this.constructor.name, 'preInitComponents');
 
-    for (const component of this.getComponents()) {
+    for (const component of this.components) {
       component.world = this.getWorld();
     }
   }
 
   public initComponents() {
-    for (const component of this.getComponents()) {
+    for (const component of this.components) {
       component.init();
     }
   }

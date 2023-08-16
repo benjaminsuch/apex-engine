@@ -105,4 +105,5 @@ function handleViewportResize(
 function handleSetCamera(camera: TRenderSetCameraMessage['camera']) {
   const proxy = renderer.getSceneProxy<CameraSceneProxy>(camera.uuid);
   renderer.camera = proxy ?? new CameraSceneProxy(camera);
+  renderer.updateCameraProjection();
 }

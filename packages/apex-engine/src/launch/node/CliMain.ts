@@ -4,8 +4,6 @@ import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { IRenderer } from '../../platform/renderer/common';
 import { NodeRenderer } from '../../platform/renderer/node';
 
-const port = 8080;
-
 export class CliMain {
   private readonly instantiationService: InstantiationService;
 

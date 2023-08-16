@@ -1,16 +1,13 @@
 import { type Actor } from './Actor';
 import { type GameInstance } from './GameInstance';
+import { GameMode } from './GameMode';
 import { type Level } from './Level';
 
 export class World {
   /**
    * Actors stored here are persistent and won't be destroyed when changing levels.
    */
-  private readonly actors: Set<Actor> = new Set();
-
-  public getActors() {
-    return Array.from(this.actors);
-  }
+  public readonly actors: Set<Actor> = new Set();
 
   private currentLevel?: Level;
 
@@ -21,11 +18,23 @@ export class World {
     return this.currentLevel;
   }
 
-  public setCurrentLevel(level: Level) {
-    if (this.currentLevel !== level) {
-      this.currentLevel = level;
+  public setCurrentLevel(val: Level) {
+    if (!this.currentLevel) {
+      this.currentLevel = val;
       this.currentLevel.world = this;
+      this.gameMode = this.spawnActor(val.gameModeClass);
+    } else {
+      //this.currentLevel.dispose()
     }
+  }
+
+  private gameMode?: GameMode;
+
+  public getGameMode() {
+    if (!this.gameMode) {
+      throw new Error(`The game mode has not been set yet.`);
+    }
+    return this.gameMode;
   }
 
   public getGameInstance() {
@@ -48,16 +57,18 @@ export class World {
     if (this.currentLevel) {
       this.currentLevel.initActors();
     }
+
+    console.log('Init actors for play');
   }
 
   public beginPlay(): void {
-    for (const actor of this.getActors()) {
+    for (const actor of this.actors) {
       actor.beginPlay();
     }
   }
 
   public tick(): void {
-    for (const actor of this.getActors()) {
+    for (const actor of this.actors) {
       actor.tick();
     }
   }
@@ -74,5 +85,10 @@ export class World {
     this.actors.add(actor);
 
     return actor;
+  }
+
+  public spawnPlayActor() {
+    const playerController = this.getGameMode().login();
+    this.getGameMode().postLogin(playerController);
   }
 }

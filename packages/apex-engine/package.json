@@ -53,7 +53,7 @@
     "socket.io": "^4.7.1",
     "socket.io-client": "^4.7.1",
     "three": "^0.154.0",
-    "three-stdlib": "^2.21.5",
+    "three-stdlib": "^2.24.1",
     "tslib": "^2.5.0",
     "typescript": "^5.0.3"
   },
