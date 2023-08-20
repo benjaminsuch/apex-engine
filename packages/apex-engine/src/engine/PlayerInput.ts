@@ -1,4 +1,4 @@
-import { type InputAxisBinding, type InputActionBinding, type InputComponent } from './components';
+import type { InputAxisBinding, InputActionBinding, InputComponent } from './components';
 import { Vector3 } from './math';
 
 export class PlayerInput {
@@ -12,8 +12,6 @@ export class PlayerInput {
 
   private readonly actionKeyMap: Map<InputActionBinding['name'], InputActionMap[]> = new Map();
 
-  private isKeyMapBuilt: boolean = false;
-
   constructor() {
     if (IS_BROWSER) {
       window.addEventListener('contextmenu', this);
@@ -26,47 +24,52 @@ export class PlayerInput {
   }
 
   public processInputStack(inputStack: InputComponent[], delta: number) {
-    this.buildKeyMappings();
+    const axisBindingsToExec: InputAxisBinding[] = [];
+    const keysWithEvents: Set<TKey> = new Set();
 
-    const keysToConsume = new Set<TKey>();
-    const axisBindingsToExecute: InputAxisBinding[] = [];
-
-    for (let i = inputStack.length - 1; i >= 0; --i) {
-      const inputComponent = inputStack[i];
-
-      //inputComponent.buildKeyMap()
-
-      for (const axisBinding of inputComponent.axisBindings) {
-        axisBinding.value = this.determineAxisValue(axisBinding, keysToConsume);
-        axisBindingsToExecute.push(axisBinding);
+    for (const [key, keyState] of this.keyStates) {
+      if (keyState.eventCount > 0) {
+        keysWithEvents.add(key);
       }
 
-      for (const key of keysToConsume) {
-        const keyState = this.keyStates.get(key);
+      const keyMappings: InputAxisMap[] = [];
 
-        if (keyState) {
-          keyState.isConsumed = true;
+      // Create axis key map
+      for (const axisMap of this.axisMappings) {
+        if (axisMap.key === key) {
+          keyMappings.push(axisMap);
         }
       }
 
-      keysToConsume.clear();
-    }
-
-    for (const axisBinding of axisBindingsToExecute) {
-      axisBinding.handle(axisBinding.value);
+      this.axisKeyMap.set(key, keyMappings);
+      keyState.eventCount = 0;
     }
 
     for (let i = inputStack.length - 1; i >= 0; --i) {
       const inputComponent = inputStack[i];
 
-      for (const axisBinding of inputComponent.axisBindings) {
+      for (const key of keysWithEvents) {
+        const mappings = this.axisKeyMap.get(key);
+        const keyState = this.keyStates.get(key);
+
+        if (key !== 'MouseX' && key !== 'MouseY' && !keyState?.isPressed) continue;
+
+        if (keyState && mappings) {
+          for (const axisMapping of mappings) {
+            for (const axisBinding of inputComponent.axisBindings) {
+              if (axisBinding.name !== axisMapping.name) continue;
+
+              axisBinding.value = keyState.value.x * axisMapping.scale;
+              axisBindingsToExec.push(axisBinding);
+            }
+          }
+        }
+      }
+
+      for (const axisBinding of axisBindingsToExec) {
+        axisBinding.handle(axisBinding.value);
         axisBinding.value = 0;
       }
-    }
-
-    for (const keyState of this.keyStates.values()) {
-      keyState.isConsumed = false;
-      keyState.sampleCount = 0;
     }
   }
 
@@ -129,7 +132,7 @@ export class PlayerInput {
       xState.value = x;
     }
 
-    xState.sampleCount++;
+    xState.eventCount++;
 
     if (!yState) {
       yState = new KeyState(y, y);
@@ -139,7 +142,7 @@ export class PlayerInput {
       yState.value = y;
     }
 
-    yState.sampleCount++;
+    yState.eventCount++;
   }
 
   private handleMouseDown(event: MouseEvent) {
@@ -161,8 +164,8 @@ export class PlayerInput {
     }
 
     state.isPressed = true;
-    state.lastUsedTime = event.timeStamp;
-    state.sampleCount++;
+    state.eventAccumulator[EKeyEvent.Pressed]++;
+    state.eventCount++;
   }
 
   private handleKeyUp(event: KeyboardEvent) {
@@ -170,57 +173,20 @@ export class PlayerInput {
 
     if (state) {
       state.isPressed = false;
-      state.lastUsedTime = event.timeStamp;
-      //state.sampleCount++;
+      state.eventAccumulator[EKeyEvent.Released]++;
+      state.eventCount++;
     }
   }
+}
 
-  private determineAxisValue(axisBinding: InputAxisBinding, keysToConsume: Set<TKey>) {
-    const keyMappings = this.axisKeyMap.get(axisBinding.name);
-
-    let value = 0;
-
-    if (keyMappings) {
-      for (let i = 0; i < keyMappings.length; ++i) {
-        const { key, scale } = keyMappings[i];
-        const keyState = this.keyStates.get(key);
-
-        if (keyState && keyState.sampleCount > 0) {
-          value += this.getKeyValue(key) * scale;
-          keysToConsume.add(key);
-        }
-      }
-    }
-
-    return value;
-  }
-
-  private buildKeyMappings() {
-    if (this.axisKeyMap.size === 0) {
-      for (const axisMapping of this.axisMappings) {
-        if (!this.axisKeyMap.has(axisMapping.name)) {
-          this.axisKeyMap.set(axisMapping.name, []);
-        }
-
-        const keyMappings = this.axisKeyMap.get(axisMapping.name) as InputAxisMap[];
-
-        let add = true;
-
-        for (const keyMapping of keyMappings) {
-          if (keyMapping.key === axisMapping.key) {
-            add = false;
-            break;
-          }
-        }
-
-        if (add) {
-          keyMappings.push(axisMapping);
-        }
-      }
-    }
-
-    this.isKeyMapBuilt = true;
-  }
+export class InputAxisConfig {
+  constructor(
+    public readonly name: string,
+    public sensivity: number = 1,
+    public deadZone: number = 0.2,
+    public exponent: number = 1,
+    public invert: boolean = false
+  ) {}
 }
 
 export class InputActionMap {
@@ -243,12 +209,9 @@ export class InputAxisMap {
 }
 
 export class KeyState {
-  /**
-   * The last time the key was being used as timestamp in milliseconds.
-   */
-  public lastUsedTime: number = 0;
+  public eventCount: number = 0;
 
-  public sampleCount: number = 0;
+  public readonly eventAccumulator: [number, number] = [0, 0];
 
   constructor(
     public rawValue: Vector3,
@@ -258,63 +221,7 @@ export class KeyState {
   ) {}
 }
 
-export type TKey =
-  | 'AltLeft'
-  | 'AltRight'
-  | 'ArrowDown'
-  | 'ArrowLeft'
-  | 'ArrowRight'
-  | 'ArrowUp'
-  | 'Backquote'
-  | 'ControlLeft'
-  | 'ControlRight'
-  | 'Digit1'
-  | 'Digit2'
-  | 'Digit3'
-  | 'Digit4'
-  | 'Digit5'
-  | 'Digit6'
-  | 'Digit7'
-  | 'Digit8'
-  | 'Digit9'
-  | 'Digit0'
-  | 'Equal'
-  | 'KeyA'
-  | 'KeyB'
-  | 'KeyC'
-  | 'KeyD'
-  | 'KeyE'
-  | 'KeyF'
-  | 'KeyG'
-  | 'KeyH'
-  | 'KeyI'
-  | 'KeyJ'
-  | 'KeyK'
-  | 'KeyL'
-  | 'KeyM'
-  | 'KeyN'
-  | 'KeyO'
-  | 'KeyP'
-  | 'KeyQ'
-  | 'KeyR'
-  | 'KeyS'
-  | 'KeyT'
-  | 'KeyU'
-  | 'KeyV'
-  | 'KeyW'
-  | 'KeyX'
-  | 'KeyY'
-  | 'KeyZ'
-  | 'Minus'
-  | 'MouseLeftClick'
-  | 'MouseRightClick'
-  | 'MouseX'
-  | 'MouseY'
-  | 'Space'
-  | 'Tab';
-
 export enum EKeyEvent {
-  DoubleClick,
-  Pressed,
-  Released
+  Pressed = 0,
+  Released = 1
 }

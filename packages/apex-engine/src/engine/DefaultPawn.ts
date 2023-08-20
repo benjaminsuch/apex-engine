@@ -125,12 +125,6 @@ export class DefaultPawn extends Pawn {
 
     if (IS_BROWSER) {
       document.body.addEventListener('mousedown', () => document.body.requestPointerLock());
-      /*document.body.addEventListener('keydown', event => {
-        if (event.code === 'KeyW') this.moveForward(1);
-        if (event.code === 'KeyS') this.moveForward(-1);
-        if (event.code === 'KeyA') this.moveRight(-1);
-        if (event.code === 'KeyD') this.moveRight(1);
-      });*/
     }
   }
 }

@@ -17,8 +17,63 @@ declare global {
     Game = 'game',
     Server = 'server'
   }
-}
 
-type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
+  type TKey =
+    | 'AltLeft'
+    | 'AltRight'
+    | 'ArrowDown'
+    | 'ArrowLeft'
+    | 'ArrowRight'
+    | 'ArrowUp'
+    | 'Backquote'
+    | 'ControlLeft'
+    | 'ControlRight'
+    | 'Digit1'
+    | 'Digit2'
+    | 'Digit3'
+    | 'Digit4'
+    | 'Digit5'
+    | 'Digit6'
+    | 'Digit7'
+    | 'Digit8'
+    | 'Digit9'
+    | 'Digit0'
+    | 'Equal'
+    | 'KeyA'
+    | 'KeyB'
+    | 'KeyC'
+    | 'KeyD'
+    | 'KeyE'
+    | 'KeyF'
+    | 'KeyG'
+    | 'KeyH'
+    | 'KeyI'
+    | 'KeyJ'
+    | 'KeyK'
+    | 'KeyL'
+    | 'KeyM'
+    | 'KeyN'
+    | 'KeyO'
+    | 'KeyP'
+    | 'KeyQ'
+    | 'KeyR'
+    | 'KeyS'
+    | 'KeyT'
+    | 'KeyU'
+    | 'KeyV'
+    | 'KeyW'
+    | 'KeyX'
+    | 'KeyY'
+    | 'KeyZ'
+    | 'Minus'
+    | 'MouseLeftClick'
+    | 'MouseRightClick'
+    | 'MouseX'
+    | 'MouseY'
+    | 'Space'
+    | 'Tab';
+
+  type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
+}
 
 export {};

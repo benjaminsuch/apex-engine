@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { rollup, type Plugin, type RollupBuild } from 'rollup';
 
 import { dynamicImport } from './utils';
+import { type InputAxisConfig } from '../engine';
 
 export type BuildPlugin = Plugin | Promise<Plugin>;
 
@@ -27,9 +28,14 @@ export interface TargetConfig {
   target: Target;
 }
 
+export interface InputSettingsConfig {
+  axisConfig?: InputAxisConfig[];
+}
+
 export interface ApexConfig {
   build?: BuildConfig;
   targets: TargetConfig[];
+  inputSettings?: InputSettingsConfig;
 }
 
 export interface ResolvedConfig {}
