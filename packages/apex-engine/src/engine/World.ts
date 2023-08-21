@@ -87,6 +87,12 @@ export class World {
     return actor;
   }
 
+  public destroyActor(actor: Actor) {
+    actor.dispose();
+    this.getCurrentLevel().removeActor(actor);
+    this.actors.delete(actor);
+  }
+
   public spawnPlayActor() {
     const playerController = this.getGameMode().login();
     this.getGameMode().postLogin(playerController);

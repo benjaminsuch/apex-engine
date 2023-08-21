@@ -15,6 +15,10 @@ export class Level {
     return actor as InstanceType<T>;
   }
 
+  public removeActor(actor: Actor) {
+    this.actors.delete(actor);
+  }
+
   public hasActor(actor: Actor) {
     return this.actors.has(actor);
   }

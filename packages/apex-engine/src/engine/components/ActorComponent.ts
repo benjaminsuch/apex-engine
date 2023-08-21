@@ -45,5 +45,7 @@ export class ActorComponent {
     this.onRegister();
   }
 
+  public dispose() {}
+
   protected onRegister() {}
 }
