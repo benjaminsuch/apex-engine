@@ -70,4 +70,6 @@ export class SceneProxy {
     this.sceneObject.matrixWorld.fromArray(this.matrixWorld.toArray());
     this.sceneObject.up.fromArray(this.up.toArray());
   }
+
+  public dispose() {}
 }

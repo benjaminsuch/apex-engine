@@ -126,5 +126,11 @@ export class Actor {
     this.onRegister();
   }
 
+  public dispose() {
+    for (const component of this.components) {
+      component.dispose();
+    }
+  }
+
   protected onRegister() {}
 }
