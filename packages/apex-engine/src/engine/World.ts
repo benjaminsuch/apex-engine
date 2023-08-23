@@ -2,7 +2,7 @@ import { type Actor } from './Actor';
 import { type GameInstance } from './GameInstance';
 import { type GameMode } from './GameMode';
 import { type Level } from './Level';
-import { PlayerController } from './PlayerController';
+import { type PlayerController } from './PlayerController';
 
 export class World {
   private readonly playerControllers: Set<PlayerController> = new Set();
@@ -24,7 +24,7 @@ export class World {
    */
   public readonly actors: Set<Actor> = new Set();
 
-  private currentLevel: Level | null = null;
+  public currentLevel: Level | null = null;
 
   public getCurrentLevel() {
     if (!this.currentLevel) {
@@ -56,15 +56,21 @@ export class World {
     return this.gameMode;
   }
 
+  private gameInstance: GameInstance | null = null;
+
   public getGameInstance() {
+    if (!this.gameInstance) {
+      throw new Error(`No game instance set.`);
+    }
     return this.gameInstance;
   }
 
   public isInitialized: boolean = false;
 
-  constructor(private readonly gameInstance: GameInstance) {}
+  constructor() {}
 
-  public init(): void {
+  public init(gameInstance: GameInstance): void {
+    this.gameInstance = gameInstance;
     this.isInitialized = true;
   }
 
@@ -77,7 +83,7 @@ export class World {
       this.currentLevel.initActors();
     }
 
-    console.log('Init actors for play');
+    console.log('Init actors for play', this.actors);
   }
 
   public beginPlay(): void {
@@ -88,18 +94,24 @@ export class World {
     //todo: Broadcast begin-play event
   }
 
+  public cleanUp() {
+    this.currentLevel = null;
+    this.isInitialized = false;
+  }
+
   public tick(): void {
     for (const actor of this.actors) {
       actor.tick();
     }
   }
 
-  public spawnActor<T extends typeof Actor>(ActorClass: T, level?: Level): InstanceType<T> {
-    if (!this.currentLevel) {
+  public spawnActor<T extends typeof Actor>(
+    ActorClass: T,
+    level: Level | null = this.currentLevel
+  ): InstanceType<T> {
+    if (!level) {
       throw new Error(`Cannot spawn actor: Please set a current level before spawning actors.`);
     }
-
-    level = level ?? this.currentLevel;
 
     const actor = level.addActor(ActorClass);
 

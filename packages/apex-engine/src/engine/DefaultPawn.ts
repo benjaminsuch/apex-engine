@@ -14,10 +14,6 @@ export class DefaultPawn extends Pawn {
 
   private cameraComponent: CameraComponent | null = null;
 
-  public openSomething() {
-    console.log('openSomething');
-  }
-
   public moveForward(value: number) {
     if (IS_BROWSER) {
       if (this.cameraComponent) {
@@ -59,7 +55,27 @@ export class DefaultPawn extends Pawn {
   }
 
   public handleEvent(event: Event) {
-    console.log(event);
+    if (IS_BROWSER) {
+      if (event.type === 'mousedown') {
+        document.body.requestPointerLock();
+      }
+    }
+  }
+
+  public override dispose(): void {
+    if (IS_BROWSER) {
+      document.body.removeEventListener('mousedown', this);
+    }
+
+    if (this.inputComponent) {
+      this.inputComponent.unbindAxis('DefaultPawn_MoveForward');
+      this.inputComponent.unbindAxis('DefaultPawn_MoveRight');
+      this.inputComponent.unbindAxis('DefaultPawn_MoveUp');
+      this.inputComponent.unbindAxis('DefaultPawn_Turn');
+      this.inputComponent.unbindAxis('DefaultPawn_LookUp');
+    }
+
+    super.dispose();
   }
 
   protected override setupInputComponent() {
@@ -78,9 +94,16 @@ export class DefaultPawn extends Pawn {
     this.inputComponent.bindAxis('DefaultPawn_MoveUp', this, this.moveUp);
     this.inputComponent.bindAxis('DefaultPawn_Turn', this, this.turn);
     this.inputComponent.bindAxis('DefaultPawn_LookUp', this, this.lookUp);
-    this.inputComponent.bindAction('OpenSomething', this, this.openSomething, EKeyEvent.Pressed);
 
     this.logger.debug(this.constructor.name, `Setup action bindings`);
+  }
+
+  protected override onRegister(): void {
+    this.cameraComponent = this.addComponent(CameraComponent);
+
+    if (IS_BROWSER) {
+      document.body.addEventListener('mousedown', this);
+    }
   }
 
   private initInputBindings() {
@@ -118,19 +141,5 @@ export class DefaultPawn extends Pawn {
     this.inputBindingsInitialized = true;
 
     this.logger.debug(this.constructor.name, `Initialized input maps`);
-  }
-
-  protected override onRegister(): void {
-    this.cameraComponent = this.addComponent(CameraComponent);
-
-    if (IS_BROWSER) {
-      document.body.addEventListener('mousedown', () => document.body.requestPointerLock());
-      /*document.body.addEventListener('keydown', event => {
-        if (event.code === 'KeyW') this.moveForward(1);
-        if (event.code === 'KeyS') this.moveForward(-1);
-        if (event.code === 'KeyA') this.moveRight(-1);
-        if (event.code === 'KeyD') this.moveRight(1);
-      });*/
-    }
   }
 }

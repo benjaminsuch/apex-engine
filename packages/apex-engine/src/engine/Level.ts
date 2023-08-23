@@ -69,6 +69,12 @@ export class Level {
     return this.world?.getCurrentLevel() === this;
   }
 
+  /**
+   * At this stage, the world has been initiated and the game mode created. Any code that should be
+   * exectuted before the level and it's actor have been initiated.
+   *
+   * @param world The world must be set here, since we broadcast the post-load event before we call `init`.
+   */
   public postLoad(world: World) {
     if (!this.world) {
       this.world = world;

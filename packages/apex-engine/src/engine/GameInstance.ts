@@ -29,7 +29,8 @@ export class GameInstance {
   constructor(private readonly engine: ApexEngine) {}
 
   public init() {
-    this.world = new World(this);
+    this.world = new World();
+    this.world.init(this);
   }
 
   public start() {
