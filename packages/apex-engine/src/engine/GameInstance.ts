@@ -34,7 +34,9 @@ export class GameInstance {
   }
 
   public start() {
-    this.engine.loadLevel(DEFAULT_LEVEL);
+    this.engine.loadLevel(DEFAULT_LEVEL).then(() => {
+      this.getWorld().beginPlay();
+    });
   }
 
   public createPlayer(withPlayerController: boolean = false) {

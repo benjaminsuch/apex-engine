@@ -100,7 +100,6 @@ export abstract class ApexEngine {
       level.init();
       world.initActorsForPlay();
       player.spawnPlayActor(world);
-      world.beginPlay();
 
       //todo: Broadcast load-level-completed event
     } catch (error) {

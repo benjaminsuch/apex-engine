@@ -87,6 +87,8 @@ export class World {
   }
 
   public beginPlay(): void {
+    this.getCurrentLevel().beginPlay();
+
     for (const actor of this.actors) {
       actor.beginPlay();
     }
