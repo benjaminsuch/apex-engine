@@ -1,14 +1,4 @@
-import {
-  ACESFilmicToneMapping,
-  BoxGeometry,
-  Mesh,
-  MeshBasicMaterial,
-  PCFSoftShadowMap,
-  Scene,
-  sRGBEncoding,
-  Vector2,
-  WebGLRenderer
-} from 'three';
+import { ACESFilmicToneMapping, PCFSoftShadowMap, Scene, Vector2, WebGLRenderer } from 'three';
 
 import {
   CameraSceneProxy,
@@ -19,7 +9,12 @@ import {
 import { InstantiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
 
-export type TRenderMessageType = 'init' | 'init-scene-proxy' | 'set-camera' | 'viewport-resize';
+export type TRenderMessageType =
+  | 'destroy-scene-proxy'
+  | 'init'
+  | 'init-scene-proxy'
+  | 'set-camera'
+  | 'viewport-resize';
 
 export type TRenderMessageData<T = { [k: string]: unknown }> = {
   [P in keyof T]: T[P];
@@ -59,6 +54,15 @@ export type TRenderSceneProxyInitMessage = TRenderMessage<
   TRenderSceneProxyInitData
 >;
 
+export type TRenderSceneProxyDestroyData = TRenderMessageData<{
+  uuid: SceneProxyConstructorData['uuid'];
+}>;
+
+export type TRenderSceneProxyDestroyMessage = TRenderMessage<
+  'destroy-scene-proxy',
+  TRenderSceneProxyDestroyData
+>;
+
 export type TRenderSetCameraData = TRenderMessageData<{ camera: CameraProxyConstructorData }>;
 
 export type TRenderSetCameraMessage = TRenderMessage<'set-camera', TRenderSetCameraData>;
@@ -74,15 +78,10 @@ export interface IRenderer {
 
 export const IRenderer = InstantiationService.createDecorator<IRenderer>('renderer');
 
-const boxGeom = new BoxGeometry(1, 1, 1);
-const box = new Mesh(boxGeom, new MeshBasicMaterial({ color: 0x00ff00 }));
-box.position.z = -5;
-//console.log('BoxGeometry', boxGeom.toJSON());
-//console.log('MeshBasicMaterial', new MeshBasicMaterial({ color: 0x00ff00 }).toJSON());
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;
 
-  public camera?: CameraSceneProxy;
+  public camera: CameraSceneProxy | null = null;
 
   private readonly scene: Scene = new Scene();
 
@@ -94,9 +93,7 @@ export class Renderer {
 
   public init() {
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
-    this.webGLRenderer.outputEncoding = sRGBEncoding;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
-    this.scene.add(box);
   }
 
   public start() {
@@ -137,15 +134,24 @@ export class Renderer {
     return this.proxyObjects.find(proxy => proxy.uuid === uuid) as T | undefined;
   }
 
+  public removeSceneProxy(uuidOrProxy: SceneProxy['uuid'] | SceneProxy) {
+    const proxy = typeof uuidOrProxy === 'string' ? this.getSceneProxy(uuidOrProxy) : uuidOrProxy;
+
+    if (proxy) {
+      proxy.dispose();
+      this.scene.remove(proxy.sceneObject);
+
+      if (this.camera?.uuid === proxy.uuid) {
+        this.camera = null;
+      }
+    }
+  }
+
   private tick() {
     if (this.camera) {
       for (const proxy of this.proxyObjects) {
         proxy.tick();
       }
-
-      box.rotation.x += 0.005;
-      box.rotation.y += 0.005;
-      box.rotation.z += 0.005;
 
       this.webGLRenderer.render(this.scene, this.camera.sceneObject);
     }

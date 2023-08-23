@@ -2,7 +2,6 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
 import { type Actor } from './Actor';
-import { GameMode } from './GameMode';
 import { type World } from './World';
 
 export class Level {
@@ -13,6 +12,10 @@ export class Level {
     actor.registerWithLevel(this);
     this.actors.add(actor);
     return actor as InstanceType<T>;
+  }
+
+  public removeActor(actor: Actor) {
+    this.actors.delete(actor);
   }
 
   public hasActor(actor: Actor) {
@@ -28,9 +31,7 @@ export class Level {
     return this.world;
   }
 
-  private isInitialized: boolean = false;
-
-  public readonly gameModeClass: typeof GameMode = GameMode;
+  public isInitialized: boolean = false;
 
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
@@ -68,5 +69,20 @@ export class Level {
     return this.world?.getCurrentLevel() === this;
   }
 
-  public postLoad() {}
+  /**
+   * At this stage, the world has been initiated and the game mode created. Any code that should be
+   * exectuted before the level and it's actor have been initiated.
+   *
+   * @param world The world must be set here, since we broadcast the post-load event before we call `init`.
+   */
+  public postLoad(world: World) {
+    if (!this.world) {
+      this.world = world;
+    }
+  }
+
+  public dispose() {
+    //todo: Make sure all event listeners are removed
+    //todo: Make sure injected services don't store any data from this level
+  }
 }

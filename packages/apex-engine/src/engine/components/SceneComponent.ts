@@ -1,5 +1,8 @@
 import { IConsoleLogger } from '../../platform/logging/common';
-import { type TRenderSceneProxyInitMessage } from '../../platform/renderer/common';
+import {
+  TRenderSceneProxyDestroyMessage,
+  type TRenderSceneProxyInitMessage
+} from '../../platform/renderer/common';
 import { SceneProxyConstructorData } from '../SceneProxy';
 import { Euler, Matrix4, Quaternion, Vector3 } from '../math';
 import { ActorComponent } from './ActorComponent';
@@ -97,5 +100,14 @@ export class SceneComponent extends ActorComponent {
       visible: this.visible,
       children: [...this.children].map(child => child.toJSON())
     };
+  }
+
+  public override dispose(): void {
+    this.getOwner().renderer.send<TRenderSceneProxyDestroyMessage>({
+      type: 'destroy-scene-proxy',
+      uuid: this.uuid
+    });
+
+    super.dispose();
   }
 }
