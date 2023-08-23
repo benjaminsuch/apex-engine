@@ -25,7 +25,7 @@ export abstract class ApexEngine {
 
   public isRunning: boolean = false;
 
-  private isInitialized: boolean = false;
+  public isInitialized: boolean = false;
 
   constructor(
     private readonly engineLoop: EngineLoop,
@@ -42,6 +42,7 @@ export abstract class ApexEngine {
   public init() {
     this.gameInstance = new GameInstance(this);
     this.gameInstance.init();
+    this.gameInstance.createPlayer();
 
     this.isInitialized = true;
   }
@@ -58,21 +59,49 @@ export abstract class ApexEngine {
   public exit() {}
 
   public async loadLevel(url: string) {
+    //todo: Broadcast pre-load-level event
     this.logger.info(`Attempt to load level: ${url}`);
 
     try {
+      const gameInstance = this.getGameInstance();
+      const world = gameInstance.getWorld();
+
+      if (world.currentLevel) {
+        this.logger.info(`Disposing current level`);
+
+        // Clean up
+        // - Shutdown net driver
+        // - Dispose current level
+        // - Detach player from its player controller and destroy the player controller actor
+        // - Destroy player pawn
+        // - Clean up the "World", which includes destroying all actors which are not supposed to be kept between levels.
+        //   (We call the clean up function after we clean up the player in case that it might execute code or spawn actors)
+
+        world.currentLevel.dispose();
+        //todo: Broadcast level-removed-from-world event
+      }
+
       const { default: LoadedLevel }: { default: typeof Level } = await import(url);
 
       this.logger.info(`Level loaded: ${url}`);
 
       const level = this.instantiationService.createInstance(LoadedLevel);
-      const world = this.getGameInstance().getWorld();
+      const player = gameInstance.getPlayer();
 
-      level.postLoad();
+      if (!world.isInitialized) {
+        throw new Error(`Cannot continue loading level: World is not initialized.`);
+      }
+
+      level.postLoad(world);
       world.setCurrentLevel(level);
+
+      await world.setGameMode(url);
+
       level.init();
       world.initActorsForPlay();
-      world.spawnPlayActor();
+      player.spawnPlayActor(world);
+
+      //todo: Broadcast load-level-completed event
     } catch (error) {
       console.log(error);
     }

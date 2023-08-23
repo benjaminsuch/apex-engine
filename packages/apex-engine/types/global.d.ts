@@ -17,8 +17,8 @@ declare global {
     Game = 'game',
     Server = 'server'
   }
-}
 
-type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
+  type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
+}
 
 export {};
