@@ -179,7 +179,7 @@ async function buildElectronTarget(target: TargetConfig) {
         plugins: [
           // electron-sandbox is a browser, so we change the platform to "browser".
           workersPlugin({ target: { ...target, platform: 'browser' } }),
-          ...createRollupPlugins(buildDir, target),
+          ...createRollupPlugins(buildDir, { ...target, platform: 'browser' }),
           htmlPlugin('./sandbox.js', {
             meta: [
               {
@@ -330,7 +330,7 @@ async function serveBrowserTarget(target: TargetConfig) {
   });
 
   watcher.on('event', async event => {
-    log('[browser:watcher]', event.code);
+    log(`[${new Date().toLocaleTimeString()}] [browser:watcher]`, event.code);
 
     if (event.code === 'END') {
       if (!server.listening) {
@@ -354,7 +354,7 @@ async function serveBrowserTarget(target: TargetConfig) {
   });
 
   watcher.on('change', file => {
-    log('[browser:watcher]', 'File changed');
+    log(`\n[${new Date().toLocaleTimeString()}] [browser:watcher]`, 'File changed');
     debug(file);
   });
 
@@ -419,7 +419,7 @@ async function serveElectronTarget(target: TargetConfig) {
       plugins: [
         // electron-sandbox is a browser, so we change the platform to "browser".
         workersPlugin({ target: { ...target, platform: 'browser' } }),
-        ...createRollupPlugins(buildDir, target),
+        ...createRollupPlugins(buildDir, { ...target, platform: 'browser' }),
         htmlPlugin('./sandbox.js')
       ],
       onwarn() {}
@@ -576,7 +576,7 @@ function createRollupConfig(
 
 function createRollupPlugins(
   buildDir: string,
-  { defaultLevel, renderer, target }: TargetConfig
+  { defaultLevel, platform, renderer, target }: TargetConfig
 ): Plugin[] {
   return [
     replace({
@@ -587,6 +587,7 @@ function createRollupPlugins(
         IS_CLIENT: String(target === 'client'),
         IS_GAME: String(target === 'game'),
         IS_SERVER: String(target === 'server'),
+        IS_BROWSER: String(platform === 'browser'),
         RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
       }
     }),

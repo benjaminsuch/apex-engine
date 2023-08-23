@@ -58,8 +58,12 @@ export default class RenderMainThread extends EventTarget implements EventListen
   }
 
   private handleSetCamera(camera: TRenderSetCameraMessage['camera']): void {
-    const proxy = this.getRenderer().getSceneProxy<CameraSceneProxy>(camera.uuid);
-    this.getRenderer().camera = proxy ?? new CameraSceneProxy(camera);
+    const proxy =
+      this.getRenderer().getSceneProxy<CameraSceneProxy>(camera.uuid) ??
+      new CameraSceneProxy(camera);
+    this.getRenderer().camera = proxy;
+    this.getRenderer().addSceneProxy(proxy);
+    this.getRenderer().updateCameraProjection();
   }
 
   private handleViewportResize(
@@ -75,7 +79,6 @@ export default class RenderMainThread extends EventTarget implements EventListen
     initialCanvasWidth,
     messagePort
   }: TRenderWorkerInitData) {
-    console.log('init main thread renderer');
     this.renderer = instantiationService.createInstance(Renderer, canvas);
     this.renderer.init();
     this.renderer.setSize(initialCanvasHeight, initialCanvasWidth);

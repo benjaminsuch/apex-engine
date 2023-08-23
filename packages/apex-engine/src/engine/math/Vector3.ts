@@ -136,6 +136,14 @@ export class Vector3 {
     return this;
   }
 
+  public addScaledVector(vector: Vector3, scale: number) {
+    this.x += vector.x * scale;
+    this.y += vector.y * scale;
+    this.z += vector.z * scale;
+
+    return this;
+  }
+
   public sub(vec: Vector3) {
     this.x -= vec.x;
     this.y -= vec.y;
@@ -270,6 +278,25 @@ export class Vector3 {
 
   public equals(vector: Vector3) {
     return vector.x === this.x && vector.y === this.y && vector.z === this.z;
+  }
+
+  public cross(vector: Vector3) {
+    return this.crossVectors(this, vector);
+  }
+
+  public crossVectors(a: Vector3, b: Vector3) {
+    const ax = a.x,
+      ay = a.y,
+      az = a.z;
+    const bx = b.x,
+      by = b.y,
+      bz = b.z;
+
+    this.x = ay * bz - az * by;
+    this.y = az * bx - ax * bz;
+    this.z = ax * by - ay * bx;
+
+    return this;
   }
 
   public random() {

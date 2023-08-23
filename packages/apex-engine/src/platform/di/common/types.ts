@@ -4,7 +4,7 @@ export interface ServiceIdentifier<T> {
 
 export type ServiceDependencies = { id: ServiceIdentifier<any>; index: number; optional: boolean };
 
-export type TClass = { new (...args: any[]): void };
+export type TClass = { new (...args: any[]): any };
 
 export type RegisteredService = { _injectibleService: undefined };
 

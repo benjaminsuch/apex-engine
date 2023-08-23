@@ -12,6 +12,7 @@ export interface SceneProxyConstructorData {
   quaternion: ArrayBufferLike;
   matrix: ArrayBufferLike;
   matrixWorld: ArrayBufferLike;
+  up: ArrayBufferLike;
   visible: boolean;
   children: SceneProxyConstructorData[];
 }
@@ -31,6 +32,8 @@ export class SceneProxy {
 
   public readonly matrixWorld: Matrix4;
 
+  public readonly up: Vector3;
+
   public visible: boolean = true;
 
   public readonly sceneObject: Object3D = new Object3D();
@@ -42,6 +45,7 @@ export class SceneProxy {
     quaternion,
     matrix,
     matrixWorld,
+    up,
     uuid
   }: SceneProxyConstructorData) {
     this.uuid = uuid;
@@ -51,6 +55,7 @@ export class SceneProxy {
     this.quaternion = new Quaternion(quaternion);
     this.matrix = new Matrix4(matrix);
     this.matrixWorld = new Matrix4(matrixWorld);
+    this.up = new Vector3(up);
   }
 
   public tick() {
@@ -63,5 +68,8 @@ export class SceneProxy {
     this.sceneObject.quaternion.fromArray(this.quaternion.toArray());
     this.sceneObject.matrix.fromArray(this.matrix.toArray());
     this.sceneObject.matrixWorld.fromArray(this.matrixWorld.toArray());
+    this.sceneObject.up.fromArray(this.up.toArray());
   }
+
+  public dispose() {}
 }

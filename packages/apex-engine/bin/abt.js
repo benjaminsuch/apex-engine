@@ -430,7 +430,7 @@ async function buildElectronTarget(target) {
                 plugins: [
                     // electron-sandbox is a browser, so we change the platform to "browser".
                     workersPlugin({ target: { ...target, platform: 'browser' } }),
-                    ...createRollupPlugins(buildDir, target),
+                    ...createRollupPlugins(buildDir, { ...target, platform: 'browser' }),
                     htmlPlugin('./sandbox.js', {
                         meta: [
                             {
@@ -563,7 +563,7 @@ async function serveBrowserTarget(target) {
         })
     });
     watcher.on('event', async (event) => {
-        log('[browser:watcher]', event.code);
+        log(`[${new Date().toLocaleTimeString()}] [browser:watcher]`, event.code);
         if (event.code === 'END') {
             if (!server.listening) {
                 server.listen(3000, 'localhost', () => {
@@ -582,7 +582,7 @@ async function serveBrowserTarget(target) {
         }
     });
     watcher.on('change', file => {
-        log('[browser:watcher]', 'File changed');
+        log(`\n[${new Date().toLocaleTimeString()}] [browser:watcher]`, 'File changed');
         debug(file);
     });
     watcher.on('restart', () => { });
@@ -634,7 +634,7 @@ async function serveElectronTarget(target) {
             plugins: [
                 // electron-sandbox is a browser, so we change the platform to "browser".
                 workersPlugin({ target: { ...target, platform: 'browser' } }),
-                ...createRollupPlugins(buildDir, target),
+                ...createRollupPlugins(buildDir, { ...target, platform: 'browser' }),
                 htmlPlugin('./sandbox.js')
             ],
             onwarn() { }
@@ -751,7 +751,7 @@ function createRollupConfig(launcher, { output, ...options } = {}) {
         ...options
     };
 }
-function createRollupPlugins(buildDir, { defaultLevel, renderer, target }) {
+function createRollupPlugins(buildDir, { defaultLevel, platform, renderer, target }) {
     return [
         replace({
             preventAssignment: true,
@@ -761,6 +761,7 @@ function createRollupPlugins(buildDir, { defaultLevel, renderer, target }) {
                 IS_CLIENT: String(target === 'client'),
                 IS_GAME: String(target === 'game'),
                 IS_SERVER: String(target === 'server'),
+                IS_BROWSER: String(platform === 'browser'),
                 RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
             }
         }),

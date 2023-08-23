@@ -1,3 +1,10 @@
+import { MathUtils } from 'three';
+
+import { Matrix4 } from './Matrix4';
+import { type Quaternion } from './Quaternion';
+
+const _matrix = new Matrix4();
+
 /**
  * Most of the code is from: https://github.com/mrdoob/three.js/blob/dev/src/math/Euler.js
  *
@@ -30,7 +37,7 @@ export class Euler {
   }
 
   set y(val) {
-    this.#data.set([this.#data[0], val]);
+    this.#data.set([val], 1);
     this.#y = this.#data[1];
   }
 
@@ -41,7 +48,7 @@ export class Euler {
   }
 
   set z(val) {
-    this.#data.set([this.#data[0], this.#data[1], val]);
+    this.#data.set([val], 2);
     this.#z = this.#data[2];
   }
 
@@ -52,7 +59,7 @@ export class Euler {
   }
 
   set order(val) {
-    this.#data.set([this.#data[0], this.#data[1], this.#data[2], Euler.ORDER_LIST.indexOf(val)]);
+    this.#data.set([Euler.ORDER_LIST.indexOf(val)], 3);
     this.#order = val;
   }
 
@@ -92,9 +99,111 @@ export class Euler {
     return this;
   }
 
-  public setFromRotationMatrix() {}
+  public setFromRotationMatrix(matrix: Matrix4, order: Euler['order']) {
+    const te = matrix.elements;
+    const m11 = te[0],
+      m12 = te[4],
+      m13 = te[8];
+    const m21 = te[1],
+      m22 = te[5],
+      m23 = te[9];
+    const m31 = te[2],
+      m32 = te[6],
+      m33 = te[10];
 
-  public setFromQuaternion() {}
+    switch (order) {
+      case 'XYZ':
+        this.y = Math.asin(MathUtils.clamp(m13, -1, 1));
+
+        if (Math.abs(m13) < 0.9999999) {
+          this.x = Math.atan2(0 - m23, m33);
+          this.z = Math.atan2(0 - m12, m11);
+        } else {
+          this.x = Math.atan2(m32, m22);
+          this.z = 0;
+        }
+
+        break;
+
+      case 'YXZ':
+        this.x = Math.asin(0 - MathUtils.clamp(m23, -1, 1));
+
+        if (Math.abs(m23) < 0.9999999) {
+          this.y = Math.atan2(m13, m33);
+          this.z = Math.atan2(m21, m22);
+        } else {
+          this.y = Math.atan2(0 - m31, m11);
+          this.z = 0;
+        }
+
+        break;
+
+      case 'ZXY':
+        this.x = Math.asin(MathUtils.clamp(m32, -1, 1));
+
+        if (Math.abs(m32) < 0.9999999) {
+          this.y = Math.atan2(0 - m31, m33);
+          this.z = Math.atan2(0 - m12, m22);
+        } else {
+          this.y = 0;
+          this.z = Math.atan2(m21, m11);
+        }
+
+        break;
+
+      case 'ZYX':
+        this.y = Math.asin(0 - MathUtils.clamp(m31, -1, 1));
+
+        if (Math.abs(m31) < 0.9999999) {
+          this.x = Math.atan2(m32, m33);
+          this.z = Math.atan2(m21, m11);
+        } else {
+          this.x = 0;
+          this.z = Math.atan2(0 - m12, m22);
+        }
+
+        break;
+
+      case 'YZX':
+        this.z = Math.asin(MathUtils.clamp(m21, -1, 1));
+
+        if (Math.abs(m21) < 0.9999999) {
+          this.x = Math.atan2(0 - m23, m22);
+          this.y = Math.atan2(0 - m31, m11);
+        } else {
+          this.x = 0;
+          this.y = Math.atan2(m13, m33);
+        }
+
+        break;
+
+      case 'XZY':
+        this.z = Math.asin(0 - MathUtils.clamp(m12, -1, 1));
+
+        if (Math.abs(m12) < 0.9999999) {
+          this.x = Math.atan2(m32, m22);
+          this.y = Math.atan2(m13, m11);
+        } else {
+          this.x = Math.atan2(0 - m23, m33);
+          this.y = 0;
+        }
+
+        break;
+
+      default:
+        console.warn(
+          'THREE.Euler: .setFromRotationMatrix() encountered an unknown order: ' + order
+        );
+    }
+
+    this.order = order;
+
+    return this;
+  }
+
+  public setFromQuaternion(quat: Quaternion, order: Euler['order'] = this.order) {
+    return this.setFromRotationMatrix(_matrix.makeRotationFromQuaternion(quat), order);
+  }
 
   public setFromVector3() {}
 

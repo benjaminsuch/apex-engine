@@ -1,10 +1,11 @@
 import { IInstatiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
 import { type Actor } from './Actor';
 import { type World } from './World';
 
 export class Level {
-  private readonly actors: Set<Actor> = new Set();
+  public readonly actors: Set<Actor> = new Set();
 
   public addActor<T extends typeof Actor>(ActorClass: T): InstanceType<T> {
     const actor = this.instantiationService.createInstance(ActorClass as typeof Actor);
@@ -13,8 +14,8 @@ export class Level {
     return actor as InstanceType<T>;
   }
 
-  public getActors() {
-    return Array.from(this.actors);
+  public removeActor(actor: Actor) {
+    this.actors.delete(actor);
   }
 
   public hasActor(actor: Actor) {
@@ -30,14 +31,20 @@ export class Level {
     return this.world;
   }
 
-  private isInitialized: boolean = false;
+  public isInitialized: boolean = false;
 
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
     @IRenderer protected readonly renderer: IRenderer
   ) {}
 
   public init() {
+    if (this.isInitialized) {
+      this.logger.warn(this.constructor.name, 'Already initialized.');
+      return;
+    }
+
     this.isInitialized = true;
   }
 
@@ -46,11 +53,11 @@ export class Level {
       throw new Error(`Level has not been initialized.`);
     }
 
-    for (const actor of this.getActors()) {
+    for (const actor of this.actors) {
       actor.preInitComponents();
     }
 
-    for (const actor of this.getActors()) {
+    for (const actor of this.actors) {
       actor.initComponents();
       actor.postInitComponents();
     }
@@ -62,5 +69,20 @@ export class Level {
     return this.world?.getCurrentLevel() === this;
   }
 
-  public postLoad() {}
+  /**
+   * At this stage, the world has been initiated and the game mode created. Any code that should be
+   * exectuted before the level and it's actor have been initiated.
+   *
+   * @param world The world must be set here, since we broadcast the post-load event before we call `init`.
+   */
+  public postLoad(world: World) {
+    if (!this.world) {
+      this.world = world;
+    }
+  }
+
+  public dispose() {
+    //todo: Make sure all event listeners are removed
+    //todo: Make sure injected services don't store any data from this level
+  }
 }
