@@ -1,15 +1,30 @@
 import { type Actor } from './Actor';
 import { type GameInstance } from './GameInstance';
-import { GameMode } from './GameMode';
+import { type GameMode } from './GameMode';
 import { type Level } from './Level';
+import { PlayerController } from './PlayerController';
 
 export class World {
+  private readonly playerControllers: Set<PlayerController> = new Set();
+
+  public addPlayerController(controller: PlayerController) {
+    // This might be a relevant to know, so we log a warning.
+    if (this.playerControllers.has(controller)) {
+      console.warn(`An instance of this player controller is already in the list.`);
+    }
+    this.playerControllers.add(controller);
+  }
+
+  public removePlayerController(controller: PlayerController) {
+    this.playerControllers.delete(controller);
+  }
+
   /**
    * Actors stored here are persistent and won't be destroyed when changing levels.
    */
   public readonly actors: Set<Actor> = new Set();
 
-  private currentLevel?: Level;
+  private currentLevel: Level | null = null;
 
   public getCurrentLevel() {
     if (!this.currentLevel) {
@@ -18,17 +33,21 @@ export class World {
     return this.currentLevel;
   }
 
-  public setCurrentLevel(val: Level) {
-    if (!this.currentLevel) {
-      this.currentLevel = val;
+  public setCurrentLevel(level: Level) {
+    if (this.currentLevel !== level) {
+      this.currentLevel = level;
       this.currentLevel.world = this;
-      this.gameMode = this.spawnActor(val.gameModeClass);
-    } else {
-      //this.currentLevel.dispose()
+      //todo: Broadcast level-changed event
     }
   }
 
-  private gameMode?: GameMode;
+  private gameMode: GameMode | null = null;
+
+  public async setGameMode(url: string) {
+    if (!IS_CLIENT && !this.gameMode) {
+      this.gameMode = await this.getGameInstance().createGameModeFromURL(url);
+    }
+  }
 
   public getGameMode() {
     if (!this.gameMode) {
@@ -41,7 +60,7 @@ export class World {
     return this.gameInstance;
   }
 
-  private isInitialized: boolean = false;
+  public isInitialized: boolean = false;
 
   constructor(private readonly gameInstance: GameInstance) {}
 
@@ -65,6 +84,8 @@ export class World {
     for (const actor of this.actors) {
       actor.beginPlay();
     }
+    //todo: StartPlay via GameMode
+    //todo: Broadcast begin-play event
   }
 
   public tick(): void {
@@ -96,5 +117,6 @@ export class World {
   public spawnPlayActor() {
     const playerController = this.getGameMode().login();
     this.getGameMode().postLogin(playerController);
+    return playerController;
   }
 }

@@ -2,7 +2,6 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
 import { type Actor } from './Actor';
-import { GameMode } from './GameMode';
 import { type World } from './World';
 
 export class Level {
@@ -32,9 +31,7 @@ export class Level {
     return this.world;
   }
 
-  private isInitialized: boolean = false;
-
-  public readonly gameModeClass: typeof GameMode = GameMode;
+  public isInitialized: boolean = false;
 
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
@@ -72,5 +69,14 @@ export class Level {
     return this.world?.getCurrentLevel() === this;
   }
 
-  public postLoad() {}
+  public postLoad(world: World) {
+    if (!this.world) {
+      this.world = world;
+    }
+  }
+
+  public dispose() {
+    //todo: Make sure all event listeners are removed
+    //todo: Make sure injected services don't store any data from this level
+  }
 }
