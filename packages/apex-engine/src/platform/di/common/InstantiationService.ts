@@ -10,12 +10,21 @@ import type {
 const DI_TARGET = '$di$target';
 const DI_DEPENDENCIES = '$di$dependencies';
 
+export interface ServicesAccessor {
+  get<T>(id: ServiceIdentifier<T>): T;
+}
+
 export interface IInstatiationService {
   readonly _injectibleService: undefined;
   createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(
     Constructor: C,
     ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
   ): R;
+  invokeFunction<R, TS extends any[] = []>(
+    fn: (accessor: ServicesAccessor, ...args: TS) => R,
+    ...args: TS
+  ): R;
+  setServiceInstance<T>(id: ServiceIdentifier<T>, instance: T): void;
 }
 
 export class InstantiationService implements IInstatiationService {
@@ -135,6 +144,41 @@ export class InstantiationService implements IInstatiationService {
       Constructor,
       args.concat(serviceArgs) as Readonly<ConstructorParameters<C>>
     );
+  }
+
+  public invokeFunction<R, TS extends any[] = []>(
+    fn: (accessor: ServicesAccessor, ...args: TS) => R,
+    ...args: TS
+  ): R {
+    let done = false;
+
+    try {
+      const accessor: ServicesAccessor = {
+        get: <T>(id: ServiceIdentifier<T>) => {
+          if (done) {
+            throw new Error(
+              'service accessor is only valid during the invocation of its target method'
+            );
+          }
+
+          const result = this.services.get(id);
+
+          if (!result) {
+            throw new Error(`[invokeFunction] unknown service '${id}'`);
+          }
+
+          return result;
+        }
+      };
+
+      return fn(accessor, ...args);
+    } finally {
+      done = true;
+    }
+  }
+
+  public setServiceInstance<T>(id: ServiceIdentifier<T>, instance: T): void {
+    this.services.set(id, instance);
   }
 }
 

@@ -15,9 +15,12 @@ export class BrowserMain {
 
     services.set(IConsoleLogger, consoleLogger);
     services.set(IRenderer, new BrowserRenderer({ runOnMainThread: !!RENDER_ON_MAIN_THREAD }));
-    services.set(INetDriver, new WebSocketNetDriver(consoleLogger));
 
     this.instantiationService = new InstantiationService(services);
+    this.instantiationService.setServiceInstance(
+      INetDriver,
+      new WebSocketNetDriver(this.instantiationService, consoleLogger)
+    );
   }
 
   public init() {
