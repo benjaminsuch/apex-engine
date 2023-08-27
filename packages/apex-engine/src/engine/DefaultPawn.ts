@@ -1,5 +1,9 @@
+import { IInstatiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
+import { INetDriver } from '../platform/net/common';
+import { IRenderer } from '../platform/renderer/common';
 import { Pawn } from './Pawn';
-import { EKeyEvent, InputActionMap, InputAxisMap } from './PlayerInput';
+import { InputActionMap, InputAxisMap } from './PlayerInput';
 import { CameraComponent } from './components';
 import { Euler, Vector3 } from './math';
 
@@ -13,6 +17,17 @@ export class DefaultPawn extends Pawn {
   private inputBindingsInitialized: boolean = false;
 
   private cameraComponent: CameraComponent | null = null;
+
+  constructor(
+    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IRenderer public override readonly renderer: IRenderer,
+    @INetDriver protected readonly netDriver: INetDriver
+  ) {
+    super(instantiationService, logger, renderer);
+
+    netDriver.send();
+  }
 
   public moveForward(value: number) {
     if (IS_BROWSER) {

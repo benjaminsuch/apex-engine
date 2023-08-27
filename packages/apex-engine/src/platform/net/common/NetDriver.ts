@@ -7,6 +7,7 @@ export interface INetDriver {
   join(): void;
   listen(): void;
   tick(): void;
+  send(): void;
 }
 
 export const INetDriver = InstantiationService.createDecorator<INetDriver>('netDriver');

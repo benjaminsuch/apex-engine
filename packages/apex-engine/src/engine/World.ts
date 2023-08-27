@@ -83,7 +83,11 @@ export class World {
       this.currentLevel.initActors();
     }
 
-    console.log('Init actors for play', this.actors);
+    if (!IS_SERVER) {
+      console.log('Init actors for play', this.actors);
+    } else {
+      console.log('Init actors for play', this.actors.size);
+    }
   }
 
   public beginPlay(): void {

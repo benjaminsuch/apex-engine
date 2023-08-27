@@ -17,8 +17,12 @@ export class WebSocketNetDriver implements INetDriver {
   }
 
   public init() {
-    this.wss.on('connection', () => {
+    this.wss.on('connection', ws => {
       this.logger.info(this.constructor.name, 'Client connected');
+
+      ws.on('message', data => {
+        this.logger.info(this.constructor.name, 'Client message received:', data);
+      });
     });
   }
 
@@ -33,4 +37,6 @@ export class WebSocketNetDriver implements INetDriver {
   public join() {}
 
   public tick() {}
+
+  public send() {}
 }
