@@ -17,11 +17,17 @@ export class WebSocketNetDriver implements INetDriver {
   }
 
   public init() {
+    this.logger.info(this.constructor.name, 'Initialize');
+
     this.wss.on('connection', ws => {
       this.logger.info(this.constructor.name, 'Client connected');
 
       ws.on('message', data => {
         this.logger.info(this.constructor.name, 'Client message received:', data);
+      });
+
+      ws.on('close', () => {
+        this.logger.info(this.constructor.name, 'Client disconnected');
       });
     });
   }

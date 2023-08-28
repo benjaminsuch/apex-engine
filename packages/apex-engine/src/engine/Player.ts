@@ -1,3 +1,4 @@
+import { IConsoleLogger } from '../platform/logging/common';
 import { PlayerController } from './PlayerController';
 import { type World } from './World';
 
@@ -11,9 +12,15 @@ export class Player {
     return this.playerController;
   }
 
-  constructor() {}
+  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {}
 
   public spawnPlayActor(world: World) {
-    this.playerController = world.spawnPlayActor();
+    this.logger.debug(this.constructor.name, 'Spawn player actor');
+
+    if (IS_CLIENT) {
+      this.playerController = world.spawnActor(PlayerController);
+    } else {
+      this.playerController = world.spawnPlayActor();
+    }
   }
 }

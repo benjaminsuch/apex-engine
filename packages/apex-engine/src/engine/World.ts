@@ -1,3 +1,4 @@
+import { IConsoleLogger } from '../platform/logging/common';
 import { type Actor } from './Actor';
 import { type GameInstance } from './GameInstance';
 import { type GameMode } from './GameMode';
@@ -67,9 +68,11 @@ export class World {
 
   public isInitialized: boolean = false;
 
-  constructor() {}
+  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {}
 
   public init(gameInstance: GameInstance): void {
+    this.logger.debug(this.constructor.name, 'Initialize');
+
     this.gameInstance = gameInstance;
     this.isInitialized = true;
   }
@@ -79,18 +82,19 @@ export class World {
       throw new Error(`World has not been initialized.`);
     }
 
+    this.logger.debug(
+      this.constructor.name,
+      'Initialize actors for play',
+      IS_BROWSER ? this.actors : this.actors.size
+    );
+
     if (this.currentLevel) {
       this.currentLevel.initActors();
-    }
-
-    if (!IS_SERVER) {
-      console.log('Init actors for play', this.actors);
-    } else {
-      console.log('Init actors for play', this.actors.size);
     }
   }
 
   public beginPlay(): void {
+    this.logger.debug(this.constructor.name, 'Begin Play');
     this.getCurrentLevel().beginPlay();
 
     for (const actor of this.actors) {
@@ -101,6 +105,7 @@ export class World {
   }
 
   public cleanUp() {
+    this.logger.debug(this.constructor.name, 'Clean up');
     this.currentLevel = null;
     this.isInitialized = false;
   }
@@ -115,24 +120,32 @@ export class World {
     ActorClass: T,
     level: Level | null = this.currentLevel
   ): InstanceType<T> {
+    this.logger.debug(this.constructor.name, 'Spawning actor', ActorClass.name);
+
     if (!level) {
       throw new Error(`Cannot spawn actor: Please set a current level before spawning actors.`);
     }
 
     const actor = level.addActor(ActorClass);
-
     this.actors.add(actor);
 
     return actor;
   }
 
   public destroyActor(actor: Actor) {
+    this.logger.debug(
+      this.constructor.name,
+      'Destroying actor',
+      IS_BROWSER ? actor : actor.constructor.name
+    );
+
     actor.dispose();
     this.getCurrentLevel().removeActor(actor);
     this.actors.delete(actor);
   }
 
   public spawnPlayActor() {
+    this.logger.debug(this.constructor.name, 'Spawning player actor');
     const playerController = this.getGameMode().login();
     this.getGameMode().postLogin(playerController);
     return playerController;

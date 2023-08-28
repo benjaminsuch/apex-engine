@@ -92,11 +92,13 @@ export class Renderer {
   }
 
   public init() {
+    this.logger.debug(this.constructor.name, 'Initialize');
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
   }
 
   public start() {
+    this.logger.debug(this.constructor.name, 'Start');
     this.webGLRenderer.setAnimationLoop(() => this.tick());
   }
 
@@ -126,6 +128,7 @@ export class Renderer {
   }
 
   public addSceneProxy(proxy: SceneProxy) {
+    this.logger.debug(this.constructor.name, 'Adding scene proxy', proxy);
     this.proxyObjects.push(proxy);
     this.scene.add(proxy.sceneObject);
   }
@@ -138,6 +141,8 @@ export class Renderer {
     const proxy = typeof uuidOrProxy === 'string' ? this.getSceneProxy(uuidOrProxy) : uuidOrProxy;
 
     if (proxy) {
+      this.logger.debug(this.constructor.name, 'Removing scene proxy', proxy);
+
       proxy.dispose();
       this.scene.remove(proxy.sceneObject);
 

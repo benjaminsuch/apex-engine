@@ -15,18 +15,24 @@ export class WebSocketNetDriver implements INetDriver {
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {}
 
-  public init() {}
+  public init() {
+    this.logger.debug(this.constructor.name, 'Initialize');
+  }
 
   public listen() {}
 
   public connect() {
+    this.logger.debug(this.constructor.name, 'Connecting to ws://localhost:8888');
+
     this.socket = new WebSocket(`ws://localhost:8888`);
     this.socket.binaryType = 'arraybuffer';
     this.socket.addEventListener('open', this);
     this.socket.addEventListener('message', this);
   }
 
-  public disconnect() {}
+  public disconnect() {
+    this.logger.debug(this.constructor.name, 'Disconnecting');
+  }
 
   public join() {}
 
@@ -44,7 +50,7 @@ export class WebSocketNetDriver implements INetDriver {
   }
 
   private handleSocketOpen(event: Event) {
-    this.logger.debug(this.constructor.name, 'Socket open');
+    this.logger.debug(this.constructor.name, 'Connection established');
 
     this.serverConnection = this.instantiationService.createInstance(NetConnection);
     this.serverConnection.init(this);

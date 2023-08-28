@@ -49,6 +49,12 @@ export class Level {
   }
 
   public initActors() {
+    if (!IS_SERVER) {
+      this.logger.debug(this.constructor.name, 'Initialize actors', this.actors);
+    } else {
+      this.logger.debug(this.constructor.name, 'Initialize actors', this.actors.size);
+    }
+
     if (!this.isInitialized) {
       throw new Error(`Level has not been initialized.`);
     }
