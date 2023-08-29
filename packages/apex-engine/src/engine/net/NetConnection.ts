@@ -15,6 +15,8 @@ export class NetConnection extends Player {
 
   public openChannels: DataChannel[] = [];
 
+  public tickChannels: DataChannel[] = [];
+
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger
@@ -34,10 +36,15 @@ export class NetConnection extends Player {
   private createInitialChannels() {
     this.logger.debug(this.constructor.name, 'Creating initial data channels');
 
-    this.controlChannel = this.instantiationService.createInstance(ControlChannel);
-    this.voiceChannel = this.instantiationService.createInstance(VoiceChannel);
+    if (IS_CLIENT) {
+      this.controlChannel = this.instantiationService.createInstance(ControlChannel);
+      this.controlChannel.init(this);
+      this.openChannels.push(this.controlChannel);
+    }
 
-    this.openChannels.push(this.controlChannel, this.voiceChannel);
+    this.voiceChannel = this.instantiationService.createInstance(VoiceChannel);
+    this.voiceChannel.init(this);
+    this.openChannels.push(this.voiceChannel);
   }
 
   private initPacketHandler() {
