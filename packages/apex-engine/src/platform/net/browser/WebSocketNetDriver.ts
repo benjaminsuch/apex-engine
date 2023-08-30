@@ -1,46 +1,39 @@
-import { NetConnection } from '../../../engine/net';
-import { IInstatiationService } from '../../di/common';
-import { IConsoleLogger } from '../../logging/common';
-import { INetDriver } from '../common';
+import { type DataChannel, NetConnection } from '../../../engine/net';
+import { INetDriver, WebSocketNetDriverBase } from '../common';
 
-export class WebSocketNetDriver implements INetDriver {
+export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDriver {
   declare readonly _injectibleService: undefined;
-
-  private socket: WebSocket | null = null;
 
   private serverConnection?: NetConnection | null = null;
 
-  constructor(
-    @IInstatiationService protected readonly instantiationService: IInstatiationService,
-    @IConsoleLogger protected readonly logger: IConsoleLogger
-  ) {}
+  public socketChannels: Map<WebSocket, DataChannel[]> = new Map();
 
-  public init() {
-    this.logger.debug(this.constructor.name, 'Initialize');
-  }
+  public channelsSocket: WeakMap<typeof DataChannel, WebSocket> = new WeakMap();
 
-  public listen() {}
-
-  public connect() {
+  public override connect() {
     this.logger.debug(this.constructor.name, 'Connecting to ws://localhost:8888');
 
-    this.socket = new WebSocket(`ws://localhost:8888`);
-    this.socket.binaryType = 'arraybuffer';
-    this.socket.addEventListener('open', this);
-    this.socket.addEventListener('message', this);
+    this.serverConnection = this.instantiationService.createInstance(NetConnection);
+    this.serverConnection.init(this);
   }
 
-  public disconnect() {
-    this.logger.debug(this.constructor.name, 'Disconnecting');
+  public override createChannel(Class: typeof DataChannel) {
+    const channel = this.instantiationService.createInstance(Class);
+    let ws: WebSocket | undefined = this.channelsSocket.get(Class);
+
+    if (!ws) {
+      ws = this.createWebSocket([Class.name]);
+
+      this.channelsSocket.set(Class, ws);
+      this.socketChannels.set(ws, [channel]);
+    } else {
+      this.socketChannels.get(ws)?.push(channel);
+    }
+
+    return channel;
   }
 
-  public join() {}
-
-  public tick() {}
-
-  public send() {}
-
-  public handleEvent(event: Event | MessageEvent) {
+  public override handleEvent(event: Event | MessageEvent) {
     if (event.type === 'message') this.handleMessageReceived(event as MessageEvent);
     if (event.type === 'open') this.handleSocketOpen(event);
   }
@@ -51,8 +44,14 @@ export class WebSocketNetDriver implements INetDriver {
 
   private handleSocketOpen(event: Event) {
     this.logger.debug(this.constructor.name, 'Connection established');
+  }
 
-    this.serverConnection = this.instantiationService.createInstance(NetConnection);
-    this.serverConnection.init(this);
+  private createWebSocket(protocols: string[] = []): WebSocket {
+    const ws = new WebSocket(`ws://localhost:8888`, protocols);
+    ws.binaryType = 'arraybuffer';
+    ws.addEventListener('open', this);
+    ws.addEventListener('message', this);
+
+    return ws;
   }
 }

@@ -17,9 +17,12 @@ export class CliMain {
     // Just a temporary fix to avoid `createInstance` to throw type errors.
     // TODO: Fix "createInstance" type and remove the renderer.
     services.set(IRenderer, new NodeRenderer());
-    services.set(INetDriver, new WebSocketNetDriver(consoleLogger));
 
     this.instantiationService = new InstantiationService(services);
+    this.instantiationService.setServiceInstance(
+      INetDriver,
+      new WebSocketNetDriver(this.instantiationService, consoleLogger)
+    );
   }
 
   public init() {

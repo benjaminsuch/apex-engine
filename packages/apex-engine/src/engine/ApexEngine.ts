@@ -42,7 +42,10 @@ export abstract class ApexEngine {
   public init() {
     this.gameInstance = this.instantiationService.createInstance(GameInstance, this);
     this.gameInstance.init();
-    this.gameInstance.createPlayer();
+
+    if (IS_BROWSER) {
+      this.gameInstance.createPlayer();
+    }
 
     this.isInitialized = true;
   }
@@ -94,7 +97,6 @@ export abstract class ApexEngine {
       this.logger.info(`Level loaded: ${url}`);
 
       const level = this.instantiationService.createInstance(LoadedLevel);
-      const player = gameInstance.getPlayer();
 
       if (!world.isInitialized) {
         throw new Error(`Cannot continue loading level: World is not initialized.`);
@@ -107,7 +109,10 @@ export abstract class ApexEngine {
 
       level.init();
       world.initActorsForPlay();
-      player.spawnPlayActor(world);
+
+      if (IS_BROWSER) {
+        gameInstance.getPlayer().spawnPlayActor(world);
+      }
 
       //todo: Broadcast load-level-completed event
     } catch (error) {

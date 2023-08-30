@@ -1,5 +1,3 @@
-import { IInstatiationService } from '../../platform/di/common';
-import { IConsoleLogger } from '../../platform/logging/common';
 import { type INetDriver } from '../../platform/net/common';
 import { Player } from '../Player';
 import { ControlChannel } from './ControlChannel';
@@ -13,16 +11,9 @@ export class NetConnection extends Player {
 
   public voiceChannel: VoiceChannel | null = null;
 
-  public openChannels: DataChannel[] = [];
+  public readonly openChannels: DataChannel[] = [];
 
-  public tickChannels: DataChannel[] = [];
-
-  constructor(
-    @IInstatiationService protected readonly instantiationService: IInstatiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger
-  ) {
-    super(logger);
-  }
+  public readonly tickChannels: DataChannel[] = [];
 
   public init(netDriver: INetDriver) {
     this.logger.debug(this.constructor.name, 'Initialize');
@@ -36,15 +27,17 @@ export class NetConnection extends Player {
   private createInitialChannels() {
     this.logger.debug(this.constructor.name, 'Creating initial data channels');
 
-    if (IS_CLIENT) {
-      this.controlChannel = this.instantiationService.createInstance(ControlChannel);
-      this.controlChannel.init(this);
-      this.openChannels.push(this.controlChannel);
-    }
+    if (this.netDriver) {
+      if (IS_CLIENT) {
+        this.controlChannel = this.netDriver.createChannel(ControlChannel);
+        this.controlChannel.init(this);
+        this.openChannels.push(this.controlChannel);
+      }
 
-    this.voiceChannel = this.instantiationService.createInstance(VoiceChannel);
-    this.voiceChannel.init(this);
-    this.openChannels.push(this.voiceChannel);
+      this.voiceChannel = this.netDriver.createChannel(VoiceChannel);
+      this.voiceChannel.init(this);
+      this.openChannels.push(this.voiceChannel);
+    }
   }
 
   private initPacketHandler() {

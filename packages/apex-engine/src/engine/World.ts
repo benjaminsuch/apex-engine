@@ -1,8 +1,10 @@
 import { IConsoleLogger } from '../platform/logging/common';
+import { INetDriver } from '../platform/net/common';
 import { type Actor } from './Actor';
 import { type GameInstance } from './GameInstance';
 import { type GameMode } from './GameMode';
 import { type Level } from './Level';
+import { type Player } from './Player';
 import { type PlayerController } from './PlayerController';
 
 export class World {
@@ -68,11 +70,15 @@ export class World {
 
   public isInitialized: boolean = false;
 
-  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {}
+  constructor(
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
+    @INetDriver protected readonly netDriver: INetDriver
+  ) {}
 
   public init(gameInstance: GameInstance): void {
     this.logger.debug(this.constructor.name, 'Initialize');
 
+    this.netDriver.world = this;
     this.gameInstance = gameInstance;
     this.isInitialized = true;
   }
@@ -144,7 +150,7 @@ export class World {
     this.actors.delete(actor);
   }
 
-  public spawnPlayActor() {
+  public spawnPlayActor(player: Player) {
     this.logger.debug(this.constructor.name, 'Spawning player actor');
     const playerController = this.getGameMode().login();
     this.getGameMode().postLogin(playerController);
