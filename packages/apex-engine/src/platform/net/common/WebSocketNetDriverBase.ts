@@ -1,11 +1,13 @@
 import { type World } from '../../../engine';
-import { type DataChannel } from '../../../engine/net';
+import { PacketHandler, type DataChannel } from '../../../engine/net';
 import { IInstatiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
 import { INetDriver } from './NetDriver';
 
 export abstract class WebSocketNetDriverBase implements INetDriver {
   declare readonly _injectibleService: undefined;
+
+  public packetHandler: PacketHandler | null = null;
 
   public world: World | null = null;
 
@@ -16,6 +18,9 @@ export abstract class WebSocketNetDriverBase implements INetDriver {
 
   public init() {
     this.logger.debug(this.constructor.name, 'Initialize');
+
+    this.packetHandler = this.instantiationService.createInstance(PacketHandler);
+    this.packetHandler.init();
   }
 
   public listen() {}
@@ -36,7 +41,7 @@ export abstract class WebSocketNetDriverBase implements INetDriver {
 
   public tick() {}
 
-  public send() {}
+  public send(data: ArrayBufferLike) {}
 
   public handleEvent(event: Event | MessageEvent) {}
 }

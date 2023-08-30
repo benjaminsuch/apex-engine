@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'http';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 
 import { NetConnection } from '../../../engine/net';
 import { IInstatiationService } from '../../di/common';
@@ -15,6 +15,10 @@ export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDr
 
   private readonly clientConnections: NetConnection[] = [];
 
+  public readonly connectionSocketMap: WeakMap<NetConnection, WebSocket | null> = new WeakMap();
+
+  public readonly socketConnectionMap: WeakMap<WebSocket, NetConnection> = new WeakMap();
+
   constructor(
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger
@@ -26,20 +30,52 @@ export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDr
   }
 
   public override init() {
-    this.logger.info(this.constructor.name, 'Initialize');
+    super.init();
 
     this.wss.on('connection', ws => {
       this.logger.info(this.constructor.name, 'Client connected');
 
-      if (ws.protocol === 'ControlChannel') {
-        const connection = this.instantiationService.createInstance(NetConnection);
-        connection.init(this);
+      const connection = this.instantiationService.createInstance(NetConnection);
 
-        this.clientConnections.push(connection);
-      }
+      this.clientConnections.push(connection);
+      this.connectionSocketMap.set(connection, ws);
+      this.socketConnectionMap.set(ws, connection);
+
+      connection.init(this);
+
+      ws.send('message from server');
+
+      ws.on('message', data => {
+        this.logger.debug(this.constructor.name, 'Message received');
+
+        if (this.packetHandler) {
+          if (data instanceof Buffer) {
+            data = data.buffer;
+          } else if (!(data instanceof ArrayBuffer)) {
+            return;
+          }
+
+          const packet = this.packetHandler.incomingPacket(data);
+          const connection = this.socketConnectionMap.get(ws);
+
+          if (connection) {
+            connection.receiveRawPacket(packet);
+          }
+        }
+      });
 
       ws.on('close', () => {
         this.logger.info(this.constructor.name, 'Client disconnected');
+
+        const connection = this.socketConnectionMap.get(ws);
+
+        if (connection) {
+          connection.close();
+          this.socketConnectionMap.delete(ws);
+          this.connectionSocketMap.set(connection, null);
+        }
+
+        ws.removeAllListeners();
       });
     });
   }

@@ -4,6 +4,12 @@ import { ControlChannel } from './ControlChannel';
 import { type DataChannel } from './DataChannel';
 import { VoiceChannel } from './VoiceChannel';
 
+export enum EConnectionState {
+  Pending,
+  Open,
+  Closed
+}
+
 export class NetConnection extends Player {
   public netDriver: INetDriver | null = null;
 
@@ -15,6 +21,8 @@ export class NetConnection extends Player {
 
   public readonly tickChannels: DataChannel[] = [];
 
+  public state: EConnectionState = EConnectionState.Pending;
+
   public init(netDriver: INetDriver) {
     this.logger.debug(this.constructor.name, 'Initialize');
 
@@ -24,17 +32,25 @@ export class NetConnection extends Player {
     this.initPacketHandler();
   }
 
+  public receiveRawPacket(packet: ArrayBuffer) {
+    this.logger.debug(this.constructor.name, 'Received raw packet');
+  }
+
+  public close() {
+    this.state = EConnectionState.Closed;
+  }
+
   private createInitialChannels() {
     this.logger.debug(this.constructor.name, 'Creating initial data channels');
 
     if (this.netDriver) {
       if (IS_CLIENT) {
-        this.controlChannel = this.netDriver.createChannel(ControlChannel);
+        this.controlChannel = this.instantiationService.createInstance(ControlChannel);
         this.controlChannel.init(this);
         this.openChannels.push(this.controlChannel);
       }
 
-      this.voiceChannel = this.netDriver.createChannel(VoiceChannel);
+      this.voiceChannel = this.instantiationService.createInstance(VoiceChannel);
       this.voiceChannel.init(this);
       this.openChannels.push(this.voiceChannel);
     }
