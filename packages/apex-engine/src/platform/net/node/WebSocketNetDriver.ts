@@ -5,6 +5,7 @@ import { NetConnection } from '../../../engine/net';
 import { IInstatiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
 import { INetDriver, WebSocketNetDriverBase } from '../common';
+import { type World } from '../../../engine';
 
 export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDriver {
   declare readonly _injectibleService: undefined;
@@ -29,8 +30,8 @@ export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDr
     this.wss = new WebSocketServer({ server: this.server });
   }
 
-  public override init() {
-    super.init();
+  public override init(world: World) {
+    super.init(world);
 
     this.wss.on('connection', ws => {
       this.logger.info(this.constructor.name, 'Client connected');
@@ -43,7 +44,12 @@ export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDr
 
       connection.init(this);
 
-      ws.send('message from server');
+      if (connection.controlChannel) {
+        if (this.world) {
+          this.world.getGameMode().preLogin();
+          this.world.welcomePlayer(connection);
+        }
+      }
 
       ws.on('message', data => {
         this.logger.debug(this.constructor.name, 'Message received');

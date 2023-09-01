@@ -9,7 +9,7 @@ export interface INetDriver {
   close(): void;
   connect(): void;
   disconnect(): void;
-  init(): void;
+  init(world: World): void;
   join(): void;
   listen(): void;
   tick(): void;

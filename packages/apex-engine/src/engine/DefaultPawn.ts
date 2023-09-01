@@ -1,6 +1,5 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { INetDriver } from '../platform/net/common';
 import { IRenderer } from '../platform/renderer/common';
 import { Pawn } from './Pawn';
 import { InputActionMap, InputAxisMap } from './PlayerInput';
@@ -21,12 +20,9 @@ export class DefaultPawn extends Pawn {
   constructor(
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IRenderer public override readonly renderer: IRenderer,
-    @INetDriver protected readonly netDriver: INetDriver
+    @IRenderer public override readonly renderer: IRenderer
   ) {
     super(instantiationService, logger, renderer);
-
-    netDriver.send();
   }
 
   public moveForward(value: number) {

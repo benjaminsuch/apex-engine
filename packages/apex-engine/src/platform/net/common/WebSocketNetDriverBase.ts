@@ -16,9 +16,10 @@ export abstract class WebSocketNetDriverBase implements INetDriver {
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {}
 
-  public init() {
+  public init(world: World) {
     this.logger.debug(this.constructor.name, 'Initialize');
 
+    this.world = world;
     this.packetHandler = this.instantiationService.createInstance(PacketHandler);
     this.packetHandler.init();
   }

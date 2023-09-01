@@ -13,5 +13,5 @@ export class DataChannel {
     this.isClosing = true;
   }
 
-  public sendPacket() {}
+  public send() {}
 }

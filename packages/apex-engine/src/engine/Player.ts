@@ -4,7 +4,7 @@ import { PlayerController } from './PlayerController';
 import { type World } from './World';
 
 export class Player {
-  private playerController: PlayerController | null = null;
+  public playerController: PlayerController | null = null;
 
   public getPlayerController() {
     if (!this.playerController) {

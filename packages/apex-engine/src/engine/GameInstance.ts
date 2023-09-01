@@ -43,7 +43,7 @@ export class GameInstance {
     this.world.init(this);
 
     if (!IS_GAME) {
-      this.netDriver.init();
+      this.netDriver.init(this.world);
       this.netDriver.listen();
       this.netDriver.connect();
     }

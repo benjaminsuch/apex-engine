@@ -6,6 +6,7 @@ import { type GameMode } from './GameMode';
 import { type Level } from './Level';
 import { type Player } from './Player';
 import { type PlayerController } from './PlayerController';
+import { type NetConnection } from './net';
 
 export class World {
   private readonly playerControllers: Set<PlayerController> = new Set();
@@ -155,5 +156,11 @@ export class World {
     const playerController = this.getGameMode().login();
     this.getGameMode().postLogin(playerController);
     return playerController;
+  }
+
+  public welcomePlayer(connection: NetConnection) {
+    this.getGameMode().welcomePlayer(connection);
+    //connection.controlChannel.send(welcomeData)
+    //connection.flush()
   }
 }
