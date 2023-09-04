@@ -3,7 +3,7 @@
   "description": "A cross-platform game engine written in Typescript.",
   "version": "0.6.0-0",
   "author": "Benjamin Such",
-  "license": "Apache-2.0",
+  "license": "BSD-3-Clause",
   "type": "module",
   "engines": {
     "node": "^16.0.0"
