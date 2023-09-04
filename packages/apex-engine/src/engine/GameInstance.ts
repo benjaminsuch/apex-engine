@@ -1,3 +1,6 @@
+import { IInstatiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
+import { INetDriver } from '../platform/net/common';
 import { type ApexEngine } from './ApexEngine';
 import { GameMode } from './GameMode';
 import { Player } from './Player';
@@ -26,17 +29,29 @@ export class GameInstance {
     return this.player;
   }
 
-  constructor(private readonly engine: ApexEngine) {}
+  constructor(
+    private readonly engine: ApexEngine,
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
+    @INetDriver protected readonly netDriver: INetDriver
+  ) {}
 
   public init() {
-    this.world = new World();
+    this.logger.debug(this.constructor.name, 'Initialize');
+
+    this.world = this.instantiationService.createInstance(World);
     this.world.init(this);
+
+    if (!IS_GAME) {
+      this.netDriver.init(this.world);
+      this.netDriver.listen();
+      this.netDriver.connect();
+    }
   }
 
   public start() {
-    this.engine.loadLevel(DEFAULT_LEVEL).then(() => {
-      this.getWorld().beginPlay();
-    });
+    this.logger.debug(this.constructor.name, 'Start');
+    this.engine.loadLevel(DEFAULT_LEVEL).then(() => this.getWorld().beginPlay());
   }
 
   public createPlayer(withPlayerController: boolean = false) {
@@ -44,7 +59,8 @@ export class GameInstance {
       throw new Error(`A player already exists.`);
     }
 
-    this.player = new Player();
+    this.logger.debug(this.constructor.name, 'Creating player');
+    this.player = this.instantiationService.createInstance(Player);
 
     if (this.world && withPlayerController) {
       this.player.spawnPlayActor(this.world);
@@ -68,7 +84,8 @@ export class GameInstance {
           if (module.default) {
             GameModeClass = module.default;
           } else {
-            console.warn(
+            this.logger.warn(
+              this.constructor.name,
               `Unable to find default export for game mode "${gameModeMap.classFilePath}".`
             );
           }

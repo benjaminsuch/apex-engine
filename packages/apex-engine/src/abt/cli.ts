@@ -1,6 +1,7 @@
 import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
+import commonjs from '@rollup/plugin-commonjs';
 import { cac } from 'cac';
 import glob from 'glob';
 import mime from 'mime';
@@ -19,7 +20,7 @@ import {
 } from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import { APEX_DIR, type TargetConfig, getApexConfig } from './config';
+import { APEX_DIR, type TargetConfig, getApexConfig, defaultTargetConfig } from './config';
 import { startElectron } from './electron';
 import { htmlPlugin, workersPlugin } from './plugins';
 import { filterDuplicateOptions, getLauncherPath, type Launcher } from './utils';
@@ -63,7 +64,9 @@ cli
       mkdirSync(APEX_DIR);
     }
 
-    for (const targetConfig of targets) {
+    for (let targetConfig of targets) {
+      targetConfig = { ...defaultTargetConfig, ...targetConfig };
+
       if (platform && targetConfig.platform !== platform) {
         continue;
       }
@@ -89,7 +92,9 @@ cli.command('build').action(async (options: CLIOptions) => {
     isDebugModeOn = true;
   }
 
-  for (const targetConfig of targets) {
+  for (let targetConfig of targets) {
+    targetConfig = { ...defaultTargetConfig, ...targetConfig };
+
     if (platform && targetConfig.platform !== platform) {
       continue;
     }
@@ -587,6 +592,7 @@ function createRollupPlugins(
       }
     }),
     nodeResolve({ preferBuiltins: true }),
-    typescript({ outDir: buildDir })
+    typescript({ outDir: buildDir }),
+    commonjs()
   ];
 }

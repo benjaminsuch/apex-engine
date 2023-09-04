@@ -9,13 +9,13 @@
   "dependencies": {
     "apex-engine": "latest",
     "electron": "^23.1.0",
-    "socket.io": "^4.7.1",
-    "socket.io-client": "^4.7.1",
-    "three": "^0.154.0"
+    "three": "^0.154.0",
+    "ws": "^8.13.0"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",
     "@types/three": "^0.153.0",
+    "@types/ws": "^8",
     "tslib": "^2.5.0",
     "typescript": "^4.9.4"
   },

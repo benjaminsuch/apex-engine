@@ -3,7 +3,7 @@
   "description": "A cross-platform game engine written in Typescript.",
   "version": "0.6.0-0",
   "author": "Benjamin Such",
-  "license": "Apache-2.0",
+  "license": "BSD-3-Clause",
   "type": "module",
   "engines": {
     "node": "^16.0.0"
@@ -48,10 +48,9 @@
     "@rollup/plugin-json": "^6.0.0",
     "@types/node": "^18.11.18",
     "@types/three": "^0.153.0",
+    "@types/ws": "^8",
     "dts-bundle-generator": "^8.0.1",
     "electron": "^23.1.0",
-    "socket.io": "^4.7.1",
-    "socket.io-client": "^4.7.1",
     "three": "^0.154.0",
     "three-stdlib": "^2.24.1",
     "tslib": "^2.5.0",
@@ -59,9 +58,8 @@
   },
   "peerDependencies": {
     "electron": "^23.1.0",
-    "socket.io": "^4.7.1",
-    "socket.io-client": "^4.7.1",
-    "three": "^0.154.0"
+    "three": "^0.154.0",
+    "ws": "^8.13.0"
   },
   "stableVersion": "0.1.2"
 }

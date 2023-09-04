@@ -3,11 +3,14 @@ import { DefaultPawn } from './DefaultPawn';
 import { Pawn } from './Pawn';
 import { PlayerController } from './PlayerController';
 import { Matrix4 } from './math';
+import { type NetConnection } from './net';
 
 export class GameMode extends Actor {
   public readonly playerPawnClass: typeof Pawn = DefaultPawn;
 
   public readonly playerControllerClass: typeof PlayerController = PlayerController;
+
+  public preLogin() {}
 
   public login() {
     const playerController = this.spawnPlayerController();
@@ -41,6 +44,8 @@ export class GameMode extends Actor {
   public spawnDefaultPlayerPawn() {
     return this.getWorld().spawnActor(this.playerPawnClass);
   }
+
+  public welcomePlayer(connection: NetConnection) {}
 
   private initPlayer(player: PlayerController) {}
 }

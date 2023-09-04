@@ -28,9 +28,9 @@ export abstract class ApexEngine {
   public isInitialized: boolean = false;
 
   constructor(
-    private readonly engineLoop: EngineLoop,
-    @IInstatiationService private readonly instantiationService: IInstatiationService,
-    @IConsoleLogger private readonly logger: IConsoleLogger
+    protected readonly engineLoop: EngineLoop,
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the GameEngine already exists.`);
@@ -40,9 +40,12 @@ export abstract class ApexEngine {
   }
 
   public init() {
-    this.gameInstance = new GameInstance(this);
+    this.gameInstance = this.instantiationService.createInstance(GameInstance, this);
     this.gameInstance.init();
-    this.gameInstance.createPlayer();
+
+    if (IS_BROWSER) {
+      this.gameInstance.createPlayer();
+    }
 
     this.isInitialized = true;
   }
@@ -58,6 +61,14 @@ export abstract class ApexEngine {
 
   public exit() {}
 
+  /**
+   * Client <-> Server:
+   * 1. Client calls `loadLevel(<url>)`
+   * 2. Client must be already authenticated? Otherwise try to authenticate
+   * 3. Load level, call `postLoad`, `setCurrentLevel`, `init` and `initActorsForPlay`
+   * 4. Client replicates additional actors sent from the server
+   * @param url
+   */
   public async loadLevel(url: string) {
     //todo: Broadcast pre-load-level event
     this.logger.info(`Attempt to load level: ${url}`);
@@ -86,7 +97,6 @@ export abstract class ApexEngine {
       this.logger.info(`Level loaded: ${url}`);
 
       const level = this.instantiationService.createInstance(LoadedLevel);
-      const player = gameInstance.getPlayer();
 
       if (!world.isInitialized) {
         throw new Error(`Cannot continue loading level: World is not initialized.`);
@@ -99,7 +109,10 @@ export abstract class ApexEngine {
 
       level.init();
       world.initActorsForPlay();
-      player.spawnPlayActor(world);
+
+      if (IS_BROWSER) {
+        gameInstance.getPlayer().spawnPlayActor(world);
+      }
 
       //todo: Broadcast load-level-completed event
     } catch (error) {
