@@ -26,6 +26,11 @@ export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDr
     this.socket?.send(data);
   }
 
+  public override tick() {
+    this.processLocalPackets();
+    this.serverConnection?.tick();
+  }
+
   public override handleEvent(event: Event | MessageEvent) {
     super.handleEvent(event);
 
@@ -65,4 +70,6 @@ export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDr
   private handleSocketError(event: Event) {
     this.logger.debug(this.constructor.name, 'Socket error', event);
   }
+
+  private processLocalPackets() {}
 }

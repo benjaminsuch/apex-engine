@@ -1,7 +1,7 @@
 import { createServer, type Server } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 
-import { NetConnection } from '../../../engine/net';
+import { EConnectionState, NetConnection } from '../../../engine/net';
 import { IInstatiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
 import { INetDriver, WebSocketNetDriverBase } from '../common';
@@ -42,6 +42,7 @@ export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDr
       this.connectionSocketMap.set(connection, ws);
       this.socketConnectionMap.set(ws, connection);
 
+      connection.state = EConnectionState.Open;
       connection.init(this);
 
       if (connection.controlChannel) {
@@ -101,4 +102,17 @@ export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDr
       this.logger.debug(this.constructor.name, 'Server closed');
     });
   }
+
+  public override tick() {
+    this.replicateActors();
+    this.processLocalPackets();
+
+    for (let i = 0; i < this.clientConnections.length; ++i) {
+      this.clientConnections[i].tick();
+    }
+  }
+
+  private replicateActors() {}
+
+  private processLocalPackets() {}
 }

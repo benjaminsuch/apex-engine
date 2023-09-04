@@ -14,4 +14,6 @@ export class DataChannel {
   }
 
   public send() {}
+
+  public tick() {}
 }
