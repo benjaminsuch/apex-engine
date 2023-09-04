@@ -58,8 +58,6 @@ export class WebSocketNetDriver extends WebSocketNetDriverBase implements INetDr
     if (this.serverConnection) {
       this.serverConnection.state = EConnectionState.Open;
     }
-
-    this.send(new TextEncoder().encode('message from client'));
   }
 
   private handleSocketClosed(event: Event) {
