@@ -13,6 +13,7 @@ export class Pawn extends Actor {
 
   public unpossessed() {
     this.controller = null;
+    this.dispose();
   }
 
   public restart() {

@@ -127,6 +127,8 @@ export class Actor {
   }
 
   public dispose() {
+    this.logger.debug(this.constructor.name, 'Dispose');
+
     for (const component of this.components) {
       component.dispose();
     }

@@ -10,6 +10,9 @@ export class PlayerController extends Actor {
   protected pawn: Pawn | null = null;
 
   public getPawn() {
+    if (!this.pawn) {
+      throw new Error(`Pawn not set.`);
+    }
     return this.pawn;
   }
 
@@ -39,8 +42,9 @@ export class PlayerController extends Actor {
     this.addComponent(InputComponent);
   }
 
-  public override tick(): void {
-    this.playerInput.processInputStack(this.buildInputStack(), 0.05);
+  // TODO: Remove default value for delta
+  public override tick(delta: number = 0.05): void {
+    this.playerInput.processInputStack(this.buildInputStack(), delta);
     super.tick();
   }
 
@@ -56,10 +60,9 @@ export class PlayerController extends Actor {
   }
 
   public possess(pawn: Pawn) {
-    if (pawn.controller) {
-      pawn.controller.unpossess();
-    }
+    this.pawn?.controller?.unpossess();
 
+    this.logger.debug(this.constructor.name, 'Possess new pawn:', pawn.constructor.name);
     this.setPawn(pawn);
 
     pawn.possessBy(this);
@@ -67,6 +70,7 @@ export class PlayerController extends Actor {
   }
 
   public unpossess() {
+    this.logger.debug(this.constructor.name, 'Unpossess old pawn:', this.pawn?.constructor.name);
     this.pawn?.unpossessed();
     this.setPawn(null);
   }
