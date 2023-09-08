@@ -2,6 +2,7 @@ import { MathUtils } from 'three';
 
 import { Actor } from '../Actor';
 import { World } from '../World';
+import { IConsoleLogger } from '../../platform/logging/common';
 
 export class ActorComponent {
   public readonly uuid: string = MathUtils.generateUUID();
@@ -24,9 +25,9 @@ export class ActorComponent {
     return this.world;
   }
 
-  private isInitialized: boolean = false;
+  public isInitialized: boolean = false;
 
-  constructor(...args: any[]) {}
+  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {}
 
   public init() {
     this.isInitialized = true;
@@ -45,7 +46,9 @@ export class ActorComponent {
     this.onRegister();
   }
 
-  public dispose() {}
+  public dispose() {
+    this.logger.debug(this.constructor.name, 'Dispose');
+  }
 
   protected onRegister() {}
 }

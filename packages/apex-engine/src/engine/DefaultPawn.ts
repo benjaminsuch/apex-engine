@@ -15,7 +15,7 @@ const moveScale = 0.1;
 export class DefaultPawn extends Pawn {
   private inputBindingsInitialized: boolean = false;
 
-  private cameraComponent: CameraComponent | null = null;
+  private cameraComponent: CameraComponent;
 
   constructor(
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
@@ -23,6 +23,8 @@ export class DefaultPawn extends Pawn {
     @IRenderer public override readonly renderer: IRenderer
   ) {
     super(instantiationService, logger, renderer);
+
+    this.cameraComponent = this.addComponent(CameraComponent);
   }
 
   public moveForward(value: number) {
@@ -110,8 +112,6 @@ export class DefaultPawn extends Pawn {
   }
 
   protected override onRegister(): void {
-    this.cameraComponent = this.addComponent(CameraComponent);
-
     if (IS_BROWSER) {
       document.body.addEventListener('mousedown', this);
     }

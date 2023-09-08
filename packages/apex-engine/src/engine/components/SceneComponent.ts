@@ -7,7 +7,7 @@ import { SceneProxyConstructorData } from '../SceneProxy';
 import { Euler, Matrix4, Quaternion, Vector3 } from '../math';
 import { ActorComponent } from './ActorComponent';
 
-export type SceneObjectType = 'Object3D' | 'PerspectiveCamera';
+export type SceneObjectType = 'Box' | 'Object3D' | 'PerspectiveCamera';
 
 export class SceneComponent extends ActorComponent {
   public readonly position: Vector3 = new Vector3();
@@ -26,14 +26,14 @@ export class SceneComponent extends ActorComponent {
 
   public visible: boolean = true;
 
+  public readonly objectType: SceneObjectType = 'Object3D';
+
   private parent: SceneComponent | null = null;
 
   private readonly children: Set<SceneComponent> = new Set();
 
-  public readonly objectType: SceneObjectType = 'Object3D';
-
-  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {
-    super();
+  constructor(@IConsoleLogger protected override readonly logger: IConsoleLogger) {
+    super(logger);
 
     this.up.set(0, 1, 0);
     this.scale.set(1, 1, 1);
@@ -103,6 +103,8 @@ export class SceneComponent extends ActorComponent {
   }
 
   public override dispose(): void {
+    this.logger.debug(this.constructor.name, 'Send request to destroy scene proxy');
+
     this.getOwner().renderer.send<TRenderSceneProxyDestroyMessage>({
       type: 'destroy-scene-proxy',
       uuid: this.uuid

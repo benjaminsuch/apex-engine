@@ -1,4 +1,11 @@
-import { ACESFilmicToneMapping, PCFSoftShadowMap, Scene, Vector2, WebGLRenderer } from 'three';
+import {
+  ACESFilmicToneMapping,
+  Mesh,
+  PCFSoftShadowMap,
+  Scene,
+  Vector2,
+  WebGLRenderer
+} from 'three';
 
 import {
   CameraSceneProxy,

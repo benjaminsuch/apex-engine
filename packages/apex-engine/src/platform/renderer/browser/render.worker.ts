@@ -83,9 +83,7 @@ function handleInitSceneProxy(component: TRenderSceneProxyInitMessage['component
 
   switch (component.objectType) {
     case 'PerspectiveCamera':
-      {
-        proxy = new CameraSceneProxy(component as CameraProxyConstructorData);
-      }
+      proxy = new CameraSceneProxy(component as CameraProxyConstructorData);
       break;
     default: {
       proxy = new SceneProxy(component);

@@ -1,4 +1,4 @@
-import { Object3D } from 'three';
+import { BoxGeometry, Mesh, MeshBasicMaterial, Object3D } from 'three';
 
 import { Euler, Matrix4, Quaternion, Vector3 } from './math';
 import { type SceneObjectType } from './components';
@@ -36,15 +36,16 @@ export class SceneProxy {
 
   public visible: boolean = true;
 
-  public readonly sceneObject: Object3D = new Object3D();
+  public readonly sceneObject: Object3D;
 
   constructor({
-    position,
-    scale,
-    rotation,
-    quaternion,
     matrix,
     matrixWorld,
+    objectType,
+    position,
+    quaternion,
+    rotation,
+    scale,
     up,
     uuid
   }: SceneProxyConstructorData) {
@@ -56,6 +57,17 @@ export class SceneProxy {
     this.matrix = new Matrix4(matrix);
     this.matrixWorld = new Matrix4(matrixWorld);
     this.up = new Vector3(up);
+
+    switch (objectType) {
+      case 'Box':
+        this.sceneObject = new Mesh(
+          new BoxGeometry(1, 1, 1),
+          new MeshBasicMaterial({ color: 0x00ff00 })
+        );
+        break;
+      default:
+        this.sceneObject = new Object3D();
+    }
   }
 
   public tick() {
