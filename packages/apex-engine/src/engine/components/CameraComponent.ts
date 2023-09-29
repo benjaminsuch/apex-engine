@@ -1,6 +1,6 @@
+import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
-import { type CameraProxyConstructorData } from '../CameraSceneProxy';
-import { type SceneObjectType, SceneComponent } from './SceneComponent';
+import { SceneComponent } from './SceneComponent';
 
 export class CameraComponent extends SceneComponent {
   readonly #buffer: ArrayBufferLike;
@@ -63,22 +63,16 @@ export class CameraComponent extends SceneComponent {
     this.#near = this.#data[3];
   }
 
-  public override readonly objectType: SceneObjectType = 'PerspectiveCamera';
-
-  constructor(@IConsoleLogger protected override readonly logger: IConsoleLogger) {
-    super(logger);
+  constructor(
+    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger
+  ) {
+    super(instantiationService, logger);
 
     const Buffer = typeof SharedArrayBuffer !== 'undefined' ? SharedArrayBuffer : ArrayBuffer;
 
     this.#buffer = new Buffer(4 * Float32Array.BYTES_PER_ELEMENT);
     this.#data = new Float32Array(this.#buffer);
     this.#data.set([50, 1, 2000, 0.1]);
-  }
-
-  public override toJSON(): CameraProxyConstructorData {
-    return {
-      ...super.toJSON(),
-      buffer: this.#buffer
-    };
   }
 }

@@ -1,11 +1,4 @@
-import {
-  ACESFilmicToneMapping,
-  Mesh,
-  PCFSoftShadowMap,
-  Scene,
-  Vector2,
-  WebGLRenderer
-} from 'three';
+import { ACESFilmicToneMapping, PCFSoftShadowMap, Scene, Vector2, WebGLRenderer } from 'three';
 
 import {
   CameraSceneProxy,
@@ -128,44 +121,11 @@ export class Renderer {
     if (!width || !height) {
       [width, height] = this.webGLRenderer.getSize(new Vector2());
     }
-
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.camera.updateMatrixWorld();
-  }
-
-  public addSceneProxy(proxy: SceneProxy) {
-    this.logger.debug(this.constructor.name, 'Adding scene proxy', proxy);
-    this.proxyObjects.push(proxy);
-    this.scene.add(proxy.sceneObject);
-  }
-
-  public getSceneProxy<T extends SceneProxy>(uuid: T['uuid']): T | undefined {
-    return this.proxyObjects.find(proxy => proxy.uuid === uuid) as T | undefined;
-  }
-
-  public removeSceneProxy(uuidOrProxy: SceneProxy['uuid'] | SceneProxy) {
-    const proxy = typeof uuidOrProxy === 'string' ? this.getSceneProxy(uuidOrProxy) : uuidOrProxy;
-
-    if (proxy) {
-      this.logger.debug(this.constructor.name, 'Removing scene proxy', proxy);
-
-      proxy.dispose();
-      this.scene.remove(proxy.sceneObject);
-
-      if (this.camera?.uuid === proxy.uuid) {
-        this.camera = null;
-      }
-    }
   }
 
   private tick() {
     if (this.camera) {
-      for (const proxy of this.proxyObjects) {
-        proxy.tick();
-      }
-
-      this.webGLRenderer.render(this.scene, this.camera.sceneObject);
+      //this.webGLRenderer.render(this.scene, this.camera.sceneObject);
     }
   }
 }

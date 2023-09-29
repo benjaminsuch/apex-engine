@@ -1,8 +1,10 @@
 import { MathUtils } from 'three';
 
-import { Actor } from '../Actor';
-import { World } from '../World';
+import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
+import { Actor } from '../Actor';
+import { type Tick } from '../EngineLoop';
+import { World } from '../World';
 
 export class ActorComponent {
   public readonly uuid: string = MathUtils.generateUUID();
@@ -27,7 +29,10 @@ export class ActorComponent {
 
   public isInitialized: boolean = false;
 
-  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {}
+  constructor(
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger
+  ) {}
 
   public init() {
     this.isInitialized = true;
@@ -35,7 +40,7 @@ export class ActorComponent {
 
   public beginPlay() {}
 
-  public tick() {}
+  public tick(tick: Tick) {}
 
   public registerWithActor(actor: Actor) {
     if (actor.hasComponent(this)) {

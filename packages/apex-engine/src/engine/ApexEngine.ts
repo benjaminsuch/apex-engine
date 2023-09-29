@@ -1,6 +1,6 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { type EngineLoop } from './EngineLoop';
+import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 
@@ -50,8 +50,8 @@ export abstract class ApexEngine {
     this.isInitialized = true;
   }
 
-  public tick() {
-    this.getGameInstance().getWorld().tick();
+  public tick(tick: Tick) {
+    this.getGameInstance().getWorld().tick(tick);
   }
 
   public start() {

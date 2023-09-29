@@ -2,6 +2,7 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer, type TRenderSetCameraMessage } from '../platform/renderer/common';
 import { Actor } from './Actor';
+import { type Tick } from './EngineLoop';
 import { Pawn } from './Pawn';
 import { PlayerInput } from './PlayerInput';
 import { CameraComponent, InputComponent } from './components';
@@ -20,11 +21,10 @@ export class PlayerController extends Actor {
     this.pawn = pawn;
 
     if (pawn) {
-      const cameraComponent = pawn.getComponent(CameraComponent);
-
-      if (cameraComponent) {
-        this.camera = cameraComponent;
-      }
+      //const cameraComponent = pawn.getComponent(CameraComponent);
+      //if (cameraComponent) {
+      //this.camera = cameraComponent;
+      //}
     }
   }
 
@@ -42,18 +42,17 @@ export class PlayerController extends Actor {
     this.addComponent(InputComponent);
   }
 
-  // TODO: Remove default value for delta
-  public override tick(delta: number = 0.05): void {
-    this.playerInput.processInputStack(this.buildInputStack(), delta);
-    super.tick();
+  public override tick(tick: Tick): void {
+    this.playerInput.processInputStack(this.buildInputStack(), tick.delta);
+    super.tick(tick);
   }
 
   public override beginPlay(): void {
     if (this.camera) {
-      this.renderer.send<TRenderSetCameraMessage>({
+      /*this.renderer.send<TRenderSetCameraMessage>({
         type: 'set-camera',
         camera: this.camera.toJSON()
-      });
+      });*/
     }
 
     super.beginPlay();

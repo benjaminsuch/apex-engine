@@ -53,17 +53,6 @@ function onInit({
     logger.debug('render.worker:', 'onMessage', event.data);
 
     const { type } = event.data;
-
-    if (type === 'init-scene-proxy') {
-      handleInitSceneProxy(event.data.component);
-    }
-    if (type === 'viewport-resize') {
-      const { height, width } = event.data;
-      handleViewportResize(height, width);
-    }
-    if (type === 'set-camera') {
-      handleSetCamera(event.data.camera);
-    }
   }
 
   messagePort.addEventListener('message', onMessage);
@@ -77,31 +66,3 @@ function startRenderWorker() {
 startRenderWorker();
 
 ////////////////////////////////////////////////////////////////////
-
-function handleInitSceneProxy(component: TRenderSceneProxyInitMessage['component']) {
-  let proxy: SceneProxy;
-
-  switch (component.objectType) {
-    case 'PerspectiveCamera':
-      proxy = new CameraSceneProxy(component as CameraProxyConstructorData);
-      break;
-    default: {
-      proxy = new SceneProxy(component);
-    }
-  }
-
-  renderer.addSceneProxy(proxy);
-}
-
-function handleViewportResize(
-  height: TRenderViewportResizeData['height'],
-  width: TRenderViewportResizeData['width']
-) {
-  renderer.setSize(height, width);
-}
-
-function handleSetCamera(camera: TRenderSetCameraMessage['camera']) {
-  const proxy = renderer.getSceneProxy<CameraSceneProxy>(camera.uuid);
-  renderer.camera = proxy ?? new CameraSceneProxy(camera);
-  renderer.updateCameraProjection();
-}
