@@ -1,4 +1,3 @@
-import { CameraSceneProxy } from '../../../engine';
 import { InstantiationService, ServiceCollection } from '../../di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
 import {
@@ -57,14 +56,7 @@ export default class RenderMainThread extends EventTarget implements EventListen
     return this.renderer;
   }
 
-  private handleSetCamera(camera: TRenderSetCameraMessage['camera']): void {
-    const proxy =
-      this.getRenderer().getSceneProxy<CameraSceneProxy>(camera.uuid) ??
-      new CameraSceneProxy(camera);
-    this.getRenderer().camera = proxy;
-    this.getRenderer().addSceneProxy(proxy);
-    this.getRenderer().updateCameraProjection();
-  }
+  private handleSetCamera(camera: TRenderSetCameraMessage['camera']): void {}
 
   private handleViewportResize(
     height: TRenderViewportResizeMessage['height'],

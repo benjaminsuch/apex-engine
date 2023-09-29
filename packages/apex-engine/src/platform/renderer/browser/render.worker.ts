@@ -1,4 +1,3 @@
-import { type CameraProxyConstructorData, CameraSceneProxy, SceneProxy } from '../../../engine';
 import { InstantiationService, ServiceCollection } from '../../di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
 import {
@@ -7,7 +6,6 @@ import {
   type TRenderSetCameraMessage,
   type TRenderWorkerInitData,
   type TRenderWorkerInitMessage,
-  type TRenderViewportResizeData,
   type TRenderViewportResizeMessage
 } from '../common/Renderer';
 

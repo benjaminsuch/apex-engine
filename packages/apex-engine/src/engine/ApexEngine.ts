@@ -5,6 +5,10 @@ import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 
 export abstract class ApexEngine {
+  public static GAME_THREAD_FLAGS: Uint8Array = new Uint8Array(
+    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
+  ).fill(0x6);
+
   private static instance?: ApexEngine;
 
   public static getInstance() {

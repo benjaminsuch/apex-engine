@@ -20,6 +20,10 @@ export class EngineLoop {
 
   public elapsed: number = 0;
 
+  public frames: number = 0;
+
+  public fps: number = 0;
+
   constructor(
     @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IRenderer private readonly renderer: IRenderer,
@@ -39,12 +43,17 @@ export class EngineLoop {
 
   public tick() {
     this.tickInterval = setInterval(() => {
+      this.frames++;
+
       const then = performance.now();
 
       this.delta = then - this.elapsed / 1000;
       this.elapsed = then;
+      this.fps = (this.frames * 1000) / then;
 
       const currentTick = { delta: this.delta, elapsed: this.elapsed };
+
+      //TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_THREAD_FLAGS);
 
       try {
         GameEngine.getInstance().tick(currentTick);
@@ -53,9 +62,7 @@ export class EngineLoop {
         throw error;
       }
 
-      const elapsed = performance.now() - then;
-
-      if (elapsed > MS_PER_UPDATE) {
+      if (performance.now() - then > MS_PER_UPDATE) {
         clearInterval(this.tickInterval);
 
         try {

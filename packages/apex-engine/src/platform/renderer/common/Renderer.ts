@@ -1,11 +1,5 @@
 import { ACESFilmicToneMapping, PCFSoftShadowMap, Scene, Vector2, WebGLRenderer } from 'three';
 
-import {
-  CameraSceneProxy,
-  type CameraProxyConstructorData,
-  type SceneProxy,
-  type SceneProxyConstructorData
-} from '../../../engine';
 import { InstantiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
 
@@ -46,7 +40,7 @@ export type TRenderViewportResizeMessage = TRenderMessage<
 >;
 
 export type TRenderSceneProxyInitData = TRenderMessageData<{
-  component: SceneProxyConstructorData;
+  component: any;
 }>;
 
 export type TRenderSceneProxyInitMessage = TRenderMessage<
@@ -55,7 +49,7 @@ export type TRenderSceneProxyInitMessage = TRenderMessage<
 >;
 
 export type TRenderSceneProxyDestroyData = TRenderMessageData<{
-  uuid: SceneProxyConstructorData['uuid'];
+  uuid: any;
 }>;
 
 export type TRenderSceneProxyDestroyMessage = TRenderMessage<
@@ -63,7 +57,7 @@ export type TRenderSceneProxyDestroyMessage = TRenderMessage<
   TRenderSceneProxyDestroyData
 >;
 
-export type TRenderSetCameraData = TRenderMessageData<{ camera: CameraProxyConstructorData }>;
+export type TRenderSetCameraData = TRenderMessageData<{ camera: any }>;
 
 export type TRenderSetCameraMessage = TRenderMessage<'set-camera', TRenderSetCameraData>;
 
@@ -81,11 +75,9 @@ export const IRenderer = InstantiationService.createDecorator<IRenderer>('render
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;
 
-  public camera: CameraSceneProxy | null = null;
+  public camera: any | null = null;
 
   private readonly scene: Scene = new Scene();
-
-  private readonly proxyObjects: SceneProxy[] = [];
 
   constructor(canvas: OffscreenCanvas, @IConsoleLogger private readonly logger: IConsoleLogger) {
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });

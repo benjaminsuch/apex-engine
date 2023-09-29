@@ -18,6 +18,8 @@ declare global {
     Server = 'server'
   }
 
+  type TClass = { new (...args: any[]): any };
+
   type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
 }
 
