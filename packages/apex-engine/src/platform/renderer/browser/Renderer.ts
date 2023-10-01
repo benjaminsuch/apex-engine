@@ -49,7 +49,7 @@ export class BrowserRenderer implements IRenderer {
     BrowserRenderer.instance = this;
   }
 
-  public async init() {
+  public async init(flags: Uint8Array) {
     if (this.isInitialized) {
       return;
     }
@@ -66,7 +66,8 @@ export class BrowserRenderer implements IRenderer {
           canvas: offscreenCanvas,
           initialCanvasHeight: this.canvas.clientHeight,
           initialCanvasWidth: this.canvas.clientWidth,
-          messagePort
+          messagePort,
+          flags
         },
         [offscreenCanvas, messagePort]
       );

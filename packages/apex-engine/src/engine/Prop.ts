@@ -1,31 +1,14 @@
-type ClassPropsMap = Map<string, Function[]>;
-
-const propsMap = new WeakMap<TClass, ClassPropsMap>();
-
-export function getPropsMap() {
-  return propsMap;
-}
-
 export function PROP(...args: Function[]) {
   return function (target: any, prop: string | symbol) {
-    const propKey = prop.toString();
+    const key = prop.toString();
+    const props: string[] = Reflect.getMetadata('class:props', target.constructor) ?? [];
 
-    if (!propsMap.has(target.constructor)) {
-      propsMap.set(target.constructor, new Map());
+    if (props.indexOf(key) === -1) {
+      Reflect.defineMetadata('class:props', props.concat(key), target.constructor);
     }
 
-    const classProps = propsMap.get(target.constructor) as ClassPropsMap;
-
-    if (!classProps.has(propKey)) {
-      classProps.set(propKey, []);
+    for (const fn of args) {
+      fn(target.constructor, prop);
     }
-
-    const fns = classProps.get(propKey);
-
-    if (fns) {
-      fns.push(...args);
-    }
-
-    Reflect.defineMetadata('position', classProps.size - 1, target.constructor, prop);
   };
 }

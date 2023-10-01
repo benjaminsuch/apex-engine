@@ -15,6 +15,4 @@ export class MeshComponent extends SceneComponent {
   ) {
     super(instantiationService, logger);
   }
-
-  public override tick(): void {}
 }

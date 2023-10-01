@@ -32,10 +32,11 @@ function onInit({
   canvas,
   initialCanvasHeight,
   initialCanvasWidth,
-  messagePort
+  messagePort,
+  flags
 }: TRenderWorkerInitData) {
   renderer = instantiationService.createInstance(Renderer, canvas);
-  renderer.init();
+  renderer.init(flags);
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();
 

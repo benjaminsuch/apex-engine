@@ -1,6 +1,7 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
+import { ApexEngine } from './ApexEngine';
 import { GameEngine } from './GameEngine';
 
 const TICK_RATE = 60;
@@ -32,7 +33,7 @@ export class EngineLoop {
 
   public init() {
     if (this.renderer) {
-      this.renderer.init();
+      this.renderer.init(ApexEngine.GAME_THREAD_FLAGS);
     }
 
     const engine = this.instantiationService.createInstance(GameEngine, this);
@@ -52,8 +53,6 @@ export class EngineLoop {
       this.fps = (this.frames * 1000) / then;
 
       const currentTick = { delta: this.delta, elapsed: this.elapsed };
-
-      //TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_THREAD_FLAGS);
 
       try {
         GameEngine.getInstance().tick(currentTick);

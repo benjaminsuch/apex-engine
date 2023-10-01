@@ -2,6 +2,7 @@ import { ACESFilmicToneMapping, PCFSoftShadowMap, Scene, Vector2, WebGLRenderer 
 
 import { InstantiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
+import { TripleBuffer } from '../../memory/common';
 
 export type TRenderMessageType =
   | 'destroy-scene-proxy'
@@ -25,6 +26,7 @@ export interface TRenderWorkerInitData {
   initialCanvasHeight: number;
   initialCanvasWidth: number;
   messagePort: MessagePort;
+  flags: Uint8Array;
 }
 
 export type TRenderWorkerInitMessage = TRenderMessage<'init', TRenderWorkerInitData>;
@@ -63,7 +65,7 @@ export type TRenderSetCameraMessage = TRenderMessage<'set-camera', TRenderSetCam
 
 export interface IRenderer {
   readonly _injectibleService: undefined;
-  init(): void;
+  init(flags: Uint8Array): void;
   send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
     message: T,
     transferList?: Transferable[]
@@ -79,14 +81,17 @@ export class Renderer {
 
   private readonly scene: Scene = new Scene();
 
+  private flags: Uint8Array | null = null;
+
   constructor(canvas: OffscreenCanvas, @IConsoleLogger private readonly logger: IConsoleLogger) {
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
   }
 
-  public init() {
+  public init(flags: Uint8Array) {
     this.logger.debug(this.constructor.name, 'Initialize');
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
+    this.flags = flags;
   }
 
   public start() {
@@ -116,6 +121,12 @@ export class Renderer {
   }
 
   private tick() {
+    if (this.flags) {
+      TripleBuffer.swapReadBufferFlags(this.flags);
+    } else {
+      this.logger.debug(this.constructor.name, `Missing triple buffer flags.`);
+    }
+
     if (this.camera) {
       //this.webGLRenderer.render(this.scene, this.camera.sceneObject);
     }

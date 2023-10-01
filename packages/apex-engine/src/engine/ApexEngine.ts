@@ -1,14 +1,13 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
+import { TripleBuffer } from '../platform/memory/common/TripleBuffer';
+import { IRenderer } from '../platform/renderer/common';
+import { proxies, proxiesToSend } from './Class';
 import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 
 export abstract class ApexEngine {
-  public static GAME_THREAD_FLAGS: Uint8Array = new Uint8Array(
-    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
-  ).fill(0x6);
-
   private static instance?: ApexEngine;
 
   public static getInstance() {
@@ -27,6 +26,10 @@ export abstract class ApexEngine {
     return this.gameInstance as GameInstance;
   }
 
+  private flags: Uint8Array = new Uint8Array(
+    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
+  ).fill(0x6);
+
   public isRunning: boolean = false;
 
   public isInitialized: boolean = false;
@@ -34,7 +37,8 @@ export abstract class ApexEngine {
   constructor(
     protected readonly engineLoop: EngineLoop,
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
-    @IConsoleLogger protected readonly logger: IConsoleLogger
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
+    @IRenderer protected readonly renderer: IRenderer
   ) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the GameEngine already exists.`);
@@ -55,10 +59,35 @@ export abstract class ApexEngine {
   }
 
   public tick(tick: Tick) {
+    TripleBuffer.swapWriteBufferFlags(this.flags);
+
+    for (const proxy of proxiesToSend) {
+      const tripleBuffer: TripleBuffer = Reflect.getMetadata('instance:buffer', proxy);
+
+      if (!tripleBuffer) {
+        console.log(`No triple buffer found for ${proxy.name}`);
+        continue;
+      }
+
+      this.renderer.send<any>({
+        type: 'instance',
+        byteLength: tripleBuffer.byteLength,
+        buffers: tripleBuffer.buffers
+      });
+    }
+
     this.getGameInstance().getWorld().tick(tick);
   }
 
   public start() {
+    for (const proxy of proxies) {
+      const specifiers = Reflect.getMetadata('class:specifiers', proxy.constructor);
+
+      for (const [, specifier] of specifiers) {
+        specifier(proxy);
+      }
+    }
+
     this.isRunning = true;
     this.getGameInstance().start();
   }

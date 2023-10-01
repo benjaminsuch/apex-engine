@@ -12,7 +12,6 @@ export * from './Pawn';
 export * from './PlayerController';
 export * from './PlayerInput';
 export * from './Prop';
-export * from './TripleBuffer';
 export * from './World';
 
 export * from './components';
