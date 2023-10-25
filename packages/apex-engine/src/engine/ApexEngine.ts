@@ -1,11 +1,10 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { TripleBuffer } from '../platform/memory/common/TripleBuffer';
 import { IRenderer } from '../platform/renderer/common';
-import { proxies, proxiesToSend } from './Class';
 import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
+import { TripleBuffer } from './TripleBuffer';
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;
@@ -26,7 +25,7 @@ export abstract class ApexEngine {
     return this.gameInstance as GameInstance;
   }
 
-  private flags: Uint8Array = new Uint8Array(
+  public static GAME_FLAGS: Uint8Array = new Uint8Array(
     new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
   ).fill(0x6);
 
@@ -59,35 +58,11 @@ export abstract class ApexEngine {
   }
 
   public tick(tick: Tick) {
-    TripleBuffer.swapWriteBufferFlags(this.flags);
-
-    for (const proxy of proxiesToSend) {
-      const tripleBuffer: TripleBuffer = Reflect.getMetadata('instance:buffer', proxy);
-
-      if (!tripleBuffer) {
-        console.log(`No triple buffer found for ${proxy.name}`);
-        continue;
-      }
-
-      this.renderer.send<any>({
-        type: 'instance',
-        byteLength: tripleBuffer.byteLength,
-        buffers: tripleBuffer.buffers
-      });
-    }
-
+    TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
     this.getGameInstance().getWorld().tick(tick);
   }
 
   public start() {
-    for (const proxy of proxies) {
-      const specifiers = Reflect.getMetadata('class:specifiers', proxy.constructor);
-
-      for (const [, specifier] of specifiers) {
-        specifier(proxy);
-      }
-    }
-
     this.isRunning = true;
     this.getGameInstance().start();
   }

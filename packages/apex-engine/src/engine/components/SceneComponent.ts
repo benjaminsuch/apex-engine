@@ -1,5 +1,5 @@
-import { ActorComponent } from './ActorComponent';
 import { Euler, Vector3 } from '../math';
+import { ActorComponent } from './ActorComponent';
 
 export type SceneObjectType = 'Box' | 'Object3D' | 'PerspectiveCamera';
 
