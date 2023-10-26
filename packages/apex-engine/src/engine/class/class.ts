@@ -1,4 +1,4 @@
-import { TripleBuffer } from '../TripleBuffer';
+import { TripleBuffer } from '../../platform/memory/common/TripleBuffer';
 
 export type ClassDecoratorFunction = (constructor: TClass) => boolean;
 

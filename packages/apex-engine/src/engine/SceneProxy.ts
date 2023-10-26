@@ -1,5 +1,5 @@
+import { TripleBuffer } from '../platform/memory/common';
 import { getClassSchema } from './class/class';
-import { TripleBuffer } from './TripleBuffer';
 
 export class SceneProxy {
   public static instances: Map<number, InstanceType<TClass>> = new Map();
@@ -13,6 +13,11 @@ export class SceneProxy {
     if (originClass) {
       const schema = getClassSchema(originClass);
       const offsets = [0];
+
+      if (!schema) {
+        console.warn(`No schema for proxy defined.`);
+        return;
+      }
 
       for (const [prop, { type, isArray, pos, size }] of Object.entries(schema)) {
         let accessors: { get: () => any } | undefined;

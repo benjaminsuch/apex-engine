@@ -83,8 +83,12 @@ export function boolean() {
   return createSerializer('boolean', 1);
 }
 
+// Vectors are treated as a ref. Initially I wanted to handle them differently, by storing
+// their values into the buffer, but that would require to create a new Vector everytime
+// someone calls the getter-function. There are ways to work around that, but it would bloat
+// up the code for little gains.
 export function vec3() {
-  return createSerializer('vec3', 3 * Float32Array.BYTES_PER_ELEMENT);
+  return ref();
 }
 
 export function serialize(fn: Function, size: number | [number] = 1) {

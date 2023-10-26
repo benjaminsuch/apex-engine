@@ -1,6 +1,6 @@
+import { TripleBuffer } from '../../../platform/memory/common';
 import { ApexEngine } from '../../ApexEngine';
 import { SceneProxy } from '../../SceneProxy';
-import { TripleBuffer } from '../../TripleBuffer';
 import {
   getClassSchema,
   getClassSpecifiers,
@@ -46,16 +46,35 @@ export function proxy(proxyClass: TClass) {
       const dv = new DataView(buf);
       const offsets = [0];
 
-      for (const [prop, { type, isArray, pos, size }] of Object.entries(schema)) {
+      for (const [prop, { type, pos, size }] of Object.entries(schema)) {
         let accessors: { get: () => any; set: (val: any) => void } | undefined;
 
         switch (type) {
-          case 'string':
-            const chars = new TextEncoder().encode(target[prop]);
+          case 'ref':
+            const refId = getTargetId(target[prop]);
 
-            for (let i = 0; i < size; ++i) {
-              dv.setUint8(offsets[pos] + i, chars[i]);
+            if (refId) {
+              dv.setUint32(offsets[pos], refId);
             }
+
+            accessors = {
+              get() {
+                //return proxyInstances.get(dv.getUint32(offsets[pos]))
+              },
+              set(val: InstanceType<TClass>) {
+                const refId = getTargetId(val);
+
+                if (!refId) {
+                  throw Error(`Ref has no id assigned.`);
+                }
+
+                dv.setUint32(offsets[pos], refId);
+                //proxyInstances.set(refId, val)
+              }
+            };
+            break;
+          case 'string':
+            setString(target[prop], dv, offsets[pos], size);
 
             accessors = {
               get() {
@@ -65,59 +84,91 @@ export function proxy(proxyClass: TClass) {
                 return new TextDecoder().decode(arr.buffer).replace(/\u0000+$/, '');
               },
               set(val: string) {
-                const chars = new TextEncoder().encode(val);
-
-                for (let i = 0; i < size; ++i) {
-                  dv.setUint8(offsets[pos] + i, chars[i] ?? 0x0);
-                }
+                setString(val, dv, offsets[pos], size);
               }
             };
             break;
           case 'float32':
-            if (isArray) {
-              for (let i = 0; i < target[prop].length; ++i) {
-                dv.setFloat32(offsets[pos] + i * Float32Array.BYTES_PER_ELEMENT, target[prop][i]);
-              }
-            } else {
-              dv.setFloat32(offsets[pos], target[prop]);
-            }
+            setNumber(Float32Array, target[prop], dv, offsets[pos]);
 
             accessors = {
               get() {
                 return new Float32Array(buf.slice(offsets[pos], size));
               },
               set(val: number | Float32Array) {
-                if (val instanceof Float32Array) {
-                  for (let i = 0; i < val.length; ++i) {
-                    dv.setUint8(offsets[pos] + i * Float32Array.BYTES_PER_ELEMENT, target[prop][i]);
-                  }
-                } else {
-                  dv.setUint8(offsets[pos], val);
-                }
+                setNumber(Float32Array, val, dv, offsets[pos]);
+              }
+            };
+            break;
+          case 'int8':
+            setNumber(Int8Array, target[prop], dv, offsets[pos]);
+
+            accessors = {
+              get() {
+                return new Int8Array(buf.slice(offsets[pos], size));
+              },
+              set(val: number | Int8Array) {
+                setNumber(Int8Array, val, dv, offsets[pos]);
+              }
+            };
+            break;
+          case 'int16':
+            setNumber(Int16Array, target[prop], dv, offsets[pos]);
+
+            accessors = {
+              get() {
+                return new Int16Array(buf.slice(offsets[pos], size));
+              },
+              set(val: number | Int16Array) {
+                setNumber(Int16Array, val, dv, offsets[pos]);
+              }
+            };
+            break;
+          case 'int32':
+            setNumber(Int32Array, target[prop], dv, offsets[pos]);
+
+            accessors = {
+              get() {
+                return new Int32Array(buf.slice(offsets[pos], size));
+              },
+              set(val: number | Int32Array) {
+                setNumber(Int32Array, val, dv, offsets[pos]);
+              }
+            };
+            break;
+          case 'uint16':
+            setNumber(Uint16Array, target[prop], dv, offsets[pos]);
+
+            accessors = {
+              get() {
+                return new Uint16Array(buf.slice(offsets[pos], size));
+              },
+              set(val: number | Uint16Array) {
+                setNumber(Uint16Array, val, dv, offsets[pos]);
+              }
+            };
+            break;
+          case 'uint32':
+            setNumber(Uint32Array, target[prop], dv, offsets[pos]);
+
+            accessors = {
+              get() {
+                return new Uint32Array(buf.slice(offsets[pos], size));
+              },
+              set(val: number | Uint32Array) {
+                setNumber(Uint32Array, val, dv, offsets[pos]);
               }
             };
             break;
           case 'uint8':
-            if (isArray) {
-              for (let i = 0; i < target[prop].length; ++i) {
-                dv.setUint8(offsets[pos] + i, target[prop][i]);
-              }
-            } else {
-              dv.setUint8(offsets[pos], target[prop]);
-            }
+            setNumber(Uint8Array, target[prop], dv, offsets[pos]);
 
             accessors = {
               get() {
                 return new Uint8Array(buf.slice(offsets[pos], size));
               },
               set(val: number | Uint8Array) {
-                if (val instanceof Uint8Array) {
-                  for (let i = 0; i < val.length; ++i) {
-                    dv.setUint8(offsets[pos] + i, target[prop][i]);
-                  }
-                } else {
-                  dv.setUint8(offsets[pos], val);
-                }
+                setNumber(Uint8Array, val, dv, offsets[pos]);
               }
             };
             break;
@@ -141,4 +192,37 @@ export function proxy(proxyClass: TClass) {
 
     return true;
   };
+}
+
+function setString(val: string, dv: DataView, offset: number, size: number) {
+  const chars = new TextEncoder().encode(val);
+
+  for (let i = 0; i < size; ++i) {
+    dv.setUint8(offset + i, chars[i]);
+  }
+}
+
+const setters = new Map<TypedArray, string>([
+  [Float32Array, 'setFloat32'],
+  [Int8Array, 'setInt8'],
+  [Int16Array, 'setInt16'],
+  [Int32Array, 'setInt32'],
+  [Uint8Array, 'setUint8'],
+  [Uint16Array, 'setUint16'],
+  [Uint32Array, 'setUint32']
+]);
+
+function setNumber(
+  type: TypedArray,
+  val: number | InstanceType<TypedArray>,
+  dv: DataView,
+  offset: number
+) {
+  if (Array.isArray(val)) {
+    for (let i = 0; i < val.length; ++i) {
+      dv[setters.get(type) as string](offset + i * type.BYTES_PER_ELEMENT, val[i]);
+    }
+  } else {
+    dv.setUint8(offset, val as number);
+  }
 }

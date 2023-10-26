@@ -1,10 +1,10 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
+import { TripleBuffer } from '../platform/memory/common';
 import { IRenderer } from '../platform/renderer/common';
 import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
-import { TripleBuffer } from './TripleBuffer';
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;

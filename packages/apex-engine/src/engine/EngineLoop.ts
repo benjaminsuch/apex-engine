@@ -33,7 +33,7 @@ export class EngineLoop {
 
   public init() {
     if (this.renderer) {
-      this.renderer.init(ApexEngine.GAME_THREAD_FLAGS);
+      this.renderer.init(ApexEngine.GAME_FLAGS);
     }
 
     const engine = this.instantiationService.createInstance(GameEngine, this);

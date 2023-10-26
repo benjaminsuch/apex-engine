@@ -20,6 +20,15 @@ declare global {
 
   type TClass = { new (...args: any[]): any };
 
+  type TypedArray =
+    | typeof Float32Array
+    | typeof Int8Array
+    | typeof Int16Array
+    | typeof Int32Array
+    | typeof Uint8Array
+    | typeof Uint16Array
+    | typeof Uint32Array;
+
   type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
 }
 
