@@ -2,6 +2,7 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
 import { type ActorComponent, SceneComponent } from './components';
+import { type Tick } from './EngineLoop';
 import { type Level } from './Level';
 import { type World } from './World';
 
@@ -91,9 +92,9 @@ export class Actor {
     }
   }
 
-  public tick() {
+  public tick(tick: Tick) {
     for (const component of this.components) {
-      component.tick();
+      component.tick(tick);
     }
   }
 

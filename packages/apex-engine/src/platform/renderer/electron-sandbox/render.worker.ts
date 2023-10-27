@@ -1,1 +1,0 @@
-import '../browser/render.worker';

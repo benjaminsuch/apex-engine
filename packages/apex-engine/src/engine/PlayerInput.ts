@@ -1,5 +1,6 @@
+import { Vector3 } from 'three';
+
 import { type InputAxisBinding, type InputActionBinding, type InputComponent } from './components';
-import { Vector3 } from './math';
 
 export class PlayerInput {
   private readonly keyStates: Map<TKey, KeyState> = new Map();

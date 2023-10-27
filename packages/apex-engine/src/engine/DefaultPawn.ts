@@ -1,10 +1,10 @@
+import { Euler, Vector3 } from 'three';
+
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
 import { Pawn } from './Pawn';
 import { InputActionMap, InputAxisMap } from './PlayerInput';
-import { CameraComponent } from './components';
-import { Euler, Vector3 } from './math';
 
 const euler = new Euler();
 euler.order = 'YXZ';
@@ -15,7 +15,7 @@ const moveScale = 0.1;
 export class DefaultPawn extends Pawn {
   private inputBindingsInitialized: boolean = false;
 
-  private cameraComponent: CameraComponent | null = null;
+  private cameraComponent: any | null = null;
 
   constructor(
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
@@ -110,8 +110,6 @@ export class DefaultPawn extends Pawn {
   }
 
   protected override onRegister(): void {
-    this.cameraComponent = this.addComponent(CameraComponent);
-
     if (IS_BROWSER) {
       document.body.addEventListener('mousedown', this);
     }

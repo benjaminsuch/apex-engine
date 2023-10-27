@@ -1,8 +1,9 @@
+import { Matrix4 } from 'three';
+
 import { Actor } from './Actor';
 import { DefaultPawn } from './DefaultPawn';
 import { Pawn } from './Pawn';
 import { PlayerController } from './PlayerController';
-import { Matrix4 } from './math';
 import { type NetConnection } from './net';
 
 export class GameMode extends Actor {
