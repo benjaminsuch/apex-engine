@@ -1,6 +1,7 @@
 import { MathUtils } from 'three';
 
 import { Actor } from '../Actor';
+import { type Tick } from '../EngineLoop';
 import { World } from '../World';
 
 export class ActorComponent {
@@ -34,7 +35,7 @@ export class ActorComponent {
 
   public beginPlay() {}
 
-  public tick() {}
+  public tick(tick: Tick) {}
 
   public registerWithActor(actor: Actor) {
     if (actor.hasComponent(this)) {
