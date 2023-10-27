@@ -1,6 +1,6 @@
 import { CLASS } from '../class';
 import { proxy } from '../class/specifiers/proxy';
-import { MeshComponent, MeshProxy } from './MeshComponent';
+import { MeshComponent } from './MeshComponent';
 
-@CLASS(proxy(MeshProxy))
+@CLASS(proxy())
 export class BoxComponent extends MeshComponent {}

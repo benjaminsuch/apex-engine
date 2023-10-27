@@ -1,12 +1,11 @@
 import { InstantiationService, ServiceCollection } from '../../di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
 import {
+  createProxyMessages,
   Renderer,
-  type TRenderSceneProxyInitMessage,
-  type TRenderSetCameraMessage,
+  type TRenderSceneProxyMessage,
   type TRenderWorkerInitData,
-  type TRenderWorkerInitMessage,
-  type TRenderViewportResizeMessage
+  type TRenderWorkerInitMessage
 } from '../common/Renderer';
 
 function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
@@ -40,18 +39,20 @@ function onInit({
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();
 
-  function onMessage(
-    event: MessageEvent<
-      TRenderSceneProxyInitMessage | TRenderSetCameraMessage | TRenderViewportResizeMessage
-    >
-  ) {
+  function onMessage(event: MessageEvent<TRenderSceneProxyMessage>) {
     if (typeof event.data !== 'object') {
       return;
     }
 
     logger.debug('render.worker:', 'onMessage', event.data);
 
-    const { type } = event.data;
+    const { action, type } = event.data;
+
+    if (type === 'proxy') {
+      if (action === 'create') {
+        createProxyMessages.push(event.data);
+      }
+    }
   }
 
   messagePort.addEventListener('message', onMessage);

@@ -3,13 +3,9 @@ import { ACESFilmicToneMapping, PCFSoftShadowMap, Scene, Vector2, WebGLRenderer 
 import { InstantiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
 import { TripleBuffer } from '../../memory/common';
+import { SceneProxy, constructProxy } from '../../../rendering';
 
-export type TRenderMessageType =
-  | 'destroy-scene-proxy'
-  | 'init'
-  | 'init-scene-proxy'
-  | 'set-camera'
-  | 'viewport-resize';
+export type TRenderMessageType = 'init' | 'proxy' | 'set-camera' | 'viewport-resize';
 
 export type TRenderMessageData<T = { [k: string]: unknown }> = {
   [P in keyof T]: T[P];
@@ -41,23 +37,31 @@ export type TRenderViewportResizeMessage = TRenderMessage<
   TRenderViewportResizeData
 >;
 
-export type TRenderSceneProxyInitData = TRenderMessageData<{
-  component: any;
+export type TTripleBufferData = Pick<
+  TripleBuffer,
+  'buffers' | 'byteLength' | 'byteViews' | 'flags'
+>;
+
+export type TRenderSceneProxyCreateData = TRenderMessageData<{
+  action: 'create';
+  origin: string;
+  id: number;
+  tb: Pick<TripleBuffer, 'buffers' | 'byteLength' | 'byteViews' | 'flags'>;
 }>;
 
-export type TRenderSceneProxyInitMessage = TRenderMessage<
-  'init-scene-proxy',
-  TRenderSceneProxyInitData
+export type TRenderSceneProxyDisposeData = TRenderMessageData<{
+  action: 'dispose';
+  id: number;
+}>;
+
+export type TRenderSceneProxyMessage = TRenderMessage<
+  'proxy',
+  TRenderSceneProxyCreateData | TRenderSceneProxyDisposeData
 >;
 
 export type TRenderSceneProxyDestroyData = TRenderMessageData<{
   uuid: any;
 }>;
-
-export type TRenderSceneProxyDestroyMessage = TRenderMessage<
-  'destroy-scene-proxy',
-  TRenderSceneProxyDestroyData
->;
 
 export type TRenderSetCameraData = TRenderMessageData<{ camera: any }>;
 
@@ -73,6 +77,8 @@ export interface IRenderer {
 }
 
 export const IRenderer = InstantiationService.createDecorator<IRenderer>('renderer');
+
+export const createProxyMessages: TRenderSceneProxyCreateData[] = [];
 
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;
@@ -123,6 +129,13 @@ export class Renderer {
   private tick() {
     if (this.flags) {
       TripleBuffer.swapReadBufferFlags(this.flags);
+
+      for (let i = 0; i < createProxyMessages.length; ++i) {
+        const { origin, id, tb } = createProxyMessages[i];
+        SceneProxy.instances.set(id, constructProxy(origin, id, tb));
+        createProxyMessages.splice(i, 1);
+        i--;
+      }
     } else {
       this.logger.debug(this.constructor.name, `Missing triple buffer flags.`);
     }

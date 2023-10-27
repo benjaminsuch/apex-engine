@@ -1,6 +1,6 @@
 import { TripleBuffer } from '../../../platform/memory/common';
+import { SceneProxy } from '../../../rendering';
 import { ApexEngine } from '../../ApexEngine';
-import { SceneProxy } from '../../SceneProxy';
 import {
   getClassSchema,
   getClassSpecifiers,
@@ -11,14 +11,10 @@ import {
 
 export const messageQueue: any[] = [];
 
-export function proxy(proxyClass: TClass) {
+export function proxy() {
   return (constructor: TClass) => {
     const bufferSize = Reflect.getMetadata('byteLength', constructor);
     console.log('bufferSize', bufferSize);
-
-    if (!SceneProxy.origins.has(proxyClass)) {
-      SceneProxy.origins.set(proxyClass, constructor);
-    }
 
     getClassSpecifiers(constructor).set('proxy', (target: InstanceType<TClass>) => {
       const schema = getClassSchema(constructor);
@@ -59,7 +55,7 @@ export function proxy(proxyClass: TClass) {
 
             accessors = {
               get() {
-                //return proxyInstances.get(dv.getUint32(offsets[pos]))
+                return SceneProxy.instances.get(dv.getUint32(offsets[pos]));
               },
               set(val: InstanceType<TClass>) {
                 const refId = getTargetId(val);
@@ -68,8 +64,14 @@ export function proxy(proxyClass: TClass) {
                   throw Error(`Ref has no id assigned.`);
                 }
 
+                messageQueue.push({
+                  action: 'dispose',
+                  id: refId
+                  //tick: ?
+                });
+
                 dv.setUint32(offsets[pos], refId);
-                //proxyInstances.set(refId, val)
+                SceneProxy.instances.set(refId, val);
               }
             };
             break;
@@ -184,9 +186,11 @@ export function proxy(proxyClass: TClass) {
       }
 
       messageQueue.push({
-        type: target.constructor.name,
+        action: 'create',
+        origin: constructor.name,
         id: getTargetId(target),
         tb: getTripleBuffer(target)
+        //tick: ?
       });
     });
 
