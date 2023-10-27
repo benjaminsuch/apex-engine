@@ -1,10 +1,10 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderer, type TRenderSetCameraMessage } from '../platform/renderer/common';
+import { IRenderer } from '../platform/renderer/common';
 import { Actor } from './Actor';
 import { Pawn } from './Pawn';
 import { PlayerInput } from './PlayerInput';
-import { CameraComponent, InputComponent } from './components';
+import { InputComponent } from './components';
 
 export class PlayerController extends Actor {
   protected pawn: Pawn | null = null;
@@ -15,17 +15,9 @@ export class PlayerController extends Actor {
 
   public setPawn(pawn: PlayerController['pawn']) {
     this.pawn = pawn;
-
-    if (pawn) {
-      const cameraComponent = pawn.getComponent(CameraComponent);
-
-      if (cameraComponent) {
-        this.camera = cameraComponent;
-      }
-    }
   }
 
-  protected camera?: CameraComponent;
+  protected camera?: any;
 
   public readonly playerInput = new PlayerInput();
 
@@ -45,13 +37,6 @@ export class PlayerController extends Actor {
   }
 
   public override beginPlay(): void {
-    if (this.camera) {
-      this.renderer.send<TRenderSetCameraMessage>({
-        type: 'set-camera',
-        camera: this.camera.toJSON()
-      });
-    }
-
     super.beginPlay();
   }
 

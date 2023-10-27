@@ -1,11 +1,4 @@
-import {
-  IRenderer,
-  type TRenderMessage,
-  type TRenderMessageData,
-  type TRenderMessageType
-} from '../common';
-import RenderMainThread from './render.browser';
-import RenderWorker from './render.worker?worker';
+import { IRenderer } from '../common';
 
 export interface BrowserRendererOptions {
   runOnMainThread?: boolean;
@@ -23,10 +16,6 @@ export class BrowserRenderer implements IRenderer {
     return this.instance;
   }
 
-  private readonly renderWorker: Worker;
-
-  private readonly messageChannel = new MessageChannel();
-
   private canvas?: HTMLCanvasElement;
 
   private isInitialized = false;
@@ -40,12 +29,6 @@ export class BrowserRenderer implements IRenderer {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
-    this.renderWorker = this.options.runOnMainThread ? new RenderMainThread() : new RenderWorker();
-
-    this.messageChannel.port1.addEventListener('message', event => {
-      console.log('Renderer received message:', event);
-    });
-
     BrowserRenderer.instance = this;
   }
 
@@ -55,45 +38,10 @@ export class BrowserRenderer implements IRenderer {
     }
 
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
-
-    if (this.canvas) {
-      const offscreenCanvas = this.canvas.transferControlToOffscreen();
-      const messagePort = this.messageChannel.port2;
-
-      this.renderWorker.postMessage(
-        {
-          type: 'init',
-          canvas: offscreenCanvas,
-          initialCanvasHeight: this.canvas.clientHeight,
-          initialCanvasWidth: this.canvas.clientWidth,
-          messagePort
-        },
-        [offscreenCanvas, messagePort]
-      );
-    }
+    this.isInitialized = true;
 
     window.addEventListener('resize', this.handleWindowResize.bind(this));
-
-    this.isInitialized = true;
   }
 
-  /**
-   * Sends messages to the render worker.
-   *
-   * @param message
-   * @param transferList
-   */
-  public send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
-    message: T,
-    transferList: Transferable[] = []
-  ) {
-    this.messageChannel.port1.postMessage(message, transferList);
-  }
-
-  private handleWindowResize() {
-    if (this.canvas) {
-      const { clientHeight, clientWidth } = this.canvas;
-      this.send({ type: 'viewport-resize', height: clientHeight, width: clientWidth });
-    }
-  }
+  private handleWindowResize() {}
 }

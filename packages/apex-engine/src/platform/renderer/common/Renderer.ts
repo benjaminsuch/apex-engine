@@ -1,30 +1,14 @@
-import { ACESFilmicToneMapping, PCFSoftShadowMap, Scene, Vector2, WebGLRenderer } from 'three';
-
 import {
-  CameraSceneProxy,
-  type CameraProxyConstructorData,
-  type SceneProxy,
-  type SceneProxyConstructorData
-} from '../../../engine';
+  ACESFilmicToneMapping,
+  PCFSoftShadowMap,
+  PerspectiveCamera,
+  Scene,
+  Vector2,
+  WebGLRenderer
+} from 'three';
+
 import { InstantiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
-
-export type TRenderMessageType =
-  | 'destroy-scene-proxy'
-  | 'init'
-  | 'init-scene-proxy'
-  | 'set-camera'
-  | 'viewport-resize';
-
-export type TRenderMessageData<T = { [k: string]: unknown }> = {
-  [P in keyof T]: T[P];
-};
-
-export type TRenderMessage<Type extends TRenderMessageType, Data> = {
-  type: Type;
-} & (Data extends TRenderMessageData
-  ? TRenderMessageData<Data>
-  : `Invalid type: 'Data' has to be of type 'object'.`);
 
 export interface TRenderWorkerInitData {
   canvas: OffscreenCanvas;
@@ -33,47 +17,9 @@ export interface TRenderWorkerInitData {
   messagePort: MessagePort;
 }
 
-export type TRenderWorkerInitMessage = TRenderMessage<'init', TRenderWorkerInitData>;
-
-export type TRenderViewportResizeData = TRenderMessageData<{
-  height: number;
-  width: number;
-}>;
-
-export type TRenderViewportResizeMessage = TRenderMessage<
-  'viewport-resize',
-  TRenderViewportResizeData
->;
-
-export type TRenderSceneProxyInitData = TRenderMessageData<{
-  component: SceneProxyConstructorData;
-}>;
-
-export type TRenderSceneProxyInitMessage = TRenderMessage<
-  'init-scene-proxy',
-  TRenderSceneProxyInitData
->;
-
-export type TRenderSceneProxyDestroyData = TRenderMessageData<{
-  uuid: SceneProxyConstructorData['uuid'];
-}>;
-
-export type TRenderSceneProxyDestroyMessage = TRenderMessage<
-  'destroy-scene-proxy',
-  TRenderSceneProxyDestroyData
->;
-
-export type TRenderSetCameraData = TRenderMessageData<{ camera: CameraProxyConstructorData }>;
-
-export type TRenderSetCameraMessage = TRenderMessage<'set-camera', TRenderSetCameraData>;
-
 export interface IRenderer {
   readonly _injectibleService: undefined;
   init(): void;
-  send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
-    message: T,
-    transferList?: Transferable[]
-  ): void;
 }
 
 export const IRenderer = InstantiationService.createDecorator<IRenderer>('renderer');
@@ -81,11 +27,9 @@ export const IRenderer = InstantiationService.createDecorator<IRenderer>('render
 export class Renderer {
   public readonly webGLRenderer: WebGLRenderer;
 
-  public camera: CameraSceneProxy | null = null;
+  public camera: PerspectiveCamera | null = null;
 
   private readonly scene: Scene = new Scene();
-
-  private readonly proxyObjects: SceneProxy[] = [];
 
   constructor(canvas: OffscreenCanvas, @IConsoleLogger private readonly logger: IConsoleLogger) {
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -127,38 +71,9 @@ export class Renderer {
     this.camera.updateMatrixWorld();
   }
 
-  public addSceneProxy(proxy: SceneProxy) {
-    this.logger.debug(this.constructor.name, 'Adding scene proxy', proxy);
-    this.proxyObjects.push(proxy);
-    this.scene.add(proxy.sceneObject);
-  }
-
-  public getSceneProxy<T extends SceneProxy>(uuid: T['uuid']): T | undefined {
-    return this.proxyObjects.find(proxy => proxy.uuid === uuid) as T | undefined;
-  }
-
-  public removeSceneProxy(uuidOrProxy: SceneProxy['uuid'] | SceneProxy) {
-    const proxy = typeof uuidOrProxy === 'string' ? this.getSceneProxy(uuidOrProxy) : uuidOrProxy;
-
-    if (proxy) {
-      this.logger.debug(this.constructor.name, 'Removing scene proxy', proxy);
-
-      proxy.dispose();
-      this.scene.remove(proxy.sceneObject);
-
-      if (this.camera?.uuid === proxy.uuid) {
-        this.camera = null;
-      }
-    }
-  }
-
   private tick() {
     if (this.camera) {
-      for (const proxy of this.proxyObjects) {
-        proxy.tick();
-      }
-
-      this.webGLRenderer.render(this.scene, this.camera.sceneObject);
+      this.webGLRenderer.render(this.scene, this.camera);
     }
   }
 }
