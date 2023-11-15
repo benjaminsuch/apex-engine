@@ -1,9 +1,8 @@
-import { ACESFilmicToneMapping, PCFSoftShadowMap, Scene, Vector2, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, PCFSoftShadowMap, WebGLRenderer } from 'three';
 
-import { InstantiationService } from '../../di/common';
-import { IConsoleLogger } from '../../logging/common';
+import { InstantiationService, ServiceCollection } from '../../di/common';
+import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
 import { TripleBuffer } from '../../memory/common';
-import { SceneProxy, constructProxy } from '../../../rendering';
 
 export type TRenderMessageType = 'init' | 'proxy' | 'set-camera' | 'viewport-resize';
 
@@ -81,23 +80,45 @@ export const IRenderer = InstantiationService.createDecorator<IRenderer>('render
 export const createProxyMessages: TRenderSceneProxyCreateData[] = [];
 
 export class Renderer {
-  public readonly webGLRenderer: WebGLRenderer;
+  private static instance?: Renderer;
 
-  public camera: any | null = null;
-
-  private readonly scene: Scene = new Scene();
-
-  private flags: Uint8Array | null = null;
-
-  constructor(canvas: OffscreenCanvas, @IConsoleLogger private readonly logger: IConsoleLogger) {
-    this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
+  public static getInstance() {
+    if (!this.instance) {
+      throw new Error(`No instance created yet`);
+    }
+    return this.instance;
   }
 
-  public init(flags: Uint8Array) {
-    this.logger.debug(this.constructor.name, 'Initialize');
+  public static create(
+    canvas: OffscreenCanvas,
+    flags: Uint8Array,
+    messagePort: MessagePort
+  ): Renderer {
+    const logger = new ConsoleLogger();
+    const services = new ServiceCollection([IConsoleLogger, logger]);
+    const instantiationService = new InstantiationService(services);
+
+    return instantiationService.createInstance(Renderer, canvas, flags, messagePort);
+  }
+
+  private readonly webGLRenderer: WebGLRenderer;
+
+  constructor(
+    canvas: OffscreenCanvas,
+    private readonly flags: Uint8Array,
+    private readonly messagePort: MessagePort,
+    @IConsoleLogger private readonly logger: IConsoleLogger
+  ) {
+    this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
-    this.flags = flags;
+
+    Renderer.instance = this;
+  }
+
+  public init() {
+    this.messagePort.addEventListener('message', this);
+    this.messagePort.start();
   }
 
   public start() {
@@ -107,41 +128,17 @@ export class Renderer {
 
   public setSize(height: number, width: number) {
     this.webGLRenderer.setSize(width, height, false);
-
-    if (!this.camera) {
-      this.logger.warn(`The renderer has no camera proxy assigned.`);
-      return;
-    }
-
-    this.updateCameraProjection(height, width);
   }
 
-  public updateCameraProjection(height?: number, width?: number) {
-    if (!this.camera) {
+  public handleEvent(event: MessageEvent<TRenderSceneProxyMessage>) {
+    if (typeof event.data !== 'object') {
       return;
     }
 
-    if (!width || !height) {
-      [width, height] = this.webGLRenderer.getSize(new Vector2());
-    }
+    this.logger.debug('render.worker:', 'onMessage', event.data);
   }
 
   private tick() {
-    if (this.flags) {
-      TripleBuffer.swapReadBufferFlags(this.flags);
-
-      for (let i = 0; i < createProxyMessages.length; ++i) {
-        const { origin, id, tb } = createProxyMessages[i];
-        SceneProxy.instances.set(id, constructProxy(origin, id, tb));
-        createProxyMessages.splice(i, 1);
-        i--;
-      }
-    } else {
-      this.logger.debug(this.constructor.name, `Missing triple buffer flags.`);
-    }
-
-    if (this.camera) {
-      //this.webGLRenderer.render(this.scene, this.camera.sceneObject);
-    }
+    TripleBuffer.swapReadBufferFlags(this.flags);
   }
 }
