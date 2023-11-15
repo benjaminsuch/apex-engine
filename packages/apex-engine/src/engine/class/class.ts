@@ -1,6 +1,4 @@
-import { TripleBuffer } from '../../platform/memory/common/TripleBuffer';
-
-export type ClassDecoratorFunction = (constructor: TClass) => boolean;
+export type ClassDecoratorFunction = (constructor: TClass) => TClass;
 
 let classId = 0;
 
@@ -19,8 +17,6 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
   return function <T extends TClass>(constructor: T, ...rest: unknown[]) {
     console.log('CLASS:', constructor.name, rest);
 
-    Reflect.defineMetadata('specifiers', new Map<string, Function>([['id', id]]), constructor);
-
     if (!Reflect.getMetadata('schema', constructor)) {
       Reflect.defineMetadata('schema', {}, constructor);
     }
@@ -35,26 +31,8 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
     Reflect.defineMetadata('byteLength', byteLength, constructor);
 
     for (const fn of classFns) {
-      if (!fn(constructor)) {
-        console.error(`An error occured during one of the class specifiers (${fn.name}).`);
-      }
+      constructor = fn(constructor) as T;
     }
-
-    const originalInit: Function | undefined = constructor.prototype.init;
-
-    Object.defineProperties(constructor.prototype, {
-      init: {
-        value(this: any, ...args: any[]) {
-          const specifiers = getClassSpecifiers(constructor);
-
-          for (const [, specifier] of specifiers) {
-            specifier(this);
-          }
-
-          originalInit?.call(this, ...args);
-        }
-      }
-    });
 
     return constructor;
   };
@@ -72,8 +50,6 @@ export function PROP(...args: Function[]) {
   };
 }
 
-export type ClassSpecifierFunction = (target: InstanceType<TClass>) => any;
-
 export interface Schema {
   [key: string]: {
     isArray: boolean;
@@ -83,44 +59,26 @@ export interface Schema {
   };
 }
 
-export function getClassSpecifiers(constructor: TClass): Map<string, ClassSpecifierFunction> {
-  return Reflect.getMetadata('specifiers', constructor) ?? new Map();
-}
-
-export function getTripleBuffer(target: InstanceType<TClass>): TripleBuffer | undefined {
-  return Reflect.getMetadata('buffer', target);
-}
-
-export function setTripleBuffer(target: InstanceType<TClass>, buffer: TripleBuffer) {
-  Reflect.defineMetadata('buffer', buffer, target);
-}
-
-export function getClassSchema(constructor: TClass): Schema | undefined {
-  return Reflect.getMetadata('schema', constructor);
-}
-
 export function addPropToSchema(constructor: TClass, prop: string | symbol) {
   const key = prop.toString();
-  let schema = getClassSchema(constructor);
+  let schema = Reflect.getMetadata('schema', constructor);
 
   if (!schema) {
     schema = {};
   }
 
-  const pos = Object.keys(schema).length;
+  const keys = Object.keys(schema);
+  const pos = keys.length;
+  const prevKey = keys.find(val => schema[val].pos === pos - 1);
+  const offset = prevKey ? schema[prevKey].offset + schema[prevKey].size : 0;
 
-  schema[key] = { isArray: false, pos, size: 0, type: 'uint8' };
+  schema[key] = { offset, pos, size: 0 };
 
   Reflect.defineMetadata('schema', schema, constructor);
 }
 
 export function getPropFromSchema(constructor: TClass, prop: string | symbol) {
-  const schema = getClassSchema(constructor);
-
-  if (!schema) {
-    throw new Error(`The class has no schema defined.`);
-  }
-
+  const schema = Reflect.getMetadata('schema', constructor);
   return schema[prop.toString()];
 }
 
@@ -130,7 +88,7 @@ export function setPropOnSchema(
   key: string,
   value: any
 ) {
-  const schema = getClassSchema(constructor);
+  const schema = Reflect.getMetadata('schema', constructor);
 
   if (!schema) {
     console.warn(`No schema defined`);

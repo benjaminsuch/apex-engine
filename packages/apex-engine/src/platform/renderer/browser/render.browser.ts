@@ -1,15 +1,9 @@
-import { InstantiationService, ServiceCollection } from '../../di/common';
-import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
 import {
   Renderer,
   type TRenderWorkerInitData,
   type TRenderSetCameraMessage,
   type TRenderViewportResizeMessage
 } from '../common/Renderer';
-
-const logger = new ConsoleLogger();
-const services = new ServiceCollection([IConsoleLogger, logger]);
-const instantiationService = new InstantiationService(services);
 
 /**
  * For consistency reasons, I implemented this class as if it were a worker. This makes
@@ -72,8 +66,8 @@ export default class RenderMainThread extends EventTarget implements EventListen
     messagePort,
     flags
   }: TRenderWorkerInitData) {
-    this.renderer = instantiationService.createInstance(Renderer, canvas);
-    this.renderer.init(flags);
+    this.renderer = Renderer.create(canvas, flags, messagePort);
+    this.renderer.init();
     this.renderer.setSize(initialCanvasHeight, initialCanvasWidth);
     this.renderer.start();
 
