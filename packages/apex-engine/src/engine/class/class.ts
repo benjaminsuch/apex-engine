@@ -1,18 +1,5 @@
 export type ClassDecoratorFunction = (constructor: TClass) => TClass;
 
-let classId = 0;
-
-export function id(target: InstanceType<TClass>) {
-  let id = Reflect.getMetadata('id', target);
-
-  if (!id) {
-    id = ++classId;
-    Reflect.defineMetadata('id', id, target);
-  }
-
-  return id;
-}
-
 export function CLASS(...classFns: ClassDecoratorFunction[]) {
   return function <T extends TClass>(constructor: T, ...rest: unknown[]) {
     console.log('CLASS:', constructor.name, rest);

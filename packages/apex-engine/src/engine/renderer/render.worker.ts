@@ -2,7 +2,7 @@ import {
   Renderer,
   type TRenderWorkerInitData,
   type TRenderWorkerInitMessage
-} from '../common/Renderer';
+} from '../../platform/renderer/common';
 
 function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   if (typeof event.data !== 'object') {
@@ -25,7 +25,6 @@ function onInit({
   flags
 }: TRenderWorkerInitData) {
   const renderer = Renderer.create(canvas, flags, messagePort);
-
   renderer.init();
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();

@@ -1,4 +1,6 @@
 import { EngineLoop } from '../../engine';
+import RenderMainThread from '../../engine/renderer/render.main';
+import RenderWorker from '../../engine/renderer/render.worker?worker';
 import { InstantiationService, ServiceCollection } from '../../platform/di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { WebSocketNetDriver } from '../../platform/net/browser';
@@ -12,9 +14,10 @@ export class BrowserMain {
   constructor() {
     const services = new ServiceCollection();
     const consoleLogger = new ConsoleLogger();
+    const renderer = RENDER_ON_MAIN_THREAD ? new RenderMainThread() : new RenderWorker();
 
     services.set(IConsoleLogger, consoleLogger);
-    services.set(IRenderer, new BrowserRenderer({ runOnMainThread: !!RENDER_ON_MAIN_THREAD }));
+    services.set(IRenderer, new BrowserRenderer(renderer));
 
     this.instantiationService = new InstantiationService(services);
     this.instantiationService.setServiceInstance(

@@ -4,7 +4,7 @@ import { InstantiationService, ServiceCollection } from '../../di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
 import { TripleBuffer } from '../../memory/common';
 
-export type TRenderMessageType = 'init' | 'proxy' | 'set-camera' | 'viewport-resize';
+export type TRenderMessageType = 'init' | 'proxy' | 'rpc' | 'set-camera' | 'viewport-resize';
 
 export type TRenderMessageData<T = { [k: string]: unknown }> = {
   [P in keyof T]: T[P];
@@ -41,30 +41,7 @@ export type TTripleBufferData = Pick<
   'buffers' | 'byteLength' | 'byteViews' | 'flags'
 >;
 
-export type TRenderSceneProxyCreateData = TRenderMessageData<{
-  action: 'create';
-  origin: string;
-  id: number;
-  tb: Pick<TripleBuffer, 'buffers' | 'byteLength' | 'byteViews' | 'flags'>;
-}>;
-
-export type TRenderSceneProxyDisposeData = TRenderMessageData<{
-  action: 'dispose';
-  id: number;
-}>;
-
-export type TRenderSceneProxyMessage = TRenderMessage<
-  'proxy',
-  TRenderSceneProxyCreateData | TRenderSceneProxyDisposeData
->;
-
-export type TRenderSceneProxyDestroyData = TRenderMessageData<{
-  uuid: any;
-}>;
-
-export type TRenderSetCameraData = TRenderMessageData<{ camera: any }>;
-
-export type TRenderSetCameraMessage = TRenderMessage<'set-camera', TRenderSetCameraData>;
+export type TRenderSceneProxyMessage = TRenderMessage<'proxy', any>;
 
 export interface IRenderer {
   readonly _injectibleService: undefined;
@@ -76,8 +53,6 @@ export interface IRenderer {
 }
 
 export const IRenderer = InstantiationService.createDecorator<IRenderer>('renderer');
-
-export const createProxyMessages: TRenderSceneProxyCreateData[] = [];
 
 export class Renderer {
   private static instance?: Renderer;
