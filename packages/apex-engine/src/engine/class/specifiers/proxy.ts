@@ -1,6 +1,7 @@
 import { TripleBuffer } from '../../../platform/memory/common';
 import { ApexEngine } from '../../ApexEngine';
 import { getTargetId } from '../class';
+import { id } from './id';
 
 export const messageQueue: any[] = [];
 
@@ -16,6 +17,8 @@ export function proxy(proxyClass: TClass) {
 
       constructor(...args: any[]) {
         super(...args);
+
+        id(this);
 
         this.tripleBuffer = new TripleBuffer(ApexEngine.GAME_FLAGS, bufferSize);
 

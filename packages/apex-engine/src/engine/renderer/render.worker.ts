@@ -4,6 +4,8 @@ import {
   type TRenderWorkerInitMessage
 } from '../../platform/renderer/common';
 
+import * as components from '../components';
+
 function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   if (typeof event.data !== 'object') {
     return;
@@ -24,7 +26,12 @@ function onInit({
   messagePort,
   flags
 }: TRenderWorkerInitData) {
-  const renderer = Renderer.create(canvas, flags, messagePort);
+  const renderer = Renderer.create(
+    canvas,
+    flags,
+    messagePort,
+    components as unknown as Record<string, TClass>
+  );
   renderer.init();
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();

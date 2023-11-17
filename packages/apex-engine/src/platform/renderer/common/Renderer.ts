@@ -1,4 +1,14 @@
-import { ACESFilmicToneMapping, PCFSoftShadowMap, WebGLRenderer } from 'three';
+import 'reflect-metadata';
+import {
+  ACESFilmicToneMapping,
+  Camera,
+  DirectionalLight,
+  HemisphereLight,
+  PCFSoftShadowMap,
+  PerspectiveCamera,
+  Scene,
+  WebGLRenderer
+} from 'three';
 
 import { InstantiationService, ServiceCollection } from '../../di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
@@ -41,7 +51,21 @@ export type TTripleBufferData = Pick<
   'buffers' | 'byteLength' | 'byteViews' | 'flags'
 >;
 
-export type TRenderSceneProxyMessage = TRenderMessage<'proxy', any>;
+export type TRenderSceneProxyCreateData = TRenderMessageData<{
+  constructor: string;
+  id: number;
+  tb: Pick<TripleBuffer, 'buffers' | 'byteLength' | 'byteViews' | 'flags'>;
+}>;
+
+export type TRenderSceneProxyMessage = TRenderMessage<'proxy', TRenderSceneProxyCreateData>;
+
+export type TRenderRPCData = TRenderMessageData<{
+  id: number;
+  action: string;
+  params: unknown[];
+}>;
+
+export type TRenderRPCMessage = TRenderMessage<'rpc', TRenderRPCData>;
 
 export interface IRenderer {
   readonly _injectibleService: undefined;
@@ -53,6 +77,9 @@ export interface IRenderer {
 }
 
 export const IRenderer = InstantiationService.createDecorator<IRenderer>('renderer');
+
+const createProxyMessages: TRenderSceneProxyCreateData[] = [];
+const rpcMessages: TRenderRPCData[] = [];
 
 export class Renderer {
   private static instance?: Renderer;
@@ -67,26 +94,50 @@ export class Renderer {
   public static create(
     canvas: OffscreenCanvas,
     flags: Uint8Array,
-    messagePort: MessagePort
+    messagePort: MessagePort,
+    components: Record<string, TClass>
   ): Renderer {
     const logger = new ConsoleLogger();
     const services = new ServiceCollection([IConsoleLogger, logger]);
     const instantiationService = new InstantiationService(services);
 
-    return instantiationService.createInstance(Renderer, canvas, flags, messagePort);
+    return instantiationService.createInstance(Renderer, canvas, flags, messagePort, components);
   }
 
+  private readonly proxyInstancesRegistry: Map<number, InstanceType<TClass>> = new Map();
+
+  private readonly proxyInstances: InstanceType<TClass>[] = [];
+
   private readonly webGLRenderer: WebGLRenderer;
+
+  private readonly scene: Scene = new Scene();
+
+  private readonly camera: Camera;
 
   constructor(
     canvas: OffscreenCanvas,
     private readonly flags: Uint8Array,
     private readonly messagePort: MessagePort,
+    private readonly components: Record<string, TClass>,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
     this.webGLRenderer.toneMapping = ACESFilmicToneMapping;
+
+    // Camera and light is temporary fixed in place here
+    this.camera = new PerspectiveCamera();
+    this.camera.position.z = 5;
+
+    const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 3);
+    hemiLight.position.set(0, 20, 0);
+
+    this.scene.add(hemiLight);
+
+    const light = new DirectionalLight(0xffffff, 3);
+    light.position.set(-1, 2, 4);
+
+    this.scene.add(light);
 
     Renderer.instance = this;
   }
@@ -98,22 +149,87 @@ export class Renderer {
 
   public start() {
     this.logger.debug(this.constructor.name, 'Start');
-    this.webGLRenderer.setAnimationLoop(() => this.tick());
+    this.webGLRenderer.setAnimationLoop(time => this.tick(time));
   }
 
   public setSize(height: number, width: number) {
     this.webGLRenderer.setSize(width, height, false);
   }
 
-  public handleEvent(event: MessageEvent<TRenderSceneProxyMessage>) {
+  public handleEvent(event: MessageEvent<TRenderSceneProxyMessage | TRenderRPCMessage>) {
     if (typeof event.data !== 'object') {
       return;
     }
 
     this.logger.debug('render.worker:', 'onMessage', event.data);
+
+    switch (event.data.type) {
+      case 'proxy':
+        createProxyMessages.push(event.data);
+        break;
+      case 'rpc':
+        rpcMessages.push(event.data);
+        break;
+    }
   }
 
-  private tick() {
+  private tick(time: number) {
     TripleBuffer.swapReadBufferFlags(this.flags);
+
+    for (let i = 0; i < createProxyMessages.length; ++i) {
+      const { constructor, id, tb } = createProxyMessages[i];
+
+      if (
+        this.createProxyInstance(
+          id,
+          constructor,
+          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers)
+        )
+      ) {
+        createProxyMessages.splice(i, 1);
+        i--;
+      }
+    }
+
+    for (let i = 0; i < rpcMessages.length; ++i) {
+      const { id, action, params } = rpcMessages[i];
+      const instance = this.proxyInstancesRegistry.get(id);
+
+      if (instance) {
+        instance[action]?.(...params);
+        rpcMessages.splice(i, 1);
+        i--;
+      } else {
+        this.logger.warn(
+          `Unable to execute RPC "${action}": RPC instance with id "${id}" not found.`
+        );
+      }
+    }
+
+    for (let i = 0; i < this.proxyInstances.length; ++i) {
+      this.proxyInstances[i].tick(time);
+    }
+
+    this.webGLRenderer.render(this.scene, this.camera);
+  }
+
+  private createProxyInstance(
+    id: TRenderSceneProxyCreateData['id'],
+    constructor: TRenderSceneProxyCreateData['constructor'],
+    tb: TripleBuffer
+  ) {
+    const Constructor = this.components[constructor as keyof typeof this.components] as TClass;
+
+    if (!Constructor) {
+      throw new Error(`Constructor (${constructor}) not found for proxy with id "${id}".`);
+    }
+
+    const instance = new Constructor(id, tb);
+
+    this.scene.add(instance.mesh);
+    this.proxyInstancesRegistry.set(id, instance);
+    this.proxyInstances.push(instance);
+
+    return true;
   }
 }

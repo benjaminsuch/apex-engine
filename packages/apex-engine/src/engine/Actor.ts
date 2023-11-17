@@ -6,6 +6,8 @@ import { type Tick } from './EngineLoop';
 import { type Level } from './Level';
 import { type World } from './World';
 
+export type ActorComponentType = new (...args: any[]) => ActorComponent;
+
 export class Actor {
   private rootComponent?: SceneComponent;
 
@@ -24,7 +26,7 @@ export class Actor {
 
   public readonly components: Set<ActorComponent> = new Set();
 
-  public getComponent<T extends typeof ActorComponent>(ComponentClass: T) {
+  public getComponent<T extends ActorComponentType>(ComponentClass: T) {
     for (const component of this.components) {
       if (component instanceof ComponentClass) {
         return component as InstanceType<T>;
@@ -36,7 +38,7 @@ export class Actor {
     return this.components.has(component);
   }
 
-  public addComponent<T extends new (...args: any[]) => ActorComponent, R extends InstanceType<T>>(
+  public addComponent<T extends ActorComponentType, R extends InstanceType<T>>(
     ComponentClass: T,
     ...args: GetLeadingNonServiceArgs<ConstructorParameters<T>>
   ): R {
