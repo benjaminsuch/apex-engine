@@ -5,20 +5,21 @@ import { proxy } from '../class/specifiers/proxy';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 
 const temp = new THREE.Vector3();
-const segmentsAround = 24;
 
 export class BoxComponentProxy extends MeshComponentProxy {
+  private segmentsAround: number = 24;
+
   public override tick(time: number = 0) {
-    time *= 0.001;
     const positionAttr = this.mesh.geometry.getAttribute('position');
+
+    time *= 0.001;
 
     if (positionAttr) {
       for (let i = 0; i < this.positions.length; i += 3) {
         const quad = (i / 12) | 0;
-        const ringId = (quad / segmentsAround) | 0;
-        const ringQuadId = quad % segmentsAround;
-        const ringU = ringQuadId / segmentsAround;
-        const angle = ringU * Math.PI * 2;
+        const ringId = (quad / this.segmentsAround) | 0;
+        const angle = ((quad % this.segmentsAround) / this.segmentsAround) * Math.PI * 2;
+
         temp.fromArray(this.normals, i);
         temp.multiplyScalar(
           THREE.MathUtils.lerp(1, 1.4, Math.sin(time + ringId + angle) * 0.5 + 0.5)
@@ -31,6 +32,7 @@ export class BoxComponentProxy extends MeshComponentProxy {
   }
 
   public makeSpherePositions(segmentsAround: number, segmentsDown: number) {
+    this.segmentsAround = segmentsAround;
     this.mesh.material = new THREE.MeshPhongMaterial({
       color: 0xff0000,
       side: THREE.DoubleSide,
@@ -42,13 +44,14 @@ export class BoxComponentProxy extends MeshComponentProxy {
     const positions = new Float32Array(numVertices * numComponents);
     const indices: any[] = [];
 
+    const temp = new THREE.Vector3();
     const longHelper = new THREE.Object3D();
     const latHelper = new THREE.Object3D();
     const pointHelper = new THREE.Object3D();
+
     longHelper.add(latHelper);
     latHelper.add(pointHelper);
     pointHelper.position.z = 1;
-    const temp = new THREE.Vector3();
 
     function getPoint(lat: number, long: number) {
       latHelper.rotation.x = lat;
@@ -59,6 +62,7 @@ export class BoxComponentProxy extends MeshComponentProxy {
 
     let posNdx = 0;
     let ndx = 0;
+
     for (let down = 0; down < segmentsDown; ++down) {
       const v0 = down / segmentsDown;
       const v1 = (down + 1) / segmentsDown;
@@ -94,7 +98,6 @@ export class BoxComponentProxy extends MeshComponentProxy {
     this.mesh.geometry.setAttribute('position', positionAttr);
     this.mesh.geometry.setAttribute('normal', new THREE.BufferAttribute(this.normals, 3));
     this.mesh.geometry.setIndex(indices);
-    console.log('hello', segmentsAround, segmentsDown);
   }
 }
 
