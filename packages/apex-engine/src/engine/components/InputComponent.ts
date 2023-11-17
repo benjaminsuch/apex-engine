@@ -1,4 +1,3 @@
-import { IConsoleLogger } from '../../platform/logging/common';
 import { Actor } from '../Actor';
 import { EKeyEvent } from '../PlayerInput';
 import { ActorComponent } from './ActorComponent';
@@ -9,10 +8,6 @@ export class InputComponent extends ActorComponent {
   public readonly axisBindings: InputAxisBinding[] = [];
 
   public blockInput: boolean = false;
-
-  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {
-    super();
-  }
 
   public buildKeyMap() {}
 

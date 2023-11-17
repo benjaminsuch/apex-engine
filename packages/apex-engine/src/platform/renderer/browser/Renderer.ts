@@ -1,7 +1,12 @@
-import { IRenderer } from '../common';
+import {
+  IRenderer,
+  type TRenderMessage,
+  type TRenderMessageData,
+  type TRenderMessageType
+} from '../common';
 
 export interface BrowserRendererOptions {
-  runOnMainThread?: boolean;
+  multithreaded?: boolean;
 }
 
 export class BrowserRenderer implements IRenderer {
@@ -16,11 +21,13 @@ export class BrowserRenderer implements IRenderer {
     return this.instance;
   }
 
+  private readonly messageChannel = new MessageChannel();
+
   private canvas?: HTMLCanvasElement;
 
   private isInitialized = false;
 
-  constructor(private readonly options: BrowserRendererOptions = { runOnMainThread: false }) {
+  constructor(private readonly renderWorker: Worker) {
     if (typeof window === 'undefined') {
       throw new Error(`Cannot create an instance of Renderer: "window" is undefined.`);
     }
@@ -29,15 +36,39 @@ export class BrowserRenderer implements IRenderer {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
+    this.messageChannel.port1.addEventListener('message', event => {
+      console.log('Renderer received message:', event);
+    });
+
     BrowserRenderer.instance = this;
   }
 
-  public async init() {
+  public async init(flags: Uint8Array) {
     if (this.isInitialized) {
       return;
     }
 
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
+
+    if (this.canvas) {
+      const offscreenCanvas = this.canvas.transferControlToOffscreen();
+      const messagePort = this.messageChannel.port2;
+
+      this.renderWorker.postMessage(
+        {
+          type: 'init',
+          canvas: offscreenCanvas,
+          initialCanvasHeight: this.canvas.clientHeight,
+          initialCanvasWidth: this.canvas.clientWidth,
+          messagePort,
+          flags
+        },
+        [offscreenCanvas, messagePort]
+      );
+    }
+
+    window.addEventListener('resize', this.handleWindowResize.bind(this));
+
     this.isInitialized = true;
 
     window.addEventListener('resize', this.handleWindowResize.bind(this));

@@ -1,5 +1,7 @@
 import { MathUtils } from 'three';
 
+import { IInstatiationService } from '../../platform/di/common';
+import { IConsoleLogger } from '../../platform/logging/common';
 import { Actor } from '../Actor';
 import { type Tick } from '../EngineLoop';
 import { World } from '../World';
@@ -25,9 +27,12 @@ export class ActorComponent {
     return this.world;
   }
 
-  private isInitialized: boolean = false;
+  public isInitialized: boolean = false;
 
-  constructor(...args: any[]) {}
+  constructor(
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger
+  ) {}
 
   public init() {
     this.isInitialized = true;
@@ -46,7 +51,9 @@ export class ActorComponent {
     this.onRegister();
   }
 
-  public dispose() {}
+  public dispose() {
+    this.logger.debug(this.constructor.name, 'Dispose');
+  }
 
   protected onRegister() {}
 }

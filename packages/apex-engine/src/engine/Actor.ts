@@ -1,10 +1,12 @@
-import { IInstatiationService } from '../platform/di/common';
+import { type GetLeadingNonServiceArgs, IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
 import { type ActorComponent, SceneComponent } from './components';
 import { type Tick } from './EngineLoop';
 import { type Level } from './Level';
 import { type World } from './World';
+
+export type ActorComponentType = new (...args: any[]) => ActorComponent;
 
 export class Actor {
   private rootComponent?: SceneComponent;
@@ -24,7 +26,7 @@ export class Actor {
 
   public readonly components: Set<ActorComponent> = new Set();
 
-  public getComponent<T extends typeof ActorComponent>(ComponentClass: T) {
+  public getComponent<T extends ActorComponentType>(ComponentClass: T) {
     for (const component of this.components) {
       if (component instanceof ComponentClass) {
         return component as InstanceType<T>;
@@ -36,25 +38,15 @@ export class Actor {
     return this.components.has(component);
   }
 
-  public addComponent<T extends typeof ActorComponent>(
+  public addComponent<T extends ActorComponentType, R extends InstanceType<T>>(
     ComponentClass: T,
-    setAsRootComponent: boolean = false
-  ): InstanceType<T> {
+    ...args: GetLeadingNonServiceArgs<ConstructorParameters<T>>
+  ): R {
     // I cast this as typeof ActorComponent as `createInstance` expects the correct constructor arguments
     // as a second parameter. I have to fix the type of `createInstance` (if that's possible).
-    const component = this.instantiationService.createInstance(
-      ComponentClass as typeof ActorComponent
-    ) as InstanceType<T>;
+    const component = this.instantiationService.createInstance(ComponentClass, ...args) as R;
 
     component.registerWithActor(this);
-
-    //? What should we do, if `rootComponent` already exists? We have to dispose
-    //? the previous `rootComponent` before assigning a new component. Can the
-    //? disposal fail? And if so, how do we handle that?
-    if (setAsRootComponent && component instanceof SceneComponent) {
-      this.setRootComponent(component);
-    }
-
     this.components.add(component);
 
     return component;
@@ -78,7 +70,7 @@ export class Actor {
     return this.world;
   }
 
-  private isInitialized: boolean = false;
+  public isInitialized: boolean = false;
 
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
@@ -128,6 +120,8 @@ export class Actor {
   }
 
   public dispose() {
+    this.logger.debug(this.constructor.name, 'Dispose');
+
     for (const component of this.components) {
       component.dispose();
     }

@@ -69,7 +69,9 @@ export class Level {
     }
   }
 
-  public beginPlay() {}
+  public beginPlay() {
+    this.logger.debug(this.constructor.name, 'Begin play');
+  }
 
   public isCurrentLevel() {
     return this.world?.getCurrentLevel() === this;

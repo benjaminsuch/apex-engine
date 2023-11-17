@@ -25,13 +25,13 @@ export class GameMode extends Actor {
   }
 
   public restartPlayer(
-    player: PlayerController,
+    playerController: PlayerController,
     transform: Matrix4 = this.findPlayerStartLocation()
   ) {
     this.logger.debug(this.constructor.name, `Restart player`);
     //InitStartSpot
     //FinishRestartPlayer
-    player.possess(this.spawnDefaultPlayerPawn());
+    playerController.possess(this.spawnDefaultPlayerPawn());
   }
 
   public findPlayerStartLocation() {
