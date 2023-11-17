@@ -2,7 +2,8 @@ import * as THREE from 'three';
 
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
-import { IRenderer, SceneProxy } from '../../platform/renderer/common';
+import { IRenderer } from '../../platform/renderer/common';
+import { SceneProxy } from '../SceneProxy';
 import { SceneComponent } from './SceneComponent';
 
 export class MeshComponentProxy extends SceneProxy {
