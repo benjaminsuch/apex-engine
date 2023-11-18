@@ -5,6 +5,7 @@ import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderer } from '../platform/renderer/common';
 import { Pawn } from './Pawn';
 import { InputActionMap, InputAxisMap } from './PlayerInput';
+import { CameraComponent } from './components';
 
 const euler = new Euler();
 euler.order = 'YXZ';
