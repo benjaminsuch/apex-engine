@@ -21,6 +21,7 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
       constructor = fn(constructor) as T;
     }
 
+    console.log('schema', Reflect.getMetadata('schema', constructor));
     return constructor;
   };
 }

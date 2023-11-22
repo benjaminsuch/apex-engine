@@ -5,6 +5,7 @@ import typescript from '@rollup/plugin-typescript';
 import commonjs from '@rollup/plugin-commonjs';
 import { cac } from 'cac';
 import glob from 'glob';
+import fs from 'fs-extra';
 import mime from 'mime';
 import { writeFileSync, unlinkSync, existsSync, readFileSync, mkdirSync, readFile } from 'node:fs';
 import { createServer } from 'node:http';
@@ -508,6 +509,11 @@ async function serveBrowserTarget(target) {
     if (existsSync(buildDir)) {
         await rimraf(buildDir);
     }
+    fs.copy('src/assets', resolve(buildDir, 'assets'), err => {
+        if (err) {
+            console.error('Error copying folder:', err);
+        }
+    });
     wss.on('connection', ws => {
         ws.on('error', console.error);
     });
@@ -740,6 +746,10 @@ function createRollupConfig(launcher, { output, ...options } = {}) {
             externalLiveBindings: false,
             freeze: false,
             sourcemap: 'inline',
+            chunkFileNames: '[name].js',
+            manualChunks: {
+                vendor: ['three']
+            },
             ...output
         },
         onwarn(warning, warn) {

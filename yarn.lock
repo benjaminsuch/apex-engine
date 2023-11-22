@@ -263,6 +263,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/fs-extra@npm:^11":
+  version: 11.0.4
+  resolution: "@types/fs-extra@npm:11.0.4"
+  dependencies:
+    "@types/jsonfile": "*"
+    "@types/node": "*"
+  checksum: 242cb84157631f057f76495c8220707541882c00a00195b603d937fb55e471afecebcb089bab50233ed3a59c69fd68bf65c1f69dd7fafe2347e139cc15b9b0e5
+  languageName: node
+  linkType: hard
+
 "@types/glob@npm:^8":
   version: 8.1.0
   resolution: "@types/glob@npm:8.1.0"
@@ -277,6 +287,15 @@ __metadata:
   version: 4.0.1
   resolution: "@types/http-cache-semantics@npm:4.0.1"
   checksum: 1048aacf627829f0d5f00184e16548205cd9f964bf0841c29b36bc504509230c40bc57c39778703a1c965a6f5b416ae2cbf4c1d4589c889d2838dd9dbfccf6e9
+  languageName: node
+  linkType: hard
+
+"@types/jsonfile@npm:*":
+  version: 6.1.4
+  resolution: "@types/jsonfile@npm:6.1.4"
+  dependencies:
+    "@types/node": "*"
+  checksum: 309fda20eb5f1cf68f2df28931afdf189c5e7e6bec64ac783ce737bb98908d57f6f58757ad5da9be37b815645a6f914e2d4f3ac66c574b8fe1ba6616284d0e97
   languageName: node
   linkType: hard
 
@@ -475,6 +494,7 @@ __metadata:
     "@rollup/plugin-replace": ^5.0.2
     "@rollup/plugin-typescript": ^11.0.0
     "@rollup/pluginutils": ^5.0.2
+    "@types/fs-extra": ^11
     "@types/glob": ^8
     "@types/mime": ^3.0.1
     "@types/node": ^18.11.18
@@ -483,6 +503,7 @@ __metadata:
     cac: ^6.7.14
     dts-bundle-generator: ^8.0.1
     electron: ^23.1.0
+    fs-extra: ^11.1.1
     glob: ^8.1.0
     mime: ^3.0.0
     reflect-metadata: ^0.1.13
@@ -942,6 +963,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fs-extra@npm:^11.1.1":
+  version: 11.1.1
+  resolution: "fs-extra@npm:11.1.1"
+  dependencies:
+    graceful-fs: ^4.2.0
+    jsonfile: ^6.0.1
+    universalify: ^2.0.0
+  checksum: fb883c68245b2d777fbc1f2082c9efb084eaa2bbf9fddaa366130d196c03608eebef7fb490541276429ee1ca99f317e2d73e96f5ca0999eefedf5a624ae1edfd
+  languageName: node
+  linkType: hard
+
 "fs-extra@npm:^8.1.0":
   version: 8.1.0
   resolution: "fs-extra@npm:8.1.0"
@@ -1337,6 +1369,19 @@ __metadata:
     graceful-fs:
       optional: true
   checksum: 6447d6224f0d31623eef9b51185af03ac328a7553efcee30fa423d98a9e276ca08db87d71e17f2310b0263fd3ffa6c2a90a6308367f661dc21580f9469897c9e
+  languageName: node
+  linkType: hard
+
+"jsonfile@npm:^6.0.1":
+  version: 6.1.0
+  resolution: "jsonfile@npm:6.1.0"
+  dependencies:
+    graceful-fs: ^4.1.6
+    universalify: ^2.0.0
+  dependenciesMeta:
+    graceful-fs:
+      optional: true
+  checksum: 7af3b8e1ac8fe7f1eccc6263c6ca14e1966fcbc74b618d3c78a0a2075579487547b94f72b7a1114e844a1e15bb00d440e5d1720bfc4612d790a6f285d5ea8354
   languageName: node
   linkType: hard
 
@@ -1970,7 +2015,7 @@ __metadata:
     apex-engine: "workspace:^"
     electron: ^23.1.0
     three: 0.154.0
-    three-stdlib: ^2.21.5
+    three-stdlib: ^2.28.5
     tslib: ^2.5.0
     typescript: ^4.9.4
   languageName: unknown
@@ -2143,27 +2188,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three-stdlib@npm:^2.21.5":
-  version: 2.25.0
-  resolution: "three-stdlib@npm:2.25.0"
-  dependencies:
-    "@types/draco3d": ^1.4.0
-    "@types/offscreencanvas": ^2019.6.4
-    "@types/webxr": ^0.5.2
-    chevrotain: ^10.1.2
-    draco3d: ^1.4.1
-    fflate: ^0.6.9
-    ktx-parse: ^0.4.5
-    mmd-parser: ^1.0.4
-    opentype.js: ^1.3.3
-    potpack: ^1.0.1
-    zstddec: ^0.0.2
-  peerDependencies:
-    three: ">=0.128.0"
-  checksum: 7aca915a17bc8cc06d6de77b8dabb565d92869201f5e498157e6eae9b5657f217a4f174366c68d185a9b93f097d3b5662e51a09d7f249b42c8b9e7f6187f2d01
-  languageName: node
-  linkType: hard
-
 "three-stdlib@npm:^2.24.1":
   version: 2.24.1
   resolution: "three-stdlib@npm:2.24.1"
@@ -2185,7 +2209,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three@npm:0.154.0, three@npm:^0.154.0":
+"three-stdlib@npm:^2.28.5":
+  version: 2.28.5
+  resolution: "three-stdlib@npm:2.28.5"
+  dependencies:
+    "@types/draco3d": ^1.4.0
+    "@types/offscreencanvas": ^2019.6.4
+    "@types/webxr": ^0.5.2
+    draco3d: ^1.4.1
+    fflate: ^0.6.9
+    potpack: ^1.0.1
+  peerDependencies:
+    three: ">=0.128.0"
+  checksum: e392dc8757a2543645bfe187b08a84e3993d2b2cb0c5d291b5f9fb5e0c3bd0c076f779691e29b7073c2b6c6cc064f45e2ec84f1af3b8812838b28ea6e80a317e
+  languageName: node
+  linkType: hard
+
+"three@npm:0.154.0":
   version: 0.154.0
   resolution: "three@npm:0.154.0"
   checksum: 90ad3cafef8b866641366977ab7189d56f7352c6cdc014cbab946544e42782ec4ea7e56b959b43590433a0fcdc4bd8f8029b18a75074ba10005182c5a73bcc88
@@ -2275,6 +2315,13 @@ __metadata:
   version: 0.1.2
   resolution: "universalify@npm:0.1.2"
   checksum: 40cdc60f6e61070fe658ca36016a8f4ec216b29bf04a55dce14e3710cc84c7448538ef4dad3728d0bfe29975ccd7bfb5f414c45e7b78883567fb31b246f02dff
+  languageName: node
+  linkType: hard
+
+"universalify@npm:^2.0.0":
+  version: 2.0.1
+  resolution: "universalify@npm:2.0.1"
+  checksum: ecd8469fe0db28e7de9e5289d32bd1b6ba8f7183db34f3bfc4ca53c49891c2d6aa05f3fb3936a81285a905cc509fb641a0c3fc131ec786167eff41236ae32e60
   languageName: node
   linkType: hard
 

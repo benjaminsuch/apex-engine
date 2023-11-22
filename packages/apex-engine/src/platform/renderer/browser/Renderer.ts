@@ -74,5 +74,7 @@ export class BrowserRenderer implements IRenderer {
     window.addEventListener('resize', this.handleWindowResize.bind(this));
   }
 
+  public send() {}
+
   private handleWindowResize() {}
 }

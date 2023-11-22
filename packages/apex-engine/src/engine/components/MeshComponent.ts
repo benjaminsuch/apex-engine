@@ -5,6 +5,8 @@ import { IConsoleLogger } from '../../platform/logging/common';
 import { IRenderer } from '../../platform/renderer/common';
 import { SceneProxy } from '../SceneProxy';
 import { SceneComponent } from './SceneComponent';
+import { CLASS } from '../class';
+import { proxy } from '../class/specifiers/proxy';
 
 export class MeshComponentProxy extends SceneProxy {
   declare geometry: THREE.BufferGeometry;
@@ -18,6 +20,7 @@ export class MeshComponentProxy extends SceneProxy {
   public normals: Float32Array = new Float32Array();
 }
 
+@CLASS(proxy(MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
   constructor(
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
