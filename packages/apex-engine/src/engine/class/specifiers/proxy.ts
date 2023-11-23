@@ -1,4 +1,5 @@
 import { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
+
 import { TripleBuffer } from '../../../platform/memory/common';
 import { ApexEngine } from '../../ApexEngine';
 import { getTargetId } from '../class';
@@ -9,6 +10,9 @@ export const messageQueue: any[] = [];
 export function proxy(proxyClass: TClass) {
   return (constructor: TClass) => {
     const schema = Reflect.getMetadata('schema', constructor);
+
+    Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
+
     const bufferSize = Reflect.getMetadata('byteLength', constructor);
 
     class ProxyOrigin extends constructor {
@@ -90,7 +94,7 @@ export function proxy(proxyClass: TClass) {
                 const { elements } = initialVal as Matrix4;
 
                 for (let i = 0; i < elements.length; ++i) {
-                  dv.setFloat32(offset + i * Float32Array.BYTES_PER_ELEMENT, elements[i]);
+                  dv.setFloat32(offset + i * Float32Array.BYTES_PER_ELEMENT, elements[i], true);
                 }
 
                 setMat4(this, key, initialVal, dv, offset);
@@ -109,10 +113,10 @@ export function proxy(proxyClass: TClass) {
               if (initialVal) {
                 const { x, y, z, w } = initialVal as Quaternion;
 
-                dv.setFloat32(offset, x);
-                dv.setFloat32(offset + 4, y);
-                dv.setFloat32(offset + 8, z);
-                dv.setFloat32(offset + 12, w);
+                dv.setFloat32(offset, x, true);
+                dv.setFloat32(offset + 4, y, true);
+                dv.setFloat32(offset + 8, z, true);
+                dv.setFloat32(offset + 12, w, true);
 
                 setQuat(this, key, initialVal, dv, offset);
               }
@@ -181,8 +185,8 @@ export function proxy(proxyClass: TClass) {
               if (initialVal) {
                 const { x, y } = initialVal as Vector2;
 
-                dv.setFloat32(offset, x);
-                dv.setFloat32(offset + 4, y);
+                dv.setFloat32(offset, x, true);
+                dv.setFloat32(offset + 4, y, true);
 
                 setVec2(this, key, initialVal, dv, offset);
               }
@@ -200,9 +204,9 @@ export function proxy(proxyClass: TClass) {
               if (initialVal) {
                 const { x, y, z } = initialVal as Vector3;
 
-                dv.setFloat32(offset, x);
-                dv.setFloat32(offset + 4, y);
-                dv.setFloat32(offset + 8, z);
+                dv.setFloat32(offset, x, true);
+                dv.setFloat32(offset + 4, y, true);
+                dv.setFloat32(offset + 8, z, true);
 
                 setVec3(this, key, initialVal, dv, offset);
               }
@@ -270,7 +274,7 @@ function setNumber(
 ) {
   if (Array.isArray(val)) {
     for (let i = 0; i < val.length; ++i) {
-      dv[setters.get(type) as string](offset + i * type.BYTES_PER_ELEMENT, val[i]);
+      dv[setters.get(type) as string](offset + i * type.BYTES_PER_ELEMENT, val[i], true);
     }
   } else {
     dv.setUint8(offset, (val ?? 0) as number);
@@ -283,7 +287,7 @@ function setMat4(target: any, prop: string | symbol, val: Matrix4, dv: DataView,
     new Proxy(val, {
       get(target: Matrix4, prop) {
         for (let i = 0; i < target.elements.length; ++i) {
-          dv.setFloat32(offset + i * Float32Array.BYTES_PER_ELEMENT, target.elements[i]);
+          dv.setFloat32(offset + i * Float32Array.BYTES_PER_ELEMENT, target.elements[i], true);
         }
 
         return Reflect.get(target, prop);
@@ -305,10 +309,10 @@ function setQuat(
     'value',
     new Proxy(val, {
       set(target, prop, val) {
-        if (prop === 'x') dv.setFloat32(offset, val);
-        if (prop === 'y') dv.setFloat32(offset + 4, val);
-        if (prop === 'z') dv.setFloat32(offset + 8, val);
-        if (prop === 'w') dv.setFloat32(offset + 12, val);
+        if (prop === 'x') dv.setFloat32(offset, val, true);
+        if (prop === 'y') dv.setFloat32(offset + 4, val, true);
+        if (prop === 'z') dv.setFloat32(offset + 8, val, true);
+        if (prop === 'w') dv.setFloat32(offset + 12, val, true);
 
         return Reflect.set(target, prop, val);
       }
@@ -323,8 +327,8 @@ function setVec2(target: any, prop: string | symbol, val: Vector2, dv: DataView,
     'value',
     new Proxy(val, {
       set(target, prop, val) {
-        if (prop === 'x') dv.setFloat32(offset, val);
-        if (prop === 'y') dv.setFloat32(offset + 4, val);
+        if (prop === 'x') dv.setFloat32(offset, val, true);
+        if (prop === 'y') dv.setFloat32(offset + 4, val, true);
 
         return Reflect.set(target, prop, val);
       }
@@ -339,10 +343,9 @@ function setVec3(target: any, prop: string | symbol, val: Vector3, dv: DataView,
     'value',
     new Proxy(val, {
       set(target, prop, val) {
-        console.log('vec3 proxy', 'set', prop, val);
-        if (prop === 'x') dv.setFloat32(offset, val);
-        if (prop === 'y') dv.setFloat32(offset + 4, val);
-        if (prop === 'z') dv.setFloat32(offset + 8, val);
+        if (prop === 'x') dv.setFloat32(offset, val, true);
+        if (prop === 'y') dv.setFloat32(offset + 4, val, true);
+        if (prop === 'z') dv.setFloat32(offset + 8, val, true);
 
         return Reflect.set(target, prop, val);
       }

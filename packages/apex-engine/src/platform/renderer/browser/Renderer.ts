@@ -74,7 +74,12 @@ export class BrowserRenderer implements IRenderer {
     window.addEventListener('resize', this.handleWindowResize.bind(this));
   }
 
-  public send() {}
+  public send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
+    message: T,
+    transferList: Transferable[] = []
+  ) {
+    this.messageChannel.port1.postMessage(message, transferList);
+  }
 
   private handleWindowResize() {}
 }

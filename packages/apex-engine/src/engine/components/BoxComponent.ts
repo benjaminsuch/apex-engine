@@ -7,6 +7,10 @@ import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 const temp = new THREE.Vector3();
 
 export class BoxComponentProxy extends MeshComponentProxy {
+  public positions: Float32Array = new Float32Array();
+
+  public normals: Float32Array = new Float32Array();
+
   private segmentsAround: number = 24;
 
   public override tick(time: number = 0) {

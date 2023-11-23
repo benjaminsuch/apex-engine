@@ -40,16 +40,22 @@ export function PROP(...args: Function[]) {
 
 export interface Schema {
   [key: string]: {
+    arrayType: TypedArray;
     isArray: boolean;
+    offset: number;
     pos: number;
     size: number;
     type: string;
   };
 }
 
+export function getClassSchema(constructor: TClass): Schema | undefined {
+  return Reflect.getMetadata('schema', constructor);
+}
+
 export function addPropToSchema(constructor: TClass, prop: string | symbol) {
   const key = prop.toString();
-  let schema = Reflect.getMetadata('schema', constructor);
+  let schema = getClassSchema(constructor);
 
   if (!schema) {
     schema = {};
@@ -57,10 +63,10 @@ export function addPropToSchema(constructor: TClass, prop: string | symbol) {
 
   const keys = Object.keys(schema);
   const pos = keys.length;
-  const prevKey = keys.find(val => schema[val].pos === pos - 1);
+  const prevKey = keys.find(val => schema?.[val].pos === pos - 1);
   const offset = prevKey ? schema[prevKey].offset + schema[prevKey].size : 0;
 
-  schema[key] = { offset, pos, size: 0 };
+  schema[key] = { arrayType: Uint8Array, isArray: false, offset, pos, size: 0, type: 'uint8' };
 
   Reflect.defineMetadata('schema', schema, constructor);
 }

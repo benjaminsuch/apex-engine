@@ -63,7 +63,7 @@ export abstract class ApexEngine {
 
     while (messageQueue.length) {
       const message = messageQueue.shift();
-      this.renderer.send({ ...message, type: 'proxy' });
+      this.renderer.send(message);
     }
 
     this.getGameInstance().getWorld().tick(tick);

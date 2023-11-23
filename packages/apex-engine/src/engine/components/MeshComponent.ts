@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
+import { type TripleBuffer } from '../../platform/memory/common';
 import { IRenderer } from '../../platform/renderer/common';
 import { SceneProxy } from '../SceneProxy';
 import { SceneComponent } from './SceneComponent';
@@ -15,9 +16,9 @@ export class MeshComponentProxy extends SceneProxy {
 
   public mesh: THREE.Mesh = new THREE.Mesh();
 
-  public positions: Float32Array = new Float32Array();
-
-  public normals: Float32Array = new Float32Array();
+  constructor(id: number, tb: TripleBuffer) {
+    super(id, tb);
+  }
 }
 
 @CLASS(proxy(MeshComponentProxy))

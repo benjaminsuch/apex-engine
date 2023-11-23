@@ -1,7 +1,70 @@
 import { TripleBuffer } from '../platform/memory/common';
+import { getClassSchema } from './class';
 
 export abstract class SceneProxy {
-  constructor(public readonly id: number, tb: TripleBuffer) {}
+  declare position: [number, number, number];
 
-  public tick(time: number): void {}
+  declare rotation: [number, number, number];
+
+  declare scale: [number, number, number];
+
+  declare matrix: [number, number, number, number];
+
+  declare up: [number, number, number];
+
+  constructor(public readonly id: number, tb: TripleBuffer) {
+    const originClass = Reflect.getMetadata('proxy:origin', this.constructor);
+    const schema = getClassSchema(originClass);
+
+    if (!schema) {
+      console.warn(`Unable to find the schema for "${originClass.name}".`);
+      return;
+    }
+
+    for (const key in schema) {
+      const { arrayType, offset, type } = schema[key];
+
+      if (arrayType) {
+        const size = schema[key].size / arrayType.BYTES_PER_ELEMENT;
+
+        Reflect.defineMetadata(
+          'buffers',
+          [
+            new arrayType(tb.buffers[0], offset, size),
+            new arrayType(tb.buffers[1], offset, size),
+            new arrayType(tb.buffers[2], offset, size)
+          ],
+          this,
+          key
+        );
+      }
+
+      let accessors: { get: (this: SceneProxy) => any } | undefined;
+
+      if (type === 'string') {
+      } else if (type === 'ref') {
+      } else {
+        accessors = {
+          get(this) {
+            const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
+            const data = Reflect.getMetadata('buffers', this, key);
+
+            if (data) {
+              return data[idx];
+            } else {
+              return data[idx][0];
+            }
+          }
+        };
+      }
+
+      if (accessors) {
+        Object.defineProperty(this, key, accessors);
+      }
+    }
+  }
+
+  public tick(time: number): void {
+    //console.log('posX', this.position[0]);
+  }
 }
