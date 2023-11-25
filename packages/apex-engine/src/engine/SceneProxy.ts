@@ -25,6 +25,7 @@ export abstract class SceneProxy {
       const { arrayType, offset, type } = schema[key];
 
       if (arrayType) {
+        // Typed arrays expect the size to not be in bytes
         const size = schema[key].size / arrayType.BYTES_PER_ELEMENT;
 
         Reflect.defineMetadata(

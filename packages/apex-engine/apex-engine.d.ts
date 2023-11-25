@@ -1,431 +1,782 @@
-import { Object3D, PerspectiveCamera } from 'three';
+import * as THREE from 'three';
+import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 
-export interface ILogger {
-	debug(message: string, ...args: any[]): void;
-	error(message: string, ...args: any[]): void;
-	info(message: string, ...args: any[]): void;
-	warn(message: string, ...args: any[]): void;
+declare global {
+  var DEFAULT_LEVEL: string;
+  var IS_BROWSER: string;
+  var IS_CLIENT: boolean;
+  var IS_DEV: string;
+  var IS_GAME: boolean;
+  var IS_SERVER: boolean;
+  var RENDER_ON_MAIN_THREAD: string;
+
+  enum Thread {
+    Game = 'game',
+    Render = 'render'
+  }
+
+  enum EngineTarget {
+    Client = 'client',
+    Game = 'game',
+    Server = 'server'
+  }
+
+  type TClass = { new (...args: any[]): any };
+
+  type TypedArray =
+    | typeof Float32Array
+    | typeof Int8Array
+    | typeof Int16Array
+    | typeof Int32Array
+    | typeof Uint8Array
+    | typeof Uint16Array
+    | typeof Uint32Array;
+
+  type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
+
+  type TKey =
+    | 'AltLeft'
+    | 'AltRight'
+    | 'ArrowDown'
+    | 'ArrowLeft'
+    | 'ArrowRight'
+    | 'ArrowUp'
+    | 'Backquote'
+    | 'ControlLeft'
+    | 'ControlRight'
+    | 'Digit1'
+    | 'Digit2'
+    | 'Digit3'
+    | 'Digit4'
+    | 'Digit5'
+    | 'Digit6'
+    | 'Digit7'
+    | 'Digit8'
+    | 'Digit9'
+    | 'Digit0'
+    | 'Equal'
+    | 'KeyA'
+    | 'KeyB'
+    | 'KeyC'
+    | 'KeyD'
+    | 'KeyE'
+    | 'KeyF'
+    | 'KeyG'
+    | 'KeyH'
+    | 'KeyI'
+    | 'KeyJ'
+    | 'KeyK'
+    | 'KeyL'
+    | 'KeyM'
+    | 'KeyN'
+    | 'KeyO'
+    | 'KeyP'
+    | 'KeyQ'
+    | 'KeyR'
+    | 'KeyS'
+    | 'KeyT'
+    | 'KeyU'
+    | 'KeyV'
+    | 'KeyW'
+    | 'KeyX'
+    | 'KeyY'
+    | 'KeyZ'
+    | 'Minus'
+    | 'MouseLeftClick'
+    | 'MouseRightClick'
+    | 'MouseX'
+    | 'MouseY'
+    | 'Space'
+    | 'Tab';
 }
+
 export interface ServiceIdentifier<T> {
-	(...args: any[]): void;
+  (...args: any[]): void;
 }
-export type RegisteredService = {
-	_injectibleService: undefined;
+export type ServiceDependencies = {
+  id: ServiceIdentifier<any>;
+  index: number;
+  optional: boolean;
 };
-export type GetLeadingNonServiceArgs<TArgs extends any[]> = TArgs extends [
-] ? [
-] : TArgs extends [
-	...infer TFirst,
-	RegisteredService
-] ? GetLeadingNonServiceArgs<TFirst> : TArgs;
-export interface IConsoleLogger extends ILogger {
-	readonly _injectibleService: undefined;
+export type RegisteredService = {
+  _injectibleService: undefined;
+};
+export type GetLeadingNonServiceArgs<TArgs extends any[]> = TArgs extends []
+  ? []
+  : TArgs extends [...infer TFirst, RegisteredService]
+  ? GetLeadingNonServiceArgs<TFirst>
+  : TArgs;
+export type SingletonRegistry = [ServiceIdentifier<any>, new (...services: any[]) => any][];
+export declare class ServiceCollection {
+  private readonly entries;
+  constructor(...entries: [ServiceIdentifier<any>, any][]);
+  set<T>(id: ServiceIdentifier<T>, instance: T): T;
+  has(id: ServiceIdentifier<any>): boolean;
+  get<T>(id: ServiceIdentifier<T>): T;
 }
-declare const IConsoleLogger: ServiceIdentifier<IConsoleLogger>;
+export interface ServicesAccessor {
+  get<T>(id: ServiceIdentifier<T>): T;
+}
 export interface IInstatiationService {
-	readonly _injectibleService: undefined;
-	createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(Constructor: C, ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>): R;
+  readonly _injectibleService: undefined;
+  createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(
+    Constructor: C,
+    ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
+  ): R;
+  invokeFunction<R, TS extends any[] = []>(
+    fn: (accessor: ServicesAccessor, ...args: TS) => R,
+    ...args: TS
+  ): R;
+  setServiceInstance<T>(id: ServiceIdentifier<T>, instance: T): void;
 }
-declare const IInstatiationService: ServiceIdentifier<IInstatiationService>;
-export type TRenderMessageType = "init" | "init-scene-proxy" | "set-camera" | "viewport-resize";
-export type TRenderMessageData<T = {
-	[k: string]: unknown;
-}> = {
-	[P in keyof T]: T[P];
+export declare class InstantiationService implements IInstatiationService {
+  private readonly services;
+  readonly _injectibleService: undefined;
+  private static readonly registeredServices;
+  private static registerServiceDependency;
+  private static getServiceDependencies;
+  static createDecorator<T>(serviceId: string): ServiceIdentifier<T>;
+  private static readonly singletonRegistry;
+  static registerSingleton<T, Services extends RegisteredService[]>(
+    id: ServiceIdentifier<T>,
+    Constructor: new (...services: Services) => T
+  ): void;
+  static getSingletonServices(): SingletonRegistry;
+  constructor(services?: ServiceCollection);
+  createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(
+    Constructor: C,
+    ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
+  ): R;
+  invokeFunction<R, TS extends any[] = []>(
+    fn: (accessor: ServicesAccessor, ...args: TS) => R,
+    ...args: TS
+  ): R;
+  setServiceInstance<T>(id: ServiceIdentifier<T>, instance: T): void;
+}
+export declare const IInstatiationService: ServiceIdentifier<IInstatiationService>;
+export interface ILogger {
+  debug(message: string, ...args: any[]): void;
+  error(message: string, ...args: any[]): void;
+  info(message: string, ...args: any[]): void;
+  warn(message: string, ...args: any[]): void;
+}
+export declare abstract class AbstractLogger implements ILogger {
+  abstract debug(message: string, ...args: any[]): void;
+  abstract error(message: string, ...args: any[]): void;
+  abstract info(message: string, ...args: any[]): void;
+  abstract warn(message: string, ...args: any[]): void;
+}
+export declare class ConsoleLogger extends AbstractLogger implements IConsoleLogger {
+  readonly _injectibleService: undefined;
+  debug(message: string, ...args: any[]): void;
+  error(message: string, ...args: any[]): void;
+  info(message: string, ...args: any[]): void;
+  warn(message: string, ...args: any[]): void;
+}
+export interface IConsoleLogger extends ILogger {
+  readonly _injectibleService: undefined;
+}
+export declare const IConsoleLogger: ServiceIdentifier<IConsoleLogger>;
+export declare class TripleBuffer {
+  readonly flags: Uint8Array;
+  readonly byteLength: number;
+  readonly buffers: SharedArrayBuffer[];
+  readonly byteViews: Uint8Array[];
+  static getReadBufferIndexFromFlags(flags: Uint8Array): number;
+  static swapWriteBufferFlags(flags: Uint8Array): void;
+  static swapReadBufferFlags(flags: Uint8Array): boolean;
+  private static swapWriteWithTempAndMarkChanged;
+  private static readyToRead;
+  private static swapReadWithTemp;
+  constructor(
+    flags?: Uint8Array,
+    byteLength?: number,
+    buffers?: SharedArrayBuffer[],
+    byteViews?: Uint8Array[]
+  );
+  getReadBufferIndex(): number;
+  getReadBuffer(): SharedArrayBuffer;
+  getReadView(): Uint8Array;
+  getWriteBufferIndex(): number;
+  getWriteBuffer(): SharedArrayBuffer;
+  copyToWriteBuffer(byteView: Uint8Array): void;
+  swapReadBuffer(): boolean;
+  swapWriteBuffer(): void;
+}
+export type TRenderMessageType = 'init' | 'proxy' | 'rpc' | 'set-camera' | 'viewport-resize';
+export type TRenderMessageData<
+  T = {
+    [k: string]: unknown;
+  }
+> = {
+  [P in keyof T]: T[P];
 };
 export type TRenderMessage<Type extends TRenderMessageType, Data> = {
-	type: Type;
-} & (Data extends TRenderMessageData ? TRenderMessageData<Data> : `Invalid type: 'Data' has to be of type 'object'.`);
+  type: Type;
+} & (Data extends TRenderMessageData
+  ? TRenderMessageData<Data>
+  : `Invalid type: 'Data' has to be of type 'object'.`);
+export interface TRenderWorkerInitData {
+  canvas: OffscreenCanvas;
+  initialCanvasHeight: number;
+  initialCanvasWidth: number;
+  messagePort: MessagePort;
+  flags: Uint8Array;
+}
+export type TRenderWorkerInitMessage = TRenderMessage<'init', TRenderWorkerInitData>;
+export type TRenderViewportResizeData = TRenderMessageData<{
+  height: number;
+  width: number;
+}>;
+export type TRenderViewportResizeMessage = TRenderMessage<
+  'viewport-resize',
+  TRenderViewportResizeData
+>;
+export type TTripleBufferData = Pick<
+  TripleBuffer,
+  'buffers' | 'byteLength' | 'byteViews' | 'flags'
+>;
+export type TRenderSceneProxyCreateData = TRenderMessageData<{
+  constructor: string;
+  id: number;
+  tb: Pick<TripleBuffer, 'buffers' | 'byteLength' | 'byteViews' | 'flags'>;
+}>;
+export type TRenderSceneProxyMessage = TRenderMessage<'proxy', TRenderSceneProxyCreateData>;
+export type TRenderRPCData = TRenderMessageData<{
+  id: number;
+  action: string;
+  params: unknown[];
+}>;
+export type TRenderRPCMessage = TRenderMessage<'rpc', TRenderRPCData>;
 export interface IRenderer {
-	readonly _injectibleService: undefined;
-	init(): void;
-	send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(message: T, transferList?: Transferable[]): void;
+  readonly _injectibleService: undefined;
+  init(flags: Uint8Array): void;
+  send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
+    message: T,
+    transferList?: Transferable[]
+  ): void;
 }
-declare const IRenderer: ServiceIdentifier<IRenderer>;
+export declare const IRenderer: ServiceIdentifier<IRenderer>;
+export declare class Renderer {
+  private readonly flags;
+  private readonly messagePort;
+  private readonly components;
+  private readonly logger;
+  private static instance?;
+  static getInstance(): Renderer;
+  static create(
+    canvas: OffscreenCanvas,
+    flags: Uint8Array,
+    messagePort: MessagePort,
+    components: Record<string, TClass>
+  ): Renderer;
+  private readonly proxyInstancesRegistry;
+  private readonly proxyInstances;
+  private readonly webGLRenderer;
+  private readonly scene;
+  private readonly camera;
+  constructor(
+    canvas: OffscreenCanvas,
+    flags: Uint8Array,
+    messagePort: MessagePort,
+    components: Record<string, TClass>,
+    logger: IConsoleLogger
+  );
+  init(): void;
+  start(): void;
+  setSize(height: number, width: number): void;
+  handleEvent(event: MessageEvent<TRenderSceneProxyMessage | TRenderRPCMessage>): void;
+  private tick;
+  private createProxyInstance;
+}
+export interface Tick {
+  delta: number;
+  elapsed: number;
+}
 export declare class EngineLoop {
-	private readonly instantiationService;
-	private readonly renderer;
-	private readonly logger;
-	private isExitRequested;
-	constructor(instantiationService: IInstatiationService, renderer: IRenderer, logger: IConsoleLogger);
-	init(): void;
-	tick(): void;
-	isEngineExitRequested(): boolean;
-	requestExit(): void;
-}
-export declare abstract class ApexEngine {
-	private readonly engineLoop;
-	private readonly instantiationService;
-	private readonly logger;
-	private static instance?;
-	static getInstance(): ApexEngine;
-	private gameInstance?;
-	getGameInstance(): GameInstance;
-	isRunning: boolean;
-	private isInitialized;
-	constructor(engineLoop: EngineLoop, instantiationService: IInstatiationService, logger: IConsoleLogger);
-	init(): void;
-	tick(): void;
-	start(): void;
-	exit(): void;
-	loadLevel(url: string): Promise<void>;
-}
-export declare class GameInstance {
-	private readonly engine;
-	private world?;
-	getWorld(): World;
-	constructor(engine: ApexEngine);
-	init(): void;
-	start(): void;
-}
-export declare class Level {
-	protected readonly instantiationService: IInstatiationService;
-	protected readonly renderer: IRenderer;
-	private readonly actors;
-	addActor<T extends typeof Actor>(ActorClass: T): InstanceType<T>;
-	getActors(): Actor[];
-	hasActor(actor: Actor): boolean;
-	world?: World;
-	getWorld(): World;
-	private isInitialized;
-	constructor(instantiationService: IInstatiationService, renderer: IRenderer);
-	init(): void;
-	initActors(): void;
-	beginPlay(): void;
-	isCurrentLevel(): boolean;
-	postLoad(): void;
-}
-export declare class World {
-	private readonly gameInstance;
-	private readonly actors;
-	getActors(): Actor[];
-	private currentLevel?;
-	getCurrentLevel(): Level;
-	setCurrentLevel(level: Level): void;
-	getGameInstance(): GameInstance;
-	private isInitialized;
-	constructor(gameInstance: GameInstance);
-	init(): void;
-	initActorsForPlay(): void;
-	beginPlay(): void;
-	tick(): void;
-	spawnActor<T extends typeof Actor>(ActorClass: T, level?: Level): InstanceType<T>;
-}
-export declare class ActorComponent {
-	readonly uuid: string;
-	private owner?;
-	getOwner(): Actor;
-	world?: World;
-	getWorld(): World;
-	private isInitialized;
-	init(): void;
-	beginPlay(): void;
-	tick(): void;
-	registerWithActor(actor: Actor): void;
-	protected onRegister(): void;
-}
-export declare class Euler {
-	#private;
-	static readonly ORDER_LIST: readonly [
-		"XYZ",
-		"XZY",
-		"YZX",
-		"YXZ",
-		"ZXY",
-		"ZYX"
-	];
-	static readonly DEFAULT_ORDER = "XYZ";
-	get x(): number;
-	set x(val: number);
-	get y(): number;
-	set y(val: number);
-	get z(): number;
-	set z(val: number);
-	get order(): "XYZ" | "YXZ" | "ZXY" | "ZYX" | "YZX" | "XZY";
-	set order(val: "XYZ" | "YXZ" | "ZXY" | "ZYX" | "YZX" | "XZY");
-	isEuler: boolean;
-	constructor(buffer?: ArrayBufferLike);
-	set(x: Euler["x"], y: Euler["y"], z: Euler["z"], order: Euler["order"]): this;
-	clone(): Euler;
-	copy(euler: Euler): this;
-	setFromRotationMatrix(): void;
-	setFromQuaternion(): void;
-	setFromVector3(): void;
-	reorder(): void;
-	equals(euler: Euler): boolean;
-	fromArray(array: number[]): this;
-	toArray(array?: number[], offset?: number): number[];
-	toJSON(): ArrayBufferLike;
-	[Symbol.iterator](): Generator<number | "XYZ" | "YXZ" | "ZXY" | "ZYX" | "YZX" | "XZY", void, unknown>;
-}
-export declare class Vector3 {
-	#private;
-	get x(): number;
-	set x(val: number);
-	get y(): number;
-	set y(val: number);
-	get z(): number;
-	set z(val: number);
-	isVector3: boolean;
-	constructor(buffer?: ArrayBufferLike);
-	toJSON(): ArrayBufferLike;
-	fromArray(array: ArrayLike<number>, offset?: number): this;
-	toArray(): [
-		number,
-		number,
-		number
-	];
-	set(x: Vector3["x"], y: Vector3["y"], z: Vector3["z"]): this;
-	setX(x: Vector3["x"]): this;
-	setY(y: Vector3["y"]): this;
-	setZ(z: Vector3["z"]): this;
-	clone(): Vector3;
-	copy(vec: Vector3): this;
-	add(vec: Vector3): this;
-	addScalar(val: number): this;
-	addVectors(a: Vector3, b: Vector3): this;
-	sub(vec: Vector3): this;
-	subScalar(val: number): this;
-	multiply(vec: Vector3): this;
-	multiplyScalar(val: number): this;
-	multiplyVectors(a: Vector3, b: Vector3): this;
-	divide(vec: Vector3): this;
-	divideScalar(val: number): this;
-	clamp(min: Vector3, max: Vector3): this;
-	clampScalar(min: number, max: number): this;
-	ceil(): this;
-	floor(): this;
-	round(): this;
-	roundToZero(): this;
-	negate(): this;
-	dot(v: Vector3): number;
-	length(): number;
-	setFromMatrixColumn(matrix: Matrix4, index: number): this;
-	setFromMatrix3Column(matrix: Matrix3, index: number): this;
-	setFromEuler(euler: Euler): this;
-	equals(vector: Vector3): boolean;
-	random(): this;
-	randomDirection(): this;
-	[Symbol.iterator](): Generator<number, void, unknown>;
-}
-export declare class Matrix4 {
-	#private;
-	get elements(): Float32Array;
-	isMatrix4: boolean;
-	constructor(buffer?: ArrayBufferLike);
-	set(n11: number, n12: number, n13: number, n14: number, n21: number, n22: number, n23: number, n24: number, n31: number, n32: number, n33: number, n34: number, n41: number, n42: number, n43: number, n44: number): this;
-	identity(): this;
-	clone(): Matrix4;
-	copy(matrix: Matrix4): this;
-	copyPosition(matrix: Matrix4): this;
-	setFromMatrix3(matrix: Matrix4): this;
-	extractBasis(xAxis: Vector3, yAxis: Vector3, zAxis: Vector3): this;
-	makeBasis(xAxis: Vector3, yAxis: Vector3, zAxis: Vector3): this;
-	makeRotationFromEuler(euler: Euler): this;
-	multiply(matrix: Matrix4): this;
-	premultiply(matrix: Matrix4): this;
-	multiplyMatrices(a: Matrix4, b: Matrix4): this;
-	multiplyScalar(scalar: number): this;
-	determinant(): number;
-	transpose(): this;
-	setPosition(x: Vector3 | number, y: number, z: number): this;
-	invert(): this;
-	scale(vector: Vector3): this;
-	getMaxScaleOnAxis(): number;
-	makeTranslation(x: number, y: number, z: number): this;
-	makeRotationX(theta: number): this;
-	makeRotationY(theta: number): this;
-	makeRotationZ(theta: number): this;
-	makeRotationAxis(axis: Vector3, angle: number): this;
-	makeScale(x: number, y: number, z: number): this;
-	makeShear(xy: number, xz: number, yx: number, yz: number, zx: number, zy: number): this;
-	makePerspective(left: number, right: number, top: number, bottom: number, near: number, far: number): this;
-	makeOrthographic(left: number, right: number, top: number, bottom: number, near: number, far: number): this;
-	equals(matrix: Matrix4): boolean;
-	fromArray(array: number[], offset?: number): this;
-	toArray(array?: number[], offset?: number): number[];
-	toJSON(): ArrayBufferLike;
-}
-export declare class Matrix3 {
-	#private;
-	get elements(): Float32Array;
-	isMatrix3: boolean;
-	constructor(buffer?: ArrayBufferLike);
-	set(n11: number, n12: number, n13: number, n21: number, n22: number, n23: number, n31: number, n32: number, n33: number): this;
-	identity(): this;
-	copy(matrix: Matrix3): this;
-	extractBasis(xAxis: Vector3, yAxis: Vector3, zAxis: Vector3): this;
-	setFromMatrix4(matrix: Matrix4): this;
-	multiply(matrix: Matrix3): this;
-	premultiply(matrix: Matrix3): this;
-	multiplyMatrices(a: Matrix3, b: Matrix3): this;
-	multiplyScalar(scalar: number): this;
-	determinant(): number;
-	invert(): this;
-	transpose(): this;
-	getNormalMatrix(matrix4: Matrix4): this;
-	transposeIntoArray(array: number[]): this;
-	setUvTransform(tx: number, ty: number, sx: number, sy: number, rotation: number, cx: number, cy: number): this;
-	scale(x: number, y: number): this;
-	rotate(theta: number): this;
-	translate(x: number, y: number): this;
-	makeTranslation(x: number, y: number): this;
-	makeRotation(theta: number): this;
-	makeScale(x: number, y: number): this;
-	equals(matrix: Matrix3): boolean;
-	fromArray(array: number[], offset?: number): this;
-	toArray(array?: number[], offset?: number): number[];
-	toJSON(): ArrayBufferLike;
-	clone(): Matrix3;
-}
-export declare class Quaternion {
-	#private;
-	static slerpFlat(dst: number[], dstOffset: number, src0: number[], srcOffset0: number, src1: number[], srcOffset1: number, t: number): void;
-	static multiplyQuaternionsFlat(dst: number[], dstOffset: number, src0: number[], srcOffset0: number, src1: number[], srcOffset1: number): number[];
-	get x(): number;
-	set x(val: number);
-	get y(): number;
-	set y(val: number);
-	get z(): number;
-	set z(val: number);
-	get w(): number;
-	set w(val: number);
-	isQuaternion: boolean;
-	constructor(buffer?: ArrayBufferLike);
-	set(x: number, y: number, z: number, w: number): this;
-	clone(): Quaternion;
-	copy(quaternion: Quaternion): this;
-	setFromEuler(euler: Euler): this;
-	setFromAxisAngle(axis: Vector3, angle: number): this;
-	setFromRotationMatrix(matrix: Matrix3): this;
-	setFromUnitVectors(from: Vector3, to: Vector3): this;
-	angleTo(quaternion: Quaternion): number;
-	rotateTowards(quaternion: Quaternion, step: number): this;
-	identity(): this;
-	invert(): this;
-	conjugate(): this;
-	dot(v: any): number;
-	lengthSq(): number;
-	length(): number;
-	normalize(): this;
-	multiply(quaternion: Quaternion): this;
-	premultiply(quaternion: Quaternion): this;
-	multiplyQuaternions(a: Quaternion, b: Quaternion): this;
-	slerp(quaternion: Quaternion, t: number): this;
-	slerpQuaternions(a: Quaternion, b: Quaternion, t: number): this;
-	random(): this;
-	equals(quaternion: Quaternion): boolean;
-	fromArray(array: number[], offset?: number): this;
-	toArray(array?: number[], offset?: number): number[];
-	fromBufferAttribute(attribute: any, index: any): this;
-	toJSON(): ArrayBufferLike;
-	[Symbol.iterator](): Generator<number, void, unknown>;
-}
-export interface SceneProxyConstructorData {
-	uuid: string;
-	objectType: SceneObjectType;
-	position: ArrayBufferLike;
-	scale: ArrayBufferLike;
-	rotation: ArrayBufferLike;
-	quaternion: ArrayBufferLike;
-	matrix: ArrayBufferLike;
-	matrixWorld: ArrayBufferLike;
-	visible: boolean;
-	children: SceneProxyConstructorData[];
-}
-export declare class SceneProxy {
-	readonly uuid: string;
-	readonly position: Vector3;
-	readonly scale: Vector3;
-	readonly rotation: Euler;
-	readonly quaternion: Quaternion;
-	readonly matrix: Matrix4;
-	readonly matrixWorld: Matrix4;
-	visible: boolean;
-	readonly sceneObject: Object3D;
-	constructor({ position, scale, rotation, quaternion, matrix, matrixWorld, uuid }: SceneProxyConstructorData);
-	tick(): void;
-}
-export interface CameraProxyConstructorData extends SceneProxyConstructorData {
-	buffer: ArrayBufferLike;
-}
-export declare class CameraSceneProxy extends SceneProxy {
-	#private;
-	fov: number;
-	aspect: number;
-	far: number;
-	near: number;
-	sceneObject: PerspectiveCamera;
-	constructor({ buffer, ...data }: CameraProxyConstructorData);
-	updateProjectionMatrix(): void;
-	updateMatrixWorld(force?: boolean): void;
-	tick(): void;
-}
-export type SceneObjectType = "Object3D" | "PerspectiveCamera";
-export declare class SceneComponent extends ActorComponent {
-	readonly position: Vector3;
-	readonly scale: Vector3;
-	readonly rotation: Euler;
-	readonly quaternion: Quaternion;
-	readonly matrix: Matrix4;
-	readonly matrixWorld: Matrix4;
-	visible: boolean;
-	private readonly children;
-	readonly objectType: SceneObjectType;
-	constructor();
-	init(): void;
-	attachToParent(parent: SceneComponent): void;
-	toJSON(): SceneProxyConstructorData;
-}
-export declare class CameraComponent extends SceneComponent {
-	#private;
-	get fov(): number;
-	set fov(val: number);
-	get aspect(): number;
-	set aspect(val: number);
-	get far(): number;
-	set far(val: number);
-	get near(): number;
-	set near(val: number);
-	readonly objectType: SceneObjectType;
-	constructor();
-	toJSON(): CameraProxyConstructorData;
-}
-export declare class Actor {
-	readonly renderer: IRenderer;
-	private rootComponent?;
-	setRootComponent(component: SceneComponent): void;
-	getRootComponent(): SceneComponent;
-	private readonly components;
-	getComponents(): ActorComponent[];
-	hasComponent(component: ActorComponent): boolean;
-	addComponent<T extends typeof ActorComponent>(ComponentClass: T, setAsRootComponent?: boolean): InstanceType<T>;
-	private level?;
-	getLevel(): Level;
-	private world?;
-	getWorld(): World;
-	private isInitialized;
-	constructor(renderer: IRenderer);
-	beginPlay(): void;
-	tick(): void;
-	preInitComponents(): void;
-	initComponents(): void;
-	postInitComponents(): void;
-	registerWithLevel(level: Level): void;
-	protected onRegister(): void;
-}
-export declare class GameEngine extends ApexEngine {
-}
-export declare class EngineUtils {
-	static hasDefinedTickMethod(target: object): boolean;
+  private readonly instantiationService;
+  private readonly renderer;
+  private readonly logger;
+  private isExitRequested;
+  private tickInterval;
+  delta: number;
+  elapsed: number;
+  frames: number;
+  fps: number;
+  constructor(
+    instantiationService: IInstatiationService,
+    renderer: IRenderer,
+    logger: IConsoleLogger
+  );
+  init(): void;
+  tick(): void;
+  isEngineExitRequested(): boolean;
+  requestExit(): void;
 }
 export declare class Pawn extends Actor {
+  controller: PlayerController | null;
+  inputComponent: InputComponent | null;
+  possessBy(player: PlayerController): void;
+  unpossessed(): void;
+  restart(): void;
+  protected setupInputComponent(): void;
+}
+export declare class PlayerInput {
+  private readonly keyStates;
+  private readonly axisMappings;
+  private readonly axisKeyMap;
+  private readonly actionMappings;
+  private readonly actionKeyMap;
+  private isKeyMapBuilt;
+  constructor();
+  processInputStack(inputStack: InputComponent[], delta: number): void;
+  getKeyValue(key: TKey): number;
+  getKeyRawValue(key: TKey): number;
+  addMapping(mapping: InputActionMap | InputAxisMap): boolean;
+  handleEvent(event: KeyboardEvent | MouseEvent | PointerEvent | TouchEvent): void;
+  private handleContextMenu;
+  private handleMouseMove;
+  private handleMouseDown;
+  private handleMouseUp;
+  private handleKeyDown;
+  private handleKeyUp;
+  private determineAxisValue;
+  private buildKeyMappings;
+}
+export declare class InputActionMap {
+  readonly name: string;
+  readonly key: TKey;
+  shift: boolean;
+  ctrl: boolean;
+  alt: boolean;
+  cmd: boolean;
+  constructor(
+    name: string,
+    key: TKey,
+    shift?: boolean,
+    ctrl?: boolean,
+    alt?: boolean,
+    cmd?: boolean
+  );
+}
+export declare class InputAxisMap {
+  readonly name: string;
+  readonly key: TKey;
+  readonly scale: number;
+  constructor(name: string, key: TKey, scale: number);
+}
+export declare class KeyState {
+  rawValue: Vector3;
+  value: Vector3;
+  isPressed: boolean;
+  isConsumed: boolean;
+  lastUsedTime: number;
+  sampleCount: number;
+  constructor(rawValue: Vector3, value: Vector3, isPressed?: boolean, isConsumed?: boolean);
+}
+export declare enum EKeyEvent {
+  DoubleClick = 0,
+  Pressed = 1,
+  Released = 2
 }
 export declare class PlayerController extends Actor {
-	protected pawn?: Pawn;
-	protected camera?: CameraComponent;
-	getPawn(): Pawn | undefined;
-	setPawn(pawn: Pawn): void;
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  readonly renderer: IRenderer;
+  protected pawn: Pawn | null;
+  getPawn(): Pawn;
+  setPawn(pawn: PlayerController['pawn']): void;
+  protected camera?: any;
+  readonly playerInput: PlayerInput;
+  constructor(
+    instantiationService: IInstatiationService,
+    logger: IConsoleLogger,
+    renderer: IRenderer
+  );
+  tick(tick: Tick): void;
+  beginPlay(): void;
+  possess(pawn: Pawn): void;
+  unpossess(): void;
+  private buildInputStack;
 }
+declare class Player {
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  playerController: PlayerController | null;
+  getPlayerController(): PlayerController;
+  constructor(instantiationService: IInstatiationService, logger: IConsoleLogger);
+  spawnPlayActor(world: World): void;
+}
+declare class ControlChannel extends DataChannel {}
+declare class VoiceChannel extends DataChannel {}
+declare enum EConnectionState {
+  Pending = 0,
+  Open = 1,
+  Closed = 2
+}
+declare class NetConnection extends Player {
+  private packetHandler;
+  netDriver: INetDriver | null;
+  controlChannel: ControlChannel | null;
+  voiceChannel: VoiceChannel | null;
+  readonly openChannels: DataChannel[];
+  readonly tickChannels: DataChannel[];
+  state: EConnectionState;
+  init(netDriver: INetDriver): void;
+  receiveRawPacket(packet: ArrayBuffer): void;
+  close(): void;
+  tick(): void;
+  flush(): void;
+  private createInitialChannels;
+  private initPacketHandler;
+}
+declare class DataChannel {
+  connection: NetConnection | null;
+  isClosing: boolean;
+  init(connection: NetConnection): void;
+  close(): void;
+  send(): void;
+  tick(): void;
+}
+declare class PacketHandler {
+  protected readonly logger: IConsoleLogger;
+  private readonly handlerComponents;
+  isInitialized: boolean;
+  constructor(logger: IConsoleLogger);
+  init(): void;
+  incomingPacket(packet: ArrayBuffer): ArrayBuffer;
+  tick(): void;
+  getQueuedPackets(): never[];
+}
+export interface INetDriver {
+  readonly _injectibleService: undefined;
+  packetHandler: PacketHandler | null;
+  world: World | null;
+  close(): void;
+  connect(): void;
+  disconnect(): void;
+  init(world: World): void;
+  join(): void;
+  listen(): void;
+  tick(): void;
+  send(data: ArrayBufferLike): void;
+}
+export declare const INetDriver: ServiceIdentifier<INetDriver>;
+export declare abstract class WebSocketNetDriverBase implements INetDriver {
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  readonly _injectibleService: undefined;
+  packetHandler: PacketHandler | null;
+  world: World | null;
+  constructor(instantiationService: IInstatiationService, logger: IConsoleLogger);
+  init(world: World): void;
+  listen(): void;
+  connect(): void;
+  disconnect(): void;
+  createChannel(Class: typeof DataChannel): DataChannel;
+  close(): void;
+  join(): void;
+  tick(): void;
+  send(data: ArrayBufferLike): void;
+  handleEvent(event: Event | MessageEvent): void;
+}
+export declare abstract class ApexEngine {
+  protected readonly engineLoop: EngineLoop;
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  protected readonly renderer: IRenderer;
+  private static instance?;
+  static getInstance(): ApexEngine;
+  private gameInstance?;
+  getGameInstance(): GameInstance;
+  static GAME_FLAGS: Uint8Array;
+  isRunning: boolean;
+  isInitialized: boolean;
+  constructor(
+    engineLoop: EngineLoop,
+    instantiationService: IInstatiationService,
+    logger: IConsoleLogger,
+    renderer: IRenderer
+  );
+  init(): void;
+  tick(tick: Tick): void;
+  start(): void;
+  exit(): void;
+  loadLevel(url: string): Promise<void>;
+}
+export declare class GameMode extends Actor {
+  readonly playerPawnClass: typeof Pawn;
+  readonly playerControllerClass: typeof PlayerController;
+  preLogin(): void;
+  login(): PlayerController;
+  postLogin(player: PlayerController): void;
+  restartPlayer(playerController: PlayerController, transform?: Matrix4): void;
+  findPlayerStartLocation(): Matrix4;
+  spawnPlayerController(): PlayerController;
+  spawnDefaultPlayerPawn(): Pawn;
+  welcomePlayer(connection: NetConnection): void;
+  private initPlayer;
+}
+export declare class GameInstance {
+  private readonly engine;
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  protected readonly netDriver: INetDriver;
+  private defaultGameModeClass;
+  private gameModeClassAliases;
+  private world;
+  getWorld(): World;
+  private player;
+  getPlayer(): Player;
+  constructor(
+    engine: ApexEngine,
+    instantiationService: IInstatiationService,
+    logger: IConsoleLogger,
+    netDriver: INetDriver
+  );
+  init(): void;
+  start(): void;
+  createPlayer(withPlayerController?: boolean): void;
+  createGameModeFromURL(url: string): Promise<GameMode>;
+  private getGameModeByName;
+}
+export declare class GameModeMap {
+  readonly name: string;
+  readonly classFilePath: string;
+  constructor(name: string, classFilePath: string);
+}
+export declare class Level {
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  protected readonly renderer: IRenderer;
+  readonly actors: Set<Actor>;
+  addActor<T extends typeof Actor>(ActorClass: T): InstanceType<T>;
+  removeActor(actor: Actor): void;
+  hasActor(actor: Actor): boolean;
+  world?: World;
+  getWorld(): World;
+  isInitialized: boolean;
+  constructor(
+    instantiationService: IInstatiationService,
+    logger: IConsoleLogger,
+    renderer: IRenderer
+  );
+  init(): void;
+  initActors(): void;
+  beginPlay(): void;
+  isCurrentLevel(): boolean;
+  postLoad(world: World): void;
+  dispose(): void;
+}
+export declare class World {
+  protected readonly logger: IConsoleLogger;
+  protected readonly netDriver: INetDriver;
+  private readonly playerControllers;
+  addPlayerController(controller: PlayerController): void;
+  removePlayerController(controller: PlayerController): void;
+  readonly actors: Set<Actor>;
+  currentLevel: Level | null;
+  getCurrentLevel(): Level;
+  setCurrentLevel(level: Level): void;
+  private gameMode;
+  setGameMode(url: string): Promise<void>;
+  getGameMode(): GameMode;
+  private gameInstance;
+  getGameInstance(): GameInstance;
+  isInitialized: boolean;
+  constructor(logger: IConsoleLogger, netDriver: INetDriver);
+  init(gameInstance: GameInstance): void;
+  initActorsForPlay(): void;
+  beginPlay(): void;
+  cleanUp(): void;
+  tick(tick: Tick): void;
+  spawnActor<T extends typeof Actor>(ActorClass: T, level?: Level | null): InstanceType<T>;
+  destroyActor(actor: Actor): void;
+  spawnPlayActor(player: Player): PlayerController;
+  welcomePlayer(connection: NetConnection): void;
+}
+export declare class ActorComponent {
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  readonly uuid: string;
+  private owner?;
+  getOwner(): Actor;
+  world?: World;
+  getWorld(): World;
+  isInitialized: boolean;
+  constructor(instantiationService: IInstatiationService, logger: IConsoleLogger);
+  init(): void;
+  beginPlay(): void;
+  tick(tick: Tick): void;
+  registerWithActor(actor: Actor): void;
+  dispose(): void;
+  protected onRegister(): void;
+}
+export declare abstract class SceneProxy {
+  readonly id: number;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: [number, number, number];
+  matrix: [number, number, number, number];
+  up: [number, number, number];
+  constructor(id: number, tb: TripleBuffer);
+  tick(time: number): void;
+}
+export type SceneObjectType = 'Box' | 'Object3D' | 'PerspectiveCamera';
+export declare class SceneComponent extends ActorComponent {
+  position: Vector3;
+  rotation: Euler;
+  scale: Vector3;
+  matrix: Matrix4;
+  quaternion: Quaternion;
+  up: Vector3;
+  visible: boolean;
+  castShadow: boolean;
+  receiveShadow: boolean;
+  parent: SceneComponent | null;
+  childIndex: number;
+  children: SceneComponent[];
+  attachToComponent(parent: SceneComponent): true | undefined;
+  detachFromParent(parent: SceneComponent): true | undefined;
+  detachFromComponent(component: SceneComponent): true | undefined;
+  isAttachedTo(component: SceneComponent): boolean;
+}
+export declare class MeshComponentProxy extends SceneProxy {
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material;
+  mesh: THREE.Mesh;
+  constructor(id: number, tb: TripleBuffer);
+  tick(time: number): void;
+}
+export declare class MeshComponent extends SceneComponent {
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  protected readonly renderer: IRenderer;
+  constructor(
+    instantiationService: IInstatiationService,
+    logger: IConsoleLogger,
+    renderer: IRenderer
+  );
+}
+export declare class BoxComponentProxy extends MeshComponentProxy {
+  positions: Float32Array;
+  normals: Float32Array;
+  private segmentsAround;
+  tick(time?: number): void;
+  makeSpherePositions(segmentsAround: number, segmentsDown: number): void;
+}
+export declare class BoxComponent extends MeshComponent {
+  makeSpherePositions(segmentsAround: number, segmentsDown: number): void;
+}
+export declare class CameraComponent extends SceneComponent {
+  #private;
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  get fov(): number;
+  set fov(val: number);
+  get aspect(): number;
+  set aspect(val: number);
+  get far(): number;
+  set far(val: number);
+  get near(): number;
+  set near(val: number);
+  constructor(instantiationService: IInstatiationService, logger: IConsoleLogger);
+}
+export declare class InputComponent extends ActorComponent {
+  readonly actionBindings: InputActionBinding[];
+  readonly axisBindings: InputAxisBinding[];
+  blockInput: boolean;
+  buildKeyMap(): void;
+  bindAxis<T extends Actor>(name: InputAxisBinding['name'], ref: T, fn: Function): void;
+  unbindAxis(name: InputAxisBinding['name']): void;
+  bindAction<T extends Actor>(
+    name: InputActionBinding['name'],
+    ref: T,
+    fn: Function,
+    event: EKeyEvent
+  ): void;
+  unbindAction(name: InputActionBinding['name']): void;
+}
+export declare class InputBinding {
+  consumeInput: boolean;
+  executeWhenPaused: boolean;
+}
+export declare class InputActionBinding extends InputBinding {
+  readonly name: string;
+  readonly handle: Function;
+  readonly event: EKeyEvent;
+  constructor(name: string, handle: Function, event: EKeyEvent);
+}
+export declare class InputAxisBinding extends InputBinding {
+  readonly name: string;
+  readonly handle: Function;
+  value: number;
+  constructor(name: string, handle: Function, value?: number);
+}
+export type ActorComponentType = new (...args: any[]) => ActorComponent;
+export declare class Actor {
+  protected readonly instantiationService: IInstatiationService;
+  protected readonly logger: IConsoleLogger;
+  readonly renderer: IRenderer;
+  private rootComponent?;
+  setRootComponent(component: SceneComponent): void;
+  getRootComponent(): SceneComponent;
+  readonly components: Set<ActorComponent>;
+  getComponent<T extends ActorComponentType>(ComponentClass: T): InstanceType<T> | undefined;
+  hasComponent(component: ActorComponent): boolean;
+  addComponent<T extends ActorComponentType, R extends InstanceType<T>>(
+    ComponentClass: T,
+    ...args: GetLeadingNonServiceArgs<ConstructorParameters<T>>
+  ): R;
+  private level?;
+  getLevel(): Level;
+  private world?;
+  getWorld(): World;
+  isInitialized: boolean;
+  constructor(
+    instantiationService: IInstatiationService,
+    logger: IConsoleLogger,
+    renderer: IRenderer
+  );
+  beginPlay(): void;
+  tick(tick: Tick): void;
+  preInitComponents(): void;
+  initComponents(): void;
+  postInitComponents(): void;
+  registerWithLevel(level: Level): void;
+  dispose(): void;
+  protected onRegister(): void;
+}
+export declare class GameEngine extends ApexEngine {}
+export declare class EngineUtils {
+  static hasDefinedTickMethod(target: object): boolean;
+}
+export type ClassDecoratorFunction = (constructor: TClass) => TClass;
+export declare function CLASS(
+  ...classFns: ClassDecoratorFunction[]
+): <T extends TClass>(constructor: T, ...rest: unknown[]) => T;
+export declare function PROP(
+  ...args: Function[]
+): (target: InstanceType<TClass>, prop: string | symbol) => void;
+export interface Schema {
+  [key: string]: {
+    arrayType: TypedArray;
+    isArray: boolean;
+    offset: number;
+    pos: number;
+    size: number;
+    type: string;
+  };
+}
+export declare function getClassSchema(constructor: TClass): Schema | undefined;
+export declare function addPropToSchema(constructor: TClass, prop: string | symbol): void;
+export declare function getPropFromSchema(constructor: TClass, prop: string | symbol): any;
+export declare function setPropOnSchema(
+  constructor: TClass,
+  prop: string | symbol,
+  key: string,
+  value: any
+): void;
+export declare function getTargetId(target: InstanceType<TClass>): undefined | number;
 
 export {};

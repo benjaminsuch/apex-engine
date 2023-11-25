@@ -9,7 +9,7 @@ import { type World } from './World';
 export type ActorComponentType = new (...args: any[]) => ActorComponent;
 
 export class Actor {
-  private rootComponent?: SceneComponent;
+  protected rootComponent?: SceneComponent;
 
   public setRootComponent(component: SceneComponent) {
     //todo: Dispose previous root component

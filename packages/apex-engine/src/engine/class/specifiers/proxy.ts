@@ -10,27 +10,28 @@ export const messageQueue: any[] = [];
 export function proxy(proxyClass: TClass) {
   return (constructor: TClass) => {
     const schema = Reflect.getMetadata('schema', constructor);
-
-    Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
-
     const bufferSize = Reflect.getMetadata('byteLength', constructor);
 
-    class ProxyOrigin extends constructor {
-      private tripleBuffer: TripleBuffer;
+    // We define the proxy-origin class as a metadata, so that we can easily
+    // access it in `SceneProxy`, when we construct the proxy on the render-thread.
+    Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
 
-      private byteView: Uint8Array;
+    class ProxyOrigin extends constructor {
+      #tripleBuffer: TripleBuffer;
+
+      #byteView: Uint8Array;
 
       constructor(...args: any[]) {
         super(...args);
 
         id(this);
 
-        this.tripleBuffer = new TripleBuffer(ApexEngine.GAME_FLAGS, bufferSize);
+        this.#tripleBuffer = new TripleBuffer(ApexEngine.GAME_FLAGS, bufferSize);
 
         const buf = new ArrayBuffer(bufferSize);
         const dv = new DataView(buf);
 
-        this.byteView = new Uint8Array(buf);
+        this.#byteView = new Uint8Array(buf);
 
         for (const key in schema) {
           const { offset, size, type } = schema[key];
@@ -231,14 +232,14 @@ export function proxy(proxyClass: TClass) {
           type: 'proxy',
           constructor: proxyClass.name,
           id: getTargetId(this),
-          tb: this.tripleBuffer
+          tb: this.#tripleBuffer
         });
       }
 
       public tick() {
         super.tick();
 
-        this.tripleBuffer.copyToWriteBuffer(this.byteView);
+        this.#tripleBuffer.copyToWriteBuffer(this.#byteView);
       }
     }
 

@@ -335,6 +335,11 @@ cli
     if (!existsSync(APEX_DIR)) {
         mkdirSync(APEX_DIR);
     }
+    const hasPlatform = targets.find(item => item.platform === platform);
+    if (!hasPlatform) {
+        console.warn(`No config defined for platform "${platform}". Please check your apex.config.ts.`);
+        process.exit(0);
+    }
     for (let targetConfig of targets) {
         targetConfig = { ...defaultTargetConfig, ...targetConfig };
         if (platform && targetConfig.platform !== platform) {
@@ -600,6 +605,11 @@ async function serveElectronTarget(target) {
     if (existsSync(buildDir)) {
         await rimraf(buildDir);
     }
+    fs.copy('src/assets', resolve(buildDir, 'assets'), err => {
+        if (err) {
+            console.error('Error copying folder:', err);
+        }
+    });
     process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
     const watcherMain = watch({
         ...createRollupConfig('electron-main', {

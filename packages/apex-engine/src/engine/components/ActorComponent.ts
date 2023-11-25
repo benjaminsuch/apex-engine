@@ -9,6 +9,9 @@ import { World } from '../World';
 export class ActorComponent {
   public readonly uuid: string = MathUtils.generateUUID();
 
+  /**
+   * The actor that owns this component.
+   */
   private owner?: Actor;
 
   public getOwner() {
