@@ -15,6 +15,7 @@ export class Actor {
     //todo: Dispose previous root component
     //todo: Send message to render-thread
     this.rootComponent = component;
+    this.rootComponent.isRootComponent = true;
   }
 
   public getRootComponent() {

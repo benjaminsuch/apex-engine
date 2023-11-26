@@ -9,6 +9,7 @@ import {
   LinearToneMapping,
   Mesh,
   MeshPhongMaterial,
+  Object3D,
   PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
@@ -61,6 +62,7 @@ export type TRenderSceneProxyCreateData = TRenderMessageData<{
   constructor: string;
   id: number;
   tb: Pick<TripleBuffer, 'buffers' | 'byteLength' | 'byteViews' | 'flags'>;
+  children: TRenderSceneProxyCreateData[];
 }>;
 
 export type TRenderSceneProxyMessage = TRenderMessage<'proxy', TRenderSceneProxyCreateData>;
@@ -173,6 +175,7 @@ export class Renderer {
   public init() {
     this.messagePort.addEventListener('message', this);
     this.messagePort.start();
+    console.log('scene', this.scene);
   }
 
   public start() {
@@ -205,13 +208,14 @@ export class Renderer {
     TripleBuffer.swapReadBufferFlags(this.flags);
 
     for (let i = 0; i < createProxyMessages.length; ++i) {
-      const { constructor, id, tb } = createProxyMessages[i];
+      const { children, constructor, id, tb } = createProxyMessages[i];
 
       if (
         this.createProxyInstance(
           id,
           constructor,
-          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers)
+          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+          children
         )
       ) {
         createProxyMessages.splice(i, 1);
@@ -244,7 +248,9 @@ export class Renderer {
   private createProxyInstance(
     id: TRenderSceneProxyCreateData['id'],
     constructor: TRenderSceneProxyCreateData['constructor'],
-    tb: TripleBuffer
+    tb: TripleBuffer,
+    children: TRenderSceneProxyCreateData['children'],
+    parent?: InstanceType<TClass>
   ) {
     const Constructor = this.components[constructor as keyof typeof this.components] as TClass;
 
@@ -254,8 +260,22 @@ export class Renderer {
 
     const instance = new Constructor(id, tb);
 
-    if (instance.mesh) {
-      this.scene.add(instance.mesh);
+    for (let i = 0; i < children.length; ++i) {
+      const child = children[i];
+
+      this.createProxyInstance(
+        child.id,
+        child.constructor,
+        new TripleBuffer(child.tb.flags, child.tb.byteLength, child.tb.buffers),
+        child.children,
+        instance
+      );
+    }
+
+    if (parent) {
+      parent.sceneObject.add(instance.sceneObject);
+    } else {
+      this.scene.add(instance.sceneObject);
     }
 
     this.proxyInstancesRegistry.set(id, instance);

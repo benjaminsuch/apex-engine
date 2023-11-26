@@ -5,7 +5,7 @@ import { IRenderer } from '../platform/renderer/common';
 import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
-import { messageQueue } from './class/specifiers/proxy';
+import { proxyQueue } from './class/specifiers/proxy';
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;
@@ -61,8 +61,8 @@ export abstract class ApexEngine {
   public tick(tick: Tick) {
     TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
 
-    while (messageQueue.length) {
-      const message = messageQueue.shift();
+    while (proxyQueue.length) {
+      const message = proxyQueue.shift();
       this.renderer.send(message);
     }
 

@@ -1,15 +1,23 @@
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 
-import { SceneProxy } from '../SceneProxy';
+import { type TripleBuffer } from '../../platform/memory/common';
 import { CLASS, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
 import { boolean, mat4, quat, serialize, vec3 } from '../class/specifiers/serialize';
+import { SceneProxy } from '../SceneProxy';
 import { ActorComponent } from './ActorComponent';
 
+// The Renderer expects scene proxies to be exported from a component file
 export class SceneComponentProxy extends SceneProxy {}
 
 @CLASS(proxy(SceneComponentProxy))
 export class SceneComponent extends ActorComponent {
+  declare static readonly proxyClassName: string;
+
+  declare byteView: Uint8Array;
+
+  declare tripleBuffer: TripleBuffer;
+
   @PROP(serialize(vec3))
   public position: Vector3 = new Vector3();
 
@@ -36,6 +44,8 @@ export class SceneComponent extends ActorComponent {
 
   @PROP(serialize(boolean))
   public receiveShadow: boolean = false;
+
+  public isRootComponent: boolean = false;
 
   /**
    * The component it is attached to.

@@ -5,7 +5,15 @@ import { ApexEngine } from '../../ApexEngine';
 import { getClassSchema, getTargetId } from '../class';
 import { id } from './id';
 
-export const messageQueue: any[] = [];
+export const proxyQueue: any[] = [];
+
+interface ProxyChildren {
+  type: string;
+  constructor: string;
+  id: number;
+  tb: any;
+  children: ProxyChildren[];
+}
 
 export function proxy(proxyClass: TClass) {
   return (constructor: TClass) => {
@@ -18,6 +26,8 @@ export function proxy(proxyClass: TClass) {
 
     return class extends constructor {
       public static override readonly name: string = constructor.name;
+
+      public static readonly proxyClassName: string = proxyClass.name;
 
       public tripleBuffer?: TripleBuffer;
 
@@ -327,13 +337,38 @@ export function proxy(proxyClass: TClass) {
             Object.defineProperty(this, key, accessors);
           }
         }
+      }
 
-        messageQueue.push({
-          type: 'proxy',
-          constructor: proxyClass.name,
-          id: getTargetId(this),
-          tb: this.tripleBuffer
-        });
+      public beginPlay() {
+        if (this.isRootComponent) {
+          function traverse(inChildren: any[]) {
+            const outChildren: ProxyChildren[] = [];
+
+            for (let i = 0; i < inChildren.length; ++i) {
+              const child = inChildren[i];
+
+              outChildren.push({
+                type: 'proxy',
+                constructor: child.constructor.proxyClassName,
+                id: getTargetId(child) as number,
+                tb: child.tripleBuffer,
+                children: traverse(child.children)
+              });
+            }
+
+            return outChildren;
+          }
+
+          proxyQueue.push({
+            type: 'proxy',
+            constructor: proxyClass.name,
+            id: getTargetId(this) as number,
+            tb: this.tripleBuffer,
+            children: traverse(this.children)
+          });
+        }
+
+        super.beginPlay();
       }
 
       public tick() {

@@ -1,3 +1,5 @@
+import { Object3D } from 'three';
+
 import { TripleBuffer } from '../platform/memory/common';
 import { getClassSchema } from './class';
 
@@ -36,6 +38,8 @@ export abstract class SceneProxy {
   declare castShadow: boolean;
 
   declare receiveShadow: boolean;
+
+  public sceneObject: Object3D = new Object3D();
 
   constructor(public readonly id: number, tb: TripleBuffer) {
     const originClass = Reflect.getMetadata('proxy:origin', this.constructor);
@@ -96,5 +100,13 @@ export abstract class SceneProxy {
     }
   }
 
-  public tick(time: number): void {}
+  public tick(time: number): void {
+    this.sceneObject.castShadow = this.castShadow;
+    this.sceneObject.receiveShadow = this.receiveShadow;
+    this.sceneObject.visible = this.visible;
+    this.sceneObject.position.fromArray(this.position);
+    this.sceneObject.rotation.fromArray(this.rotation);
+    this.sceneObject.scale.fromArray(this.scale);
+    this.sceneObject.up.fromArray(this.up);
+  }
 }
