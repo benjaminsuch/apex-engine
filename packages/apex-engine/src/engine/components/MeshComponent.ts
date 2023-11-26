@@ -7,7 +7,7 @@ import { IRenderer } from '../../platform/renderer/common';
 import { SceneProxy } from '../SceneProxy';
 import { CLASS, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
-import { float32, serialize } from '../class/specifiers/serialize';
+import { float32, int16, serialize } from '../class/specifiers/serialize';
 import { SceneComponent } from './SceneComponent';
 
 export class MeshComponentProxy extends SceneProxy {
@@ -27,14 +27,13 @@ export class MeshComponentProxy extends SceneProxy {
     this.mesh.position.fromArray(this.position);
     this.mesh.rotation.fromArray(this.rotation);
     this.mesh.scale.fromArray(this.scale);
-    this.mesh.matrix.fromArray(this.matrix);
     this.mesh.up.fromArray(this.up);
   }
 }
 
 @CLASS(proxy(MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
-  @PROP(serialize(float32))
+  @PROP(serialize(int16))
   public test: number = 8;
 
   constructor(

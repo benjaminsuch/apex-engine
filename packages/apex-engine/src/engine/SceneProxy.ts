@@ -8,9 +8,34 @@ export abstract class SceneProxy {
 
   declare scale: [number, number, number];
 
-  declare matrix: [number, number, number, number];
+  declare matrix: [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number
+  ];
+
+  declare quaternion: [number, number, number, number];
 
   declare up: [number, number, number];
+
+  declare visible: boolean;
+
+  declare castShadow: boolean;
+
+  declare receiveShadow: boolean;
 
   constructor(public readonly id: number, tb: TripleBuffer) {
     const originClass = Reflect.getMetadata('proxy:origin', this.constructor);
@@ -23,27 +48,33 @@ export abstract class SceneProxy {
 
     for (const key in schema) {
       const { arrayType, offset, type } = schema[key];
+      // Typed arrays expect the size to not be in bytes
+      const size = schema[key].size / arrayType.BYTES_PER_ELEMENT;
 
-      if (arrayType) {
-        // Typed arrays expect the size to not be in bytes
-        const size = schema[key].size / arrayType.BYTES_PER_ELEMENT;
-
-        Reflect.defineMetadata(
-          'buffers',
-          [
-            new arrayType(tb.buffers[0], offset, size),
-            new arrayType(tb.buffers[1], offset, size),
-            new arrayType(tb.buffers[2], offset, size)
-          ],
-          this,
-          key
-        );
-      }
+      Reflect.defineMetadata(
+        'buffers',
+        [
+          new arrayType(tb.buffers[0], offset, size),
+          new arrayType(tb.buffers[1], offset, size),
+          new arrayType(tb.buffers[2], offset, size)
+        ],
+        this,
+        key
+      );
 
       let accessors: { get: (this: SceneProxy) => any } | undefined;
 
       if (type === 'string') {
       } else if (type === 'ref') {
+      } else if (type === 'boolean') {
+        accessors = {
+          get(this) {
+            const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
+            const data = Reflect.getMetadata('buffers', this, key);
+
+            return Boolean(data[idx][0]);
+          }
+        };
       } else {
         accessors = {
           get(this) {
@@ -65,7 +96,5 @@ export abstract class SceneProxy {
     }
   }
 
-  public tick(time: number): void {
-    //console.log('posX', this.position[0]);
-  }
+  public tick(time: number): void {}
 }
