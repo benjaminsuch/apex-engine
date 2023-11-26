@@ -254,7 +254,10 @@ export class Renderer {
 
     const instance = new Constructor(id, tb);
 
-    this.scene.add(instance.mesh);
+    if (instance.mesh) {
+      this.scene.add(instance.mesh);
+    }
+
     this.proxyInstancesRegistry.set(id, instance);
     this.proxyInstances.push(instance);
 

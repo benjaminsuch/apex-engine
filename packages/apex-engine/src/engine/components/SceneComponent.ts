@@ -1,11 +1,16 @@
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 
-import { PROP } from '../class';
+import { SceneProxy } from '../SceneProxy';
+import { CLASS, PROP, Schema } from '../class';
+import { proxy } from '../class/specifiers/proxy';
 import { boolean, mat4, quat, serialize, vec3 } from '../class/specifiers/serialize';
 import { ActorComponent } from './ActorComponent';
 
 export type SceneObjectType = 'Box' | 'Object3D' | 'PerspectiveCamera';
 
+export class SceneComponentProxy extends SceneProxy {}
+
+@CLASS(proxy(SceneComponentProxy))
 export class SceneComponent extends ActorComponent {
   @PROP(serialize(vec3))
   public position: Vector3 = new Vector3();

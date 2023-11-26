@@ -18,7 +18,7 @@ declare global {
     Server = 'server'
   }
 
-  type TClass = { new (...args: any[]): any };
+  type TClass<T = any> = { new (...args: any[]): T };
 
   type TypedArray =
     | typeof Float32Array

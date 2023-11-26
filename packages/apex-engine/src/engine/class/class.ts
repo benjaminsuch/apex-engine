@@ -4,15 +4,25 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
   return function <T extends TClass>(constructor: T, ...rest: unknown[]) {
     console.log('CLASS:', constructor.name, rest);
 
-    if (!Reflect.getMetadata('schema', constructor)) {
+    if (!getClassSchema(constructor)) {
       Reflect.defineMetadata('schema', {}, constructor);
     }
 
-    const schema = Reflect.getMetadata('schema', constructor);
+    let schema = getClassSchema(constructor)!;
+    let currentTarget = constructor;
+
+    while (currentTarget) {
+      schema = { ...Reflect.getOwnMetadata('schema', currentTarget), ...schema };
+      currentTarget = Object.getPrototypeOf(currentTarget);
+    }
+
+    Reflect.defineMetadata('schema', schema, constructor);
+    console.log('schema', Reflect.getOwnMetadata('schema', constructor));
+
     let byteLength = 0;
 
-    for (const config of Object.values(schema)) {
-      byteLength += (config as any).size;
+    for (const key in schema) {
+      byteLength += schema[key].size;
     }
 
     Reflect.defineMetadata('byteLength', byteLength, constructor);
@@ -21,7 +31,6 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
       constructor = fn(constructor) as T;
     }
 
-    console.log('schema', Reflect.getMetadata('schema', constructor));
     return constructor;
   };
 }
@@ -50,10 +59,10 @@ export interface Schema {
 }
 
 export function getClassSchema(constructor: TClass): Schema | undefined {
-  return Reflect.getMetadata('schema', constructor);
+  return Reflect.getOwnMetadata('schema', constructor);
 }
 
-export function addPropToSchema(constructor: TClass, prop: string | symbol) {
+export function addPropToSchema(constructor: TClass & { schema?: Schema }, prop: string | symbol) {
   const key = prop.toString();
   let schema = getClassSchema(constructor);
 
@@ -72,7 +81,7 @@ export function addPropToSchema(constructor: TClass, prop: string | symbol) {
 }
 
 export function getPropFromSchema(constructor: TClass, prop: string | symbol) {
-  const schema = Reflect.getMetadata('schema', constructor);
+  const schema = getClassSchema(constructor)!;
   return schema[prop.toString()];
 }
 
@@ -82,7 +91,7 @@ export function setPropOnSchema(
   key: string,
   value: any
 ) {
-  const schema = Reflect.getMetadata('schema', constructor);
+  const schema = getClassSchema(constructor);
 
   if (!schema) {
     console.warn(`No schema defined`);

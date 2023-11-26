@@ -2,36 +2,61 @@ import { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { TripleBuffer } from '../../../platform/memory/common';
 import { ApexEngine } from '../../ApexEngine';
-import { getTargetId } from '../class';
+import { getClassSchema, getTargetId } from '../class';
 import { id } from './id';
 
 export const messageQueue: any[] = [];
 
 export function proxy(proxyClass: TClass) {
   return (constructor: TClass) => {
-    const schema = Reflect.getMetadata('schema', constructor);
-    const bufferSize = Reflect.getMetadata('byteLength', constructor);
+    const schema = getClassSchema(constructor);
+    const bufSize = Reflect.getMetadata('byteLength', constructor);
 
-    // We define the proxy-origin class as a metadata, so that we can easily
-    // access it in `SceneProxy`, when we construct the proxy on the render-thread.
+    // We define the proxy-origin class as a metadata, to easily access it in
+    // `SceneProxy`, when we construct the proxy on the render-thread.
     Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
 
-    class ProxyOrigin extends constructor {
-      #tripleBuffer: TripleBuffer;
+    return class extends constructor {
+      public static override readonly name: string = constructor.name;
 
-      #byteView: Uint8Array;
+      public tripleBuffer?: TripleBuffer;
+
+      public byteView?: Uint8Array;
 
       constructor(...args: any[]) {
         super(...args);
 
+        // This check is necessary, to prevent parent classes to also push into the `messageQueue`.
+        //
+        // Here's a more detailed explanation:
+        // When a class is assigned the `proxy` specifier, the original class is exchanged with this
+        // class, which inherits from the original class. Therefor, a class like `MeshComponent`,
+        // would be replaced with `class extends MeshComponent`.
+        //
+        // This is relevant for class inheritance. The `SceneComponent` and `MeshComponent` are a good
+        // example. Both classes have the `proxy` specifier assigned to them, which means that
+        // `MeshComponent` becomes `class extends MeshComponent extends class extends SceneComponent`.
+        // You see `MeshComponent` doesn't actually inherit from `SceneComponent`, but from the class
+        // that is returned from this specifier (`class extends SceneComponent`).
+        //
+        // This fact leads to a problem when you instantiate `MeshComponent`. The code in this
+        // constructor is not exectute once, but twice (`class extends SceneComponent` executes it too).
+        // As a consequence of that,we would allocate more memory and push two objects into `messageQueue`
+        // (from `MessageComponent` and `class extends SceneComponent`).
+        //
+        // The check below ensures that we only run our constructor code, when the prototype matches the
+        // original class constructor.
+        if (Object.getPrototypeOf(this.constructor) !== constructor) {
+          return;
+        }
+
         id(this);
 
-        this.#tripleBuffer = new TripleBuffer(ApexEngine.GAME_FLAGS, bufferSize);
-
-        const buf = new ArrayBuffer(bufferSize);
+        const buf = new ArrayBuffer(bufSize);
         const dv = new DataView(buf);
 
-        this.#byteView = new Uint8Array(buf);
+        this.byteView = new Uint8Array(buf);
+        this.tripleBuffer = new TripleBuffer(ApexEngine.GAME_FLAGS, bufSize);
 
         for (const key in schema) {
           const { offset, size, type } = schema[key];
@@ -232,20 +257,18 @@ export function proxy(proxyClass: TClass) {
           type: 'proxy',
           constructor: proxyClass.name,
           id: getTargetId(this),
-          tb: this.#tripleBuffer
+          tb: this.tripleBuffer
         });
       }
 
       public tick() {
         super.tick();
 
-        this.#tripleBuffer.copyToWriteBuffer(this.#byteView);
+        if (this.tripleBuffer && this.byteView) {
+          this.tripleBuffer.copyToWriteBuffer(this.byteView);
+        }
       }
-    }
-
-    Object.defineProperty(ProxyOrigin, 'name', { value: constructor.name });
-
-    return ProxyOrigin;
+    };
   };
 }
 

@@ -5,8 +5,9 @@ import { IConsoleLogger } from '../../platform/logging/common';
 import { type TripleBuffer } from '../../platform/memory/common';
 import { IRenderer } from '../../platform/renderer/common';
 import { SceneProxy } from '../SceneProxy';
-import { CLASS } from '../class';
+import { CLASS, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
+import { float32, serialize } from '../class/specifiers/serialize';
 import { SceneComponent } from './SceneComponent';
 
 export class MeshComponentProxy extends SceneProxy {
@@ -33,6 +34,9 @@ export class MeshComponentProxy extends SceneProxy {
 
 @CLASS(proxy(MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
+  @PROP(serialize(float32))
+  public test: number = 8;
+
   constructor(
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
