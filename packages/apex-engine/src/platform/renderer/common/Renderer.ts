@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import {
   ACESFilmicToneMapping,
+  BoxGeometry,
   Camera,
   Color,
   DirectionalLight,
@@ -9,7 +10,6 @@ import {
   LinearToneMapping,
   Mesh,
   MeshPhongMaterial,
-  Object3D,
   PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
@@ -21,7 +21,13 @@ import { InstantiationService, ServiceCollection } from '../../di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
 import { TripleBuffer } from '../../memory/common';
 
-export type TRenderMessageType = 'init' | 'proxy' | 'rpc' | 'set-camera' | 'viewport-resize';
+export type TRenderMessageType =
+  | 'init'
+  | 'proxy'
+  | 'ref'
+  | 'rpc'
+  | 'set-camera'
+  | 'viewport-resize';
 
 export type TRenderMessageData<T = { [k: string]: unknown }> = {
   [P in keyof T]: T[P];
@@ -62,7 +68,6 @@ export type TRenderSceneProxyCreateData = TRenderMessageData<{
   constructor: string;
   id: number;
   tb: Pick<TripleBuffer, 'buffers' | 'byteLength' | 'byteViews' | 'flags'>;
-  children: TRenderSceneProxyCreateData[];
 }>;
 
 export type TRenderSceneProxyMessage = TRenderMessage<'proxy', TRenderSceneProxyCreateData>;
@@ -74,6 +79,8 @@ export type TRenderRPCData = TRenderMessageData<{
 }>;
 
 export type TRenderRPCMessage = TRenderMessage<'rpc', TRenderRPCData>;
+
+export type TRenderRefMessage = TRenderMessage<'ref', { refId: number; parentId: number }>;
 
 export interface IRenderer {
   readonly _injectibleService: undefined;
@@ -169,6 +176,9 @@ export class Renderer {
 
     this.scene.add(floor);
 
+    const cube = new Mesh(new BoxGeometry(1, 1, 1));
+    this.scene.add(cube);
+
     Renderer.instance = this;
   }
 
@@ -208,14 +218,13 @@ export class Renderer {
     TripleBuffer.swapReadBufferFlags(this.flags);
 
     for (let i = 0; i < createProxyMessages.length; ++i) {
-      const { children, constructor, id, tb } = createProxyMessages[i];
+      const { constructor, id, tb } = createProxyMessages[i];
 
       if (
         this.createProxyInstance(
           id,
           constructor,
-          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
-          children
+          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers)
         )
       ) {
         createProxyMessages.splice(i, 1);
@@ -238,19 +247,13 @@ export class Renderer {
       }
     }
 
-    for (let i = 0; i < this.proxyInstances.length; ++i) {
-      this.proxyInstances[i].tick(time);
-    }
-
     this.webGLRenderer.render(this.scene, this.camera);
   }
 
   private createProxyInstance(
     id: TRenderSceneProxyCreateData['id'],
     constructor: TRenderSceneProxyCreateData['constructor'],
-    tb: TripleBuffer,
-    children: TRenderSceneProxyCreateData['children'],
-    parent?: InstanceType<TClass>
+    tb: TripleBuffer
   ) {
     const Constructor = this.components[constructor as keyof typeof this.components] as TClass;
 
@@ -258,25 +261,7 @@ export class Renderer {
       throw new Error(`Constructor (${constructor}) not found for proxy with id "${id}".`);
     }
 
-    const instance = new Constructor(id, tb);
-
-    for (let i = 0; i < children.length; ++i) {
-      const child = children[i];
-
-      this.createProxyInstance(
-        child.id,
-        child.constructor,
-        new TripleBuffer(child.tb.flags, child.tb.byteLength, child.tb.buffers),
-        child.children,
-        instance
-      );
-    }
-
-    if (parent) {
-      parent.sceneObject.add(instance.sceneObject);
-    } else {
-      this.scene.add(instance.sceneObject);
-    }
+    const instance = new Constructor(id, tb, this.proxyInstancesRegistry);
 
     this.proxyInstancesRegistry.set(id, instance);
     this.proxyInstances.push(instance);

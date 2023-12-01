@@ -5,7 +5,8 @@ import { IRenderer } from '../platform/renderer/common';
 import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
-import { proxyQueue } from './class/specifiers/proxy';
+import { ProxyManager } from './ProxyManager';
+import { getTargetId } from './class';
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;
@@ -61,12 +62,22 @@ export abstract class ApexEngine {
   public tick(tick: Tick) {
     TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
 
-    while (proxyQueue.length) {
-      const message = proxyQueue.shift();
-      this.renderer.send(message);
+    this.getGameInstance().getWorld().tick(tick);
+
+    for (const proxy of ProxyManager.proxies) {
+      proxy.tripleBuffer.copyToWriteBuffer(proxy.byteView);
     }
 
-    this.getGameInstance().getWorld().tick(tick);
+    while (ProxyManager.enqueuedProxies.length) {
+      const proxy = ProxyManager.enqueuedProxies.shift();
+
+      this.renderer.send({
+        type: 'proxy',
+        constructor: proxy.constructor.proxyClassName,
+        id: getTargetId(proxy) as number,
+        tb: proxy.tripleBuffer
+      });
+    }
   }
 
   public start() {

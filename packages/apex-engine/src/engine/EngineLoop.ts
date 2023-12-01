@@ -8,6 +8,7 @@ const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
 
 export interface Tick {
+  id: number;
   delta: number;
   elapsed: number;
 }
@@ -52,7 +53,7 @@ export class EngineLoop {
       this.elapsed = then;
       this.fps = (this.frames * 1000) / then;
 
-      const currentTick = { delta: this.delta, elapsed: this.elapsed };
+      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.frames };
 
       try {
         GameEngine.getInstance().tick(currentTick);

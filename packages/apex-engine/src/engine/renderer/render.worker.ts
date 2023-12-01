@@ -5,6 +5,9 @@ import {
 } from '../../platform/renderer/common';
 
 import * as components from '../components';
+import { BoxGeometryProxy } from '../BoxGeometry';
+
+const proxyClasses = { ...components, BoxGeometryProxy };
 
 function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   if (typeof event.data !== 'object') {
@@ -26,12 +29,7 @@ function onInit({
   messagePort,
   flags
 }: TRenderWorkerInitData) {
-  const renderer = Renderer.create(
-    canvas,
-    flags,
-    messagePort,
-    components as unknown as Record<string, TClass>
-  );
+  const renderer = Renderer.create(canvas, flags, messagePort, proxyClasses);
   renderer.init();
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();

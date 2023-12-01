@@ -1,40 +1,98 @@
-import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
+import * as THREE from 'three';
 
 import { type TripleBuffer } from '../../platform/memory/common';
 import { CLASS, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
-import { boolean, mat4, quat, serialize, vec3 } from '../class/specifiers/serialize';
-import { SceneProxy } from '../SceneProxy';
+import { boolean, mat4, quat, ref, serialize, vec3 } from '../class/specifiers/serialize';
+import { RenderProxy } from '../RenderProxy';
 import { ActorComponent } from './ActorComponent';
 
-// The Renderer expects scene proxies to be exported from a component file
-export class SceneComponentProxy extends SceneProxy {}
+export class SceneComponentProxy extends RenderProxy {
+  declare position: [number, number, number];
+
+  declare rotation: [number, number, number];
+
+  declare scale: [number, number, number];
+
+  declare matrix: [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number
+  ];
+
+  declare quaternion: [number, number, number, number];
+
+  declare up: [number, number, number];
+
+  declare visible: boolean;
+
+  declare castShadow: boolean;
+
+  declare receiveShadow: boolean;
+
+  declare isRootComponent: boolean;
+
+  declare parent: SceneComponentProxy | null;
+
+  public children: SceneComponentProxy[] = [];
+
+  public sceneObject: THREE.Object3D = new THREE.Object3D();
+
+  public tick(time: number): void {
+    this.sceneObject.castShadow = this.castShadow;
+    this.sceneObject.receiveShadow = this.receiveShadow;
+    this.sceneObject.visible = this.visible;
+    this.sceneObject.position.fromArray(this.position);
+    this.sceneObject.rotation.fromArray(this.rotation);
+    this.sceneObject.scale.fromArray(this.scale);
+    this.sceneObject.up.fromArray(this.up);
+
+    if (this.parent) {
+      const idx = this.parent.children.indexOf(this);
+
+      if (idx === -1) {
+        this.parent.children.push(this);
+      }
+    }
+  }
+}
 
 @CLASS(proxy(SceneComponentProxy))
 export class SceneComponent extends ActorComponent {
-  declare static readonly proxyClassName: string;
-
   declare byteView: Uint8Array;
 
   declare tripleBuffer: TripleBuffer;
 
   @PROP(serialize(vec3))
-  public position: Vector3 = new Vector3();
+  public position: THREE.Vector3 = new THREE.Vector3();
 
   @PROP(serialize(vec3))
-  public rotation: Euler = new Euler();
+  public rotation: THREE.Euler = new THREE.Euler();
 
   @PROP(serialize(vec3))
-  public scale: Vector3 = new Vector3();
+  public scale: THREE.Vector3 = new THREE.Vector3();
 
   @PROP(serialize(mat4))
-  public matrix: Matrix4 = new Matrix4();
+  public matrix: THREE.Matrix4 = new THREE.Matrix4();
 
   @PROP(serialize(quat))
-  public quaternion: Quaternion = new Quaternion();
+  public quaternion: THREE.Quaternion = new THREE.Quaternion();
 
   @PROP(serialize(vec3))
-  public up: Vector3 = new Vector3();
+  public up: THREE.Vector3 = new THREE.Vector3();
 
   @PROP(serialize(boolean))
   public visible: boolean = true;
@@ -45,11 +103,13 @@ export class SceneComponent extends ActorComponent {
   @PROP(serialize(boolean))
   public receiveShadow: boolean = false;
 
+  @PROP(serialize(boolean))
   public isRootComponent: boolean = false;
 
   /**
    * The component it is attached to.
    */
+  @PROP(serialize(ref))
   public parent: SceneComponent | null = null;
 
   public childIndex: number = -1;

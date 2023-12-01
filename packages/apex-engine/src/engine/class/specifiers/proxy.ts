@@ -2,18 +2,9 @@ import { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { TripleBuffer } from '../../../platform/memory/common';
 import { ApexEngine } from '../../ApexEngine';
+import { ProxyManager } from '../../ProxyManager';
 import { getClassSchema, getTargetId } from '../class';
 import { id } from './id';
-
-export const proxyQueue: any[] = [];
-
-interface ProxyChildren {
-  type: string;
-  constructor: string;
-  id: number;
-  tb: any;
-  children: ProxyChildren[];
-}
 
 export function proxy(proxyClass: TClass) {
   return (constructor: TClass) => {
@@ -21,7 +12,7 @@ export function proxy(proxyClass: TClass) {
     const bufSize = Reflect.getMetadata('byteLength', constructor);
 
     // We define the proxy-origin class as a metadata, to easily access it in
-    // `SceneProxy`, when we construct the proxy on the render-thread.
+    // `RenderProxy`, when we construct the proxy on the render-thread.
     Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
 
     return class extends constructor {
@@ -29,9 +20,9 @@ export function proxy(proxyClass: TClass) {
 
       public static readonly proxyClassName: string = proxyClass.name;
 
-      public tripleBuffer?: TripleBuffer;
+      public tripleBuffer!: TripleBuffer;
 
-      public byteView?: Uint8Array;
+      public byteView!: Uint8Array;
 
       constructor(...args: any[]) {
         super(...args);
@@ -50,7 +41,7 @@ export function proxy(proxyClass: TClass) {
         // that is returned from this specifier (`class extends SceneComponent`).
         //
         // This fact leads to a problem when you instantiate `MeshComponent`. The code in this
-        // constructor is not exectute once, but twice (`class extends SceneComponent` executes it too).
+        // constructor is not execute once, but twice (`class extends SceneComponent` executes it too).
         // As a consequence of that,we would allocate more memory and push two objects into `messageQueue`
         // (from `MessageComponent` and `class extends SceneComponent`).
         //
@@ -215,6 +206,27 @@ export function proxy(proxyClass: TClass) {
                 }
               };
               break;
+            case 'ref':
+              if (initialVal) {
+                //todo: `id(initialVal)` only works if we have a proxy with that id (which does not work for 3rd-party instances)
+                const refId = getTargetId(initialVal) ?? id(initialVal);
+                dv.setUint32(offset, refId, true);
+              }
+
+              Reflect.defineMetadata('value', initialVal, this, key);
+
+              accessors = {
+                get(this) {
+                  return Reflect.getMetadata('value', this, key);
+                },
+                set(this, val: InstanceType<TClass>) {
+                  const refId = getTargetId(val) ?? id(val);
+                  dv.setUint32(offset, refId, true);
+
+                  Reflect.defineMetadata('value', val, this, key);
+                }
+              };
+              break;
             case 'string':
               setString(this[key], dv, offset, size);
 
@@ -337,47 +349,49 @@ export function proxy(proxyClass: TClass) {
             Object.defineProperty(this, key, accessors);
           }
         }
+
+        ProxyManager.add(this);
       }
 
-      public beginPlay() {
-        if (this.isRootComponent) {
-          function traverse(inChildren: any[]) {
-            const outChildren: ProxyChildren[] = [];
+      // public beginPlay() {
+      //   if (this.isRootComponent) {
+      //     function traverse(inChildren: any[]) {
+      //       const outChildren: ProxyChildren[] = [];
 
-            for (let i = 0; i < inChildren.length; ++i) {
-              const child = inChildren[i];
+      //       for (let i = 0; i < inChildren.length; ++i) {
+      //         const child = inChildren[i];
 
-              outChildren.push({
-                type: 'proxy',
-                constructor: child.constructor.proxyClassName,
-                id: getTargetId(child) as number,
-                tb: child.tripleBuffer,
-                children: traverse(child.children)
-              });
-            }
+      //         outChildren.push({
+      //           type: 'proxy',
+      //           constructor: child.constructor.proxyClassName,
+      //           id: getTargetId(child) as number,
+      //           tb: child.tripleBuffer,
+      //           children: traverse(child.children)
+      //         });
+      //       }
 
-            return outChildren;
-          }
+      //       return outChildren;
+      //     }
 
-          proxyQueue.push({
-            type: 'proxy',
-            constructor: proxyClass.name,
-            id: getTargetId(this) as number,
-            tb: this.tripleBuffer,
-            children: traverse(this.children)
-          });
-        }
+      //     proxyQueue.push({
+      //       type: 'proxy',
+      //       constructor: proxyClass.name,
+      //       id: getTargetId(this) as number,
+      //       tb: this.tripleBuffer,
+      //       children: traverse(this.children)
+      //     });
+      //   }
 
-        super.beginPlay();
-      }
+      //   super.beginPlay();
+      // }
 
-      public tick() {
-        super.tick();
+      // public tick(tick: Tick) {
+      //   super.tick(tick);
 
-        if (this.tripleBuffer && this.byteView) {
-          this.tripleBuffer.copyToWriteBuffer(this.byteView);
-        }
-      }
+      //   if (this.tripleBuffer && this.byteView) {
+      //     this.tripleBuffer.copyToWriteBuffer(this.byteView);
+      //   }
+      // }
     };
   };
 }
