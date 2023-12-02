@@ -1,3 +1,5 @@
+import { type Tick } from './EngineLoop';
+
 export class ProxyManager {
   private static readonly replicatedProxies = new Set<any>();
 
@@ -10,6 +12,8 @@ export class ProxyManager {
       this.enqueuedProxies.splice(idx, 1);
     }
   }
+
+  public static currentTick: Tick;
 
   /**
    * Proxies that have been created on the game-thread, but are not

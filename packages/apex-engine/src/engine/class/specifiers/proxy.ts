@@ -2,6 +2,7 @@ import { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { TripleBuffer } from '../../../platform/memory/common';
 import { ApexEngine } from '../../ApexEngine';
+import { type Tick } from '../../EngineLoop';
 import { ProxyManager } from '../../ProxyManager';
 import { getClassSchema, getTargetId, isPropSchema } from '../class';
 import { id } from './id';
@@ -28,6 +29,19 @@ export function proxy(proxyClass: TClass) {
 
       //todo: We should only create a message channel for classes that have rpcs
       private readonly proxyMessageChannel!: MessageChannel;
+
+      private readonly actionsByTick: Map<number, any[]> = new Map();
+
+      public addTickAction(action: any) {
+        const tick = ProxyManager.currentTick.id;
+        const actions = this.actionsByTick.get(tick);
+
+        if (actions) {
+          actions.push(action);
+        } else {
+          this.actionsByTick.set(tick, [action]);
+        }
+      }
 
       public readonly tripleBuffer!: TripleBuffer;
 
@@ -370,16 +384,37 @@ export function proxy(proxyClass: TClass) {
         ProxyManager.add(this);
 
         this.proxyMessageChannel = new MessageChannel();
-        this.proxyMessageChannel.port1.addEventListener('message', this);
+        this.proxyMessageChannel.port1.addEventListener('message', event => {
+          console.log('Received message from proxy:', event.data);
+        });
         this.proxyMessageChannel.port1.start();
-      }
-
-      public handleEvent(event: MessageEvent) {
-        console.log('Received message from proxy:', event.data);
+        console.log('proxy origin:', this);
       }
 
       public getProxyMessagePort() {
         return this.proxyMessageChannel.port2;
+      }
+
+      public tick(tick: Tick) {
+        const actions: any[][] = [];
+
+        for (let i = 2; i > 0; --i) {
+          actions.push(this.actionsByTick.get(Math.max(tick.id - i, 0)) ?? []);
+        }
+
+        const cpy = [...actions];
+        //todo: We should probably use a incremental for-loop
+        for (const stack of actions) {
+          for (let i = 0; i < stack.length; ++i) {
+            const action = stack[i];
+            console.log('actions', tick.id, cpy);
+            this.proxyMessageChannel.port1.postMessage({ ...action, tick: tick.id });
+            stack.splice(i, 1);
+            i--;
+          }
+        }
+
+        super.tick(tick);
       }
     };
   };

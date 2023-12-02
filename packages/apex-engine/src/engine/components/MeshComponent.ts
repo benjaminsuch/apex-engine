@@ -16,8 +16,8 @@ export class MeshComponentProxy extends SceneComponentProxy {
 
   public override sceneObject: THREE.Mesh = new THREE.Mesh();
 
-  public override tick(time: number) {
-    super.tick(time);
+  public override tick(time: number, frameId: number) {
+    super.tick(time, frameId);
   }
 }
 

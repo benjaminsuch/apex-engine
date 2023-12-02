@@ -30,7 +30,9 @@ export class EngineLoop {
     @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IRenderer private readonly renderer: IRenderer,
     @IConsoleLogger private readonly logger: IConsoleLogger
-  ) {}
+  ) {
+    ApexEngine.TICK = { delta: this.delta, elapsed: this.elapsed, id: this.frames };
+  }
 
   public init() {
     if (this.renderer) {

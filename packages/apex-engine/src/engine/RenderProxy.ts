@@ -3,6 +3,18 @@ import { type Renderer } from '../platform/renderer/common';
 import { getClassSchema, isPropSchema } from './class';
 
 export abstract class RenderProxy {
+  private readonly actionsByTick: Map<number, any[]> = new Map();
+
+  public addTickAction(tick: number, action: any) {
+    const actions = this.actionsByTick.get(tick);
+
+    if (actions) {
+      actions.push(action);
+    } else {
+      this.actionsByTick.set(tick, [action]);
+    }
+  }
+
   public name: string = '';
 
   public readonly isProxy: boolean = true;
@@ -84,23 +96,32 @@ export abstract class RenderProxy {
         const { type } = event.data;
 
         if (type === 'rpc') {
-          const { name, params } = event.data;
-          const method = this[name];
-
-          if (!method) {
-            console.warn(
-              `RPC execution failed: A method "${name}" does not exist on ${this.constructor.name}.`
-            );
-          } else {
-            method.apply(this, params);
-          }
+          this.addTickAction(event.data.tick, event.data);
         }
       });
       this.messagePort.start();
     }
   }
 
-  public tick(time: number) {}
+  //todo: Consolidate params into one object
+  public tick(time: number, frameId: number) {
+    const actions = this.actionsByTick.get(frameId) ?? [];
+
+    //todo: We should probably use a incremental for-loop
+    for (const action of actions) {
+      console.log('executing action:', frameId, this.actionsByTick);
+      const { name, params } = action;
+      const method = this[name];
+
+      if (!method) {
+        console.warn(
+          `RPC execution failed: A method "${name}" does not exist on ${this.constructor.name}.`
+        );
+      } else {
+        method.apply(this, params);
+      }
+    }
+  }
 }
 
 const getters = new Map<TypedArray, string>([

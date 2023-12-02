@@ -16,7 +16,7 @@ export function rpc(...args: any[]) {
 
       if (result) {
         //todo: We have to include the tick information
-        (this.proxyMessageChannel.port1 as MessagePort).postMessage({
+        this.addTickAction({
           type: 'rpc',
           name: prop.toString(),
           //todo: We can only send booleans, numbers, strings and arrays of those.

@@ -70,8 +70,8 @@ export class SceneComponentProxy extends RenderProxy {
     this.renderer.scene.add(this.sceneObject);
   }
 
-  public override tick(time: number): void {
-    super.tick(time);
+  public override tick(time: number, frameId: number): void {
+    super.tick(time, frameId);
 
     this.sceneObject.castShadow = this.castShadow;
     this.sceneObject.receiveShadow = this.receiveShadow;

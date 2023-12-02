@@ -69,6 +69,7 @@ export type TRenderSceneProxyCreateData = TRenderMessageData<{
   id: number;
   tb: Pick<TripleBuffer, 'buffers' | 'byteLength' | 'byteViews' | 'flags'>;
   messagePort?: MessagePort;
+  tick: number;
 }>;
 
 export type TRenderSceneProxyMessage = TRenderMessage<'proxy', TRenderSceneProxyCreateData>;
@@ -94,15 +95,12 @@ export interface IRenderer {
 
 export const IRenderer = InstantiationService.createDecorator<IRenderer>('renderer');
 
-const createProxyMessages: TRenderSceneProxyCreateData[] = [];
-const rpcMessages: TRenderRPCData[] = [];
-
 export class Renderer {
   private static instance?: Renderer;
 
   public static getInstance() {
     if (!this.instance) {
-      throw new Error(`No instance created yet`);
+      throw new Error(`No instance created yet.`);
     }
     return this.instance;
   }
@@ -124,11 +122,25 @@ export class Renderer {
 
   private readonly webGLRenderer: WebGLRenderer;
 
+  private readonly actionsByTick: Map<number, any[]> = new Map();
+
+  public addTickAction(tick: number, action: any) {
+    const actions = this.actionsByTick.get(tick);
+
+    if (actions) {
+      actions.push(action);
+    } else {
+      this.actionsByTick.set(tick, [action]);
+    }
+  }
+
   public readonly scene: Scene = new Scene();
 
   public readonly camera: Camera;
 
   public readonly proxyRegistry: Map<number, InstanceType<TClass>> = new Map();
+
+  public frameId: number = 0;
 
   constructor(
     canvas: OffscreenCanvas,
@@ -208,33 +220,27 @@ export class Renderer {
 
     this.logger.debug('render.worker:', 'onMessage', event.data);
 
-    switch (event.data.type) {
-      case 'proxy':
-        createProxyMessages.push(event.data);
-        break;
-      case 'rpc':
-        rpcMessages.push(event.data);
-        break;
+    const { type } = event.data;
+
+    if (type === 'proxy') {
+      this.addTickAction(event.data.tick, event.data);
     }
   }
 
-  private tickCount = 0;
-
   private tick(time: number) {
-    ++this.tickCount;
+    ++this.frameId;
 
-    if (this.tickCount < 61) {
-      console.log('render tick:', this.tickCount);
-    }
     TripleBuffer.swapReadBufferFlags(this.flags);
 
     for (let i = 0; i < this.proxyInstances.length; ++i) {
       const proxy = this.proxyInstances[i];
-      proxy.tick(time);
+      proxy.tick(time, this.frameId);
     }
 
-    for (let i = 0; i < createProxyMessages.length; ++i) {
-      const { constructor, id, messagePort, tb } = createProxyMessages[i];
+    const actions = this.actionsByTick.get(this.frameId) ?? [];
+
+    for (let i = 0; i < actions.length; ++i) {
+      const { constructor, id, messagePort, tb } = actions[i];
 
       if (
         this.createProxyInstance(
@@ -244,7 +250,7 @@ export class Renderer {
           messagePort
         )
       ) {
-        createProxyMessages.splice(i, 1);
+        actions.splice(i, 1);
         i--;
       }
     }

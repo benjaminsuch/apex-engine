@@ -2,11 +2,11 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { TripleBuffer } from '../platform/memory/common';
 import { IRenderer } from '../platform/renderer/common';
+import { getTargetId } from './class';
 import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 import { ProxyManager } from './ProxyManager';
-import { getTargetId } from './class';
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;
@@ -30,6 +30,9 @@ export abstract class ApexEngine {
   public static GAME_FLAGS: Uint8Array = new Uint8Array(
     new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
   ).fill(0x6);
+
+  //todo: Should probably be removed (not sure tho)
+  public static TICK: Tick;
 
   public isRunning: boolean = false;
 
@@ -59,18 +62,12 @@ export abstract class ApexEngine {
     this.isInitialized = true;
   }
 
-  private tickCount = 0;
-
   public tick(tick: Tick) {
-    ++this.tickCount;
-
-    if (this.tickCount < 61) {
-      console.log('game tick:', this.tickCount);
-    }
-
     TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
 
     this.getGameInstance().getWorld().tick(tick);
+
+    ProxyManager.currentTick = tick;
 
     for (const proxy of ProxyManager.proxies) {
       proxy.tripleBuffer.copyToWriteBuffer(proxy.byteView);
@@ -86,7 +83,8 @@ export abstract class ApexEngine {
           constructor: proxy.constructor.proxyClassName,
           id: getTargetId(proxy) as number,
           tb: proxy.tripleBuffer,
-          messagePort
+          messagePort,
+          tick: tick.id
         },
         [messagePort]
       );
