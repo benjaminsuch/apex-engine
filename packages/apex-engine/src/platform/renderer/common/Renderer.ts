@@ -68,6 +68,7 @@ export type TRenderSceneProxyCreateData = TRenderMessageData<{
   constructor: string;
   id: number;
   tb: Pick<TripleBuffer, 'buffers' | 'byteLength' | 'byteViews' | 'flags'>;
+  messagePort?: MessagePort;
 }>;
 
 export type TRenderSceneProxyMessage = TRenderMessage<'proxy', TRenderSceneProxyCreateData>;
@@ -119,15 +120,15 @@ export class Renderer {
     return instantiationService.createInstance(Renderer, canvas, flags, messagePort, components);
   }
 
-  private readonly proxyInstancesRegistry: Map<number, InstanceType<TClass>> = new Map();
-
   private readonly proxyInstances: InstanceType<TClass>[] = [];
 
   private readonly webGLRenderer: WebGLRenderer;
 
-  private readonly scene: Scene = new Scene();
+  public readonly scene: Scene = new Scene();
 
-  private readonly camera: Camera;
+  public readonly camera: Camera;
+
+  public readonly proxyRegistry: Map<number, InstanceType<TClass>> = new Map();
 
   constructor(
     canvas: OffscreenCanvas,
@@ -173,13 +174,16 @@ export class Renderer {
     );
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
+    floor.name = 'Floor';
 
     this.scene.add(floor);
 
     const cube = new Mesh(new BoxGeometry(1, 1, 1));
+    cube.name = 'TestCube';
     this.scene.add(cube);
 
     Renderer.instance = this;
+    console.log('Renderer', this);
   }
 
   public init() {
@@ -214,36 +218,34 @@ export class Renderer {
     }
   }
 
+  private tickCount = 0;
+
   private tick(time: number) {
+    ++this.tickCount;
+
+    if (this.tickCount < 61) {
+      console.log('render tick:', this.tickCount);
+    }
     TripleBuffer.swapReadBufferFlags(this.flags);
 
+    for (let i = 0; i < this.proxyInstances.length; ++i) {
+      const proxy = this.proxyInstances[i];
+      proxy.tick(time);
+    }
+
     for (let i = 0; i < createProxyMessages.length; ++i) {
-      const { constructor, id, tb } = createProxyMessages[i];
+      const { constructor, id, messagePort, tb } = createProxyMessages[i];
 
       if (
         this.createProxyInstance(
           id,
           constructor,
-          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers)
+          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+          messagePort
         )
       ) {
         createProxyMessages.splice(i, 1);
         i--;
-      }
-    }
-
-    for (let i = 0; i < rpcMessages.length; ++i) {
-      const { id, action, params } = rpcMessages[i];
-      const instance = this.proxyInstancesRegistry.get(id);
-
-      if (instance) {
-        instance[action]?.(...params);
-        rpcMessages.splice(i, 1);
-        i--;
-      } else {
-        this.logger.warn(
-          `Unable to execute RPC "${action}": RPC instance with id "${id}" not found.`
-        );
       }
     }
 
@@ -253,7 +255,8 @@ export class Renderer {
   private createProxyInstance(
     id: TRenderSceneProxyCreateData['id'],
     constructor: TRenderSceneProxyCreateData['constructor'],
-    tb: TripleBuffer
+    tb: TripleBuffer,
+    messagePort?: MessagePort
   ) {
     const Constructor = this.components[constructor as keyof typeof this.components] as TClass;
 
@@ -261,9 +264,9 @@ export class Renderer {
       throw new Error(`Constructor (${constructor}) not found for proxy with id "${id}".`);
     }
 
-    const instance = new Constructor(id, tb, this.proxyInstancesRegistry);
+    const instance = new Constructor(tb, id, messagePort, this);
 
-    this.proxyInstancesRegistry.set(id, instance);
+    this.proxyRegistry.set(id, instance);
     this.proxyInstances.push(instance);
 
     return true;

@@ -14,8 +14,18 @@ export class Actor {
   public setRootComponent(component: SceneComponent) {
     //todo: Dispose previous root component
     //todo: Send message to render-thread
+    if (component === this.rootComponent) {
+      return false;
+    }
+
+    if (this.rootComponent) {
+      this.logger.warn(`Cannot set root component: A root component is already defined.`);
+      return false;
+    }
+
     this.rootComponent = component;
-    this.rootComponent.isRootComponent = true;
+
+    return true;
   }
 
   public getRootComponent() {

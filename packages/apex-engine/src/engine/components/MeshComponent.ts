@@ -15,6 +15,10 @@ export class MeshComponentProxy extends SceneComponentProxy {
   declare material: THREE.Material;
 
   public override sceneObject: THREE.Mesh = new THREE.Mesh();
+
+  public override tick(time: number) {
+    super.tick(time);
+  }
 }
 
 @CLASS(proxy(MeshComponentProxy))

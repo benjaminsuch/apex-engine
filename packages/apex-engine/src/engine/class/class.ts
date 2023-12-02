@@ -11,6 +11,9 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
     let schema = getClassSchema(constructor)!;
     let currentTarget = constructor;
 
+    // By traversing the prototype chain, we make sure, that we only store the schema
+    // for the respective class and not it's derived classes. Derived classes will still
+    // extend their schema with that from the parent class though.
     while (currentTarget) {
       schema = { ...Reflect.getOwnMetadata('schema', currentTarget), ...schema };
       currentTarget = Object.getPrototypeOf(currentTarget);
@@ -22,7 +25,11 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
     let byteLength = 0;
 
     for (const key in schema) {
-      byteLength += schema[key].size;
+      const propSchema = schema[key];
+
+      if (isPropSchema(propSchema)) {
+        byteLength += propSchema.size;
+      }
     }
 
     Reflect.defineMetadata('byteLength', byteLength, constructor);
@@ -47,35 +54,76 @@ export function PROP(...args: Function[]) {
   };
 }
 
-export interface Schema {
-  [key: string]: {
-    arrayType: TypedArray;
-    isArray: boolean;
-    offset: number;
-    pos: number;
-    size: number;
-    type: string;
+export function FUNC(...args: Function[]) {
+  return function (
+    target: InstanceType<TClass>,
+    prop: string | symbol,
+    descriptor: PropertyDescriptor
+  ) {
+    addPropToSchema(target.constructor, prop, descriptor);
+
+    for (const fn of args) {
+      fn(target, prop, descriptor);
+    }
+
+    console.log('FUNC:', prop);
   };
+}
+
+export interface PropSchema {
+  arrayType: TypedArray;
+  isArray: boolean;
+  offset: number;
+  pos: number;
+  size: number;
+  type: string;
+}
+
+export interface FuncSchema {
+  type: 'function';
+  isRPC: boolean;
+  descriptor: PropertyDescriptor;
+}
+
+export interface Schema {
+  [key: string]: PropSchema | FuncSchema;
 }
 
 export function getClassSchema(constructor: TClass): Schema | undefined {
   return Reflect.getOwnMetadata('schema', constructor);
 }
 
-export function addPropToSchema(constructor: TClass & { schema?: Schema }, prop: string | symbol) {
+export function isPropSchema(schema: PropSchema | FuncSchema): schema is PropSchema {
+  return schema.type !== 'function';
+}
+
+export function isFuncSchema(schema: PropSchema | FuncSchema): schema is FuncSchema {
+  return schema.type === 'function';
+}
+
+export function addPropToSchema(
+  constructor: TClass & { schema?: Schema },
+  prop: string | symbol,
+  descriptor?: PropertyDescriptor
+) {
   const key = prop.toString();
-  let schema = getClassSchema(constructor);
+  let schema = getClassSchema(constructor)!;
 
   if (!schema) {
     schema = {};
   }
 
-  const keys = Object.keys(schema);
-  const pos = keys.length;
-  const prevKey = keys.find(val => schema?.[val].pos === pos - 1);
-  const offset = prevKey ? schema[prevKey].offset + schema[prevKey].size : 0;
+  if (descriptor) {
+    schema[key] = { type: 'function', isRPC: false, descriptor };
+  } else {
+    const keys = Object.keys(schema).filter(val => schema[val].type !== 'function');
+    const pos = keys.length;
+    const prevKey = keys.find(val => (schema[val] as PropSchema).pos === pos - 1);
+    const prevSchema = prevKey ? (schema[prevKey] as PropSchema) : null;
+    const offset = prevSchema ? prevSchema.offset + prevSchema.size : 0;
 
-  schema[key] = { arrayType: Uint8Array, isArray: false, offset, pos, size: 0, type: 'uint8' };
+    schema[key] = { type: 'uint8', size: 0, arrayType: Uint8Array, isArray: false, offset, pos };
+  }
 
   Reflect.defineMetadata('schema', schema, constructor);
 }

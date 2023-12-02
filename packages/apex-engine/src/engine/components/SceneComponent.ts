@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 
 import { type TripleBuffer } from '../../platform/memory/common';
-import { CLASS, PROP } from '../class';
+import { type Renderer } from '../../platform/renderer/common';
+import { CLASS, FUNC, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
+import { rpc } from '../class/specifiers/rpc';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../class/specifiers/serialize';
+import { type Actor } from '../Actor';
 import { RenderProxy } from '../RenderProxy';
 import { ActorComponent } from './ActorComponent';
 
@@ -49,24 +52,60 @@ export class SceneComponentProxy extends RenderProxy {
 
   public children: SceneComponentProxy[] = [];
 
+  public childIndex: number = -1;
+
   public sceneObject: THREE.Object3D = new THREE.Object3D();
 
-  public tick(time: number): void {
+  constructor(
+    tb: TripleBuffer,
+    public override readonly id: number,
+    protected override readonly messagePort: MessagePort | null = null,
+    protected override readonly renderer: Renderer
+  ) {
+    super(tb, id, messagePort, renderer);
+  }
+
+  public setAsRoot() {
+    // We do not set `isRootComponent` here (this information is automatically set from the triple buffer).
+    this.renderer.scene.add(this.sceneObject);
+  }
+
+  public override tick(time: number): void {
+    super.tick(time);
+
     this.sceneObject.castShadow = this.castShadow;
     this.sceneObject.receiveShadow = this.receiveShadow;
     this.sceneObject.visible = this.visible;
     this.sceneObject.position.fromArray(this.position);
-    this.sceneObject.rotation.fromArray(this.rotation);
+    // this.sceneObject.rotation.fromArray(this.rotation);
     this.sceneObject.scale.fromArray(this.scale);
     this.sceneObject.up.fromArray(this.up);
+  }
 
-    if (this.parent) {
+  public attachToComponent() {
+    // We use setInterval as a ugly fix. The problem is, that once the rpc call comes in,
+    // the data from the write-buffer may not been copied to the read-buffer yet.
+    //
+    // This issue should be resolved, once we include the tick information in our execution.
+    // todo: Remove setInterval
+    const interval = setInterval(() => {
+      // if (!this.parent) {
+      //   console.warn(`Cannot attach component to parent: Parent is ${typeof this.parent}.`);
+      //   return false;
+      // }
+
+      if (!this.parent) {
+        return;
+      }
+
       const idx = this.parent.children.indexOf(this);
 
       if (idx === -1) {
-        this.parent.children.push(this);
+        this.childIndex = this.parent.children.push(this) - 1;
+        this.parent.sceneObject.add(this.sceneObject);
+        clearInterval(interval);
       }
-    }
+    });
   }
 }
 
@@ -120,14 +159,24 @@ export class SceneComponent extends ActorComponent {
    */
   public children: SceneComponent[] = [];
 
-  public attachToComponent(parent: SceneComponent) {
+  @FUNC(rpc())
+  public setAsRoot(actor: Actor): boolean {
+    if (actor.setRootComponent(this)) {
+      this.isRootComponent = true;
+      return true;
+    }
+    return false;
+  }
+
+  @FUNC(rpc())
+  public attachToComponent(parent: SceneComponent): boolean {
     if (this.parent === parent) {
-      return;
+      return false;
     }
 
     if (parent === this) {
       this.logger.warn(`Cannot attach component to itself.`);
-      return;
+      return false;
     }
 
     const owner = this.getOwner();
@@ -136,14 +185,14 @@ export class SceneComponent extends ActorComponent {
       this.logger.warn(
         `This component is the root component and cannot be attached to other components.`
       );
-      return;
+      return false;
     }
 
     if (parent.isAttachedTo(this)) {
       this.logger.warn(
         `"${parent.constructor.name}" is already attached to "${this.constructor.name}" and would form a cycle.`
       );
-      return;
+      return false;
     }
 
     this.parent = parent;
@@ -154,23 +203,23 @@ export class SceneComponent extends ActorComponent {
     return true;
   }
 
-  public detachFromParent(parent: SceneComponent) {
+  public detachFromParent(parent: SceneComponent): boolean {
     if (!this.parent) {
       this.logger.warn(
         `"${this.constructor.name}" is not attached to "${parent.constructor.name}".`
       );
-      return;
+      return false;
     }
 
     return this.parent.detachFromComponent(this);
   }
 
-  public detachFromComponent(component: SceneComponent) {
+  public detachFromComponent(component: SceneComponent): boolean {
     if (component.parent !== this) {
       this.logger.warn(
         `"${component.constructor.name}" is not attached to "${this.constructor.name}".`
       );
-      return;
+      return false;
     }
 
     this.children.splice(component.childIndex, 1);

@@ -59,7 +59,15 @@ export abstract class ApexEngine {
     this.isInitialized = true;
   }
 
+  private tickCount = 0;
+
   public tick(tick: Tick) {
+    ++this.tickCount;
+
+    if (this.tickCount < 61) {
+      console.log('game tick:', this.tickCount);
+    }
+
     TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
 
     this.getGameInstance().getWorld().tick(tick);
@@ -70,13 +78,18 @@ export abstract class ApexEngine {
 
     while (ProxyManager.enqueuedProxies.length) {
       const proxy = ProxyManager.enqueuedProxies.shift();
+      const messagePort: MessagePort = proxy.getProxyMessagePort();
 
-      this.renderer.send({
-        type: 'proxy',
-        constructor: proxy.constructor.proxyClassName,
-        id: getTargetId(proxy) as number,
-        tb: proxy.tripleBuffer
-      });
+      this.renderer.send(
+        {
+          type: 'proxy',
+          constructor: proxy.constructor.proxyClassName,
+          id: getTargetId(proxy) as number,
+          tb: proxy.tripleBuffer,
+          messagePort
+        },
+        [messagePort]
+      );
     }
   }
 
