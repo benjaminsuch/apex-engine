@@ -1,7 +1,10 @@
+import { GameProxyManager, GameRPCTask } from '../../ProxyManager';
+import { type IProxy } from './proxy';
+
 //todo: Add description
 //todo: Mention that only booleans, numbers, strings and arrays can be used as params
 export function rpc(...args: any[]) {
-  return (target: InstanceType<TClass>, prop: string | symbol, descriptor: PropertyDescriptor) => {
+  return (target: IProxy, prop: string | symbol, descriptor: PropertyDescriptor) => {
     if (typeof target[prop] !== 'function') {
       console.warn(
         `The rpc specifier expects prop (${prop.toString()}) to be a method, but it's of type "${typeof prop}".`
@@ -15,13 +18,15 @@ export function rpc(...args: any[]) {
       const result = originalMethod.apply(this, args);
 
       if (result) {
-        //todo: We have to include the tick information
-        this.addTickAction({
-          type: 'rpc',
-          name: prop.toString(),
-          //todo: We can only send booleans, numbers, strings and arrays of those.
-          params: []
-        });
+        GameProxyManager.getInstance().queueTask(
+          GameRPCTask,
+          {
+            name: prop.toString(),
+            //todo: We can only send booleans, numbers, strings and arrays of those.
+            params: []
+          },
+          this
+        );
       }
     };
   };

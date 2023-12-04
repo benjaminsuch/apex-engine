@@ -1,40 +1,188 @@
+import { IInstatiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
+import { IRenderer, type TRenderRPCData } from '../platform/renderer/common';
+import { getTargetId } from './class';
+import { type TProxyConstructor, type IProxy } from './class/specifiers/proxy';
+import * as components from './components';
+import { BoxGeometryProxy } from './BoxGeometry';
 import { type Tick } from './EngineLoop';
 
 export class ProxyManager {
-  private static readonly replicatedProxies = new Set<any>();
+  private static instance?: ProxyManager;
 
-  public static markAsReplicated(proxy: InstanceType<TClass>) {
-    this.replicatedProxies.add(proxy);
-
-    const idx = this.enqueuedProxies.indexOf(proxy);
-
-    if (idx > -1) {
-      this.enqueuedProxies.splice(idx, 1);
+  // I don't like applying the singleton pattern for this class, but an architectural
+  // issue with the proxies force me to do so.
+  //
+  // For context: Currently, I don't see a way to pass the instance of ProxyManager to
+  // the class that is returned by our `proxy` specifier (see /class/specifiers/proxy.ts).
+  public static getInstance() {
+    if (!this.instance) {
+      throw new Error(`There is no instance of ProxyManager.`);
     }
+    return this.instance;
   }
 
-  public static currentTick: Tick;
+  protected readonly proxies: ProxyRegistry;
 
-  /**
-   * Proxies that have been created on the game-thread, but are not
-   * replicated on the render-thread yet.
-   */
-  public static readonly enqueuedProxies: InstanceType<TClass>[] = [];
+  public registerProxy(proxy: IProxy) {
+    return this.proxies.register(proxy);
+  }
 
-  /**
-   * All proxies that are currently operating.
-   */
-  public static readonly proxies: InstanceType<TClass>[] = [];
+  protected readonly tasks: ProxyTask<any>[] = [];
 
-  public static add(proxy: InstanceType<TClass>) {
-    const idx = this.proxies.indexOf(proxy);
+  public queueTask<T extends new (...args: any[]) => ProxyTask<any>>(
+    TaskConstructor: T,
+    //todo: Re-add `never` to `? R : any`
+    ...args: [T extends typeof ProxyTask<infer R> ? R : any, ...any[]]
+  ) {
+    //todo: Improve types
+    this.tasks.push(this.instantiationService.createInstance(TaskConstructor as TClass, ...args));
+    return true;
+  }
 
-    if (idx > -1) {
-      console.warn(`The proxy has already been added.`);
-      return;
+  public currentTick: Tick = { delta: 0, elapsed: 0, id: 0 };
+
+  constructor(
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger
+  ) {
+    if (ProxyManager.instance) {
+      throw new Error(`An instance of the ProxyManager already exists.`);
     }
 
-    this.enqueuedProxies.push(proxy);
-    this.proxies.push(proxy);
+    this.proxies = this.instantiationService.createInstance(ProxyRegistry);
+
+    ProxyManager.instance = this;
+    console.log('ProxyManager', this);
+  }
+
+  public tick(tick: Tick) {
+    this.currentTick = tick;
+
+    for (let i = 0; i < this.tasks.length; ++i) {
+      const task = this.tasks[i];
+
+      this.logger.debug(`Start ${task.constructor.name}`);
+
+      if (task.run(this)) {
+        this.logger.debug(`${task.constructor.name} done`);
+        this.tasks.splice(i, 1);
+        i--;
+      } else {
+        //todo: Replace with `IS_DEV` (the variable does not exist in worker context)
+        if (true) {
+          this.logger.debug(`${task.constructor.name} failed`);
+        } else {
+          this.logger.warn(this.constructor.name, `"${task.constructor.name}" failed.`);
+        }
+      }
+    }
+  }
+}
+
+export class GameProxyManager extends ProxyManager {
+  constructor(
+    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IRenderer protected readonly renderer: IRenderer
+  ) {
+    super(instantiationService, logger);
+  }
+
+  public send(message: any, transferable?: Transferable[]) {
+    this.renderer.send(message, transferable);
+  }
+}
+
+export class RenderProxyManager extends ProxyManager {
+  public readonly components = { ...components, BoxGeometryProxy };
+
+  public getProxy(id: number) {
+    for (const proxy of this.proxies) {
+      if (proxy.id === id) {
+        return proxy;
+      }
+    }
+  }
+}
+
+export abstract class ProxyTask<Data> {
+  constructor(
+    public readonly data: Data,
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger
+  ) {}
+
+  public abstract run(proxyManager: ProxyManager): boolean;
+}
+
+export class GameRPCTask extends ProxyTask<Omit<TRenderRPCData, 'tick'>> {
+  constructor(
+    public override readonly data: Omit<TRenderRPCData, 'tick'>,
+    private readonly proxy: IProxy,
+    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger
+  ) {
+    super(data, instantiationService, logger);
+  }
+
+  public run(proxyManager: GameProxyManager) {
+    this.proxy.proxyMessageChannel.port1.postMessage({
+      ...this.data,
+      type: 'rpc',
+      tick: proxyManager.currentTick.id
+    });
+
+    return true;
+  }
+}
+
+export class GameCreateProxyInstanceTask extends ProxyTask<IProxy> {
+  public run(proxyManager: GameProxyManager) {
+    const messagePort = this.data.getProxyMessagePort();
+    const constructor = (this.data.constructor as TProxyConstructor).proxyClassName;
+
+    proxyManager.send(
+      {
+        type: 'proxy',
+        constructor,
+        id: getTargetId(this.data) as number,
+        tb: this.data.tripleBuffer,
+        messagePort,
+        tick: proxyManager.currentTick.id
+      },
+      [messagePort]
+    );
+
+    return true;
+  }
+}
+
+class ProxyRegistry {
+  private readonly list: IProxy[] = [];
+
+  public register(proxy: IProxy) {
+    const idx = this.list.indexOf(proxy);
+
+    if (idx > -1) {
+      this.logger.warn(`Proxy is already registered. Aborting.`);
+      return false;
+    }
+
+    this.entries = this.list.push(proxy);
+
+    return true;
+  }
+
+  public entries: number = 0;
+
+  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {}
+
+  public *[Symbol.iterator]() {
+    let idx = 0;
+
+    while (idx < this.list.length) {
+      yield this.list[idx++];
+    }
   }
 }

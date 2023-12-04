@@ -1,13 +1,10 @@
 import {
+  IRenderProxyManager,
   Renderer,
   type TRenderWorkerInitData,
   type TRenderWorkerInitMessage
 } from '../../platform/renderer/common';
-
-import * as components from '../components';
-import { BoxGeometryProxy } from '../BoxGeometry';
-
-const proxyClasses = { ...components, BoxGeometryProxy };
+import { RenderProxyManager } from '../ProxyManager';
 
 function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   if (typeof event.data !== 'object') {
@@ -29,7 +26,13 @@ function onInit({
   messagePort,
   flags
 }: TRenderWorkerInitData) {
-  const renderer = Renderer.create(canvas, flags, messagePort, proxyClasses);
+  const renderer = Renderer.create(
+    canvas,
+    flags,
+    messagePort,
+    //todo: Improve types (I think we have to move `RenderProxyManager` into `../../platform/renderer/common`)
+    RenderProxyManager as TClass<IRenderProxyManager>
+  );
   renderer.init();
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();

@@ -3,13 +3,23 @@ import { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 import { TripleBuffer } from '../../../platform/memory/common';
 import { ApexEngine } from '../../ApexEngine';
 import { type Tick } from '../../EngineLoop';
-import { ProxyManager } from '../../ProxyManager';
+import { GameCreateProxyInstanceTask, GameProxyManager } from '../../ProxyManager';
 import { getClassSchema, getTargetId, isPropSchema } from '../class';
 import { id } from './id';
 
+export interface IProxy {
+  readonly id?: number;
+  readonly tripleBuffer: TripleBuffer;
+  readonly byteView: Uint8Array;
+  //todo: Remove
+  readonly proxyMessageChannel: MessageChannel;
+  getProxyMessagePort(): MessagePort;
+  tick(tick: Tick): void;
+}
+
+export type TProxyConstructor = TClass<IProxy> & { proxyClassName: string };
+
 /**
- *
- *
  * @param proxyClass The class which is used to instantiate the proxy on the render-thread.
  * @returns An anonymous class that is derived from the original class.
  */
@@ -27,21 +37,9 @@ export function proxy(proxyClass: TClass) {
 
       public static readonly proxyClassName: string = proxyClass.name;
 
-      //todo: We should only create a message channel for classes that have rpcs
-      private readonly proxyMessageChannel!: MessageChannel;
-
-      private readonly actionsByTick: Map<number, any[]> = new Map();
-
-      public addTickAction(action: any) {
-        const tick = ProxyManager.currentTick.id;
-        const actions = this.actionsByTick.get(tick);
-
-        if (actions) {
-          actions.push(action);
-        } else {
-          this.actionsByTick.set(tick, [action]);
-        }
-      }
+      //todo: We should only create a message channel for classes that have rpcs.
+      //todo: I don't think we have to store the message channel and instead could just store the port1 and port2.
+      public readonly proxyMessageChannel!: MessageChannel;
 
       public readonly tripleBuffer!: TripleBuffer;
 
@@ -381,14 +379,12 @@ export function proxy(proxyClass: TClass) {
           }
         }
 
-        ProxyManager.add(this);
+        GameProxyManager.getInstance().registerProxy(this);
+        GameProxyManager.getInstance().queueTask(GameCreateProxyInstanceTask, this);
 
+        // We only create the message channel, but don't listen to any incoming messages.
+        // Currently there is no reason for Proxies to send messages back, but this may change in the future.
         this.proxyMessageChannel = new MessageChannel();
-        this.proxyMessageChannel.port1.addEventListener('message', event => {
-          console.log('Received message from proxy:', event.data);
-        });
-        this.proxyMessageChannel.port1.start();
-        console.log('proxy origin:', this);
       }
 
       public getProxyMessagePort() {
@@ -396,24 +392,10 @@ export function proxy(proxyClass: TClass) {
       }
 
       public tick(tick: Tick) {
-        const actions: any[][] = [];
-
-        for (let i = 2; i > 0; --i) {
-          actions.push(this.actionsByTick.get(Math.max(tick.id - i, 0)) ?? []);
+        //todo: This check should not be necessary, but CameraComponent throws an error
+        if (this.tripleBuffer) {
+          this.tripleBuffer.copyToWriteBuffer(this.byteView);
         }
-
-        const cpy = [...actions];
-        //todo: We should probably use a incremental for-loop
-        for (const stack of actions) {
-          for (let i = 0; i < stack.length; ++i) {
-            const action = stack[i];
-            console.log('actions', tick.id, cpy);
-            this.proxyMessageChannel.port1.postMessage({ ...action, tick: tick.id });
-            stack.splice(i, 1);
-            i--;
-          }
-        }
-
         super.tick(tick);
       }
     };

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 import { type TripleBuffer } from '../../platform/memory/common';
-import { type Renderer } from '../../platform/renderer/common';
+import { type IRenderTickContext, type Renderer } from '../../platform/renderer/common';
 import { CLASS, FUNC, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
 import { rpc } from '../class/specifiers/rpc';
@@ -70,8 +70,8 @@ export class SceneComponentProxy extends RenderProxy {
     this.renderer.scene.add(this.sceneObject);
   }
 
-  public override tick(time: number, frameId: number): void {
-    super.tick(time, frameId);
+  public override tick(tick: IRenderTickContext): void {
+    super.tick(tick);
 
     this.sceneObject.castShadow = this.castShadow;
     this.sceneObject.receiveShadow = this.receiveShadow;

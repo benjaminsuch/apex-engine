@@ -2,11 +2,10 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { TripleBuffer } from '../platform/memory/common';
 import { IRenderer } from '../platform/renderer/common';
-import { getTargetId } from './class';
 import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
-import { ProxyManager } from './ProxyManager';
+import { GameProxyManager, type ProxyManager } from './ProxyManager';
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;
@@ -31,8 +30,7 @@ export abstract class ApexEngine {
     new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
   ).fill(0x6);
 
-  //todo: Should probably be removed (not sure tho)
-  public static TICK: Tick;
+  public readonly proxyManager: ProxyManager;
 
   public isRunning: boolean = false;
 
@@ -47,6 +45,8 @@ export abstract class ApexEngine {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the GameEngine already exists.`);
     }
+
+    this.proxyManager = this.instantiationService.createInstance(GameProxyManager);
 
     ApexEngine.instance = this;
   }
@@ -66,29 +66,7 @@ export abstract class ApexEngine {
     TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
 
     this.getGameInstance().getWorld().tick(tick);
-
-    ProxyManager.currentTick = tick;
-
-    for (const proxy of ProxyManager.proxies) {
-      proxy.tripleBuffer.copyToWriteBuffer(proxy.byteView);
-    }
-
-    while (ProxyManager.enqueuedProxies.length) {
-      const proxy = ProxyManager.enqueuedProxies.shift();
-      const messagePort: MessagePort = proxy.getProxyMessagePort();
-
-      this.renderer.send(
-        {
-          type: 'proxy',
-          constructor: proxy.constructor.proxyClassName,
-          id: getTargetId(proxy) as number,
-          tb: proxy.tripleBuffer,
-          messagePort,
-          tick: tick.id
-        },
-        [messagePort]
-      );
-    }
+    this.proxyManager.tick(tick);
   }
 
   public start() {

@@ -7,6 +7,7 @@ import { GameEngine } from './GameEngine';
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
 
+//todo: Rename to `TickContext`
 export interface Tick {
   id: number;
   delta: number;
@@ -30,9 +31,7 @@ export class EngineLoop {
     @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IRenderer private readonly renderer: IRenderer,
     @IConsoleLogger private readonly logger: IConsoleLogger
-  ) {
-    ApexEngine.TICK = { delta: this.delta, elapsed: this.elapsed, id: this.frames };
-  }
+  ) {}
 
   public init() {
     if (this.renderer) {

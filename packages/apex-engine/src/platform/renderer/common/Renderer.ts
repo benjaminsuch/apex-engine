@@ -17,9 +17,78 @@ import {
   WebGLRenderer
 } from 'three';
 
-import { InstantiationService, ServiceCollection } from '../../di/common';
+import { IInstatiationService, InstantiationService, ServiceCollection } from '../../di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../logging/common';
 import { TripleBuffer } from '../../memory/common';
+
+export interface IRenderTickContext {
+  id: number;
+  elapsed: number;
+}
+
+export interface IRenderProxyManager {
+  //todo: Improve types
+  readonly components: Record<string, TClass>;
+  currentTick: IRenderTickContext;
+  tick(tick: IRenderTickContext): void;
+  queueTask<T extends new (...args: any[]) => RenderProxyTask<any>>(
+    TaskConstructor: T,
+    //todo: Re-add `never` to `? R : any`
+    ...args: [T extends typeof RenderProxyTask<infer R> ? R : any, ...any[]]
+  ): boolean;
+  registerProxy(proxy: InstanceType<TClass>): boolean;
+  getProxy(id: number): InstanceType<TClass> | void;
+}
+
+export abstract class RenderProxyTask<Data> {
+  constructor(
+    public readonly data: Data,
+    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger
+  ) {}
+
+  public abstract run(proxyManager: IRenderProxyManager): boolean;
+}
+
+class RenderCreateProxyInstanceTask extends RenderProxyTask<TRenderSceneProxyCreateData> {
+  constructor(
+    public override readonly data: TRenderSceneProxyCreateData,
+    private readonly renderer: Renderer,
+    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger
+  ) {
+    super(data, instantiationService, logger);
+  }
+
+  public run(proxyManager: IRenderProxyManager) {
+    const { constructor, id, messagePort, tb, tick } = this.data;
+    const ProxyConstructor = proxyManager.components[constructor] as TClass;
+
+    if (!ProxyConstructor) {
+      this.logger.warn(`Constructor (${constructor}) not found for proxy with id "${id}".`);
+      return false;
+    }
+
+    if (proxyManager.currentTick.id !== tick) {
+      //todo: `IS_DEV` does not exist in worker environment (this needs to be fixed in abt/cli.ts).
+      this.logger.info(
+        this.constructor.name,
+        `The render tick (${proxyManager.currentTick.id}) does not match the game tick (${tick}). The task will be deferred to the next tick.`
+      );
+      return false;
+    }
+
+    return proxyManager.registerProxy(
+      this.instantiationService.createInstance(
+        ProxyConstructor,
+        new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+        id,
+        messagePort,
+        this.renderer
+      )
+    );
+  }
+}
 
 export type TRenderMessageType =
   | 'init'
@@ -75,9 +144,9 @@ export type TRenderSceneProxyCreateData = TRenderMessageData<{
 export type TRenderSceneProxyMessage = TRenderMessage<'proxy', TRenderSceneProxyCreateData>;
 
 export type TRenderRPCData = TRenderMessageData<{
-  id: number;
-  action: string;
+  name: string;
   params: unknown[];
+  tick: number;
 }>;
 
 export type TRenderRPCMessage = TRenderMessage<'rpc', TRenderRPCData>;
@@ -109,36 +178,26 @@ export class Renderer {
     canvas: OffscreenCanvas,
     flags: Uint8Array,
     messagePort: MessagePort,
-    components: Record<string, TClass>
+    ProxyManagerClass: TClass<IRenderProxyManager>
   ): Renderer {
     const logger = new ConsoleLogger();
     const services = new ServiceCollection([IConsoleLogger, logger]);
     const instantiationService = new InstantiationService(services);
 
-    return instantiationService.createInstance(Renderer, canvas, flags, messagePort, components);
+    return instantiationService.createInstance(
+      Renderer,
+      canvas,
+      flags,
+      messagePort,
+      instantiationService.createInstance(ProxyManagerClass)
+    );
   }
-
-  private readonly proxyInstances: InstanceType<TClass>[] = [];
 
   private readonly webGLRenderer: WebGLRenderer;
-
-  private readonly actionsByTick: Map<number, any[]> = new Map();
-
-  public addTickAction(tick: number, action: any) {
-    const actions = this.actionsByTick.get(tick);
-
-    if (actions) {
-      actions.push(action);
-    } else {
-      this.actionsByTick.set(tick, [action]);
-    }
-  }
 
   public readonly scene: Scene = new Scene();
 
   public readonly camera: Camera;
-
-  public readonly proxyRegistry: Map<number, InstanceType<TClass>> = new Map();
 
   public frameId: number = 0;
 
@@ -146,7 +205,7 @@ export class Renderer {
     canvas: OffscreenCanvas,
     private readonly flags: Uint8Array,
     private readonly messagePort: MessagePort,
-    private readonly components: Record<string, TClass>,
+    public readonly proxyManager: IRenderProxyManager,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -201,7 +260,6 @@ export class Renderer {
   public init() {
     this.messagePort.addEventListener('message', this);
     this.messagePort.start();
-    console.log('scene', this.scene);
   }
 
   public start() {
@@ -223,7 +281,7 @@ export class Renderer {
     const { type } = event.data;
 
     if (type === 'proxy') {
-      this.addTickAction(event.data.tick, event.data);
+      this.proxyManager.queueTask(RenderCreateProxyInstanceTask, event.data, this);
     }
   }
 
@@ -232,49 +290,7 @@ export class Renderer {
 
     TripleBuffer.swapReadBufferFlags(this.flags);
 
-    for (let i = 0; i < this.proxyInstances.length; ++i) {
-      const proxy = this.proxyInstances[i];
-      proxy.tick(time, this.frameId);
-    }
-
-    const actions = this.actionsByTick.get(this.frameId) ?? [];
-
-    for (let i = 0; i < actions.length; ++i) {
-      const { constructor, id, messagePort, tb } = actions[i];
-
-      if (
-        this.createProxyInstance(
-          id,
-          constructor,
-          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
-          messagePort
-        )
-      ) {
-        actions.splice(i, 1);
-        i--;
-      }
-    }
-
+    this.proxyManager.tick({ id: this.frameId, elapsed: time });
     this.webGLRenderer.render(this.scene, this.camera);
-  }
-
-  private createProxyInstance(
-    id: TRenderSceneProxyCreateData['id'],
-    constructor: TRenderSceneProxyCreateData['constructor'],
-    tb: TripleBuffer,
-    messagePort?: MessagePort
-  ) {
-    const Constructor = this.components[constructor as keyof typeof this.components] as TClass;
-
-    if (!Constructor) {
-      throw new Error(`Constructor (${constructor}) not found for proxy with id "${id}".`);
-    }
-
-    const instance = new Constructor(tb, id, messagePort, this);
-
-    this.proxyRegistry.set(id, instance);
-    this.proxyInstances.push(instance);
-
-    return true;
   }
 }

@@ -1,20 +1,16 @@
+import { IInstatiationService } from '../platform/di/common';
+import { IConsoleLogger } from '../platform/logging/common';
 import { TripleBuffer } from '../platform/memory/common';
-import { type Renderer } from '../platform/renderer/common';
+import {
+  type IRenderProxyManager,
+  type IRenderTickContext,
+  RenderProxyTask,
+  type Renderer,
+  TRenderRPCData
+} from '../platform/renderer/common';
 import { getClassSchema, isPropSchema } from './class';
 
 export abstract class RenderProxy {
-  private readonly actionsByTick: Map<number, any[]> = new Map();
-
-  public addTickAction(tick: number, action: any) {
-    const actions = this.actionsByTick.get(tick);
-
-    if (actions) {
-      actions.push(action);
-    } else {
-      this.actionsByTick.set(tick, [action]);
-    }
-  }
-
   public name: string = '';
 
   public readonly isProxy: boolean = true;
@@ -52,7 +48,7 @@ export abstract class RenderProxy {
           accessors = {
             get(this) {
               const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
-              return this.renderer.proxyRegistry.get(views[idx].getUint32(offset, true));
+              return this.renderer.proxyManager.getProxy(views[idx].getUint32(offset, true));
             }
           };
         } else if (type === 'boolean') {
@@ -91,37 +87,19 @@ export abstract class RenderProxy {
 
     if (this.messagePort) {
       this.messagePort.addEventListener('message', event => {
-        console.log(`Proxy (${this.constructor.name}:${this.id}) received message:`, event.data);
+        console.log(`${this.constructor.name} (${this.id})`, `Received message:`, event.data);
 
         const { type } = event.data;
 
         if (type === 'rpc') {
-          this.addTickAction(event.data.tick, event.data);
+          this.renderer.proxyManager.queueTask(RenderRPCTask, event.data, this);
         }
       });
       this.messagePort.start();
     }
   }
 
-  //todo: Consolidate params into one object
-  public tick(time: number, frameId: number) {
-    const actions = this.actionsByTick.get(frameId) ?? [];
-
-    //todo: We should probably use a incremental for-loop
-    for (const action of actions) {
-      console.log('executing action:', frameId, this.actionsByTick);
-      const { name, params } = action;
-      const method = this[name];
-
-      if (!method) {
-        console.warn(
-          `RPC execution failed: A method "${name}" does not exist on ${this.constructor.name}.`
-        );
-      } else {
-        method.apply(this, params);
-      }
-    }
-  }
+  public tick(tick: IRenderTickContext) {}
 }
 
 const getters = new Map<TypedArray, string>([
@@ -133,3 +111,48 @@ const getters = new Map<TypedArray, string>([
   [Uint16Array, 'getUint16'],
   [Uint32Array, 'getUint32']
 ]);
+
+class RenderRPCTask extends RenderProxyTask<TRenderRPCData> {
+  constructor(
+    public override readonly data: TRenderRPCData,
+    private readonly proxy: RenderProxy | undefined = undefined,
+    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger
+  ) {
+    super(data, instantiationService, logger);
+  }
+
+  public run(proxyManager: IRenderProxyManager) {
+    const { name, params, tick } = this.data;
+
+    // if (proxyManager.currentTick.id !== tick) {
+    //   //todo: `IS_DEV` does not exist in worker environment (this needs to be fixed in abt/cli.ts).
+    //   this.logger.info(
+    //     this.constructor.name,
+    //     `The render tick (${proxyManager.currentTick.id}) does not match the game tick (${tick}). The task will be deferred to the next tick.`
+    //   );
+    //   return false;
+    // }
+
+    if (!this.proxy) {
+      this.logger.info(
+        this.constructor.name,
+        `RPC execution failed: The target for this rpc does not exist yet. Task will be deferred to the next tick.`
+      );
+      return false;
+    }
+
+    const method = this.proxy[name];
+
+    if (!method) {
+      this.logger.warn(
+        this.constructor.name,
+        `RPC execution failed: A method "${name}" does not exist on ${this.proxy.constructor.name}.`
+      );
+    } else {
+      method.apply(this.proxy, params);
+    }
+
+    return true;
+  }
+}
