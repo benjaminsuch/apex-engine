@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 
+import { type IRenderTickContext } from '../../platform/renderer/common';
 import { CLASS, getTargetId } from '../class';
 import { proxy } from '../class/specifiers/proxy';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
@@ -13,8 +14,8 @@ export class BoxComponentProxy extends MeshComponentProxy {
 
   private segmentsAround: number = 24;
 
-  public override tick(time: number = 0) {
-    const positionAttr = this.mesh.geometry.getAttribute('position');
+  public override tick({ elapsed: time }: IRenderTickContext) {
+    const positionAttr = this.sceneObject.geometry.getAttribute('position');
 
     time *= 0.001;
 
@@ -37,7 +38,7 @@ export class BoxComponentProxy extends MeshComponentProxy {
 
   public makeSpherePositions(segmentsAround: number, segmentsDown: number) {
     this.segmentsAround = segmentsAround;
-    this.mesh.material = new THREE.MeshPhongMaterial({
+    this.sceneObject.material = new THREE.MeshPhongMaterial({
       color: 0xff0000,
       side: THREE.DoubleSide,
       shininess: 100
@@ -99,9 +100,9 @@ export class BoxComponentProxy extends MeshComponentProxy {
     const positionAttr = new THREE.BufferAttribute(positions, 3);
     positionAttr.setUsage(THREE.DynamicDrawUsage);
 
-    this.mesh.geometry.setAttribute('position', positionAttr);
-    this.mesh.geometry.setAttribute('normal', new THREE.BufferAttribute(this.normals, 3));
-    this.mesh.geometry.setIndex(indices);
+    this.sceneObject.geometry.setAttribute('position', positionAttr);
+    this.sceneObject.geometry.setAttribute('normal', new THREE.BufferAttribute(this.normals, 3));
+    this.sceneObject.geometry.setIndex(indices);
   }
 }
 

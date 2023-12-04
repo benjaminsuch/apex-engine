@@ -1,8 +1,9 @@
-import { Renderer, type TRenderWorkerInitData } from '../../platform/renderer/common';
-import * as components from '../components';
-import { BoxGeometryProxy } from '../BoxGeometry';
-
-const proxyClasses = { ...components, BoxGeometryProxy };
+import {
+  Renderer,
+  type IRenderProxyManager,
+  type TRenderWorkerInitData
+} from '../../platform/renderer/common';
+import { RenderProxyManager } from '../ProxyManager';
 
 /**
  * For consistency reasons, I implemented this class as if it were a worker. This makes
@@ -40,7 +41,12 @@ export default class RenderMainThread extends EventTarget implements EventListen
     messagePort,
     flags
   }: TRenderWorkerInitData) {
-    this.renderer = Renderer.create(canvas, flags, messagePort, proxyClasses);
+    this.renderer = Renderer.create(
+      canvas,
+      flags,
+      messagePort,
+      RenderProxyManager as TClass<IRenderProxyManager>
+    );
     this.renderer.init();
     this.renderer.setSize(initialCanvasHeight, initialCanvasWidth);
     this.renderer.start();

@@ -376,6 +376,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/three@npm:^0":
+  version: 0.159.0
+  resolution: "@types/three@npm:0.159.0"
+  dependencies:
+    "@types/stats.js": "*"
+    "@types/webxr": "*"
+    fflate: ~0.6.10
+    meshoptimizer: ~0.18.1
+  checksum: 409495d27e70cce06bdc64e80b22685d1a1f8c327052a78b62166f71dca1f49077f1ecda9ff3440447096c9e5c520e5e158a8605207b74827af3c33c10020883
+  languageName: node
+  linkType: hard
+
 "@types/three@npm:^0.153.0":
   version: 0.153.0
   resolution: "@types/three@npm:0.153.0"
@@ -947,7 +959,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fflate@npm:^0.6.9, fflate@npm:~0.6.9":
+"fflate@npm:^0.6.9, fflate@npm:~0.6.10, fflate@npm:~0.6.9":
   version: 0.6.10
   resolution: "fflate@npm:0.6.10"
   checksum: 96384bc4090987fe565c0de8204e3830f538144ec950576fea50aee1b42adbe9fc3ed5e7905dfa7979faaa20979def330dbebce548f3dcafc3e118cc9838526d
@@ -1485,6 +1497,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"meshoptimizer@npm:~0.18.1":
+  version: 0.18.1
+  resolution: "meshoptimizer@npm:0.18.1"
+  checksum: 101dbed8abd4cf167cdb7a0bc13db90dd0743332c689e43b18cc5254d238f0766750752432401fa63dc7e9e32399ef68daacf48f0d89db1484042c1761c7362d
+  languageName: node
+  linkType: hard
+
 "mime@npm:^3.0.0":
   version: 3.0.0
   resolution: "mime@npm:3.0.0"
@@ -2002,10 +2021,10 @@ __metadata:
   resolution: "sandbox@workspace:sandbox"
   dependencies:
     "@types/node": ^18.11.18
-    "@types/three": ^0.153.0
+    "@types/three": ^0
     apex-engine: "workspace:^"
     electron: ^23.1.0
-    three: 0.154.0
+    three: ^0.159.0
     three-stdlib: ^2.28.5
     tslib: ^2.5.0
     typescript: ^4.9.4
@@ -2216,10 +2235,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three@npm:0.154.0, three@npm:^0.154.0":
+"three@npm:^0.154.0":
   version: 0.154.0
   resolution: "three@npm:0.154.0"
   checksum: 90ad3cafef8b866641366977ab7189d56f7352c6cdc014cbab946544e42782ec4ea7e56b959b43590433a0fcdc4bd8f8029b18a75074ba10005182c5a73bcc88
+  languageName: node
+  linkType: hard
+
+"three@npm:^0.159.0":
+  version: 0.159.0
+  resolution: "three@npm:0.159.0"
+  checksum: 41f03abf140d7872f64d3f980eb8cf05ef15385914969435a0b60f006f4ed846c6473aaa992e9e770baac4b4e8fdfc288c6276a74b75977cef6a5b9e76f40eb3
   languageName: node
   linkType: hard
 

@@ -591,9 +591,9 @@ function createRollupConfig(
       freeze: false,
       sourcemap: 'inline',
       chunkFileNames: '[name].js',
-      manualChunks: {
-        vendor: ['three']
-      },
+      // manualChunks: {
+      //   vendor: ['three']
+      // },
       ...output
     },
     onwarn(warning, warn) {

@@ -327,7 +327,7 @@ cli
     .alias('dev')
     .action(async (options) => {
     filterDuplicateOptions(options);
-    const { config: configFile, debug, platform } = options;
+    const { config: configFile, debug, platform, target } = options;
     const { targets } = await getApexConfig(configFile);
     if (debug) {
         isDebugModeOn = true;
@@ -336,8 +336,13 @@ cli
         mkdirSync(APEX_DIR);
     }
     const hasPlatform = targets.find(item => item.platform === platform);
+    const hasTarget = targets.find(item => item.target === target);
     if (!hasPlatform) {
         console.warn(`No config defined for platform "${platform}". Please check your apex.config.ts.`);
+        process.exit(0);
+    }
+    if (target && !hasTarget) {
+        console.warn(`No config defined for target "${target}". Please check your apex.config.ts.`);
         process.exit(0);
     }
     for (let targetConfig of targets) {
@@ -757,9 +762,9 @@ function createRollupConfig(launcher, { output, ...options } = {}) {
             freeze: false,
             sourcemap: 'inline',
             chunkFileNames: '[name].js',
-            manualChunks: {
-                vendor: ['three']
-            },
+            // manualChunks: {
+            //   vendor: ['three']
+            // },
             ...output
         },
         onwarn(warning, warn) {

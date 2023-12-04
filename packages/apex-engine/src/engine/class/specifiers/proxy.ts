@@ -33,6 +33,7 @@ export function proxy(proxyClass: TClass) {
     Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
 
     return class extends constructor {
+      // @ts-ignore
       public static override readonly name: string = constructor.name;
 
       public static readonly proxyClassName: string = proxyClass.name;

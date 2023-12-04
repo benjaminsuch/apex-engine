@@ -1,6 +1,6 @@
 import {
-  IRenderProxyManager,
   Renderer,
+  type IRenderProxyManager,
   type TRenderWorkerInitData,
   type TRenderWorkerInitMessage
 } from '../../platform/renderer/common';
