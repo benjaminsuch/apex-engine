@@ -1,9 +1,10 @@
 import { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { TripleBuffer } from '../../../platform/memory/common';
+import { GameCreateProxyInstanceTask } from '../../tasks';
 import { ApexEngine } from '../../ApexEngine';
 import { type Tick } from '../../EngineLoop';
-import { GameCreateProxyInstanceTask, GameProxyManager } from '../../ProxyManager';
+import { GameProxyManager } from '../../ProxyManager';
 import { getClassSchema, getTargetId, isPropSchema } from '../class';
 import { id } from './id';
 

@@ -1,8 +1,7 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderPlatform, type TRenderRPCData } from '../platform/rendering/common';
-import { getTargetId } from './class';
-import { type TProxyConstructor, type IProxy } from './class/specifiers/proxy';
+import { IRenderPlatform } from '../platform/rendering/common';
+import { type IProxy } from './class/specifiers/proxy';
 import * as components from './components';
 import { BoxGeometryProxy } from './BoxGeometry';
 import { type Tick } from './EngineLoop';
@@ -118,48 +117,6 @@ export class RenderProxyManager extends ProxyManager {
         return proxy;
       }
     }
-  }
-}
-
-export class GameRPCTask extends ProxyTask<Omit<TRenderRPCData, 'tick'>> {
-  constructor(
-    public override readonly data: Omit<TRenderRPCData, 'tick'>,
-    private readonly proxy: IProxy,
-    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger
-  ) {
-    super(data, instantiationService, logger);
-  }
-
-  public run(proxyManager: GameProxyManager) {
-    this.proxy.proxyMessageChannel.port1.postMessage({
-      ...this.data,
-      type: 'rpc',
-      tick: proxyManager.currentTick.id
-    });
-
-    return true;
-  }
-}
-
-export class GameCreateProxyInstanceTask extends ProxyTask<IProxy> {
-  public run(proxyManager: GameProxyManager) {
-    const messagePort = this.data.getProxyMessagePort();
-    const constructor = (this.data.constructor as TProxyConstructor).proxyClassName;
-
-    proxyManager.send(
-      {
-        type: 'proxy',
-        constructor,
-        id: getTargetId(this.data) as number,
-        tb: this.data.tripleBuffer,
-        messagePort,
-        tick: proxyManager.currentTick.id
-      },
-      [messagePort]
-    );
-
-    return true;
   }
 }
 

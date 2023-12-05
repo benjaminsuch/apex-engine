@@ -48,6 +48,10 @@ export class EngineLoop {
     this.tickInterval = setInterval(() => {
       this.frames++;
 
+      if (this.frames < 241) {
+        console.log('game tick:', this.frames);
+      }
+
       const then = performance.now();
 
       this.delta = then - this.elapsed / 1000;

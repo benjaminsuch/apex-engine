@@ -153,6 +153,10 @@ export class Renderer {
   private tick(time: number) {
     ++this.frameId;
 
+    if (this.frameId < 241) {
+      console.log('render tick:', this.frameId);
+    }
+
     TripleBuffer.swapReadBufferFlags(this.flags);
 
     this.proxyManager.tick({ id: this.frameId, delta: 0, elapsed: time });
