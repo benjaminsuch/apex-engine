@@ -1,4 +1,4 @@
-import { IRenderer } from '../common';
+import { IRenderPlatform } from '../common';
 
 /**
  * This is just a temporary renderer-class for the "node" platform, to avoid Typescript
@@ -6,7 +6,7 @@ import { IRenderer } from '../common';
  *
  * A "node" build does not render anything, so it will be deleted once I fixed the types.
  */
-export class NodeRenderer implements IRenderer {
+export class NodeRenderPlatform implements IRenderPlatform {
   declare readonly _injectibleService: undefined;
 
   public async init() {}

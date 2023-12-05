@@ -1,13 +1,12 @@
 import * as THREE from 'three';
 
 import { type TripleBuffer } from '../../platform/memory/common';
-import { type IRenderTickContext, type Renderer } from '../../platform/renderer/common';
 import { CLASS, FUNC, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
 import { rpc } from '../class/specifiers/rpc';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../class/specifiers/serialize';
+import { type IRenderTickContext, RenderProxy, Renderer } from '../renderer';
 import { type Actor } from '../Actor';
-import { RenderProxy } from '../RenderProxy';
 import { ActorComponent } from './ActorComponent';
 
 export class SceneComponentProxy extends RenderProxy {

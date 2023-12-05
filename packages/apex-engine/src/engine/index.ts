@@ -13,8 +13,9 @@ export * from './Pawn';
 export * from './PlayerController';
 export * from './PlayerInput';
 export * from './ProxyManager';
-export * from './RenderProxy';
+export * from './ProxyTask';
 export * from './World';
 
 export * from './class';
 export * from './components';
+export * from './renderer';

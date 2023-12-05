@@ -1,6 +1,6 @@
 import { type GetLeadingNonServiceArgs, IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderer } from '../platform/renderer/common';
+import { IRenderPlatform } from '../platform/rendering/common';
 import { type ActorComponent, SceneComponent } from './components';
 import { type Tick } from './EngineLoop';
 import { type Level } from './Level';
@@ -86,7 +86,7 @@ export class Actor {
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @IRenderer public readonly renderer: IRenderer
+    @IRenderPlatform public readonly renderer: IRenderPlatform
   ) {}
 
   public beginPlay() {

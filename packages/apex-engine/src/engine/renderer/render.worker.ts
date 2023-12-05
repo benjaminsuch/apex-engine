@@ -1,10 +1,9 @@
 import {
-  Renderer,
-  type IRenderProxyManager,
   type TRenderWorkerInitData,
   type TRenderWorkerInitMessage
-} from '../../platform/renderer/common';
+} from '../../platform/rendering/common';
 import { RenderProxyManager } from '../ProxyManager';
+import { Renderer } from './Renderer';
 
 function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   if (typeof event.data !== 'object') {
@@ -26,13 +25,7 @@ function onInit({
   messagePort,
   flags
 }: TRenderWorkerInitData) {
-  const renderer = Renderer.create(
-    canvas,
-    flags,
-    messagePort,
-    //todo: Improve types (I think we have to move `RenderProxyManager` into `../../platform/renderer/common`)
-    RenderProxyManager as TClass<IRenderProxyManager>
-  );
+  const renderer = Renderer.create(canvas, flags, messagePort, RenderProxyManager);
   renderer.init();
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();

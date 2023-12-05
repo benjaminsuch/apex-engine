@@ -1,18 +1,18 @@
 import {
-  IRenderer,
+  IRenderPlatform,
   type TRenderMessage,
   type TRenderMessageData,
   type TRenderMessageType
 } from '../common';
 
-export interface BrowserRendererOptions {
+export interface BrowserRenderPlatformOptions {
   multithreaded?: boolean;
 }
 
-export class BrowserRenderer implements IRenderer {
+export class BrowserRenderPlatform implements IRenderPlatform {
   declare readonly _injectibleService: undefined;
 
-  private static instance?: BrowserRenderer;
+  private static instance?: BrowserRenderPlatform;
 
   public static getInstance() {
     if (!this.instance) {
@@ -32,7 +32,7 @@ export class BrowserRenderer implements IRenderer {
       throw new Error(`Cannot create an instance of Renderer: "window" is undefined.`);
     }
 
-    if (BrowserRenderer.instance) {
+    if (BrowserRenderPlatform.instance) {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
@@ -40,7 +40,7 @@ export class BrowserRenderer implements IRenderer {
       console.log('Renderer received message:', event);
     });
 
-    BrowserRenderer.instance = this;
+    BrowserRenderPlatform.instance = this;
   }
 
   public async init(flags: Uint8Array) {

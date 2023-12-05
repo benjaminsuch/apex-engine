@@ -1,11 +1,12 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderer, type TRenderRPCData } from '../platform/renderer/common';
+import { IRenderPlatform, type TRenderRPCData } from '../platform/rendering/common';
 import { getTargetId } from './class';
 import { type TProxyConstructor, type IProxy } from './class/specifiers/proxy';
 import * as components from './components';
 import { BoxGeometryProxy } from './BoxGeometry';
 import { type Tick } from './EngineLoop';
+import { ProxyTask } from './ProxyTask';
 
 export class ProxyManager {
   private static instance?: ProxyManager;
@@ -66,8 +67,9 @@ export class ProxyManager {
 
       if (task.run(this)) {
         this.logger.debug(`${task.constructor.name} done`);
-        this.tasks.splice(i, 1);
-        i--;
+        // See comment below
+        // this.tasks.splice(i, 1);
+        // i--;
       } else {
         //todo: Replace with `IS_DEV` (the variable does not exist in worker context)
         if (true) {
@@ -76,6 +78,19 @@ export class ProxyManager {
           this.logger.warn(this.constructor.name, `"${task.constructor.name}" failed.`);
         }
       }
+      // If the render-thread is too fast, the proxy tasks added by the game-thread
+      // won't be executed by the render-thread, because it is already 1 or more ticks
+      // ahead. Example: If we have a RenderCreateProxyTask added at (game) tick 2,
+      // and the (render) tick is already at 3 at the time it receives the task, the
+      // render-thread will never execute that task (because it's in the past).
+      //
+      // To properly solve this, we have to make sure that either:
+      // - the game-thread is always ahead
+      // - or we execute tasks that were sent x ticks ago
+      //
+      // todo: Remove this when the above gets fixed.
+      this.tasks.splice(i, 1);
+      i--;
     }
   }
 }
@@ -84,7 +99,7 @@ export class GameProxyManager extends ProxyManager {
   constructor(
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IRenderer protected readonly renderer: IRenderer
+    @IRenderPlatform protected readonly renderer: IRenderPlatform
   ) {
     super(instantiationService, logger);
   }
@@ -104,16 +119,6 @@ export class RenderProxyManager extends ProxyManager {
       }
     }
   }
-}
-
-export abstract class ProxyTask<Data> {
-  constructor(
-    public readonly data: Data,
-    @IInstatiationService protected readonly instantiationService: IInstatiationService,
-    @IConsoleLogger protected readonly logger: IConsoleLogger
-  ) {}
-
-  public abstract run(proxyManager: ProxyManager): boolean;
 }
 
 export class GameRPCTask extends ProxyTask<Omit<TRenderRPCData, 'tick'>> {

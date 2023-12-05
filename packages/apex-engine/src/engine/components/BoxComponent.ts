@@ -1,9 +1,13 @@
 import * as THREE from 'three';
 
-import { type IRenderTickContext } from '../../platform/renderer/common';
+import { IInstatiationService } from '../../platform/di/common';
+import { IConsoleLogger } from '../../platform/logging/common';
+import { IRenderPlatform } from '../../platform/rendering/common';
 import { CLASS, getTargetId } from '../class';
 import { proxy } from '../class/specifiers/proxy';
+import { type IRenderTickContext } from '../renderer';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
+import { BoxGeometry } from '../BoxGeometry';
 
 const temp = new THREE.Vector3();
 
@@ -108,6 +112,22 @@ export class BoxComponentProxy extends MeshComponentProxy {
 
 @CLASS(proxy(BoxComponentProxy))
 export class BoxComponent extends MeshComponent {
+  constructor(
+    width: number = 1,
+    height: number = 1,
+    depth: number = 1,
+    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IRenderPlatform protected override readonly renderer: IRenderPlatform
+  ) {
+    super(
+      instantiationService.createInstance(BoxGeometry, width, height, depth),
+      instantiationService,
+      logger,
+      renderer
+    );
+  }
+
   public makeSpherePositions(segmentsAround: number, segmentsDown: number) {
     this.renderer.send({
       type: 'rpc',

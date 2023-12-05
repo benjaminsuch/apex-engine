@@ -5,8 +5,8 @@ import { InstantiationService, ServiceCollection } from '../../platform/di/commo
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { WebSocketNetDriver } from '../../platform/net/browser';
 import { INetDriver } from '../../platform/net/common';
-import { BrowserRenderer } from '../../platform/renderer/browser';
-import { IRenderer } from '../../platform/renderer/common';
+import { BrowserRenderPlatform } from '../../platform/rendering/browser';
+import { IRenderPlatform } from '../../platform/rendering/common';
 
 export class BrowserMain {
   private readonly instantiationService: InstantiationService;
@@ -17,7 +17,7 @@ export class BrowserMain {
     const renderer = RENDER_ON_MAIN_THREAD ? new RenderMainThread() : new RenderWorker();
 
     services.set(IConsoleLogger, consoleLogger);
-    services.set(IRenderer, new BrowserRenderer(renderer));
+    services.set(IRenderPlatform, new BrowserRenderPlatform(renderer));
 
     this.instantiationService = new InstantiationService(services);
     this.instantiationService.setServiceInstance(

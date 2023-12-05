@@ -1,7 +1,7 @@
 import { CLASS, PROP } from './class';
 import { proxy } from './class/specifiers/proxy';
 import { serialize, uint16 } from './class/specifiers/serialize';
-import { RenderProxy } from './RenderProxy';
+import { RenderProxy } from './renderer';
 
 export class BoxGeometryProxy extends RenderProxy {
   declare depth: number;

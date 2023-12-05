@@ -1,6 +1,6 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderer } from '../platform/renderer/common';
+import { IRenderPlatform } from '../platform/rendering/common';
 import { ApexEngine } from './ApexEngine';
 import { GameEngine } from './GameEngine';
 
@@ -29,7 +29,7 @@ export class EngineLoop {
 
   constructor(
     @IInstatiationService private readonly instantiationService: IInstatiationService,
-    @IRenderer private readonly renderer: IRenderer,
+    @IRenderPlatform private readonly renderer: IRenderPlatform,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {}
 

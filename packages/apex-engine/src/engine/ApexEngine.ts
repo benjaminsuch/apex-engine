@@ -1,7 +1,7 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { TripleBuffer } from '../platform/memory/common';
-import { IRenderer } from '../platform/renderer/common';
+import { IRenderPlatform } from '../platform/rendering/common';
 import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
@@ -40,7 +40,7 @@ export abstract class ApexEngine {
     protected readonly engineLoop: EngineLoop,
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @IRenderer protected readonly renderer: IRenderer
+    @IRenderPlatform protected readonly renderer: IRenderPlatform
   ) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the GameEngine already exists.`);

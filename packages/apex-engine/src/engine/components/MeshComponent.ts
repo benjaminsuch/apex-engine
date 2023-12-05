@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
-import { IRenderer } from '../../platform/renderer/common';
+import { IRenderPlatform } from '../../platform/rendering/common';
 import { CLASS, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
 import { ref, serialize } from '../class/specifiers/serialize';
@@ -26,7 +26,7 @@ export class MeshComponent extends SceneComponent {
     geometry: BoxGeometry,
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IRenderer protected readonly renderer: IRenderer
+    @IRenderPlatform protected readonly renderer: IRenderPlatform
   ) {
     super(instantiationService, logger);
 

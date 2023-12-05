@@ -1,12 +1,9 @@
-import {
-  Renderer,
-  type IRenderProxyManager,
-  type TRenderWorkerInitData
-} from '../../platform/renderer/common';
+import { type TRenderWorkerInitData } from '../../platform/rendering/common';
+import { Renderer } from '.';
 import { RenderProxyManager } from '../ProxyManager';
 
 /**
- * For consistency reasons, I implemented this class as if it were a worker. This makes
+ * For consistency reasons, I implemented the class as if it were a worker. This makes
  * it easier to use in the Renderer-classes.
  */
 export default class RenderMainThread extends EventTarget implements EventListenerObject, Worker {
@@ -41,12 +38,7 @@ export default class RenderMainThread extends EventTarget implements EventListen
     messagePort,
     flags
   }: TRenderWorkerInitData) {
-    this.renderer = Renderer.create(
-      canvas,
-      flags,
-      messagePort,
-      RenderProxyManager as TClass<IRenderProxyManager>
-    );
+    this.renderer = Renderer.create(canvas, flags, messagePort, RenderProxyManager);
     this.renderer.init();
     this.renderer.setSize(initialCanvasHeight, initialCanvasWidth);
     this.renderer.start();
