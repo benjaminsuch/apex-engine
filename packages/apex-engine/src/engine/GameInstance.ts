@@ -51,7 +51,15 @@ export class GameInstance {
 
   public start() {
     this.logger.debug(this.constructor.name, 'Start');
-    this.engine.loadLevel(DEFAULT_LEVEL).then(() => this.getWorld().beginPlay());
+    this.engine.loadLevel(DEFAULT_LEVEL).then(() => {
+      const world = this.getWorld();
+      //todo: Wait for stuff (like actor models) to be loaded
+      //todo: Remove timeout and window.beginPlay
+      window['beginPlay'] = world.beginPlay;
+      setTimeout(() => {
+        world.beginPlay();
+      }, 2000);
+    });
   }
 
   public createPlayer(withPlayerController: boolean = false) {

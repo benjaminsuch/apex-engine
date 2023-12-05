@@ -1,6 +1,6 @@
 import { type GetLeadingNonServiceArgs, IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderer } from '../platform/renderer/common';
+import { IRenderPlatform } from '../platform/rendering/common';
 import { type ActorComponent, SceneComponent } from './components';
 import { type Tick } from './EngineLoop';
 import { type Level } from './Level';
@@ -9,12 +9,23 @@ import { type World } from './World';
 export type ActorComponentType = new (...args: any[]) => ActorComponent;
 
 export class Actor {
-  private rootComponent?: SceneComponent;
+  protected rootComponent?: SceneComponent;
 
   public setRootComponent(component: SceneComponent) {
     //todo: Dispose previous root component
     //todo: Send message to render-thread
+    if (component === this.rootComponent) {
+      return false;
+    }
+
+    if (this.rootComponent) {
+      this.logger.warn(`Cannot set root component: A root component is already defined.`);
+      return false;
+    }
+
     this.rootComponent = component;
+
+    return true;
   }
 
   public getRootComponent() {
@@ -75,7 +86,7 @@ export class Actor {
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @IRenderer public readonly renderer: IRenderer
+    @IRenderPlatform public readonly renderer: IRenderPlatform
   ) {}
 
   public beginPlay() {

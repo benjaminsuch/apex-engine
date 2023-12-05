@@ -1,7 +1,7 @@
 let targetId = 0;
 
 export function id(target: InstanceType<TClass>) {
-  let id = Reflect.getMetadata('id', target);
+  let id = Reflect.getOwnMetadata('id', target);
 
   if (!id) {
     id = ++targetId;

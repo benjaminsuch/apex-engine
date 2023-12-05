@@ -1,10 +1,9 @@
 import {
-  Renderer,
   type TRenderWorkerInitData,
   type TRenderWorkerInitMessage
-} from '../../platform/renderer/common';
-
-import * as components from '../components';
+} from '../../platform/rendering/common';
+import { RenderProxyManager } from '../ProxyManager';
+import { Renderer } from './Renderer';
 
 function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
   if (typeof event.data !== 'object') {
@@ -26,12 +25,7 @@ function onInit({
   messagePort,
   flags
 }: TRenderWorkerInitData) {
-  const renderer = Renderer.create(
-    canvas,
-    flags,
-    messagePort,
-    components as unknown as Record<string, TClass>
-  );
+  const renderer = Renderer.create(canvas, flags, messagePort, RenderProxyManager);
   renderer.init();
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
   renderer.start();

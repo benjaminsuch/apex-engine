@@ -1,13 +1,15 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderer } from '../platform/renderer/common';
+import { IRenderPlatform } from '../platform/rendering/common';
 import { ApexEngine } from './ApexEngine';
 import { GameEngine } from './GameEngine';
 
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
 
+//todo: Rename to `TickContext`
 export interface Tick {
+  id: number;
   delta: number;
   elapsed: number;
 }
@@ -27,7 +29,7 @@ export class EngineLoop {
 
   constructor(
     @IInstatiationService private readonly instantiationService: IInstatiationService,
-    @IRenderer private readonly renderer: IRenderer,
+    @IRenderPlatform private readonly renderer: IRenderPlatform,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {}
 
@@ -52,7 +54,7 @@ export class EngineLoop {
       this.elapsed = then;
       this.fps = (this.frames * 1000) / then;
 
-      const currentTick = { delta: this.delta, elapsed: this.elapsed };
+      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.frames };
 
       try {
         GameEngine.getInstance().tick(currentTick);

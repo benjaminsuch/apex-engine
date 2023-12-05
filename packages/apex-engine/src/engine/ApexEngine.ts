@@ -1,11 +1,11 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { TripleBuffer } from '../platform/memory/common';
-import { IRenderer } from '../platform/renderer/common';
+import { IRenderPlatform } from '../platform/rendering/common';
 import { type EngineLoop, type Tick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
-import { messageQueue } from './class/specifiers/proxy';
+import { GameProxyManager, type ProxyManager } from './ProxyManager';
 
 export abstract class ApexEngine {
   private static instance?: ApexEngine;
@@ -30,6 +30,8 @@ export abstract class ApexEngine {
     new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
   ).fill(0x6);
 
+  public readonly proxyManager: ProxyManager;
+
   public isRunning: boolean = false;
 
   public isInitialized: boolean = false;
@@ -38,11 +40,13 @@ export abstract class ApexEngine {
     protected readonly engineLoop: EngineLoop,
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @IRenderer protected readonly renderer: IRenderer
+    @IRenderPlatform protected readonly renderer: IRenderPlatform
   ) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the GameEngine already exists.`);
     }
+
+    this.proxyManager = this.instantiationService.createInstance(GameProxyManager);
 
     ApexEngine.instance = this;
   }
@@ -61,12 +65,8 @@ export abstract class ApexEngine {
   public tick(tick: Tick) {
     TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
 
-    while (messageQueue.length) {
-      const message = messageQueue.shift();
-      this.renderer.send({ ...message, type: 'proxy' });
-    }
-
     this.getGameInstance().getWorld().tick(tick);
+    this.proxyManager.tick(tick);
   }
 
   public start() {

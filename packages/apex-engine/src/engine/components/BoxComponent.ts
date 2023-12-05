@@ -1,16 +1,25 @@
 import * as THREE from 'three';
 
+import { IInstatiationService } from '../../platform/di/common';
+import { IConsoleLogger } from '../../platform/logging/common';
+import { IRenderPlatform } from '../../platform/rendering/common';
 import { CLASS, getTargetId } from '../class';
 import { proxy } from '../class/specifiers/proxy';
+import { type IRenderTickContext } from '../renderer';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
+import { BoxGeometry } from '../BoxGeometry';
 
 const temp = new THREE.Vector3();
 
 export class BoxComponentProxy extends MeshComponentProxy {
+  public positions: Float32Array = new Float32Array();
+
+  public normals: Float32Array = new Float32Array();
+
   private segmentsAround: number = 24;
 
-  public override tick(time: number = 0) {
-    const positionAttr = this.mesh.geometry.getAttribute('position');
+  public override tick({ elapsed: time }: IRenderTickContext) {
+    const positionAttr = this.sceneObject.geometry.getAttribute('position');
 
     time *= 0.001;
 
@@ -33,7 +42,7 @@ export class BoxComponentProxy extends MeshComponentProxy {
 
   public makeSpherePositions(segmentsAround: number, segmentsDown: number) {
     this.segmentsAround = segmentsAround;
-    this.mesh.material = new THREE.MeshPhongMaterial({
+    this.sceneObject.material = new THREE.MeshPhongMaterial({
       color: 0xff0000,
       side: THREE.DoubleSide,
       shininess: 100
@@ -95,14 +104,30 @@ export class BoxComponentProxy extends MeshComponentProxy {
     const positionAttr = new THREE.BufferAttribute(positions, 3);
     positionAttr.setUsage(THREE.DynamicDrawUsage);
 
-    this.mesh.geometry.setAttribute('position', positionAttr);
-    this.mesh.geometry.setAttribute('normal', new THREE.BufferAttribute(this.normals, 3));
-    this.mesh.geometry.setIndex(indices);
+    this.sceneObject.geometry.setAttribute('position', positionAttr);
+    this.sceneObject.geometry.setAttribute('normal', new THREE.BufferAttribute(this.normals, 3));
+    this.sceneObject.geometry.setIndex(indices);
   }
 }
 
 @CLASS(proxy(BoxComponentProxy))
 export class BoxComponent extends MeshComponent {
+  constructor(
+    width: number = 1,
+    height: number = 1,
+    depth: number = 1,
+    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IRenderPlatform protected override readonly renderer: IRenderPlatform
+  ) {
+    super(
+      instantiationService.createInstance(BoxGeometry, width, height, depth),
+      instantiationService,
+      logger,
+      renderer
+    );
+  }
+
   public makeSpherePositions(segmentsAround: number, segmentsDown: number) {
     this.renderer.send({
       type: 'rpc',

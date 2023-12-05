@@ -4,6 +4,7 @@ import typescript from '@rollup/plugin-typescript';
 import commonjs from '@rollup/plugin-commonjs';
 import { cac } from 'cac';
 import glob from 'glob';
+import fs from 'fs-extra';
 import mime from 'mime';
 import { existsSync, mkdirSync, readFile } from 'node:fs';
 import { createServer, Server } from 'node:http';
@@ -53,7 +54,7 @@ cli
   .action(async (options: CLIOptions) => {
     filterDuplicateOptions(options);
 
-    const { config: configFile, debug, platform } = options;
+    const { config: configFile, debug, platform, target } = options;
     const { targets } = await getApexConfig(configFile);
 
     if (debug) {
@@ -62,6 +63,21 @@ cli
 
     if (!existsSync(APEX_DIR)) {
       mkdirSync(APEX_DIR);
+    }
+
+    const hasPlatform = targets.find(item => item.platform === platform);
+    const hasTarget = targets.find(item => item.target === target);
+
+    if (!hasPlatform) {
+      console.warn(
+        `No config defined for platform "${platform}". Please check your apex.config.ts.`
+      );
+      process.exit(0);
+    }
+
+    if (target && !hasTarget) {
+      console.warn(`No config defined for target "${target}". Please check your apex.config.ts.`);
+      process.exit(0);
     }
 
     for (let targetConfig of targets) {
@@ -267,6 +283,12 @@ async function serveBrowserTarget(target: TargetConfig) {
     await rimraf(buildDir);
   }
 
+  fs.copy('src/assets', resolve(buildDir, 'assets'), err => {
+    if (err) {
+      console.error('Error copying folder:', err);
+    }
+  });
+
   wss.on('connection', ws => {
     ws.on('error', console.error);
   });
@@ -371,6 +393,12 @@ async function serveElectronTarget(target: TargetConfig) {
   if (existsSync(buildDir)) {
     await rimraf(buildDir);
   }
+
+  fs.copy('src/assets', resolve(buildDir, 'assets'), err => {
+    if (err) {
+      console.error('Error copying folder:', err);
+    }
+  });
 
   process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
 
@@ -562,6 +590,10 @@ function createRollupConfig(
       externalLiveBindings: false,
       freeze: false,
       sourcemap: 'inline',
+      chunkFileNames: '[name].js',
+      // manualChunks: {
+      //   vendor: ['three']
+      // },
       ...output
     },
     onwarn(warning, warn) {
