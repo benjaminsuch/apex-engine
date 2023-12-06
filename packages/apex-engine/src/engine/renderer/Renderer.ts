@@ -58,7 +58,19 @@ export class Renderer {
     );
   }
 
+  public static readonly RENDER_FLAGS = new Uint8Array(
+    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
+  ).fill(0x6);
+
   private readonly webGLRenderer: WebGLRenderer;
+
+  private readonly byteView: Uint8Array;
+
+  private readonly buffer: ArrayBuffer;
+
+  private readonly dataView: DataView;
+
+  private readonly tripleBuffer: TripleBuffer;
 
   public readonly scene: Scene = new Scene();
 
@@ -66,9 +78,11 @@ export class Renderer {
 
   public frameId: number = 0;
 
+  public isInitialized: boolean = false;
+
   constructor(
     canvas: OffscreenCanvas,
-    private readonly flags: Uint8Array,
+    private readonly GAME_FLAGS: Uint8Array,
     private readonly messagePort: MessagePort,
     public readonly proxyManager: RenderProxyManager,
     @IConsoleLogger private readonly logger: IConsoleLogger
@@ -118,13 +132,26 @@ export class Renderer {
     cube.name = 'TestCube';
     this.scene.add(cube);
 
+    this.buffer = new ArrayBuffer(Uint32Array.BYTES_PER_ELEMENT);
+    this.byteView = new Uint8Array(this.buffer);
+    this.dataView = new DataView(this.buffer);
+    this.tripleBuffer = new TripleBuffer(Renderer.RENDER_FLAGS, this.byteView.length);
+
     Renderer.instance = this;
     console.log('Renderer', this);
   }
 
   public init() {
+    if (this.isInitialized) {
+      this.logger.warn(this.constructor.name, `Already initialized.`);
+      return;
+    }
+
     this.messagePort.addEventListener('message', this);
     this.messagePort.start();
+    this.messagePort.postMessage({ type: 'running', data: this.tripleBuffer });
+
+    this.isInitialized = true;
   }
 
   public start() {
@@ -153,13 +180,14 @@ export class Renderer {
   private tick(time: number) {
     ++this.frameId;
 
-    if (this.frameId < 241) {
-      console.log('render tick:', this.frameId);
-    }
-
-    TripleBuffer.swapReadBufferFlags(this.flags);
+    TripleBuffer.swapReadBufferFlags(this.GAME_FLAGS);
 
     this.proxyManager.tick({ id: this.frameId, delta: 0, elapsed: time });
     this.webGLRenderer.render(this.scene, this.camera);
+
+    this.dataView.setUint32(0, this.frameId, true);
+    this.tripleBuffer.copyToWriteBuffer(this.byteView);
+
+    TripleBuffer.swapWriteBufferFlags(this.tripleBuffer.flags);
   }
 }

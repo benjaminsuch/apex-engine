@@ -4,7 +4,7 @@ import { IRenderPlatform } from '../platform/rendering/common';
 import { type IProxy } from './class/specifiers/proxy';
 import * as components from './components';
 import { BoxGeometryProxy } from './BoxGeometry';
-import { type Tick } from './EngineLoop';
+import { type IGameTickContext } from './EngineLoop';
 import { ProxyTask } from './ProxyTask';
 
 export class ProxyManager {
@@ -40,7 +40,7 @@ export class ProxyManager {
     return true;
   }
 
-  public currentTick: Tick = { delta: 0, elapsed: 0, id: 0 };
+  public currentTick: IGameTickContext = { delta: 0, elapsed: 0, id: 0 };
 
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
@@ -56,7 +56,7 @@ export class ProxyManager {
     console.log('ProxyManager', this);
   }
 
-  public tick(tick: Tick) {
+  public tick(tick: IGameTickContext) {
     this.currentTick = tick;
 
     for (let i = 0; i < this.tasks.length; ++i) {

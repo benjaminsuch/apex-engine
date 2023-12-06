@@ -2,7 +2,7 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { TripleBuffer } from '../platform/memory/common';
 import { IRenderPlatform } from '../platform/rendering/common';
-import { type EngineLoop, type Tick } from './EngineLoop';
+import { type EngineLoop, type IGameTickContext } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 import { GameProxyManager, type ProxyManager } from './ProxyManager';
@@ -17,6 +17,10 @@ export abstract class ApexEngine {
     return this.instance;
   }
 
+  public static readonly GAME_FLAGS: Uint8Array = new Uint8Array(
+    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
+  ).fill(0x6);
+
   private gameInstance?: GameInstance;
 
   public getGameInstance() {
@@ -25,10 +29,6 @@ export abstract class ApexEngine {
     }
     return this.gameInstance as GameInstance;
   }
-
-  public static GAME_FLAGS: Uint8Array = new Uint8Array(
-    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
-  ).fill(0x6);
 
   public readonly proxyManager: ProxyManager;
 
@@ -62,11 +62,13 @@ export abstract class ApexEngine {
     this.isInitialized = true;
   }
 
-  public tick(tick: Tick) {
-    TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
+  public tick(tick: IGameTickContext) {
+    TripleBuffer.swapReadBufferFlags(this.renderer.RENDER_FLAGS);
 
     this.getGameInstance().getWorld().tick(tick);
     this.proxyManager.tick(tick);
+
+    TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
   }
 
   public start() {

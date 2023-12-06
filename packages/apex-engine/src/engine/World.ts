@@ -1,7 +1,7 @@
 import { IConsoleLogger } from '../platform/logging/common';
 import { INetDriver } from '../platform/net/common';
 import { type Actor } from './Actor';
-import { type Tick } from './EngineLoop';
+import { type IGameTickContext } from './EngineLoop';
 import { type GameInstance } from './GameInstance';
 import { type GameMode } from './GameMode';
 import { type Level } from './Level';
@@ -118,7 +118,7 @@ export class World {
     this.isInitialized = false;
   }
 
-  public tick(tick: Tick): void {
+  public tick(tick: IGameTickContext): void {
     for (const actor of this.actors) {
       actor.tick(tick);
     }

@@ -2,7 +2,7 @@ import { type GetLeadingNonServiceArgs, IInstatiationService } from '../platform
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderPlatform } from '../platform/rendering/common';
 import { type ActorComponent, SceneComponent } from './components';
-import { type Tick } from './EngineLoop';
+import { type IGameTickContext } from './EngineLoop';
 import { type Level } from './Level';
 import { type World } from './World';
 
@@ -95,7 +95,7 @@ export class Actor {
     }
   }
 
-  public tick(tick: Tick) {
+  public tick(tick: IGameTickContext) {
     for (const component of this.components) {
       component.tick(tick);
     }

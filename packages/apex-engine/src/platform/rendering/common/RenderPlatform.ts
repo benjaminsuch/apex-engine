@@ -63,7 +63,9 @@ export type TRenderRefMessage = TRenderMessage<'ref', { refId: number; parentId:
 
 export interface IRenderPlatform {
   readonly _injectibleService: undefined;
+  RENDER_FLAGS: Uint8Array;
   init(flags: Uint8Array): void;
+  getRendererInfo(): { currentFrame: number };
   send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
     message: T,
     transferList?: Transferable[]

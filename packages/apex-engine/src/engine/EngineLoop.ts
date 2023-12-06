@@ -7,8 +7,7 @@ import { GameEngine } from './GameEngine';
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
 
-//todo: Rename to `TickContext`
-export interface Tick {
+export interface IGameTickContext {
   id: number;
   delta: number;
   elapsed: number;
@@ -23,7 +22,7 @@ export class EngineLoop {
 
   public elapsed: number = 0;
 
-  public frames: number = 0;
+  public ticks: number = 0;
 
   public fps: number = 0;
 
@@ -46,19 +45,20 @@ export class EngineLoop {
 
   public tick() {
     this.tickInterval = setInterval(() => {
-      this.frames++;
+      this.ticks++;
 
-      if (this.frames < 241) {
-        console.log('game tick:', this.frames);
+      if (this.ticks < 61) {
+        console.log('game tick:', this.ticks);
+        console.log('render tick:', this.renderer.getRendererInfo().currentFrame);
       }
 
       const then = performance.now();
 
       this.delta = then - this.elapsed / 1000;
       this.elapsed = then;
-      this.fps = (this.frames * 1000) / then;
+      this.fps = (this.ticks * 1000) / then;
 
-      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.frames };
+      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.ticks };
 
       try {
         GameEngine.getInstance().tick(currentTick);
