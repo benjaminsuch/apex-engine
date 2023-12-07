@@ -3,7 +3,7 @@ import { MathUtils } from 'three';
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
 import { Actor } from '../Actor';
-import { type Tick } from '../EngineLoop';
+import { type IEngineLoopTick } from '../EngineLoop';
 import { World } from '../World';
 
 export class ActorComponent {
@@ -43,7 +43,7 @@ export class ActorComponent {
 
   public beginPlay() {}
 
-  public tick(tick: Tick) {}
+  public tick(tick: IEngineLoopTick) {}
 
   public registerWithActor(actor: Actor) {
     if (actor.hasComponent(this)) {

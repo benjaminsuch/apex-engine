@@ -19,3 +19,4 @@ export * from './World';
 export * from './class';
 export * from './components';
 export * from './renderer';
+export * from './tasks';

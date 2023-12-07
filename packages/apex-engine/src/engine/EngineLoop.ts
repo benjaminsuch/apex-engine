@@ -1,14 +1,12 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderPlatform } from '../platform/rendering/common';
-import { ApexEngine } from './ApexEngine';
 import { GameEngine } from './GameEngine';
 
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
 
-//todo: Rename to `TickContext`
-export interface Tick {
+export interface IEngineLoopTick {
   id: number;
   delta: number;
   elapsed: number;
@@ -23,7 +21,7 @@ export class EngineLoop {
 
   public elapsed: number = 0;
 
-  public frames: number = 0;
+  public ticks: number = 0;
 
   public fps: number = 0;
 
@@ -33,28 +31,39 @@ export class EngineLoop {
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {}
 
-  public init() {
+  //todo: Make sure all initialization code is resolved before other code can proceed.
+  //      Background: For `getRenderingInfo` we have to wait for the renderer to send
+  //      us the data, so we can set up `RenderingInfo` on the game-thread.
+  public async init() {
+    const promises: MaybePromise<void>[] = [];
+
     if (this.renderer) {
-      this.renderer.init(ApexEngine.GAME_FLAGS);
+      promises.push(this.renderer.init([GameEngine.GAME_FLAGS, GameEngine.RENDER_FLAGS]));
     }
 
     const engine = this.instantiationService.createInstance(GameEngine, this);
+    promises.push(engine.init());
 
-    engine.init();
+    await Promise.all(promises);
+
     engine.start();
   }
 
   public tick() {
     this.tickInterval = setInterval(() => {
-      this.frames++;
+      this.ticks++;
+
+      // if (this.ticks < 61) {
+      //   console.log('game tick:', this.ticks);
+      // }
 
       const then = performance.now();
 
       this.delta = then - this.elapsed / 1000;
       this.elapsed = then;
-      this.fps = (this.frames * 1000) / then;
+      this.fps = (this.ticks * 1000) / then;
 
-      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.frames };
+      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.ticks };
 
       try {
         GameEngine.getInstance().tick(currentTick);

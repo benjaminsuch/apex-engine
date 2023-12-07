@@ -1,4 +1,5 @@
-import { GameProxyManager, GameRPCTask } from '../../ProxyManager';
+import { GameProxyManager } from '../../ProxyManager';
+import { GameRPCTask } from '../../tasks';
 import { type IProxy } from './proxy';
 
 //todo: Add description

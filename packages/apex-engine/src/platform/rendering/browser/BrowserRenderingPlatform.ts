@@ -1,18 +1,22 @@
+import { IInstatiationService } from '../../di/common';
+import { IConsoleLogger } from '../../logging/common';
+import { TripleBuffer } from '../../memory/common';
 import {
-  IRenderPlatform,
+  RenderingInfo,
+  type IRenderPlatform,
   type TRenderMessage,
   type TRenderMessageData,
   type TRenderMessageType
 } from '../common';
 
-export interface BrowserRenderPlatformOptions {
+export interface BrowserRenderingPlatformOptions {
   multithreaded?: boolean;
 }
 
-export class BrowserRenderPlatform implements IRenderPlatform {
+export class BrowserRenderingPlatform implements IRenderPlatform {
   declare readonly _injectibleService: undefined;
 
-  private static instance?: BrowserRenderPlatform;
+  private static instance?: BrowserRenderingPlatform;
 
   public static getInstance() {
     if (!this.instance) {
@@ -27,23 +31,34 @@ export class BrowserRenderPlatform implements IRenderPlatform {
 
   private isInitialized = false;
 
-  constructor(private readonly renderWorker: Worker) {
+  private renderingInfo?: RenderingInfo;
+
+  public getRenderingInfo() {
+    if (!this.renderingInfo) {
+      throw new Error(
+        `The rendering info is not available yet. The renderer has most likely not finished his initialization or is not running.`
+      );
+    }
+    return this.renderingInfo;
+  }
+
+  constructor(
+    private readonly renderWorker: Worker,
+    @IInstatiationService private readonly instantiationService: IInstatiationService,
+    @IConsoleLogger private readonly logger: IConsoleLogger
+  ) {
     if (typeof window === 'undefined') {
       throw new Error(`Cannot create an instance of Renderer: "window" is undefined.`);
     }
 
-    if (BrowserRenderPlatform.instance) {
+    if (BrowserRenderingPlatform.instance) {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
-    this.messageChannel.port1.addEventListener('message', event => {
-      console.log('Renderer received message:', event);
-    });
-
-    BrowserRenderPlatform.instance = this;
+    BrowserRenderingPlatform.instance = this;
   }
 
-  public async init(flags: Uint8Array) {
+  public async init(flags: Uint8Array[]) {
     if (this.isInitialized) {
       return;
     }
@@ -71,7 +86,26 @@ export class BrowserRenderPlatform implements IRenderPlatform {
 
     this.isInitialized = true;
 
-    window.addEventListener('resize', this.handleWindowResize.bind(this));
+    return new Promise<void>(resolve => {
+      this.messageChannel.port1.onmessage = event => {
+        if (typeof event.data !== 'object') {
+          return;
+        }
+
+        if (event.data.type === 'running') {
+          const { flags, byteLength, buffers, byteViews } = event.data.data;
+
+          this.renderingInfo = this.instantiationService.createInstance(
+            RenderingInfo,
+            flags,
+            new TripleBuffer(flags, byteLength, buffers, byteViews),
+            this.messageChannel.port1
+          );
+
+          resolve();
+        }
+      };
+    });
   }
 
   public send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(

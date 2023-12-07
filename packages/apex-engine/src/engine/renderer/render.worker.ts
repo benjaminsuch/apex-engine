@@ -1,6 +1,6 @@
-import {
-  type TRenderWorkerInitData,
-  type TRenderWorkerInitMessage
+import type {
+  TRenderWorkerInitData,
+  TRenderWorkerInitMessage
 } from '../../platform/rendering/common';
 import { RenderProxyManager } from '../ProxyManager';
 import { Renderer } from './Renderer';

@@ -17,10 +17,19 @@ import {
   WebGLRenderer
 } from 'three';
 
-import { InstantiationService, ServiceCollection } from '../../platform/di/common';
+import {
+  IInstatiationService,
+  InstantiationService,
+  ServiceCollection
+} from '../../platform/di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { TripleBuffer } from '../../platform/memory/common';
-import type { TRenderRPCMessage, TRenderSceneProxyMessage } from '../../platform/rendering/common';
+import {
+  RenderingInfo,
+  type TRenderRPCMessage,
+  type TRenderSceneProxyMessage
+} from '../../platform/rendering/common';
+import { GameEngine } from '../GameEngine';
 import { RenderProxyManager } from '../ProxyManager';
 import { RenderCreateProxyInstanceTask } from './tasks';
 
@@ -41,7 +50,7 @@ export class Renderer {
 
   public static create(
     canvas: OffscreenCanvas,
-    flags: Uint8Array,
+    flags: Uint8Array[],
     messagePort: MessagePort,
     ProxyManagerClass: typeof RenderProxyManager
   ): Renderer {
@@ -66,13 +75,21 @@ export class Renderer {
 
   public frameId: number = 0;
 
+  public isInitialized: boolean = false;
+
+  public readonly renderingInfo: RenderingInfo;
+
   constructor(
     canvas: OffscreenCanvas,
-    private readonly flags: Uint8Array,
+    flags: Uint8Array[],
     private readonly messagePort: MessagePort,
     public readonly proxyManager: RenderProxyManager,
+    @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
+    GameEngine.GAME_FLAGS = flags[0];
+    GameEngine.RENDER_FLAGS = flags[1];
+
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.webGLRenderer.toneMapping = LinearToneMapping;
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
@@ -118,13 +135,31 @@ export class Renderer {
     cube.name = 'TestCube';
     this.scene.add(cube);
 
+    this.renderingInfo = this.instantiationService.createInstance(
+      RenderingInfo,
+      GameEngine.RENDER_FLAGS,
+      undefined,
+      this.messagePort
+    );
+
     Renderer.instance = this;
     console.log('Renderer', this);
   }
 
   public init() {
+    this.logger.debug(this.constructor.name, `Initialize`);
+
+    if (this.isInitialized) {
+      this.logger.warn(this.constructor.name, `Already initialized`);
+      return;
+    }
+
     this.messagePort.addEventListener('message', this);
     this.messagePort.start();
+
+    this.renderingInfo.init();
+
+    this.isInitialized = true;
   }
 
   public start() {
@@ -153,9 +188,18 @@ export class Renderer {
   private tick(time: number) {
     ++this.frameId;
 
-    TripleBuffer.swapReadBufferFlags(this.flags);
+    // if (this.frameId < 61) {
+    //   console.log('render tick:', this.frameId);
+    // }
 
-    this.proxyManager.tick({ id: this.frameId, delta: 0, elapsed: time });
+    TripleBuffer.swapReadBufferFlags(GameEngine.GAME_FLAGS);
+
+    const context = { id: this.frameId, delta: 0, elapsed: time };
+
+    this.renderingInfo.tick(context);
+    this.proxyManager.tick(context);
     this.webGLRenderer.render(this.scene, this.camera);
+
+    TripleBuffer.swapWriteBufferFlags(GameEngine.RENDER_FLAGS);
   }
 }
