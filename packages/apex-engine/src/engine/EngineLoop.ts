@@ -6,7 +6,7 @@ import { GameEngine } from './GameEngine';
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
 
-export interface IGameTickContext {
+export interface IEngineLoopTick {
   id: number;
   delta: number;
   elapsed: number;
@@ -50,8 +50,8 @@ export class EngineLoop {
       this.ticks++;
 
       if (this.ticks < 61) {
-        //console.log('game tick:', this.ticks);
-        console.log('render tick:', this.renderer.getRenderingInfo().currentFrame);
+        // console.log('game tick:', this.ticks);
+        // console.log('render tick:', this.renderer.getRenderingInfo().currentFrame);
       }
 
       const then = performance.now();

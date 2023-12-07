@@ -2,7 +2,7 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { TripleBuffer } from '../platform/memory/common';
 import { IRenderPlatform } from '../platform/rendering/common';
-import { type EngineLoop, type IGameTickContext } from './EngineLoop';
+import { type EngineLoop, type IEngineLoopTick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 import { GameProxyManager, type ProxyManager } from './ProxyManager';
@@ -66,7 +66,7 @@ export abstract class ApexEngine {
     this.isInitialized = true;
   }
 
-  public tick(tick: IGameTickContext) {
+  public tick(tick: IEngineLoopTick) {
     TripleBuffer.swapReadBufferFlags(ApexEngine.RENDER_FLAGS);
 
     this.getGameInstance().getWorld().tick(tick);
