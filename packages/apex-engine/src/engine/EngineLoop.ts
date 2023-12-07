@@ -34,14 +34,18 @@ export class EngineLoop {
   //todo: Make sure all initialization code is resolved before other code can proceed.
   //      Background: For `getRenderingInfo` we have to wait for the renderer to send
   //      us the data, so we can set up `RenderingInfo` on the game-thread.
-  public init() {
+  public async init() {
+    const promises: MaybePromise<void>[] = [];
+
     if (this.renderer) {
-      this.renderer.init([GameEngine.GAME_FLAGS, GameEngine.RENDER_FLAGS]);
+      promises.push(this.renderer.init([GameEngine.GAME_FLAGS, GameEngine.RENDER_FLAGS]));
     }
 
     const engine = this.instantiationService.createInstance(GameEngine, this);
+    promises.push(engine.init());
 
-    engine.init();
+    await Promise.all(promises);
+
     engine.start();
   }
 
@@ -49,10 +53,9 @@ export class EngineLoop {
     this.tickInterval = setInterval(() => {
       this.ticks++;
 
-      if (this.ticks < 61) {
-        // console.log('game tick:', this.ticks);
-        // console.log('render tick:', this.renderer.getRenderingInfo().currentFrame);
-      }
+      // if (this.ticks < 61) {
+      //   console.log('game tick:', this.ticks);
+      // }
 
       const then = performance.now();
 

@@ -14,7 +14,7 @@ export class RenderingInfo {
 
   private readonly views: [DataView, DataView, DataView];
 
-  get currentFrame() {
+  get lastFrame() {
     const idx = this.tripleBuffer.getReadBufferIndex();
     return this.views[idx].getUint32(0, true);
   }
@@ -49,6 +49,7 @@ export class RenderingInfo {
 
   public init() {
     if (IS_RENDER_THREAD) {
+      this.logger.debug(this.constructor.name, `Initialize`);
       this.messagePort.postMessage({ type: 'running', data: this.tripleBuffer });
     }
   }

@@ -5,7 +5,7 @@ import { InstantiationService, ServiceCollection } from '../../platform/di/commo
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { WebSocketNetDriver } from '../../platform/net/browser';
 import { INetDriver } from '../../platform/net/common';
-import { BrowserRenderPlatform } from '../../platform/rendering/browser';
+import { BrowserRenderingPlatform } from '../../platform/rendering/browser';
 import { IRenderPlatform } from '../../platform/rendering/common';
 
 export class BrowserMain {
@@ -25,7 +25,7 @@ export class BrowserMain {
     );
     this.instantiationService.setServiceInstance(
       IRenderPlatform,
-      new BrowserRenderPlatform(renderer, this.instantiationService, consoleLogger)
+      new BrowserRenderingPlatform(renderer, this.instantiationService, consoleLogger)
     );
   }
 
@@ -37,10 +37,10 @@ export class BrowserMain {
     //  is started.
     //
     //  At some point we will load the web workers inline and remove the timeout.
-    setTimeout(() => {
+    setTimeout(async () => {
       const engineLoop = this.instantiationService.createInstance(EngineLoop);
 
-      engineLoop.init();
+      await engineLoop.init();
 
       if (!engineLoop.isEngineExitRequested()) {
         engineLoop.tick();

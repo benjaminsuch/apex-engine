@@ -147,8 +147,10 @@ export class Renderer {
   }
 
   public init() {
+    this.logger.debug(this.constructor.name, `Initialize`);
+
     if (this.isInitialized) {
-      this.logger.warn(this.constructor.name, `Already initialized.`);
+      this.logger.warn(this.constructor.name, `Already initialized`);
       return;
     }
 
@@ -186,12 +188,16 @@ export class Renderer {
   private tick(time: number) {
     ++this.frameId;
 
+    // if (this.frameId < 61) {
+    //   console.log('render tick:', this.frameId);
+    // }
+
     TripleBuffer.swapReadBufferFlags(GameEngine.GAME_FLAGS);
 
-    const tickContext = { id: this.frameId, delta: 0, elapsed: time };
+    const context = { id: this.frameId, delta: 0, elapsed: time };
 
-    this.renderingInfo.tick(tickContext);
-    this.proxyManager.tick(tickContext);
+    this.renderingInfo.tick(context);
+    this.proxyManager.tick(context);
     this.webGLRenderer.render(this.scene, this.camera);
 
     TripleBuffer.swapWriteBufferFlags(GameEngine.RENDER_FLAGS);

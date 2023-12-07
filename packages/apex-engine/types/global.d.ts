@@ -29,6 +29,8 @@ declare global {
     | typeof Uint16Array
     | typeof Uint32Array;
 
+  type MaybePromise<T> = Promise<T> | T;
+
   type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
 }
 

@@ -2,21 +2,21 @@ import { IInstatiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
 import { TripleBuffer } from '../../memory/common';
 import {
-  IRenderPlatform,
   RenderingInfo,
-  TRenderMessage,
-  TRenderMessageData,
-  TRenderMessageType
+  type IRenderPlatform,
+  type TRenderMessage,
+  type TRenderMessageData,
+  type TRenderMessageType
 } from '../common';
 
-export interface BrowserRenderPlatformOptions {
+export interface BrowserRenderingPlatformOptions {
   multithreaded?: boolean;
 }
 
-export class BrowserRenderPlatform implements IRenderPlatform {
+export class BrowserRenderingPlatform implements IRenderPlatform {
   declare readonly _injectibleService: undefined;
 
-  private static instance?: BrowserRenderPlatform;
+  private static instance?: BrowserRenderingPlatform;
 
   public static getInstance() {
     if (!this.instance) {
@@ -51,11 +51,11 @@ export class BrowserRenderPlatform implements IRenderPlatform {
       throw new Error(`Cannot create an instance of Renderer: "window" is undefined.`);
     }
 
-    if (BrowserRenderPlatform.instance) {
+    if (BrowserRenderingPlatform.instance) {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
-    BrowserRenderPlatform.instance = this;
+    BrowserRenderingPlatform.instance = this;
   }
 
   public async init(flags: Uint8Array[]) {
@@ -63,7 +63,6 @@ export class BrowserRenderPlatform implements IRenderPlatform {
       return;
     }
 
-    this.messageChannel.port1.onmessage = event => this.handleRendererMessage(event);
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
 
     if (this.canvas) {
@@ -86,6 +85,27 @@ export class BrowserRenderPlatform implements IRenderPlatform {
     window.addEventListener('resize', this.handleWindowResize.bind(this));
 
     this.isInitialized = true;
+
+    return new Promise<void>(resolve => {
+      this.messageChannel.port1.onmessage = event => {
+        if (typeof event.data !== 'object') {
+          return;
+        }
+
+        if (event.data.type === 'running') {
+          const { flags, byteLength, buffers, byteViews } = event.data.data;
+
+          this.renderingInfo = this.instantiationService.createInstance(
+            RenderingInfo,
+            flags,
+            new TripleBuffer(flags, byteLength, buffers, byteViews),
+            this.messageChannel.port1
+          );
+
+          resolve();
+        }
+      };
+    });
   }
 
   public send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
@@ -93,24 +113,6 @@ export class BrowserRenderPlatform implements IRenderPlatform {
     transferList: Transferable[] = []
   ) {
     this.messageChannel.port1.postMessage(message, transferList);
-  }
-
-  public handleRendererMessage(event: MessageEvent) {
-    console.log('render message', event);
-    if (typeof event.data !== 'object') {
-      return;
-    }
-
-    if (event.data.type === 'running') {
-      const { flags, byteLength, buffers, byteViews } = event.data.data;
-      console.log('flags from message', flags);
-      this.renderingInfo = this.instantiationService.createInstance(
-        RenderingInfo,
-        flags,
-        new TripleBuffer(flags, byteLength, buffers, byteViews),
-        this.messageChannel.port1
-      );
-    }
   }
 
   private handleWindowResize() {}

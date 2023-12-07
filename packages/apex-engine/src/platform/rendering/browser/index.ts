@@ -1,1 +1,1 @@
-export * from './BrowserRenderPlatform';
+export * from './BrowserRenderingPlatform';
