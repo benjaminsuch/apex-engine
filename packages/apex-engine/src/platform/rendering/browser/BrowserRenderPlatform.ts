@@ -31,24 +31,6 @@ export class BrowserRenderPlatform implements IRenderPlatform {
 
   private isInitialized = false;
 
-  private rendererInfoBuffer?: TripleBuffer;
-
-  private rendererInfoViews?: [DataView, DataView, DataView];
-
-  public getRendererInfo() {
-    if (!this.rendererInfoBuffer || !this.rendererInfoViews) {
-      console.log('render info not set yet');
-      // throw new Error(`Renderer info has not been set yet.`);
-      return { currentFrame: 0 };
-    }
-
-    const idx = this.rendererInfoBuffer.getReadBufferIndex();
-    const view = this.rendererInfoViews[idx];
-    const currentFrame = view.getUint32(0, true);
-
-    return { currentFrame };
-  }
-
   private renderingInfo?: RenderingInfo;
 
   public getRenderingInfo() {

@@ -6,9 +6,16 @@ import { type EngineLoop, type IGameTickContext } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 import { GameProxyManager, type ProxyManager } from './ProxyManager';
-import { TickContext } from './TickContext';
 
 export abstract class ApexEngine {
+  public static GAME_FLAGS: Uint8Array = new Uint8Array(
+    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
+  ).fill(0x6);
+
+  public static RENDER_FLAGS: Uint8Array = new Uint8Array(
+    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
+  ).fill(0x6);
+
   private static instance?: ApexEngine;
 
   public static getInstance() {
@@ -60,12 +67,12 @@ export abstract class ApexEngine {
   }
 
   public tick(tick: IGameTickContext) {
-    TripleBuffer.swapReadBufferFlags(TickContext.RENDER_FLAGS);
+    TripleBuffer.swapReadBufferFlags(ApexEngine.RENDER_FLAGS);
 
     this.getGameInstance().getWorld().tick(tick);
     this.proxyManager.tick(tick);
 
-    TripleBuffer.swapWriteBufferFlags(TickContext.GAME_FLAGS);
+    TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
   }
 
   public start() {

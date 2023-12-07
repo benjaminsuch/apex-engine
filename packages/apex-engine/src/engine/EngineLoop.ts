@@ -2,7 +2,6 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderPlatform } from '../platform/rendering/common';
 import { GameEngine } from './GameEngine';
-import { TickContext } from './TickContext';
 
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
@@ -37,7 +36,7 @@ export class EngineLoop {
   //      us the data, so we can set up `RenderingInfo` on the game-thread.
   public init() {
     if (this.renderer) {
-      this.renderer.init([TickContext.GAME_FLAGS, TickContext.RENDER_FLAGS]);
+      this.renderer.init([GameEngine.GAME_FLAGS, GameEngine.RENDER_FLAGS]);
     }
 
     const engine = this.instantiationService.createInstance(GameEngine, this);
@@ -52,7 +51,7 @@ export class EngineLoop {
 
       if (this.ticks < 61) {
         //console.log('game tick:', this.ticks);
-        // console.log('render tick:', this.renderer.getRenderingInfo().currentFrame);
+        console.log('render tick:', this.renderer.getRenderingInfo().currentFrame);
       }
 
       const then = performance.now();

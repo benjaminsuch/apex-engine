@@ -14,7 +14,6 @@ export * from './PlayerController';
 export * from './PlayerInput';
 export * from './ProxyManager';
 export * from './ProxyTask';
-export * from './TickContext';
 export * from './World';
 
 export * from './class';

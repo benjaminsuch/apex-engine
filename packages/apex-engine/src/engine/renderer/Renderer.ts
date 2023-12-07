@@ -29,8 +29,8 @@ import {
   type TRenderRPCMessage,
   type TRenderSceneProxyMessage
 } from '../../platform/rendering/common';
+import { GameEngine } from '../GameEngine';
 import { RenderProxyManager } from '../ProxyManager';
-import { TickContext } from '../TickContext';
 import { RenderCreateProxyInstanceTask } from './tasks';
 
 export interface IRenderTickContext {
@@ -67,10 +67,6 @@ export class Renderer {
     );
   }
 
-  public static readonly RENDER_FLAGS = new Uint8Array(
-    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
-  ).fill(0x6);
-
   private readonly webGLRenderer: WebGLRenderer;
 
   public readonly scene: Scene = new Scene();
@@ -91,8 +87,8 @@ export class Renderer {
     @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
-    TickContext.GAME_FLAGS = flags[0];
-    TickContext.RENDER_FLAGS = flags[1];
+    GameEngine.GAME_FLAGS = flags[0];
+    GameEngine.RENDER_FLAGS = flags[1];
 
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.webGLRenderer.toneMapping = LinearToneMapping;
@@ -141,7 +137,7 @@ export class Renderer {
 
     this.renderingInfo = this.instantiationService.createInstance(
       RenderingInfo,
-      TickContext.RENDER_FLAGS,
+      GameEngine.RENDER_FLAGS,
       undefined,
       this.messagePort
     );
@@ -190,7 +186,7 @@ export class Renderer {
   private tick(time: number) {
     ++this.frameId;
 
-    TripleBuffer.swapReadBufferFlags(TickContext.GAME_FLAGS);
+    TripleBuffer.swapReadBufferFlags(GameEngine.GAME_FLAGS);
 
     const tickContext = { id: this.frameId, delta: 0, elapsed: time };
 
@@ -198,6 +194,6 @@ export class Renderer {
     this.proxyManager.tick(tickContext);
     this.webGLRenderer.render(this.scene, this.camera);
 
-    TripleBuffer.swapWriteBufferFlags(TickContext.RENDER_FLAGS);
+    TripleBuffer.swapWriteBufferFlags(GameEngine.RENDER_FLAGS);
   }
 }
