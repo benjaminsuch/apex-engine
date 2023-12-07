@@ -17,12 +17,15 @@ export class BrowserMain {
     const renderer = RENDER_ON_MAIN_THREAD ? new RenderMainThread() : new RenderWorker();
 
     services.set(IConsoleLogger, consoleLogger);
-    services.set(IRenderPlatform, new BrowserRenderPlatform(renderer));
 
     this.instantiationService = new InstantiationService(services);
     this.instantiationService.setServiceInstance(
       INetDriver,
       new WebSocketNetDriver(this.instantiationService, consoleLogger)
+    );
+    this.instantiationService.setServiceInstance(
+      IRenderPlatform,
+      new BrowserRenderPlatform(renderer, this.instantiationService, consoleLogger)
     );
   }
 

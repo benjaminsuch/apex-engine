@@ -1,7 +1,9 @@
+import { IInstatiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
 import { TripleBuffer } from '../../memory/common';
-import type {
+import {
   IRenderPlatform,
+  RenderingInfo,
   TRenderMessage,
   TRenderMessageData,
   TRenderMessageType
@@ -47,12 +49,20 @@ export class BrowserRenderPlatform implements IRenderPlatform {
     return { currentFrame };
   }
 
-  public RENDER_FLAGS: Uint8Array = new Uint8Array(
-    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
-  ).fill(0x6);
+  private renderingInfo?: RenderingInfo;
+
+  public getRenderingInfo() {
+    if (!this.renderingInfo) {
+      throw new Error(
+        `The rendering info is not available yet. The renderer has most likely not finished his initialization or is not running.`
+      );
+    }
+    return this.renderingInfo;
+  }
 
   constructor(
     private readonly renderWorker: Worker,
+    @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
     if (typeof window === 'undefined') {
@@ -63,17 +73,15 @@ export class BrowserRenderPlatform implements IRenderPlatform {
       throw new Error(`An instance of the renderer already exists.`);
     }
 
-    this.messageChannel.port1.addEventListener('message', event => this.handleEvent(event));
-    this.messageChannel.port1.start();
-
     BrowserRenderPlatform.instance = this;
   }
 
-  public async init(flags: Uint8Array) {
+  public async init(flags: Uint8Array[]) {
     if (this.isInitialized) {
       return;
     }
 
+    this.messageChannel.port1.onmessage = event => this.handleRendererMessage(event);
     this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
 
     if (this.canvas) {
@@ -105,31 +113,22 @@ export class BrowserRenderPlatform implements IRenderPlatform {
     this.messageChannel.port1.postMessage(message, transferList);
   }
 
-  public handleEvent(event: MessageEvent) {
+  public handleRendererMessage(event: MessageEvent) {
+    console.log('render message', event);
     if (typeof event.data !== 'object') {
       return;
     }
 
     if (event.data.type === 'running') {
-      this.handleRendererRunning(event.data.data);
+      const { flags, byteLength, buffers, byteViews } = event.data.data;
+      console.log('flags from message', flags);
+      this.renderingInfo = this.instantiationService.createInstance(
+        RenderingInfo,
+        flags,
+        new TripleBuffer(flags, byteLength, buffers, byteViews),
+        this.messageChannel.port1
+      );
     }
-  }
-
-  private handleRendererRunning(data: any) {
-    if (this.rendererInfoBuffer) {
-      this.logger.warn(this.constructor.name, `Renderer info has already been set. Aborting.`);
-      return;
-    }
-
-    const { flags, byteLength, buffers, byteViews } = data;
-
-    this.RENDER_FLAGS = flags;
-    this.rendererInfoBuffer = new TripleBuffer(flags, byteLength, buffers, byteViews);
-    this.rendererInfoViews = [
-      new DataView(this.rendererInfoBuffer.buffers[0]),
-      new DataView(this.rendererInfoBuffer.buffers[1]),
-      new DataView(this.rendererInfoBuffer.buffers[2])
-    ];
   }
 
   private handleWindowResize() {}

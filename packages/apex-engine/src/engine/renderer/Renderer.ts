@@ -17,11 +17,20 @@ import {
   WebGLRenderer
 } from 'three';
 
-import { InstantiationService, ServiceCollection } from '../../platform/di/common';
+import {
+  IInstatiationService,
+  InstantiationService,
+  ServiceCollection
+} from '../../platform/di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { TripleBuffer } from '../../platform/memory/common';
-import type { TRenderRPCMessage, TRenderSceneProxyMessage } from '../../platform/rendering/common';
+import {
+  RenderingInfo,
+  type TRenderRPCMessage,
+  type TRenderSceneProxyMessage
+} from '../../platform/rendering/common';
 import { RenderProxyManager } from '../ProxyManager';
+import { TickContext } from '../TickContext';
 import { RenderCreateProxyInstanceTask } from './tasks';
 
 export interface IRenderTickContext {
@@ -41,7 +50,7 @@ export class Renderer {
 
   public static create(
     canvas: OffscreenCanvas,
-    flags: Uint8Array,
+    flags: Uint8Array[],
     messagePort: MessagePort,
     ProxyManagerClass: typeof RenderProxyManager
   ): Renderer {
@@ -64,14 +73,6 @@ export class Renderer {
 
   private readonly webGLRenderer: WebGLRenderer;
 
-  private readonly byteView: Uint8Array;
-
-  private readonly buffer: ArrayBuffer;
-
-  private readonly dataView: DataView;
-
-  private readonly tripleBuffer: TripleBuffer;
-
   public readonly scene: Scene = new Scene();
 
   public readonly camera: Camera;
@@ -80,13 +81,19 @@ export class Renderer {
 
   public isInitialized: boolean = false;
 
+  public readonly renderingInfo: RenderingInfo;
+
   constructor(
     canvas: OffscreenCanvas,
-    private readonly GAME_FLAGS: Uint8Array,
+    flags: Uint8Array[],
     private readonly messagePort: MessagePort,
     public readonly proxyManager: RenderProxyManager,
+    @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
+    TickContext.GAME_FLAGS = flags[0];
+    TickContext.RENDER_FLAGS = flags[1];
+
     this.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.webGLRenderer.toneMapping = LinearToneMapping;
     this.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
@@ -132,10 +139,12 @@ export class Renderer {
     cube.name = 'TestCube';
     this.scene.add(cube);
 
-    this.buffer = new ArrayBuffer(Uint32Array.BYTES_PER_ELEMENT);
-    this.byteView = new Uint8Array(this.buffer);
-    this.dataView = new DataView(this.buffer);
-    this.tripleBuffer = new TripleBuffer(Renderer.RENDER_FLAGS, this.byteView.length);
+    this.renderingInfo = this.instantiationService.createInstance(
+      RenderingInfo,
+      TickContext.RENDER_FLAGS,
+      undefined,
+      this.messagePort
+    );
 
     Renderer.instance = this;
     console.log('Renderer', this);
@@ -149,7 +158,8 @@ export class Renderer {
 
     this.messagePort.addEventListener('message', this);
     this.messagePort.start();
-    this.messagePort.postMessage({ type: 'running', data: this.tripleBuffer });
+
+    this.renderingInfo.init();
 
     this.isInitialized = true;
   }
@@ -180,14 +190,14 @@ export class Renderer {
   private tick(time: number) {
     ++this.frameId;
 
-    TripleBuffer.swapReadBufferFlags(this.GAME_FLAGS);
+    TripleBuffer.swapReadBufferFlags(TickContext.GAME_FLAGS);
 
-    this.proxyManager.tick({ id: this.frameId, delta: 0, elapsed: time });
+    const tickContext = { id: this.frameId, delta: 0, elapsed: time };
+
+    this.renderingInfo.tick(tickContext);
+    this.proxyManager.tick(tickContext);
     this.webGLRenderer.render(this.scene, this.camera);
 
-    this.dataView.setUint32(0, this.frameId, true);
-    this.tripleBuffer.copyToWriteBuffer(this.byteView);
-
-    TripleBuffer.swapWriteBufferFlags(this.tripleBuffer.flags);
+    TripleBuffer.swapWriteBufferFlags(TickContext.RENDER_FLAGS);
   }
 }

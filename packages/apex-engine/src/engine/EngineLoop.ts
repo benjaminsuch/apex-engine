@@ -1,8 +1,8 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderPlatform } from '../platform/rendering/common';
-import { ApexEngine } from './ApexEngine';
 import { GameEngine } from './GameEngine';
+import { TickContext } from './TickContext';
 
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
@@ -32,9 +32,12 @@ export class EngineLoop {
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {}
 
+  //todo: Make sure all initialization code is resolved before other code can proceed.
+  //      Background: For `getRenderingInfo` we have to wait for the renderer to send
+  //      us the data, so we can set up `RenderingInfo` on the game-thread.
   public init() {
     if (this.renderer) {
-      this.renderer.init(ApexEngine.GAME_FLAGS);
+      this.renderer.init([TickContext.GAME_FLAGS, TickContext.RENDER_FLAGS]);
     }
 
     const engine = this.instantiationService.createInstance(GameEngine, this);
@@ -48,8 +51,8 @@ export class EngineLoop {
       this.ticks++;
 
       if (this.ticks < 61) {
-        console.log('game tick:', this.ticks);
-        console.log('render tick:', this.renderer.getRendererInfo().currentFrame);
+        //console.log('game tick:', this.ticks);
+        // console.log('render tick:', this.renderer.getRenderingInfo().currentFrame);
       }
 
       const then = performance.now();

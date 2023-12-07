@@ -26,7 +26,7 @@ export interface TRenderWorkerInitData {
   initialCanvasHeight: number;
   initialCanvasWidth: number;
   messagePort: MessagePort;
-  flags: Uint8Array;
+  flags: Uint8Array[];
 }
 
 export type TRenderWorkerInitMessage = TRenderMessage<'init', TRenderWorkerInitData>;
@@ -63,9 +63,8 @@ export type TRenderRefMessage = TRenderMessage<'ref', { refId: number; parentId:
 
 export interface IRenderPlatform {
   readonly _injectibleService: undefined;
-  RENDER_FLAGS: Uint8Array;
-  init(flags: Uint8Array): void;
-  getRendererInfo(): { currentFrame: number };
+  getRenderingInfo(): any;
+  init(flags: Uint8Array[]): void;
   send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
     message: T,
     transferList?: Transferable[]
