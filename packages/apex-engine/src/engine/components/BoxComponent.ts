@@ -2,12 +2,13 @@ import * as THREE from 'three';
 
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
+import { TripleBuffer } from '../../platform/memory/common';
 import { IRenderingPlatform } from '../../platform/rendering/common';
 import { CLASS, getTargetId } from '../class';
 import { proxy } from '../class/specifiers/proxy';
-import { type IRenderTickContext } from '../renderer';
-import { MeshComponent, MeshComponentProxy } from './MeshComponent';
+import { Renderer, type IRenderTickContext } from '../renderer';
 import { BoxGeometry } from '../BoxGeometry';
+import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 
 const temp = new THREE.Vector3();
 
@@ -17,6 +18,18 @@ export class BoxComponentProxy extends MeshComponentProxy {
   public normals: Float32Array = new Float32Array();
 
   private segmentsAround: number = 24;
+
+  constructor(
+    args: [number, number, number],
+    tb: TripleBuffer,
+    public override readonly id: number,
+    protected override readonly messagePort: MessagePort | null = null,
+    protected override readonly renderer: Renderer
+  ) {
+    super(args, tb, id, messagePort, renderer);
+
+    this.sceneObject = new THREE.Mesh(new THREE.BoxGeometry(args[0], args[1], args[2]));
+  }
 
   public override tick({ elapsed: time }: IRenderTickContext) {
     const positionAttr = this.sceneObject.geometry.getAttribute('position');

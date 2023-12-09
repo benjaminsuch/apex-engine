@@ -5,7 +5,7 @@ import { CLASS, FUNC, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
 import { rpc } from '../class/specifiers/rpc';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../class/specifiers/serialize';
-import { type IRenderTickContext, RenderProxy, Renderer } from '../renderer';
+import { type IRenderTickContext, RenderProxy } from '../renderer';
 import { type Actor } from '../Actor';
 import { ActorComponent } from './ActorComponent';
 
