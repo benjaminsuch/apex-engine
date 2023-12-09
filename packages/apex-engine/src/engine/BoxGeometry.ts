@@ -1,42 +1,41 @@
-import { CLASS, PROP } from './class';
+import { TripleBuffer } from '../platform/memory/common';
+import { CLASS } from './class';
 import { proxy } from './class/specifiers/proxy';
-import { serialize, uint16 } from './class/specifiers/serialize';
-import { RenderProxy } from './renderer';
+import { RenderProxy, Renderer } from './renderer';
 
 export class BoxGeometryProxy extends RenderProxy {
-  declare depth: number;
+  public width: number = 1;
 
-  declare depthSegments: number;
+  public height: number = 1;
 
-  declare height: number;
+  public depth: number = 1;
 
-  declare heightSegments: number;
+  public widthSegments: number = 1;
 
-  declare width: number;
+  public heightSegments: number = 1;
 
-  declare widthSegments: number;
+  public depthSegments: number = 1;
+
+  constructor(
+    args: number[],
+    tb: TripleBuffer,
+    public override readonly id: number,
+    protected override readonly messagePort: MessagePort | null = null,
+    protected override readonly renderer: Renderer
+  ) {
+    super(args, tb, id, messagePort, renderer);
+
+    this.width = args[0];
+    this.height = args[1];
+    this.depth = args[2];
+    this.widthSegments = args[3];
+    this.heightSegments = args[4];
+    this.depthSegments = args[5];
+  }
 }
 
 @CLASS(proxy(BoxGeometryProxy))
 export class BoxGeometry {
-  @PROP(serialize(uint16))
-  public width: number;
-
-  @PROP(serialize(uint16))
-  public height: number;
-
-  @PROP(serialize(uint16))
-  public depth: number;
-
-  @PROP(serialize(uint16))
-  public widthSegments: number;
-
-  @PROP(serialize(uint16))
-  public heightSegments: number;
-
-  @PROP(serialize(uint16))
-  public depthSegments: number;
-
   constructor(
     width: number = 1,
     height: number = 1,
@@ -44,12 +43,5 @@ export class BoxGeometry {
     widthSegments: number = 1,
     heightSegments: number = 1,
     depthSegments: number = 1
-  ) {
-    this.depth = depth;
-    this.height = height;
-    this.width = width;
-    this.depthSegments = depthSegments;
-    this.heightSegments = heightSegments;
-    this.widthSegments = widthSegments;
-  }
+  ) {}
 }

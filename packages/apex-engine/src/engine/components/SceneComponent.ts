@@ -55,15 +55,6 @@ export class SceneComponentProxy extends RenderProxy {
 
   public sceneObject: THREE.Object3D = new THREE.Object3D();
 
-  constructor(
-    tb: TripleBuffer,
-    public override readonly id: number,
-    protected override readonly messagePort: MessagePort | null = null,
-    protected override readonly renderer: Renderer
-  ) {
-    super(tb, id, messagePort, renderer);
-  }
-
   public setAsRoot() {
     // We do not set `isRootComponent` here (this information is automatically set from the triple buffer).
     this.renderer.scene.add(this.sceneObject);

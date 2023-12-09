@@ -3,7 +3,7 @@ import { InstantiationService, ServiceCollection } from '../../platform/di/commo
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { INetDriver } from '../../platform/net/common';
 import { WebSocketNetDriver } from '../../platform/net/node';
-import { IRenderPlatform } from '../../platform/rendering/common';
+import { IRenderingPlatform } from '../../platform/rendering/common';
 import { NodeRenderPlatform } from '../../platform/rendering/node';
 
 export class CliMain {
@@ -16,7 +16,7 @@ export class CliMain {
     services.set(IConsoleLogger, consoleLogger);
     // Just a temporary fix to avoid `createInstance` to throw type errors.
     // TODO: Fix "createInstance" type and remove the renderer.
-    services.set(IRenderPlatform, new NodeRenderPlatform());
+    services.set(IRenderingPlatform, new NodeRenderPlatform());
 
     this.instantiationService = new InstantiationService(services);
     this.instantiationService.setServiceInstance(

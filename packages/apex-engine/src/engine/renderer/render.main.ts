@@ -1,6 +1,7 @@
+import { InstantiationService, ServiceCollection } from '../../platform/di/common';
+import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { type TRenderWorkerInitData } from '../../platform/rendering/common';
-import { Renderer } from '.';
-import { RenderProxyManager } from '../ProxyManager';
+import { Renderer } from './Renderer';
 
 /**
  * For consistency reasons, I implemented the class as if it were a worker. This makes
@@ -38,7 +39,11 @@ export default class RenderMainThread extends EventTarget implements EventListen
     messagePort,
     flags
   }: TRenderWorkerInitData) {
-    this.renderer = Renderer.create(canvas, flags, messagePort, RenderProxyManager);
+    const logger = new ConsoleLogger();
+    const services = new ServiceCollection([IConsoleLogger, logger]);
+    const instantiationService = new InstantiationService(services);
+
+    this.renderer = Renderer.create(canvas, flags, messagePort, instantiationService);
     this.renderer.init();
     this.renderer.setSize(initialCanvasHeight, initialCanvasWidth);
     this.renderer.start();

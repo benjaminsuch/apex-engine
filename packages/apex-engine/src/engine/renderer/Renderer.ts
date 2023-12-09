@@ -50,13 +50,7 @@ export class Renderer {
     messagePort: MessagePort,
     instantiationService: InstantiationService
   ): Renderer {
-    return instantiationService.createInstance(
-      Renderer,
-      canvas,
-      flags,
-      messagePort,
-      instantiationService.createInstance(RenderProxyManager)
-    );
+    return instantiationService.createInstance(Renderer, canvas, flags, messagePort);
   }
 
   private readonly webGLRenderer: WebGLRenderer;
@@ -65,17 +59,18 @@ export class Renderer {
 
   public readonly camera: Camera;
 
+  public readonly renderingInfo: RenderingInfo;
+
+  public readonly proxyManager: RenderProxyManager;
+
   public frameId: number = 0;
 
   public isInitialized: boolean = false;
-
-  public readonly renderingInfo: RenderingInfo;
 
   constructor(
     canvas: OffscreenCanvas,
     flags: Uint8Array[],
     private readonly messagePort: MessagePort,
-    public readonly proxyManager: RenderProxyManager,
     @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
@@ -125,8 +120,10 @@ export class Renderer {
 
     const cube = new Mesh(new BoxGeometry(1, 1, 1));
     cube.name = 'TestCube';
+    cube.visible = false;
     this.scene.add(cube);
 
+    this.proxyManager = this.instantiationService.createInstance(RenderProxyManager, this);
     this.renderingInfo = this.instantiationService.createInstance(
       RenderingInfo,
       GameEngine.RENDER_FLAGS,
@@ -173,7 +170,7 @@ export class Renderer {
     const { type } = event.data;
 
     if (type === 'proxy') {
-      this.proxyManager.queueTask(RenderCreateProxyInstanceTask, event.data, this);
+      this.proxyManager.queueTask(RenderCreateProxyInstanceTask, event.data.data, this);
     }
   }
 
@@ -190,6 +187,8 @@ export class Renderer {
 
     this.renderingInfo.tick(context);
     this.proxyManager.tick(context);
+    this.proxyManager.tickEnd();
+
     this.webGLRenderer.render(this.scene, this.camera);
 
     TripleBuffer.swapWriteBufferFlags(GameEngine.RENDER_FLAGS);

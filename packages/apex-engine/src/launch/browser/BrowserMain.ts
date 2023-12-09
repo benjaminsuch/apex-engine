@@ -6,7 +6,7 @@ import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
 import { WebSocketNetDriver } from '../../platform/net/browser';
 import { INetDriver } from '../../platform/net/common';
 import { BrowserRenderingPlatform } from '../../platform/rendering/browser';
-import { IRenderPlatform } from '../../platform/rendering/common';
+import { IRenderingPlatform } from '../../platform/rendering/common';
 
 export class BrowserMain {
   private readonly instantiationService: InstantiationService;
@@ -24,7 +24,7 @@ export class BrowserMain {
       new WebSocketNetDriver(this.instantiationService, consoleLogger)
     );
     this.instantiationService.setServiceInstance(
-      IRenderPlatform,
+      IRenderingPlatform,
       new BrowserRenderingPlatform(renderer, this.instantiationService, consoleLogger)
     );
   }

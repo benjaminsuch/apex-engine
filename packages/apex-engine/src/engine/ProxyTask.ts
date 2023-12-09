@@ -9,5 +9,9 @@ export abstract class ProxyTask<Data> {
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {}
 
-  public abstract run(proxyManager: ProxyManager): boolean;
+  public abstract run(proxyManager: ProxyManager<any>): boolean;
+
+  public tickEnd(proxyManager: ProxyManager<any>): boolean {
+    return true;
+  }
 }

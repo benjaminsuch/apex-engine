@@ -1,6 +1,6 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderPlatform } from '../platform/rendering/common';
+import { IRenderingPlatform } from '../platform/rendering/common';
 import { Actor } from './Actor';
 import { type IEngineLoopTick } from './EngineLoop';
 import { Pawn } from './Pawn';
@@ -35,7 +35,7 @@ export class PlayerController extends Actor {
   constructor(
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IRenderPlatform public override readonly renderer: IRenderPlatform
+    @IRenderingPlatform public override readonly renderer: IRenderingPlatform
   ) {
     super(instantiationService, logger, renderer);
 

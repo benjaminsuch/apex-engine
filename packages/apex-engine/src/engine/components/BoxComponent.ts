@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
-import { IRenderPlatform } from '../../platform/rendering/common';
+import { IRenderingPlatform } from '../../platform/rendering/common';
 import { CLASS, getTargetId } from '../class';
 import { proxy } from '../class/specifiers/proxy';
 import { type IRenderTickContext } from '../renderer';
@@ -118,7 +118,7 @@ export class BoxComponent extends MeshComponent {
     depth: number = 1,
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IRenderPlatform protected override readonly renderer: IRenderPlatform
+    @IRenderingPlatform protected override readonly renderer: IRenderingPlatform
   ) {
     super(
       instantiationService.createInstance(BoxGeometry, width, height, depth),

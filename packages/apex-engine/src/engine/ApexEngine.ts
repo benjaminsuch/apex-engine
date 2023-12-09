@@ -1,7 +1,8 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { TripleBuffer } from '../platform/memory/common';
-import { IRenderPlatform } from '../platform/rendering/common';
+import { IRenderingPlatform } from '../platform/rendering/common';
+import { type IProxyOrigin } from './class/specifiers/proxy';
 import { type EngineLoop, type IEngineLoopTick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
@@ -34,7 +35,7 @@ export abstract class ApexEngine {
     return this.gameInstance as GameInstance;
   }
 
-  public readonly proxyManager: ProxyManager;
+  public readonly proxyManager: ProxyManager<IProxyOrigin>;
 
   public isRunning: boolean = false;
 
@@ -44,7 +45,7 @@ export abstract class ApexEngine {
     protected readonly engineLoop: EngineLoop,
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @IRenderPlatform protected readonly renderer: IRenderPlatform
+    @IRenderingPlatform protected readonly renderer: IRenderingPlatform
   ) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the GameEngine already exists.`);
@@ -71,6 +72,7 @@ export abstract class ApexEngine {
 
     this.getGameInstance().getWorld().tick(tick);
     this.proxyManager.tick(tick);
+    this.proxyManager.tickEnd();
 
     TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
   }

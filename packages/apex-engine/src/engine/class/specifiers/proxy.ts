@@ -1,4 +1,4 @@
-import { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
+import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { TripleBuffer } from '../../../platform/memory/common';
 import { GameCreateProxyInstanceTask } from '../../tasks';
@@ -8,7 +8,7 @@ import { GameProxyManager } from '../../ProxyManager';
 import { getClassSchema, getTargetId, isPropSchema } from '../class';
 import { id } from './id';
 
-export interface IProxy {
+export interface IProxyOrigin {
   readonly id?: number;
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
@@ -18,7 +18,7 @@ export interface IProxy {
   tick(tick: IEngineLoopTick): void;
 }
 
-export type TProxyConstructor = TClass<IProxy> & { proxyClassName: string };
+export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
 
 /**
  * @param proxyClass The class which is used to instantiate the proxy on the render-thread.
@@ -33,7 +33,7 @@ export function proxy(proxyClass: TClass) {
     // `RenderProxy`, when we construct the proxy on the render-thread.
     Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
 
-    return class extends constructor {
+    return class extends constructor implements IProxyOrigin {
       // @ts-ignore
       public static override readonly name: string = constructor.name;
 
@@ -47,7 +47,10 @@ export function proxy(proxyClass: TClass) {
 
       public readonly byteView!: Uint8Array;
 
+      public readonly isProxyOrigin: boolean = true;
+
       constructor(...args: any[]) {
+        console.log('args', args);
         super(...args);
 
         // This check is necessary, to prevent parent classes to also push into the `messageQueue`.
@@ -382,7 +385,13 @@ export function proxy(proxyClass: TClass) {
         }
 
         GameProxyManager.getInstance().registerProxy(this);
-        GameProxyManager.getInstance().queueTask(GameCreateProxyInstanceTask, this);
+        GameProxyManager.getInstance().queueTask(
+          GameCreateProxyInstanceTask,
+          this,
+          args.filter(
+            val => typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
+          )
+        );
 
         // We only create the message channel, but don't listen to any incoming messages.
         // Currently there is no reason for Proxies to send messages back, but this may change in the future.

@@ -9,6 +9,7 @@ export abstract class RenderProxy {
   public readonly isProxy: boolean = true;
 
   constructor(
+    args: unknown[] = [],
     tb: TripleBuffer,
     public readonly id: number,
     protected readonly messagePort: MessagePort | null = null,
