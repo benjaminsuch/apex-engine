@@ -92,6 +92,12 @@ export class ProxyManager<T> {
       // this.tasks.splice(i, 1);
       // i--;
     }
+
+    //todo: To run `tick` inside `ProxyManager` we have to make sure it's guaranteed `proxy` has that method.
+    // for (let i = 0; i < this.proxies.entries; ++i) {
+    //   const proxy = this.proxies.getProxyByIndex(i)
+    //   proxy.tick(tick);
+    // }
   }
 
   public tickEnd() {
@@ -168,6 +174,15 @@ export class RenderProxyManager extends ProxyManager<RenderProxy> {
     return super.registerProxy(proxy);
   }
 
+  public override tick(tick: IEngineLoopTick): void {
+    super.tick(tick);
+
+    for (let i = 0; i < this.proxies.entries; ++i) {
+      const proxy = this.proxies.getProxyByIndex(i);
+      proxy.tick(tick);
+    }
+  }
+
   public override tickEnd(): void {
     super.tickEnd();
 
@@ -185,6 +200,10 @@ export class RenderProxyManager extends ProxyManager<RenderProxy> {
 
 class ProxyRegistry<T> {
   private readonly list: T[] = [];
+
+  public getProxyByIndex(idx: number) {
+    return this.list[idx];
+  }
 
   public register(proxy: T) {
     const idx = this.list.indexOf(proxy);
