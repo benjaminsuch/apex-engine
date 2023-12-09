@@ -6,7 +6,7 @@ import { TripleBuffer } from '../../platform/memory/common';
 import { IRenderingPlatform } from '../../platform/rendering/common';
 import { CLASS, getTargetId } from '../class';
 import { proxy } from '../class/specifiers/proxy';
-import { Renderer, type IRenderTickContext } from '../renderer';
+import { type Renderer, type IRenderTickContext } from '../renderer';
 import { BoxGeometry } from '../BoxGeometry';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 

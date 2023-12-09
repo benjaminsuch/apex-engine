@@ -50,7 +50,6 @@ export function proxy(proxyClass: TClass) {
       public readonly isProxyOrigin: boolean = true;
 
       constructor(...args: any[]) {
-        console.log('args', args);
         super(...args);
 
         // This check is necessary, to prevent parent classes to also push into the `messageQueue`.
