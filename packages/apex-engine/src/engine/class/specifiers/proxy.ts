@@ -368,7 +368,7 @@ export function proxy(proxyClass: TClass) {
 
                 accessors = {
                   get(this) {
-                    return Reflect.getMetadata('value', this, key);
+                    return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: Vector3) {
                     setVec3(this, key, val, dv, offset);

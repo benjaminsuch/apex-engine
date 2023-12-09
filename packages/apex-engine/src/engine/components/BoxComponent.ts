@@ -11,10 +11,6 @@ import { BoxGeometry } from '../BoxGeometry';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 
 export class BoxComponentProxy extends MeshComponentProxy {
-  public positions: Float32Array = new Float32Array();
-
-  public normals: Float32Array = new Float32Array();
-
   constructor(
     args: [number, number, number],
     tb: TripleBuffer,

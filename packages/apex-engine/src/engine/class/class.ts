@@ -23,12 +23,19 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
     console.log('schema', Reflect.getOwnMetadata('schema', constructor));
 
     let byteLength = 0;
+    let prevSchema: PropSchema | undefined;
+    let pos = 0;
 
     for (const key in schema) {
       const propSchema = schema[key];
 
       if (isPropSchema(propSchema)) {
         byteLength += propSchema.size;
+
+        propSchema.offset = prevSchema ? prevSchema.offset + prevSchema.size : 0;
+        propSchema.pos = pos++;
+
+        prevSchema = propSchema;
       }
     }
 
@@ -116,13 +123,14 @@ export function addPropToSchema(
   if (descriptor) {
     schema[key] = { type: 'function', isRPC: false, descriptor };
   } else {
-    const keys = Object.keys(schema).filter(val => schema[val].type !== 'function');
-    const pos = keys.length;
-    const prevKey = keys.find(val => (schema[val] as PropSchema).pos === pos - 1);
-    const prevSchema = prevKey ? (schema[prevKey] as PropSchema) : null;
-    const offset = prevSchema ? prevSchema.offset + prevSchema.size : 0;
-
-    schema[key] = { type: 'uint8', size: 0, arrayType: Uint8Array, isArray: false, offset, pos };
+    schema[key] = {
+      type: 'uint8',
+      size: 0,
+      arrayType: Uint8Array,
+      isArray: false,
+      offset: 0,
+      pos: 0
+    };
   }
 
   Reflect.defineMetadata('schema', schema, constructor);

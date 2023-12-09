@@ -112,7 +112,7 @@ export class SceneComponent extends ActorComponent {
   public rotation: THREE.Euler = new THREE.Euler();
 
   @PROP(serialize(vec3))
-  public scale: THREE.Vector3 = new THREE.Vector3();
+  public scale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
 
   @PROP(serialize(mat4))
   public matrix: THREE.Matrix4 = new THREE.Matrix4();

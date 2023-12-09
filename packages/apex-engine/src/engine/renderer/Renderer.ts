@@ -88,7 +88,7 @@ export class Renderer {
     // Camera and light is temporary fixed in place here
     this.camera = new PerspectiveCamera();
     this.camera.position.set(1, 15, -25);
-    this.camera.lookAt(0, 1, 15);
+    this.camera.lookAt(0, 0, 0);
 
     const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 3);
     hemiLight.position.set(0, 20, 0);
@@ -118,9 +118,12 @@ export class Renderer {
 
     this.scene.add(floor);
 
-    const cube = new Mesh(new BoxGeometry(1, 1, 1));
+    const cube = new Mesh(
+      new BoxGeometry(1, 1, 1),
+      new MeshPhongMaterial({ color: 0xeb4034, depthWrite: false })
+    );
     cube.name = 'TestCube';
-    cube.visible = false;
+    cube.visible = true;
     this.scene.add(cube);
 
     this.proxyManager = this.instantiationService.createInstance(RenderProxyManager, this);
