@@ -17,12 +17,8 @@ import {
   WebGLRenderer
 } from 'three';
 
-import {
-  IInstatiationService,
-  InstantiationService,
-  ServiceCollection
-} from '../../platform/di/common';
-import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
+import { IInstatiationService, InstantiationService } from '../../platform/di/common';
+import { IConsoleLogger } from '../../platform/logging/common';
 import { TripleBuffer } from '../../platform/memory/common';
 import {
   RenderingInfo,
@@ -52,18 +48,14 @@ export class Renderer {
     canvas: OffscreenCanvas,
     flags: Uint8Array[],
     messagePort: MessagePort,
-    ProxyManagerClass: typeof RenderProxyManager
+    instantiationService: InstantiationService
   ): Renderer {
-    const logger = new ConsoleLogger();
-    const services = new ServiceCollection([IConsoleLogger, logger]);
-    const instantiationService = new InstantiationService(services);
-
     return instantiationService.createInstance(
       Renderer,
       canvas,
       flags,
       messagePort,
-      instantiationService.createInstance(ProxyManagerClass)
+      instantiationService.createInstance(RenderProxyManager)
     );
   }
 
