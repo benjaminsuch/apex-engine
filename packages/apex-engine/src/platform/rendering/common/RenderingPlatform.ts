@@ -65,8 +65,6 @@ export type TRenderRPCData = TRenderMessageData<{
 
 export type TRenderRPCMessage = TRenderMessage<'rpc', TRenderRPCData>;
 
-export type TRenderRefMessage = TRenderMessage<'ref', { refId: number; parentId: number }>;
-
 export interface IRenderingPlatform {
   readonly _injectibleService: undefined;
   getRenderingInfo(): any;

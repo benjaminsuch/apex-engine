@@ -1,9 +1,8 @@
 import { IInstatiationService } from '../../../platform/di/common';
 import { IConsoleLogger } from '../../../platform/logging/common';
-import { TRenderRPCData } from '../../../platform/rendering/common';
-import { type ProxyManager } from '../../ProxyManager';
+import type { TRenderRPCData } from '../../../platform/rendering/common';
 import { ProxyTask } from '../../ProxyTask';
-import { type RenderProxy } from '../RenderProxy';
+import type { RenderProxy } from '../RenderProxy';
 
 export class RenderRPCTask extends ProxyTask<TRenderRPCData> {
   constructor(
@@ -15,7 +14,7 @@ export class RenderRPCTask extends ProxyTask<TRenderRPCData> {
     super(data, instantiationService, logger);
   }
 
-  public run(proxyManager: ProxyManager) {
+  public run() {
     const { name, params, tick } = this.data;
 
     // if (proxyManager.currentTick.id !== tick) {

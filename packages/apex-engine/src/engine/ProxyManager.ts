@@ -5,6 +5,7 @@ import { type IProxyOrigin } from './class/specifiers/proxy';
 import * as components from './components';
 import { type RenderProxy, type Renderer } from './renderer';
 import { BoxGeometryProxy } from './BoxGeometry';
+import { BufferGeometryProxy } from './BufferGeometry';
 import { type IEngineLoopTick } from './EngineLoop';
 import { ProxyTask } from './ProxyTask';
 
@@ -149,7 +150,7 @@ export class RenderProxyManager extends ProxyManager<RenderProxy> {
    */
   private unattachedSceneProxies: components.SceneComponentProxy[] = [];
 
-  public readonly components = { ...components, BoxGeometryProxy };
+  public readonly components = { ...components, BoxGeometryProxy, BufferGeometryProxy };
 
   constructor(
     private readonly renderer: Renderer,

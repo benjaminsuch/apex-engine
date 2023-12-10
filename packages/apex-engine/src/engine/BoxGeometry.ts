@@ -2,8 +2,9 @@ import { TripleBuffer } from '../platform/memory/common';
 import { CLASS } from './class';
 import { proxy } from './class/specifiers/proxy';
 import { RenderProxy, Renderer } from './renderer';
+import { BufferGeometry, BufferGeometryProxy } from './BufferGeometry';
 
-export class BoxGeometryProxy extends RenderProxy {
+export class BoxGeometryProxy extends BufferGeometryProxy {
   public width: number = 1;
 
   public height: number = 1;
@@ -35,7 +36,7 @@ export class BoxGeometryProxy extends RenderProxy {
 }
 
 @CLASS(proxy(BoxGeometryProxy))
-export class BoxGeometry {
+export class BoxGeometry extends BufferGeometry {
   constructor(
     width: number = 1,
     height: number = 1,
@@ -43,5 +44,7 @@ export class BoxGeometry {
     widthSegments: number = 1,
     heightSegments: number = 1,
     depthSegments: number = 1
-  ) {}
+  ) {
+    super();
+  }
 }

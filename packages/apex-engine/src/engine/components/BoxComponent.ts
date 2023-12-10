@@ -2,17 +2,17 @@ import * as THREE from 'three';
 
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
-import { TripleBuffer } from '../../platform/memory/common';
+import type { TripleBuffer } from '../../platform/memory/common';
 import { IRenderingPlatform } from '../../platform/rendering/common';
 import { CLASS } from '../class';
 import { proxy } from '../class/specifiers/proxy';
-import { type Renderer } from '../renderer';
+import type { Renderer } from '../renderer';
 import { BoxGeometry } from '../BoxGeometry';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 
 export class BoxComponentProxy extends MeshComponentProxy {
   constructor(
-    args: [number, number, number],
+    args: [number, number, number, number, number, number],
     tb: TripleBuffer,
     public override readonly id: number,
     protected override readonly messagePort: MessagePort | null = null,
@@ -20,7 +20,9 @@ export class BoxComponentProxy extends MeshComponentProxy {
   ) {
     super(args, tb, id, messagePort, renderer);
 
-    this.sceneObject = new THREE.Mesh(new THREE.BoxGeometry(args[0], args[1], args[2]));
+    this.sceneObject = new THREE.Mesh(
+      new THREE.BoxGeometry(args[0], args[1], args[2], args[3], args[4], args[5])
+    );
   }
 }
 

@@ -1,7 +1,7 @@
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
-import { TRenderRPCData } from '../../platform/rendering/common';
-import { type IProxyOrigin } from '../class/specifiers/proxy';
+import type { TRenderRPCData, TRenderRPCMessage } from '../../platform/rendering/common';
+import type { IProxyOrigin } from '../class/specifiers/proxy';
 import { GameProxyManager } from '../ProxyManager';
 import { ProxyTask } from '../ProxyTask';
 

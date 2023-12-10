@@ -1,10 +1,10 @@
 import { IInstatiationService } from '../../../platform/di/common';
 import { IConsoleLogger } from '../../../platform/logging/common';
 import { TripleBuffer } from '../../../platform/memory/common';
-import { type TRenderSceneProxyCreateData } from '../../../platform/rendering/common';
-import { type RenderProxyManager } from '../../ProxyManager';
+import type { TRenderSceneProxyCreateData } from '../../../platform/rendering/common';
+import type { RenderProxyManager } from '../../ProxyManager';
 import { ProxyTask } from '../../ProxyTask';
-import { type Renderer } from '../Renderer';
+import type { Renderer } from '../Renderer';
 
 export class RenderCreateProxyInstanceTask extends ProxyTask<
   TRenderSceneProxyCreateData | TRenderSceneProxyCreateData[]
@@ -28,7 +28,7 @@ export class RenderCreateProxyInstanceTask extends ProxyTask<
       const ProxyConstructor = proxyManager.components[constructor] as TClass;
 
       if (!ProxyConstructor) {
-        this.logger.warn(`Constructor (${constructor}) not found for proxy with id "${id}".`);
+        this.logger.warn(`Constructor (${constructor}) not found for proxy "${id}".`);
         return false;
       }
 
@@ -42,7 +42,7 @@ export class RenderCreateProxyInstanceTask extends ProxyTask<
       //   return false;
       // }
 
-      hasError = proxyManager.registerProxy(
+      hasError = !proxyManager.registerProxy(
         this.instantiationService.createInstance(
           ProxyConstructor,
           args,

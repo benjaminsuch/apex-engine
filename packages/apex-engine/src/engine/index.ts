@@ -4,6 +4,7 @@ export * from './Actor';
 export * from './GameEngine';
 export * from './ApexEngine';
 export * from './BoxGeometry';
+export * from './BufferGeometry';
 export * from './EngineLoop';
 export * from './EngineUtils';
 export * from './GameInstance';
