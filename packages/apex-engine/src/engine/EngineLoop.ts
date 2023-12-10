@@ -1,6 +1,6 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderPlatform } from '../platform/rendering/common';
+import { IRenderingPlatform } from '../platform/rendering/common';
 import { GameEngine } from './GameEngine';
 
 const TICK_RATE = 60;
@@ -27,13 +27,10 @@ export class EngineLoop {
 
   constructor(
     @IInstatiationService private readonly instantiationService: IInstatiationService,
-    @IRenderPlatform private readonly renderer: IRenderPlatform,
+    @IRenderingPlatform private readonly renderer: IRenderingPlatform,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {}
 
-  //todo: Make sure all initialization code is resolved before other code can proceed.
-  //      Background: For `getRenderingInfo` we have to wait for the renderer to send
-  //      us the data, so we can set up `RenderingInfo` on the game-thread.
   public async init() {
     const promises: MaybePromise<void>[] = [];
 

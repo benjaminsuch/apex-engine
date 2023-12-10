@@ -3,7 +3,7 @@ import { IConsoleLogger } from '../../logging/common';
 import { TripleBuffer } from '../../memory/common';
 import {
   RenderingInfo,
-  type IRenderPlatform,
+  type IRenderingPlatform,
   type TRenderMessage,
   type TRenderMessageData,
   type TRenderMessageType
@@ -13,7 +13,7 @@ export interface BrowserRenderingPlatformOptions {
   multithreaded?: boolean;
 }
 
-export class BrowserRenderingPlatform implements IRenderPlatform {
+export class BrowserRenderingPlatform implements IRenderingPlatform {
   declare readonly _injectibleService: undefined;
 
   private static instance?: BrowserRenderingPlatform;

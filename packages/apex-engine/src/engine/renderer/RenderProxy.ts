@@ -1,7 +1,7 @@
 import { TripleBuffer } from '../../platform/memory/common';
 import { getClassSchema, isPropSchema } from '../class';
 import { RenderRPCTask } from './tasks';
-import { Renderer, type IRenderTickContext } from './Renderer';
+import { type Renderer, type IRenderTickContext } from './Renderer';
 
 export abstract class RenderProxy {
   public name: string = '';
@@ -9,6 +9,7 @@ export abstract class RenderProxy {
   public readonly isProxy: boolean = true;
 
   constructor(
+    args: unknown[] = [],
     tb: TripleBuffer,
     public readonly id: number,
     protected readonly messagePort: MessagePort | null = null,
@@ -60,8 +61,8 @@ export abstract class RenderProxy {
               if (isArray) {
                 const arr: number[] = [];
 
-                for (let i = 0; i < size; ++i) {
-                  arr.push(views[idx][getter](offset, true));
+                for (let i = 0; i < size / arrayType.BYTES_PER_ELEMENT; ++i) {
+                  arr.push(views[idx][getter](offset + i * arrayType.BYTES_PER_ELEMENT, true));
                 }
 
                 return arr;

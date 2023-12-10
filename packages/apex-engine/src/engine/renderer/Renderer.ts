@@ -17,12 +17,8 @@ import {
   WebGLRenderer
 } from 'three';
 
-import {
-  IInstatiationService,
-  InstantiationService,
-  ServiceCollection
-} from '../../platform/di/common';
-import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
+import { IInstatiationService, InstantiationService } from '../../platform/di/common';
+import { IConsoleLogger } from '../../platform/logging/common';
 import { TripleBuffer } from '../../platform/memory/common';
 import {
   RenderingInfo,
@@ -52,19 +48,9 @@ export class Renderer {
     canvas: OffscreenCanvas,
     flags: Uint8Array[],
     messagePort: MessagePort,
-    ProxyManagerClass: typeof RenderProxyManager
+    instantiationService: InstantiationService
   ): Renderer {
-    const logger = new ConsoleLogger();
-    const services = new ServiceCollection([IConsoleLogger, logger]);
-    const instantiationService = new InstantiationService(services);
-
-    return instantiationService.createInstance(
-      Renderer,
-      canvas,
-      flags,
-      messagePort,
-      instantiationService.createInstance(ProxyManagerClass)
-    );
+    return instantiationService.createInstance(Renderer, canvas, flags, messagePort);
   }
 
   private readonly webGLRenderer: WebGLRenderer;
@@ -73,17 +59,18 @@ export class Renderer {
 
   public readonly camera: Camera;
 
+  public readonly renderingInfo: RenderingInfo;
+
+  public readonly proxyManager: RenderProxyManager;
+
   public frameId: number = 0;
 
   public isInitialized: boolean = false;
-
-  public readonly renderingInfo: RenderingInfo;
 
   constructor(
     canvas: OffscreenCanvas,
     flags: Uint8Array[],
     private readonly messagePort: MessagePort,
-    public readonly proxyManager: RenderProxyManager,
     @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
@@ -101,7 +88,7 @@ export class Renderer {
     // Camera and light is temporary fixed in place here
     this.camera = new PerspectiveCamera();
     this.camera.position.set(1, 15, -25);
-    this.camera.lookAt(0, 1, 15);
+    this.camera.lookAt(0, 0, 0);
 
     const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 3);
     hemiLight.position.set(0, 20, 0);
@@ -131,10 +118,15 @@ export class Renderer {
 
     this.scene.add(floor);
 
-    const cube = new Mesh(new BoxGeometry(1, 1, 1));
+    const cube = new Mesh(
+      new BoxGeometry(1, 1, 1),
+      new MeshPhongMaterial({ color: 0xeb4034, depthWrite: false })
+    );
     cube.name = 'TestCube';
+    cube.visible = true;
     this.scene.add(cube);
 
+    this.proxyManager = this.instantiationService.createInstance(RenderProxyManager, this);
     this.renderingInfo = this.instantiationService.createInstance(
       RenderingInfo,
       GameEngine.RENDER_FLAGS,
@@ -181,7 +173,7 @@ export class Renderer {
     const { type } = event.data;
 
     if (type === 'proxy') {
-      this.proxyManager.queueTask(RenderCreateProxyInstanceTask, event.data, this);
+      this.proxyManager.queueTask(RenderCreateProxyInstanceTask, event.data.data, this);
     }
   }
 
@@ -198,6 +190,8 @@ export class Renderer {
 
     this.renderingInfo.tick(context);
     this.proxyManager.tick(context);
+    this.proxyManager.tickEnd();
+
     this.webGLRenderer.render(this.scene, this.camera);
 
     TripleBuffer.swapWriteBufferFlags(GameEngine.RENDER_FLAGS);

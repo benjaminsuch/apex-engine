@@ -43,13 +43,19 @@ export type TRenderViewportResizeMessage = TRenderMessage<
 
 export type TRenderSceneProxyCreateData = TRenderMessageData<{
   constructor: string;
+  args: Array<string | number | boolean>;
   id: number;
   tb: Pick<TripleBuffer, 'buffers' | 'byteLength' | 'byteViews' | 'flags'>;
   messagePort?: MessagePort;
   tick: number;
 }>;
 
-export type TRenderSceneProxyMessage = TRenderMessage<'proxy', TRenderSceneProxyCreateData>;
+export type TRenderSceneProxyMessage = TRenderMessage<
+  'proxy',
+  {
+    data: TRenderSceneProxyCreateData[];
+  }
+>;
 
 export type TRenderRPCData = TRenderMessageData<{
   name: string;
@@ -59,9 +65,7 @@ export type TRenderRPCData = TRenderMessageData<{
 
 export type TRenderRPCMessage = TRenderMessage<'rpc', TRenderRPCData>;
 
-export type TRenderRefMessage = TRenderMessage<'ref', { refId: number; parentId: number }>;
-
-export interface IRenderPlatform {
+export interface IRenderingPlatform {
   readonly _injectibleService: undefined;
   getRenderingInfo(): any;
   init(flags: Uint8Array[]): void;
@@ -71,4 +75,5 @@ export interface IRenderPlatform {
   ): void;
 }
 
-export const IRenderPlatform = InstantiationService.createDecorator<IRenderPlatform>('renderer');
+export const IRenderingPlatform =
+  InstantiationService.createDecorator<IRenderingPlatform>('renderer');

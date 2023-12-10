@@ -5,7 +5,7 @@ import { CLASS, FUNC, PROP } from '../class';
 import { proxy } from '../class/specifiers/proxy';
 import { rpc } from '../class/specifiers/rpc';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../class/specifiers/serialize';
-import { type IRenderTickContext, RenderProxy, Renderer } from '../renderer';
+import { type IRenderTickContext, RenderProxy } from '../renderer';
 import { type Actor } from '../Actor';
 import { ActorComponent } from './ActorComponent';
 
@@ -54,15 +54,6 @@ export class SceneComponentProxy extends RenderProxy {
   public childIndex: number = -1;
 
   public sceneObject: THREE.Object3D = new THREE.Object3D();
-
-  constructor(
-    tb: TripleBuffer,
-    public override readonly id: number,
-    protected override readonly messagePort: MessagePort | null = null,
-    protected override readonly renderer: Renderer
-  ) {
-    super(tb, id, messagePort, renderer);
-  }
 
   public setAsRoot() {
     // We do not set `isRootComponent` here (this information is automatically set from the triple buffer).
@@ -121,7 +112,7 @@ export class SceneComponent extends ActorComponent {
   public rotation: THREE.Euler = new THREE.Euler();
 
   @PROP(serialize(vec3))
-  public scale: THREE.Vector3 = new THREE.Vector3();
+  public scale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
 
   @PROP(serialize(mat4))
   public matrix: THREE.Matrix4 = new THREE.Matrix4();

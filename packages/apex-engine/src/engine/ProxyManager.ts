@@ -1,14 +1,16 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderPlatform } from '../platform/rendering/common';
-import { type IProxy } from './class/specifiers/proxy';
+import { IRenderingPlatform } from '../platform/rendering/common';
+import { type IProxyOrigin } from './class/specifiers/proxy';
 import * as components from './components';
+import { type RenderProxy, type Renderer } from './renderer';
 import { BoxGeometryProxy } from './BoxGeometry';
+import { BufferGeometryProxy } from './BufferGeometry';
 import { type IEngineLoopTick } from './EngineLoop';
 import { ProxyTask } from './ProxyTask';
 
-export class ProxyManager {
-  private static instance?: ProxyManager;
+export class ProxyManager<T> {
+  protected static instance?: ProxyManager<any>;
 
   // I don't like applying the singleton pattern for this class, but an architectural
   // issue with the proxies force me to do so.
@@ -22,23 +24,13 @@ export class ProxyManager {
     return this.instance;
   }
 
-  protected readonly proxies: ProxyRegistry;
+  protected readonly proxies: ProxyRegistry<T>;
 
-  public registerProxy(proxy: IProxy) {
+  public registerProxy(proxy: T) {
     return this.proxies.register(proxy);
   }
 
   protected readonly tasks: ProxyTask<any>[] = [];
-
-  public queueTask<T extends new (...args: any[]) => ProxyTask<any>>(
-    TaskConstructor: T,
-    //todo: Re-add `never` to `? R : any`
-    ...args: [T extends typeof ProxyTask<infer R> ? R : any, ...any[]]
-  ) {
-    //todo: Improve types
-    this.tasks.push(this.instantiationService.createInstance(TaskConstructor as TClass, ...args));
-    return true;
-  }
 
   public currentTick: IEngineLoopTick = { delta: 0, elapsed: 0, id: 0 };
 
@@ -56,16 +48,26 @@ export class ProxyManager {
     console.log('ProxyManager', this);
   }
 
+  public queueTask<T extends new (...args: any[]) => ProxyTask<any>>(
+    TaskConstructor: T,
+    //todo: Re-add `never` to `? R : any`
+    ...args: [T extends typeof ProxyTask<infer R> ? R : any, ...any[]]
+  ) {
+    //todo: Improve types
+    this.tasks.push(this.instantiationService.createInstance(TaskConstructor as TClass, ...args));
+    return true;
+  }
+
   public tick(tick: IEngineLoopTick) {
     this.currentTick = tick;
 
     for (let i = 0; i < this.tasks.length; ++i) {
       const task = this.tasks[i];
 
-      this.logger.debug(`Start ${task.constructor.name}`);
+      this.logger.debug(task.constructor.name, 'Start');
 
       if (task.run(this)) {
-        this.logger.debug(`${task.constructor.name} done`);
+        this.logger.debug(task.constructor.name, 'Done');
         // See comment below
         // this.tasks.splice(i, 1);
         // i--;
@@ -88,17 +90,44 @@ export class ProxyManager {
       // - or we execute tasks that were sent x ticks ago
       //
       // todo: Remove this when the above gets fixed.
+      // this.tasks.splice(i, 1);
+      // i--;
+    }
+
+    //todo: To run `tick` inside `ProxyManager` we have to make sure it's guaranteed `proxy` has that method.
+    // for (let i = 0; i < this.proxies.entries; ++i) {
+    //   const proxy = this.proxies.getProxyByIndex(i)
+    //   proxy.tick(tick);
+    // }
+  }
+
+  public tickEnd() {
+    for (let i = 0; i < this.tasks.length; ++i) {
+      const task = this.tasks[i];
+
+      if (task.tickEnd(this)) {
+        // this.tasks.splice(i, 1);
+        // i--;
+      } else {
+        this.logger.warn(this.constructor.name, `"${task.constructor.name}" failed.`);
+      }
+
+      //todo: Remove
       this.tasks.splice(i, 1);
       i--;
     }
   }
 }
 
-export class GameProxyManager extends ProxyManager {
+export class GameProxyManager extends ProxyManager<IProxyOrigin> {
+  public static override getInstance() {
+    return super.getInstance() as GameProxyManager;
+  }
+
   constructor(
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IRenderPlatform protected readonly renderer: IRenderPlatform
+    @IRenderingPlatform protected readonly renderer: IRenderingPlatform
   ) {
     super(instantiationService, logger);
   }
@@ -108,8 +137,28 @@ export class GameProxyManager extends ProxyManager {
   }
 }
 
-export class RenderProxyManager extends ProxyManager {
-  public readonly components = { ...components, BoxGeometryProxy };
+export class RenderProxyManager extends ProxyManager<RenderProxy> {
+  public static override getInstance() {
+    return super.getInstance() as RenderProxyManager;
+  }
+
+  /**
+   * Holds all scene proxies that should be added to the rendering scene.
+   * The list is processed at the end of each tick.
+   *
+   * Important: Only scene proxies that have no parent are added to the rendering scene.
+   */
+  private unattachedSceneProxies: components.SceneComponentProxy[] = [];
+
+  public readonly components = { ...components, BoxGeometryProxy, BufferGeometryProxy };
+
+  constructor(
+    private readonly renderer: Renderer,
+    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger
+  ) {
+    super(instantiationService, logger);
+  }
 
   public getProxy(id: number) {
     for (const proxy of this.proxies) {
@@ -118,12 +167,46 @@ export class RenderProxyManager extends ProxyManager {
       }
     }
   }
+
+  public override registerProxy(proxy: RenderProxy): boolean {
+    if (proxy instanceof components.SceneComponentProxy) {
+      this.unattachedSceneProxies.push(proxy);
+    }
+    return super.registerProxy(proxy);
+  }
+
+  public override tick(tick: IEngineLoopTick): void {
+    super.tick(tick);
+
+    for (let i = 0; i < this.proxies.entries; ++i) {
+      const proxy = this.proxies.getProxyByIndex(i);
+      proxy.tick(tick);
+    }
+  }
+
+  public override tickEnd(): void {
+    super.tickEnd();
+
+    for (let i = 0; i < this.unattachedSceneProxies.length; ++i) {
+      const proxy = this.unattachedSceneProxies[i];
+
+      if (!proxy.parent && proxy.sceneObject) {
+        this.renderer.scene.add(proxy.sceneObject);
+      }
+    }
+
+    this.unattachedSceneProxies = [];
+  }
 }
 
-class ProxyRegistry {
-  private readonly list: IProxy[] = [];
+class ProxyRegistry<T> {
+  private readonly list: T[] = [];
 
-  public register(proxy: IProxy) {
+  public getProxyByIndex(idx: number) {
+    return this.list[idx];
+  }
+
+  public register(proxy: T) {
     const idx = this.list.indexOf(proxy);
 
     if (idx > -1) {

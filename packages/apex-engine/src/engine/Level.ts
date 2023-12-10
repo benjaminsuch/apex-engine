@@ -1,6 +1,6 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderPlatform } from '../platform/rendering/common';
+import { IRenderingPlatform } from '../platform/rendering/common';
 import { type Actor } from './Actor';
 import { type World } from './World';
 
@@ -36,7 +36,7 @@ export class Level {
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @IRenderPlatform protected readonly renderer: IRenderPlatform
+    @IRenderingPlatform protected readonly renderer: IRenderingPlatform
   ) {}
 
   public init() {
