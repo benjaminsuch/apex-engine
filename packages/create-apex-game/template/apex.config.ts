@@ -1,14 +1,14 @@
 export default {
   targets: [
     {
-      target: 'client',
+      target: 'game',
       platform: 'browser',
-      defaultLevel: './maps/index.js'
+      defaultLevel: './maps/EntryLevel.js'
     },
     {
-      target: 'client',
+      target: 'game',
       platform: 'electron',
-      defaultLevel: './maps/index.js'
+      defaultLevel: './maps/EntryLevel.js'
     }
   ]
 };
