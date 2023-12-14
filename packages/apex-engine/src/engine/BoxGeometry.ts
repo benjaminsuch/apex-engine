@@ -1,7 +1,7 @@
 import { TripleBuffer } from '../platform/memory/common';
 import { CLASS } from './class';
 import { proxy } from './class/specifiers/proxy';
-import { RenderProxy, Renderer } from './renderer';
+import { Renderer } from './renderer';
 import { BufferGeometry, BufferGeometryProxy } from './BufferGeometry';
 
 export class BoxGeometryProxy extends BufferGeometryProxy {

@@ -3,6 +3,7 @@ import { IConsoleLogger } from '../../platform/logging/common';
 import { TRenderSceneProxyMessage } from '../../platform/rendering/common';
 import { getTargetId } from '../class';
 import type { TProxyOriginConstructor, IProxyOrigin } from '../class/specifiers/proxy';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type GameProxyManager } from '../ProxyManager';
 import { ProxyTask } from '../ProxyTask';
 
@@ -22,7 +23,7 @@ export class GameCreateProxyInstanceTask extends ProxyTask<IProxyOrigin> {
     super(data, instantiationService, logger);
   }
 
-  public run(proxyManager: GameProxyManager) {
+  public run(proxyManager: GameProxyManager, context: IEngineLoopTickContext) {
     const messagePort = this.data.getProxyMessagePort();
     const constructor = (this.data.constructor as TProxyOriginConstructor).proxyClassName;
 
@@ -34,14 +35,14 @@ export class GameCreateProxyInstanceTask extends ProxyTask<IProxyOrigin> {
       id: getTargetId(this.data) as number,
       tb: this.data.tripleBuffer,
       messagePort,
-      tick: proxyManager.currentTick.id
+      tick: context.id
     });
     GameCreateProxyInstanceTask.transferables.push(messagePort);
 
     return true;
   }
 
-  public override tickEnd(proxyManager: GameProxyManager): boolean {
+  public override end(proxyManager: GameProxyManager): boolean {
     if (GameCreateProxyInstanceTask.error) {
       return false;
     }

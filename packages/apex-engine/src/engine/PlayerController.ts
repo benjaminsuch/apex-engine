@@ -2,7 +2,7 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderingPlatform } from '../platform/rendering/common';
 import { Actor } from './Actor';
-import { type IEngineLoopTick } from './EngineLoop';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { Pawn } from './Pawn';
 import { PlayerInput } from './PlayerInput';
 import { InputComponent } from './components';
@@ -42,7 +42,7 @@ export class PlayerController extends Actor {
     this.addComponent(InputComponent);
   }
 
-  public override tick(tick: IEngineLoopTick): void {
+  public override tick(tick: IEngineLoopTickContext): void {
     this.playerInput.processInputStack(this.buildInputStack(), tick.delta);
     super.tick(tick);
   }

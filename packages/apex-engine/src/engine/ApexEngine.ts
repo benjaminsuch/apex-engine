@@ -3,10 +3,11 @@ import { IConsoleLogger } from '../platform/logging/common';
 import { TripleBuffer } from '../platform/memory/common';
 import { IRenderingPlatform } from '../platform/rendering/common';
 import { type IProxyOrigin } from './class/specifiers/proxy';
-import { type EngineLoop, type IEngineLoopTick } from './EngineLoop';
+import { type EngineLoop, type IEngineLoopTickContext } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 import { GameProxyManager, type ProxyManager } from './ProxyManager';
+import { ETickGroup, TickFunctionManager } from './TickFunctionManager';
 
 export abstract class ApexEngine {
   public static GAME_FLAGS: Uint8Array = new Uint8Array(
@@ -67,12 +68,10 @@ export abstract class ApexEngine {
     this.isInitialized = true;
   }
 
-  public tick(tick: IEngineLoopTick) {
+  public tick(tick: IEngineLoopTickContext) {
     TripleBuffer.swapReadBufferFlags(ApexEngine.RENDER_FLAGS);
 
     this.getGameInstance().getWorld().tick(tick);
-    this.proxyManager.tick(tick);
-    this.proxyManager.tickEnd();
 
     TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
   }

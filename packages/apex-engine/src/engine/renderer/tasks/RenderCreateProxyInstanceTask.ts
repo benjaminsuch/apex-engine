@@ -18,7 +18,7 @@ export class RenderCreateProxyInstanceTask extends ProxyTask<
     super(data, instantiationService, logger);
   }
 
-  public run(proxyManager: RenderProxyManager) {
+  public run(proxyManager: RenderProxyManager, context: any) {
     const data = Array.isArray(this.data) ? this.data : [this.data];
 
     let hasError = false;

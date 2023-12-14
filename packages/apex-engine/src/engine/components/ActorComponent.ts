@@ -3,11 +3,14 @@ import { MathUtils } from 'three';
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
 import { Actor } from '../Actor';
-import { type IEngineLoopTick } from '../EngineLoop';
+import { type IEngineLoopTickContext } from '../EngineLoop';
+import { ETickGroup, TickFunction } from '../TickFunctionManager';
 import { World } from '../World';
 
 export class ActorComponent {
   public readonly uuid: string = MathUtils.generateUUID();
+
+  public readonly componentTick: ComponentTickFunction;
 
   /**
    * The actor that owns this component.
@@ -35,7 +38,10 @@ export class ActorComponent {
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger
-  ) {}
+  ) {
+    this.componentTick = this.instantiationService.createInstance(ComponentTickFunction, this);
+    this.componentTick.tickGroup = ETickGroup.DuringPhysics;
+  }
 
   public init() {
     this.isInitialized = true;
@@ -43,7 +49,7 @@ export class ActorComponent {
 
   public beginPlay() {}
 
-  public tick(tick: IEngineLoopTick) {}
+  public tick(context: IEngineLoopTickContext) {}
 
   public registerWithActor(actor: Actor) {
     if (actor.hasComponent(this)) {
@@ -58,5 +64,17 @@ export class ActorComponent {
     this.logger.debug(this.constructor.name, 'Dispose');
   }
 
+  public registerComponentTickFunction() {
+    if (this.componentTick.canTick) {
+      this.componentTick.register();
+    }
+  }
+
   protected onRegister() {}
+}
+
+export class ComponentTickFunction extends TickFunction<ActorComponent> {
+  public override run(context: IEngineLoopTickContext): void {
+    this.target.tick(context);
+  }
 }

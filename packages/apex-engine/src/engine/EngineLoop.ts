@@ -2,11 +2,12 @@ import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderingPlatform } from '../platform/rendering/common';
 import { GameEngine } from './GameEngine';
+import { TickFunctionManager } from './TickFunctionManager';
 
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
 
-export interface IEngineLoopTick {
+export interface IEngineLoopTickContext {
   id: number;
   delta: number;
   elapsed: number;
@@ -16,6 +17,8 @@ export class EngineLoop {
   private isExitRequested: boolean = false;
 
   private tickInterval: NodeJS.Timer | undefined;
+
+  private tickManager: TickFunctionManager;
 
   public delta: number = 0;
 
@@ -29,7 +32,9 @@ export class EngineLoop {
     @IInstatiationService private readonly instantiationService: IInstatiationService,
     @IRenderingPlatform private readonly renderer: IRenderingPlatform,
     @IConsoleLogger private readonly logger: IConsoleLogger
-  ) {}
+  ) {
+    this.tickManager = this.instantiationService.createInstance(TickFunctionManager);
+  }
 
   public async init() {
     const promises: MaybePromise<void>[] = [];
