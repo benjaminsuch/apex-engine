@@ -155,8 +155,7 @@ export class Actor {
 }
 
 export class ActorTickFunction extends TickFunction<Actor> {
-  public override run(context: IEngineLoopTickContext): boolean {
+  public override run(context: IEngineLoopTickContext): void {
     this.target.tick(context);
-    return super.run(context);
   }
 }

@@ -104,11 +104,11 @@ export class TickFunctionManager {
   /**
    * Creates a topological order of `enabledTickFunctions` and stores it in `tickGroups`.
    *
-   * @param world
    * @param context
+   * @param world
    */
-  public startTick(world: World, context: IEngineLoopTickContext) {
-    if (!this.world) {
+  public startTick(context: IEngineLoopTickContext, world?: World) {
+    if (world && !this.world) {
       this.world = world;
     }
 
@@ -174,6 +174,8 @@ export class TickFunctionManager {
   public runTickGroup(group: ETickGroup) {
     for (let i = 0; i < this.tickGroups[group].length; ++i) {
       const tickFunction = this.tickGroups[group][i];
+      //todo: Silently reject when the tick is about to end or the function is taking too long
+      //todo: Trigger event "FunctionTaskCompletion"
       tickFunction.run(this.currentTick);
     }
   }
@@ -213,18 +215,12 @@ export class TickFunction<T> {
    */
   public indegree: number = 0;
 
-  constructor(public readonly target: T) {}
+  constructor(
+    public readonly target: T,
+    @IConsoleLogger protected readonly logger: IConsoleLogger
+  ) {}
 
-  /**
-   * The function that executes the code that is being written
-   *
-   * @returns Must return `false` if it failed
-   */
-  public run(context: IEngineLoopTickContext): boolean {
-    //todo: Silently reject when the tick is about to end or the function is taking too long
-    //todo: Trigger event "FunctionTaskCompletion"
-    return true;
-  }
+  public run(context: IEngineLoopTickContext): void {}
 
   /**
    * It will push the tick function onto the stack of enabled tick functions.

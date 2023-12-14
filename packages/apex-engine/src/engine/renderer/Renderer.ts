@@ -27,6 +27,7 @@ import {
 } from '../../platform/rendering/common';
 import { GameEngine } from '../GameEngine';
 import { RenderProxyManager } from '../ProxyManager';
+import { ETickGroup, TickFunctionManager } from '../TickFunctionManager';
 import { RenderCreateProxyInstanceTask } from './tasks';
 
 export interface IRenderTickContext {
@@ -62,6 +63,8 @@ export class Renderer {
   public readonly renderingInfo: RenderingInfo;
 
   public readonly proxyManager: RenderProxyManager;
+
+  public readonly tickManager: TickFunctionManager;
 
   public frameId: number = 0;
 
@@ -126,6 +129,7 @@ export class Renderer {
     cube.visible = true;
     this.scene.add(cube);
 
+    this.tickManager = this.instantiationService.createInstance(TickFunctionManager);
     this.proxyManager = this.instantiationService.createInstance(RenderProxyManager, this);
     this.renderingInfo = this.instantiationService.createInstance(
       RenderingInfo,
@@ -188,10 +192,12 @@ export class Renderer {
 
     const context = { id: this.frameId, delta: 0, elapsed: time };
 
+    this.tickManager.startTick(context);
+    this.tickManager.runTickGroup(ETickGroup.PrePhysics);
     this.renderingInfo.tick(context);
-    // this.proxyManager.tick(context);
-    // this.proxyManager.tickEnd();
-
+    this.tickManager.runTickGroup(ETickGroup.DuringPhysics);
+    this.tickManager.runTickGroup(ETickGroup.PostPhysics);
+    this.tickManager.endTick();
     this.webGLRenderer.render(this.scene, this.camera);
 
     TripleBuffer.swapWriteBufferFlags(GameEngine.RENDER_FLAGS);

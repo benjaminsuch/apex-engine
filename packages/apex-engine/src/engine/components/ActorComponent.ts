@@ -74,8 +74,7 @@ export class ActorComponent {
 }
 
 export class ComponentTickFunction extends TickFunction<ActorComponent> {
-  public override run(context: IEngineLoopTickContext): boolean {
+  public override run(context: IEngineLoopTickContext): void {
     this.target.tick(context);
-    return super.run(context);
   }
 }

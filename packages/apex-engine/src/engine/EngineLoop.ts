@@ -18,7 +18,7 @@ export class EngineLoop {
 
   private tickInterval: NodeJS.Timer | undefined;
 
-  private tickTaskManager: TickFunctionManager;
+  private tickManager: TickFunctionManager;
 
   public delta: number = 0;
 
@@ -33,7 +33,7 @@ export class EngineLoop {
     @IRenderingPlatform private readonly renderer: IRenderingPlatform,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
-    this.tickTaskManager = this.instantiationService.createInstance(TickFunctionManager);
+    this.tickManager = this.instantiationService.createInstance(TickFunctionManager);
   }
 
   public async init() {

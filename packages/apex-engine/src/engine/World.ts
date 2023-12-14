@@ -122,7 +122,7 @@ export class World {
   }
 
   public tick(tick: IEngineLoopTickContext): void {
-    TickFunctionManager.getInstance().startTick(this, tick);
+    TickFunctionManager.getInstance().startTick(tick, this);
 
     this.runTickGroup(ETickGroup.PrePhysics);
     this.runTickGroup(ETickGroup.DuringPhysics);

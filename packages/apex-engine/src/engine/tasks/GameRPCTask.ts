@@ -1,7 +1,8 @@
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
-import type { TRenderRPCData, TRenderRPCMessage } from '../../platform/rendering/common';
+import type { TRenderRPCData } from '../../platform/rendering/common';
 import type { IProxyOrigin } from '../class/specifiers/proxy';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { GameProxyManager } from '../ProxyManager';
 import { ProxyTask } from '../ProxyTask';
 
@@ -15,11 +16,11 @@ export class GameRPCTask extends ProxyTask<Omit<TRenderRPCData, 'tick'>> {
     super(data, instantiationService, logger);
   }
 
-  public run(proxyManager: GameProxyManager) {
+  public run(proxyManager: GameProxyManager, context: IEngineLoopTickContext) {
     this.proxy.proxyMessageChannel.port1.postMessage({
       ...this.data,
       type: 'rpc',
-      tick: proxyManager.currentTick.id
+      tick: context.id
     });
 
     return true;

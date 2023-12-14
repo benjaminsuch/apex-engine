@@ -121,7 +121,7 @@ export class SceneComponent extends ActorComponent {
   public quaternion: THREE.Quaternion = new THREE.Quaternion();
 
   @PROP(serialize(vec3))
-  public up: THREE.Vector3 = new THREE.Vector3();
+  public up: THREE.Vector3 = THREE.Object3D.DEFAULT_UP;
 
   @PROP(serialize(boolean))
   public visible: boolean = true;

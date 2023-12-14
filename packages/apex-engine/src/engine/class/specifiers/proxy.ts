@@ -15,7 +15,6 @@ export interface IProxyOrigin {
   //todo: Remove
   readonly proxyMessageChannel: MessageChannel;
   getProxyMessagePort(): MessagePort;
-  tick(tick: IEngineLoopTickContext): void;
 }
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
@@ -399,14 +398,6 @@ export function proxy(proxyClass: TClass) {
 
       public getProxyMessagePort() {
         return this.proxyMessageChannel.port2;
-      }
-
-      public tick(tick: IEngineLoopTickContext) {
-        //todo: This check should not be necessary, but CameraComponent throws an error
-        if (this.tripleBuffer) {
-          this.tripleBuffer.copyToWriteBuffer(this.byteView);
-        }
-        super.tick(tick);
       }
     };
   };
