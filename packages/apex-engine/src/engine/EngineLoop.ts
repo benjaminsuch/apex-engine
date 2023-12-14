@@ -7,7 +7,7 @@ import { TickFunctionManager } from './TickFunctionManager';
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
 
-export interface IEngineLoopTick {
+export interface IEngineLoopTickContext {
   id: number;
   delta: number;
   elapsed: number;

@@ -6,7 +6,7 @@ import * as components from './components';
 import { type RenderProxy, type Renderer } from './renderer';
 import { BoxGeometryProxy } from './BoxGeometry';
 import { BufferGeometryProxy } from './BufferGeometry';
-import { type IEngineLoopTick } from './EngineLoop';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { ProxyTask } from './ProxyTask';
 
 export class ProxyManager<T> {
@@ -35,7 +35,7 @@ export class ProxyManager<T> {
 
   protected readonly tasks: ProxyTask<any>[] = [];
 
-  public currentTick: IEngineLoopTick = { delta: 0, elapsed: 0, id: 0 };
+  public currentTick: IEngineLoopTickContext = { delta: 0, elapsed: 0, id: 0 };
 
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
@@ -61,7 +61,7 @@ export class ProxyManager<T> {
     return true;
   }
 
-  public tick(tick: IEngineLoopTick) {
+  public tick(tick: IEngineLoopTickContext) {
     this.currentTick = tick;
 
     // for (let i = 0; i < this.tasks.length; ++i) {
@@ -178,7 +178,7 @@ export class RenderProxyManager extends ProxyManager<RenderProxy> {
     return super.registerProxy(proxy);
   }
 
-  public override tick(tick: IEngineLoopTick): void {
+  public override tick(tick: IEngineLoopTickContext): void {
     super.tick(tick);
 
     for (let i = 0; i < this.proxies.entries; ++i) {

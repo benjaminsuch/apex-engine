@@ -1,8 +1,8 @@
 import { type GetLeadingNonServiceArgs, IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderingPlatform } from '../platform/rendering/common';
-import { type ActorComponent, SceneComponent } from './components';
-import { type IEngineLoopTick } from './EngineLoop';
+import { type ActorComponent, type SceneComponent } from './components';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Level } from './Level';
 import { TickFunction } from './TickFunctionManager';
 import { type World } from './World';
@@ -103,7 +103,7 @@ export class Actor {
     }
   }
 
-  public tick(tick: IEngineLoopTick) {}
+  public tick(context: IEngineLoopTickContext) {}
 
   public preInitComponents() {
     this.logger.debug(this.constructor.name, 'preInitComponents');
@@ -154,4 +154,9 @@ export class Actor {
   protected onRegister() {}
 }
 
-export class ActorTickFunction extends TickFunction<Actor> {}
+export class ActorTickFunction extends TickFunction<Actor> {
+  public override run(context: IEngineLoopTickContext): boolean {
+    this.target.tick(context);
+    return super.run(context);
+  }
+}

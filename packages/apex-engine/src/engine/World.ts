@@ -1,7 +1,7 @@
 import { IConsoleLogger } from '../platform/logging/common';
 import { INetDriver } from '../platform/net/common';
 import { type Actor } from './Actor';
-import { type IEngineLoopTick } from './EngineLoop';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { type GameInstance } from './GameInstance';
 import { type GameMode } from './GameMode';
 import { type Level } from './Level';
@@ -73,6 +73,8 @@ export class World {
 
   public isInitialized: boolean = false;
 
+  public tickGroup: ETickGroup = ETickGroup.PrePhysics;
+
   constructor(
     @IConsoleLogger protected readonly logger: IConsoleLogger,
     @INetDriver protected readonly netDriver: INetDriver
@@ -119,12 +121,19 @@ export class World {
     this.isInitialized = false;
   }
 
-  public tick(tick: IEngineLoopTick): void {
-    TickFunctionManager.getInstance().startTick();
-    TickFunctionManager.getInstance().runTickGroup(ETickGroup.PrePhysics);
-    TickFunctionManager.getInstance().runTickGroup(ETickGroup.DuringPhysics);
-    TickFunctionManager.getInstance().runTickGroup(ETickGroup.PostPhysics);
+  public tick(tick: IEngineLoopTickContext): void {
+    TickFunctionManager.getInstance().startTick(this, tick);
+
+    this.runTickGroup(ETickGroup.PrePhysics);
+    this.runTickGroup(ETickGroup.DuringPhysics);
+    this.runTickGroup(ETickGroup.PostPhysics);
+
     TickFunctionManager.getInstance().endTick();
+  }
+
+  public runTickGroup(group: ETickGroup) {
+    this.tickGroup = group;
+    TickFunctionManager.getInstance().runTickGroup(group);
   }
 
   public spawnActor<T extends typeof Actor>(

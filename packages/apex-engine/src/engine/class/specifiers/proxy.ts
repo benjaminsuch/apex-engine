@@ -3,7 +3,7 @@ import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 import { TripleBuffer } from '../../../platform/memory/common';
 import { GameCreateProxyInstanceTask } from '../../tasks';
 import { ApexEngine } from '../../ApexEngine';
-import { type IEngineLoopTick } from '../../EngineLoop';
+import { type IEngineLoopTickContext } from '../../EngineLoop';
 import { GameProxyManager } from '../../ProxyManager';
 import { getClassSchema, getTargetId, isPropSchema } from '../class';
 import { id } from './id';
@@ -15,7 +15,7 @@ export interface IProxyOrigin {
   //todo: Remove
   readonly proxyMessageChannel: MessageChannel;
   getProxyMessagePort(): MessagePort;
-  tick(tick: IEngineLoopTick): void;
+  tick(tick: IEngineLoopTickContext): void;
 }
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
@@ -401,7 +401,7 @@ export function proxy(proxyClass: TClass) {
         return this.proxyMessageChannel.port2;
       }
 
-      public tick(tick: IEngineLoopTick) {
+      public tick(tick: IEngineLoopTickContext) {
         //todo: This check should not be necessary, but CameraComponent throws an error
         if (this.tripleBuffer) {
           this.tripleBuffer.copyToWriteBuffer(this.byteView);

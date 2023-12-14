@@ -3,12 +3,14 @@ import { MathUtils } from 'three';
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
 import { Actor } from '../Actor';
-import { type IEngineLoopTick } from '../EngineLoop';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ETickGroup, TickFunction } from '../TickFunctionManager';
 import { World } from '../World';
 
 export class ActorComponent {
   public readonly uuid: string = MathUtils.generateUUID();
+
+  public readonly componentTick: ComponentTickFunction;
 
   /**
    * The actor that owns this component.
@@ -33,8 +35,6 @@ export class ActorComponent {
 
   public isInitialized: boolean = false;
 
-  public componentTick: ComponentTickFunction;
-
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger
@@ -49,7 +49,7 @@ export class ActorComponent {
 
   public beginPlay() {}
 
-  public tick(tick: IEngineLoopTick) {}
+  public tick(context: IEngineLoopTickContext) {}
 
   public registerWithActor(actor: Actor) {
     if (actor.hasComponent(this)) {
@@ -73,4 +73,9 @@ export class ActorComponent {
   protected onRegister() {}
 }
 
-export class ComponentTickFunction extends TickFunction<ActorComponent> {}
+export class ComponentTickFunction extends TickFunction<ActorComponent> {
+  public override run(context: IEngineLoopTickContext): boolean {
+    this.target.tick(context);
+    return super.run(context);
+  }
+}

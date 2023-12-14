@@ -189,8 +189,8 @@ export class Renderer {
     const context = { id: this.frameId, delta: 0, elapsed: time };
 
     this.renderingInfo.tick(context);
-    this.proxyManager.tick(context);
-    this.proxyManager.tickEnd();
+    // this.proxyManager.tick(context);
+    // this.proxyManager.tickEnd();
 
     this.webGLRenderer.render(this.scene, this.camera);
 
