@@ -4,6 +4,7 @@ import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
 import { Actor } from '../Actor';
 import { type IEngineLoopTick } from '../EngineLoop';
+import { ETickGroup, TickFunction } from '../TickFunctionManager';
 import { World } from '../World';
 
 export class ActorComponent {
@@ -32,10 +33,15 @@ export class ActorComponent {
 
   public isInitialized: boolean = false;
 
+  public componentTick: ComponentTickFunction;
+
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger
-  ) {}
+  ) {
+    this.componentTick = this.instantiationService.createInstance(ComponentTickFunction, this);
+    this.componentTick.tickGroup = ETickGroup.DuringPhysics;
+  }
 
   public init() {
     this.isInitialized = true;
@@ -58,5 +64,13 @@ export class ActorComponent {
     this.logger.debug(this.constructor.name, 'Dispose');
   }
 
+  public registerComponentTickFunction() {
+    if (this.componentTick.canTick) {
+      this.componentTick.register();
+    }
+  }
+
   protected onRegister() {}
 }
+
+export class ComponentTickFunction extends TickFunction<ActorComponent> {}

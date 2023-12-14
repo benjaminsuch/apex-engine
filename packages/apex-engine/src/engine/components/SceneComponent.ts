@@ -185,6 +185,8 @@ export class SceneComponent extends ActorComponent {
       return false;
     }
 
+    this.componentTick.addDependency(parent.componentTick);
+
     this.parent = parent;
     this.childIndex = this.parent.children.push(this) - 1;
 
@@ -217,6 +219,8 @@ export class SceneComponent extends ActorComponent {
     for (const child of this.children) {
       child.childIndex = this.children.indexOf(child);
     }
+
+    this.componentTick.removeDependency(component.componentTick);
 
     //? Broadcast an event, something like "onChildDetached"?
     //todo: Update world transformations for the detached component

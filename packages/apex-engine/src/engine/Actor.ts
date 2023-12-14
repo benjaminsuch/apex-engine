@@ -4,6 +4,7 @@ import { IRenderingPlatform } from '../platform/rendering/common';
 import { type ActorComponent, SceneComponent } from './components';
 import { type IEngineLoopTick } from './EngineLoop';
 import { type Level } from './Level';
+import { TickFunction } from './TickFunctionManager';
 import { type World } from './World';
 
 export type ActorComponentType = new (...args: any[]) => ActorComponent;
@@ -83,23 +84,26 @@ export class Actor {
 
   public isInitialized: boolean = false;
 
+  public actorTick: ActorTickFunction;
+
   constructor(
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
     @IRenderingPlatform public readonly renderer: IRenderingPlatform
-  ) {}
+  ) {
+    this.actorTick = this.instantiationService.createInstance(ActorTickFunction, this);
+  }
 
   public beginPlay() {
+    this.registerActorTickFunction();
+
     for (const component of this.components) {
+      component.registerComponentTickFunction();
       component.beginPlay();
     }
   }
 
-  public tick(tick: IEngineLoopTick) {
-    for (const component of this.components) {
-      component.tick(tick);
-    }
-  }
+  public tick(tick: IEngineLoopTick) {}
 
   public preInitComponents() {
     this.logger.debug(this.constructor.name, 'preInitComponents');
@@ -138,5 +142,16 @@ export class Actor {
     }
   }
 
+  /**
+   * Registers it's own tick function and all of it's components.
+   */
+  public registerActorTickFunction() {
+    if (this.actorTick.canTick) {
+      this.actorTick.register();
+    }
+  }
+
   protected onRegister() {}
 }
+
+export class ActorTickFunction extends TickFunction<Actor> {}

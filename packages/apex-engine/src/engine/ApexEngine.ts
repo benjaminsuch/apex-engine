@@ -7,6 +7,7 @@ import { type EngineLoop, type IEngineLoopTick } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 import { GameProxyManager, type ProxyManager } from './ProxyManager';
+import { ETickGroup, TickFunctionManager } from './TickFunctionManager';
 
 export abstract class ApexEngine {
   public static GAME_FLAGS: Uint8Array = new Uint8Array(
@@ -71,8 +72,6 @@ export abstract class ApexEngine {
     TripleBuffer.swapReadBufferFlags(ApexEngine.RENDER_FLAGS);
 
     this.getGameInstance().getWorld().tick(tick);
-    this.proxyManager.tick(tick);
-    this.proxyManager.tickEnd();
 
     TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
   }

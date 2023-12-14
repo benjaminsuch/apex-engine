@@ -7,6 +7,7 @@ import { type GameMode } from './GameMode';
 import { type Level } from './Level';
 import { type Player } from './Player';
 import { type PlayerController } from './PlayerController';
+import { ETickGroup, TickFunctionManager } from './TickFunctionManager';
 import { type NetConnection } from './net';
 
 export class World {
@@ -119,9 +120,11 @@ export class World {
   }
 
   public tick(tick: IEngineLoopTick): void {
-    for (const actor of this.actors) {
-      actor.tick(tick);
-    }
+    TickFunctionManager.getInstance().startTick();
+    TickFunctionManager.getInstance().runTickGroup(ETickGroup.PrePhysics);
+    TickFunctionManager.getInstance().runTickGroup(ETickGroup.DuringPhysics);
+    TickFunctionManager.getInstance().runTickGroup(ETickGroup.PostPhysics);
+    TickFunctionManager.getInstance().endTick();
   }
 
   public spawnActor<T extends typeof Actor>(

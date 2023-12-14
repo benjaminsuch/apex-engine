@@ -24,9 +24,12 @@ export class ProxyManager<T> {
     return this.instance;
   }
 
+  protected queuedProxies: any[] = [];
+
   protected readonly proxies: ProxyRegistry<T>;
 
   public registerProxy(proxy: T) {
+    this.queuedProxies.push(proxy);
     return this.proxies.register(proxy);
   }
 
@@ -61,38 +64,38 @@ export class ProxyManager<T> {
   public tick(tick: IEngineLoopTick) {
     this.currentTick = tick;
 
-    for (let i = 0; i < this.tasks.length; ++i) {
-      const task = this.tasks[i];
+    // for (let i = 0; i < this.tasks.length; ++i) {
+    //   const task = this.tasks[i];
 
-      this.logger.debug(task.constructor.name, 'Start');
+    //   this.logger.debug(task.constructor.name, 'Start');
 
-      if (task.run(this)) {
-        this.logger.debug(task.constructor.name, 'Done');
-        // See comment below
-        // this.tasks.splice(i, 1);
-        // i--;
-      } else {
-        //todo: Replace with `IS_DEV` (the variable does not exist in worker context)
-        if (true) {
-          this.logger.debug(`${task.constructor.name} failed`);
-        } else {
-          this.logger.warn(this.constructor.name, `"${task.constructor.name}" failed.`);
-        }
-      }
-      // If the render-thread is too fast, the proxy tasks added by the game-thread
-      // won't be executed by the render-thread, because it is already 1 or more ticks
-      // ahead. Example: If we have a RenderCreateProxyTask added at (game) tick 2,
-      // and the (render) tick is already at 3 at the time it receives the task, the
-      // render-thread will never execute that task (because it's in the past).
-      //
-      // To properly solve this, we have to make sure that either:
-      // - the game-thread is always ahead
-      // - or we execute tasks that were sent x ticks ago
-      //
-      // todo: Remove this when the above gets fixed.
-      // this.tasks.splice(i, 1);
-      // i--;
-    }
+    //   if (task.run(this)) {
+    //     this.logger.debug(task.constructor.name, 'Done');
+    //     // See comment below
+    //     // this.tasks.splice(i, 1);
+    //     // i--;
+    //   } else {
+    //     //todo: Replace with `IS_DEV` (the variable does not exist in worker context)
+    //     if (true) {
+    //       this.logger.debug(`${task.constructor.name} failed`);
+    //     } else {
+    //       this.logger.warn(this.constructor.name, `"${task.constructor.name}" failed.`);
+    //     }
+    //   }
+    //   // If the render-thread is too fast, the proxy tasks added by the game-thread
+    //   // won't be executed by the render-thread, because it is already 1 or more ticks
+    //   // ahead. Example: If we have a RenderCreateProxyTask added at (game) tick 2,
+    //   // and the (render) tick is already at 3 at the time it receives the task, the
+    //   // render-thread will never execute that task (because it's in the past).
+    //   //
+    //   // To properly solve this, we have to make sure that either:
+    //   // - the game-thread is always ahead
+    //   // - or we execute tasks that were sent x ticks ago
+    //   //
+    //   // todo: Remove this when the above gets fixed.
+    //   // this.tasks.splice(i, 1);
+    //   // i--;
+    // }
 
     //todo: To run `tick` inside `ProxyManager` we have to make sure it's guaranteed `proxy` has that method.
     // for (let i = 0; i < this.proxies.entries; ++i) {
