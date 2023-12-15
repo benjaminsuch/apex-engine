@@ -167,7 +167,7 @@ export class Renderer {
     this.webGLRenderer.setSize(width, height, false);
   }
 
-  public handleEvent(event: MessageEvent<TRenderSceneProxyMessage | TRenderRPCMessage>) {
+  public handleEvent(event: MessageEvent<TRenderSceneProxyMessage | TRenderRPCMessage | any>) {
     if (typeof event.data !== 'object') {
       return;
     }
@@ -178,6 +178,9 @@ export class Renderer {
 
     if (type === 'proxy') {
       this.proxyManager.queueTask(RenderCreateProxyInstanceTask, event.data.data, this);
+    }
+    if (type === 'start') {
+      this.start();
     }
   }
 

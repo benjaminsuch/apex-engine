@@ -1,6 +1,7 @@
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { INetDriver } from '../platform/net/common';
+import { IRenderingPlatform } from '../platform/rendering/common';
 import { type ApexEngine } from './ApexEngine';
 import { GameMode } from './GameMode';
 import { Player } from './Player';
@@ -33,7 +34,8 @@ export class GameInstance {
     private readonly engine: ApexEngine,
     @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @INetDriver protected readonly netDriver: INetDriver
+    @INetDriver protected readonly netDriver: INetDriver,
+    @IRenderingPlatform protected readonly renderer: IRenderingPlatform
   ) {}
 
   public init() {
@@ -52,13 +54,8 @@ export class GameInstance {
   public start() {
     this.logger.debug(this.constructor.name, 'Start');
     this.engine.loadLevel(DEFAULT_LEVEL).then(() => {
-      const world = this.getWorld();
-      //todo: Wait for stuff (like actor models) to be loaded
-      //todo: Remove timeout and window.beginPlay
-      window['beginPlay'] = world.beginPlay;
-      setTimeout(() => {
-        world.beginPlay();
-      }, 2000);
+      this.getWorld().beginPlay();
+      this.renderer.start();
     });
   }
 

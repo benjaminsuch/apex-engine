@@ -33,7 +33,6 @@ function onInit({
 
   renderer.init();
   renderer.setSize(initialCanvasHeight, initialCanvasWidth);
-  renderer.start();
 }
 
 function startRenderWorker() {
