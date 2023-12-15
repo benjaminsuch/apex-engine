@@ -60,7 +60,6 @@ export class ProxyManager<T> {
     this.registerTickFunctions();
 
     ProxyManager.instance = this;
-    console.log('ProxyManager', this);
   }
 
   public queueTask<T extends new (...args: any[]) => ProxyTask<any>>(
