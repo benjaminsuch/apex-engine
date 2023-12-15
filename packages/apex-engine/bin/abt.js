@@ -2,7 +2,6 @@
 import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
-import commonjs from '@rollup/plugin-commonjs';
 import { cac } from 'cac';
 import glob from 'glob';
 import fs from 'fs-extra';
@@ -14,6 +13,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rimraf } from 'rimraf';
 import { rollup, watch } from 'rollup';
 import { WebSocketServer } from 'ws';
+import commonjs from '@rollup/plugin-commonjs';
 import { builtinModules, createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import html, { makeHtmlAttributes } from '@rollup/plugin-html';
@@ -44,6 +44,25 @@ function filterDuplicateOptions(options) {
             options[key] = value[value.length - 1];
         }
     }
+}
+function createRollupPlugins(buildDir, { defaultLevel, platform, renderer, target }) {
+    return [
+        replace({
+            preventAssignment: true,
+            values: {
+                DEFAULT_LEVEL: JSON.stringify(defaultLevel),
+                IS_DEV: 'true',
+                IS_CLIENT: String(target === 'client'),
+                IS_GAME: String(target === 'game'),
+                IS_SERVER: String(target === 'server'),
+                IS_BROWSER: String(platform === 'browser'),
+                RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
+            }
+        }),
+        nodeResolve({ preferBuiltins: true }),
+        typescript({ outDir: buildDir }),
+        commonjs()
+    ];
 }
 
 var NetDriver;
@@ -227,9 +246,13 @@ function workersPlugin({ inline, isBuild = false, target }) {
                 return;
             }
             try {
+                const plugins = createRollupPlugins('', target);
+                plugins.pop();
+                plugins.push(typescript());
                 bundle = await rollup({
                     input: id,
-                    plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+                    plugins,
+                    // plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
                     onwarn() { }
                 });
                 const { output } = await bundle.generate({
@@ -775,23 +798,4 @@ function createRollupConfig(launcher, { output, ...options } = {}) {
         },
         ...options
     };
-}
-function createRollupPlugins(buildDir, { defaultLevel, platform, renderer, target }) {
-    return [
-        replace({
-            preventAssignment: true,
-            values: {
-                DEFAULT_LEVEL: JSON.stringify(defaultLevel),
-                IS_DEV: 'true',
-                IS_CLIENT: String(target === 'client'),
-                IS_GAME: String(target === 'game'),
-                IS_SERVER: String(target === 'server'),
-                IS_BROWSER: String(platform === 'browser'),
-                RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
-            }
-        }),
-        nodeResolve({ preferBuiltins: true }),
-        typescript({ outDir: buildDir }),
-        commonjs()
-    ];
 }

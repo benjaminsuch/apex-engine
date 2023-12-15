@@ -17,9 +17,12 @@ export class WindowMain {
     const renderer = RENDER_ON_MAIN_THREAD ? new RenderMainThread() : new RenderWorker();
 
     services.set(IConsoleLogger, consoleLogger);
-    services.set(IRenderingPlatform, new BrowserRenderingPlatform(renderer));
 
     this.instantiationService = new InstantiationService(services);
+    this.instantiationService.setServiceInstance(
+      IRenderingPlatform,
+      new BrowserRenderingPlatform(renderer, this.instantiationService, consoleLogger)
+    );
     this.instantiationService.setServiceInstance(
       INetDriver,
       new WebSocketNetDriver(this.instantiationService, consoleLogger)

@@ -19,6 +19,7 @@ export class CliMain {
     services.set(IRenderingPlatform, new NodeRenderPlatform());
 
     this.instantiationService = new InstantiationService(services);
+    // this.instantiationService.setServiceInstance(IRenderingPlatform, new NodeRenderPlatform())
     this.instantiationService.setServiceInstance(
       INetDriver,
       new WebSocketNetDriver(this.instantiationService, consoleLogger)

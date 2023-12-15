@@ -24,7 +24,12 @@ import { WebSocketServer } from 'ws';
 import { APEX_DIR, type TargetConfig, getApexConfig, defaultTargetConfig } from './config';
 import { startElectron } from './electron';
 import { htmlPlugin, workersPlugin } from './plugins';
-import { filterDuplicateOptions, getLauncherPath, type Launcher } from './utils';
+import {
+  createRollupPlugins,
+  filterDuplicateOptions,
+  getLauncherPath,
+  type Launcher
+} from './utils';
 
 interface CLIOptions {
   config?: string;
@@ -604,27 +609,4 @@ function createRollupConfig(
     },
     ...options
   };
-}
-
-function createRollupPlugins(
-  buildDir: string,
-  { defaultLevel, platform, renderer, target }: TargetConfig
-): Plugin[] {
-  return [
-    replace({
-      preventAssignment: true,
-      values: {
-        DEFAULT_LEVEL: JSON.stringify(defaultLevel),
-        IS_DEV: 'true',
-        IS_CLIENT: String(target === 'client'),
-        IS_GAME: String(target === 'game'),
-        IS_SERVER: String(target === 'server'),
-        IS_BROWSER: String(platform === 'browser'),
-        RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
-      }
-    }),
-    nodeResolve({ preferBuiltins: true }),
-    typescript({ outDir: buildDir }),
-    commonjs()
-  ];
 }

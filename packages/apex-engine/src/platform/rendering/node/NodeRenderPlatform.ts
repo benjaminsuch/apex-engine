@@ -9,6 +9,10 @@ import { IRenderingPlatform } from '../common';
 export class NodeRenderPlatform implements IRenderingPlatform {
   declare readonly _injectibleService: undefined;
 
+  public getRenderingInfo() {
+    return {};
+  }
+
   public async init() {}
 
   public send() {}
