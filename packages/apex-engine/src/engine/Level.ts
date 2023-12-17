@@ -90,7 +90,7 @@ export class Level {
   }
 
   public dispose() {
-    //todo: Make sure all event listeners are removed
-    //todo: Make sure injected services don't store any data from this level
+    // todo: Make sure all event listeners are removed
+    // todo: Make sure injected services don't store any data from this level
   }
 }

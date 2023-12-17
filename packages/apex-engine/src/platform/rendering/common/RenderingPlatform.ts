@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 
 import { InstantiationService } from '../../di/common';
-import { TripleBuffer } from '../../memory/common';
+import { type TripleBuffer } from '../../memory/common';
 
 export type TRenderMessageType =
   | 'init'
@@ -79,5 +79,4 @@ export interface IRenderingPlatform {
   ): void;
 }
 
-export const IRenderingPlatform =
-  InstantiationService.createDecorator<IRenderingPlatform>('renderer');
+export const IRenderingPlatform = InstantiationService.createDecorator<IRenderingPlatform>('renderer');

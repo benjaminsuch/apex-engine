@@ -2,9 +2,9 @@ import { Matrix4 } from 'three';
 
 import { Actor } from './Actor';
 import { DefaultPawn } from './DefaultPawn';
-import { Pawn } from './Pawn';
-import { PlayerController } from './PlayerController';
 import { type NetConnection } from './net';
+import { type Pawn } from './Pawn';
+import { PlayerController } from './PlayerController';
 
 export class GameMode extends Actor {
   public readonly playerPawnClass: typeof Pawn = DefaultPawn;
@@ -29,8 +29,8 @@ export class GameMode extends Actor {
     transform: Matrix4 = this.findPlayerStartLocation()
   ) {
     this.logger.debug(this.constructor.name, `Restart player`);
-    //InitStartSpot
-    //FinishRestartPlayer
+    // InitStartSpot
+    // FinishRestartPlayer
     playerController.possess(this.spawnDefaultPlayerPawn());
   }
 

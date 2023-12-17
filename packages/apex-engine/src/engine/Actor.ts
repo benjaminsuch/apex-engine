@@ -13,8 +13,8 @@ export class Actor {
   protected rootComponent?: SceneComponent;
 
   public setRootComponent(component: SceneComponent) {
-    //todo: Dispose previous root component
-    //todo: Send message to render-thread
+    // todo: Dispose previous root component
+    // todo: Send message to render-thread
     if (component === this.rootComponent) {
       return false;
     }

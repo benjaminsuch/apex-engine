@@ -1,10 +1,12 @@
+import { builtinModules } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
+import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
-import commonjs from '@rollup/plugin-commonjs';
-import { builtinModules } from 'node:module';
-import { fileURLToPath } from 'node:url';
 import { type Plugin } from 'rollup';
+
 import { type TargetConfig } from './config';
 
 const builtins = new Set([
@@ -21,7 +23,7 @@ const builtins = new Set([
   'stream/web',
   'timers/promises',
   'util/types',
-  'wasi'
+  'wasi',
 ]);
 
 export function isBuiltin(id: string): boolean {
@@ -60,11 +62,11 @@ export function createRollupPlugins(
         IS_GAME: String(target === 'game'),
         IS_SERVER: String(target === 'server'),
         IS_BROWSER: String(platform === 'browser'),
-        RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
-      }
+        RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false),
+      },
     }),
     nodeResolve({ preferBuiltins: true }),
     typescript({ outDir: buildDir }),
-    commonjs()
+    commonjs(),
   ];
 }

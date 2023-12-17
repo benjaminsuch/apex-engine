@@ -1,6 +1,6 @@
 import { Vector3 } from 'three';
 
-import { type InputAxisBinding, type InputActionBinding, type InputComponent } from './components';
+import { type InputActionBinding, type InputAxisBinding, type InputComponent } from './components';
 
 export class PlayerInput {
   private readonly keyStates: Map<TKey, KeyState> = new Map();
@@ -35,7 +35,7 @@ export class PlayerInput {
     for (let i = inputStack.length - 1; i >= 0; --i) {
       const inputComponent = inputStack[i];
 
-      //inputComponent.buildKeyMap()
+      // inputComponent.buildKeyMap()
 
       for (const axisBinding of inputComponent.axisBindings) {
         axisBinding.value = this.determineAxisValue(axisBinding, keysToConsume);
@@ -172,7 +172,7 @@ export class PlayerInput {
     if (state) {
       state.isPressed = false;
       state.lastUsedTime = event.timeStamp;
-      //state.sampleCount++;
+      // state.sampleCount++;
     }
   }
 
@@ -262,5 +262,5 @@ export class KeyState {
 export enum EKeyEvent {
   DoubleClick,
   Pressed,
-  Released
+  Released,
 }

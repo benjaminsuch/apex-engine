@@ -1,7 +1,7 @@
 import { TripleBuffer } from '../../platform/memory/common';
 import { getClassSchema, isPropSchema } from '../class';
+import { type IRenderTickContext, type Renderer } from './Renderer';
 import { RenderRPCTask } from './tasks';
-import { type Renderer, type IRenderTickContext } from './Renderer';
 
 export abstract class RenderProxy {
   public name: string = '';
@@ -26,7 +26,7 @@ export abstract class RenderProxy {
     const views = [
       new DataView(tb.buffers[0]),
       new DataView(tb.buffers[1]),
-      new DataView(tb.buffers[2])
+      new DataView(tb.buffers[2]),
     ];
 
     for (const key in schema) {
@@ -43,14 +43,14 @@ export abstract class RenderProxy {
             get(this) {
               const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
               return this.renderer.proxyManager.getProxy(views[idx].getUint32(offset, true));
-            }
+            },
           };
         } else if (type === 'boolean') {
           accessors = {
             get(this) {
               const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
               return Boolean(views[idx].getUint8(offset));
-            }
+            },
           };
         } else {
           accessors = {
@@ -69,7 +69,7 @@ export abstract class RenderProxy {
               } else {
                 return views[idx][getter](offset, true);
               }
-            }
+            },
           };
         }
 
@@ -80,7 +80,7 @@ export abstract class RenderProxy {
     }
 
     if (this.messagePort) {
-      this.messagePort.addEventListener('message', event => {
+      this.messagePort.addEventListener('message', (event) => {
         console.log(`${this.constructor.name} (${this.id})`, `Received message:`, event.data);
 
         const { type } = event.data;
@@ -103,5 +103,5 @@ const getters = new Map<TypedArray, string>([
   [Int32Array, 'getInt32'],
   [Uint8Array, 'getUint8'],
   [Uint16Array, 'getUint16'],
-  [Uint32Array, 'getUint32']
+  [Uint32Array, 'getUint32'],
 ]);

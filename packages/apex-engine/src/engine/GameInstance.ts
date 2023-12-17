@@ -75,7 +75,7 @@ export class GameInstance {
   public async createGameModeFromURL(url: string) {
     // We don't parse the url yet, but in the future, it should be able to load a specific
     // game mode via url parameters.
-    //todo: Parse url
+    // todo: Parse url
     const gameModeParam = '';
     let GameModeClass: typeof GameMode = this.defaultGameModeClass;
 

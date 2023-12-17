@@ -27,11 +27,11 @@ export function startElectron(
 ): ChildProcessWithoutNullStreams {
   const ps = spawn(getElectronPath(), [path]);
 
-  ps.stdout.on('data', chunk => {
+  ps.stdout.on('data', (chunk) => {
     console.log(chunk.toString());
   });
 
-  ps.stderr.on('data', chunk => {
+  ps.stderr.on('data', (chunk) => {
     console.log(chunk.toString());
   });
 

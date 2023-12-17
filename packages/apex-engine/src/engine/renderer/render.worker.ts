@@ -1,9 +1,6 @@
 import { InstantiationService, ServiceCollection } from '../../platform/di/common';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
-import type {
-  TRenderWorkerInitData,
-  TRenderWorkerInitMessage
-} from '../../platform/rendering/common';
+import { type TRenderWorkerInitData, type TRenderWorkerInitMessage } from '../../platform/rendering/common';
 import { Renderer } from './Renderer';
 
 function onInitMessage(event: MessageEvent<TRenderWorkerInitMessage>) {
@@ -24,7 +21,7 @@ function onInit({
   initialCanvasHeight,
   initialCanvasWidth,
   messagePort,
-  flags
+  flags,
 }: TRenderWorkerInitData) {
   const logger = new ConsoleLogger();
   const services = new ServiceCollection([IConsoleLogger, logger]);

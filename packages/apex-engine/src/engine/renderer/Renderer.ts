@@ -1,30 +1,12 @@
 import 'reflect-metadata';
-import {
-  ACESFilmicToneMapping,
-  BoxGeometry,
-  Camera,
-  Color,
-  DirectionalLight,
-  Fog,
-  HemisphereLight,
-  LinearToneMapping,
-  Mesh,
-  MeshPhongMaterial,
-  PCFSoftShadowMap,
-  PerspectiveCamera,
-  PlaneGeometry,
-  Scene,
-  WebGLRenderer
-} from 'three';
 
-import { IInstatiationService, InstantiationService } from '../../platform/di/common';
+import { ACESFilmicToneMapping, BoxGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight, LinearToneMapping, Mesh, MeshPhongMaterial, PCFSoftShadowMap, PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer } from 'three';
+
+import { type InstantiationService } from '../../platform/di/common';
+import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
 import { TripleBuffer } from '../../platform/memory/common';
-import {
-  RenderingInfo,
-  type TRenderRPCMessage,
-  type TRenderSceneProxyMessage
-} from '../../platform/rendering/common';
+import { RenderingInfo, type TRenderRPCMessage, type TRenderSceneProxyMessage } from '../../platform/rendering/common';
 import { GameEngine } from '../GameEngine';
 import { RenderProxyManager } from '../ProxyManager';
 import { ETickGroup, TickFunctionManager } from '../TickFunctionManager';
@@ -131,15 +113,11 @@ export class Renderer {
 
     this.tickManager = this.instantiationService.createInstance(TickFunctionManager);
     this.proxyManager = this.instantiationService.createInstance(RenderProxyManager, this);
-    this.renderingInfo = this.instantiationService.createInstance(
-      RenderingInfo,
-      GameEngine.RENDER_FLAGS,
-      undefined,
-      this.messagePort
-    );
+    this.renderingInfo = this.instantiationService.createInstance(RenderingInfo, GameEngine.RENDER_FLAGS, undefined, this.messagePort);
 
     Renderer.instance = this;
-    console.log('Renderer', this);
+
+    this.logger.debug(this.constructor.name, this);
   }
 
   public init() {
