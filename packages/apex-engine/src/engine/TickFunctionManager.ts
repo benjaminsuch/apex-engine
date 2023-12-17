@@ -7,10 +7,10 @@ export enum ETickGroup {
   PrePhysics,
   DuringPhysics,
   PostPhysics,
-  MAX
+  MAX,
 }
 
-//todo: Keep track of tick time
+// todo: Keep track of tick time
 export class TickFunctionManager {
   private static instance?: TickFunctionManager;
 
@@ -170,12 +170,12 @@ export class TickFunctionManager {
     }
   }
 
-  //todo: Should we push rejected tasks into the next tick?
+  // todo: Should we push rejected tasks into the next tick?
   public runTickGroup(group: ETickGroup) {
     for (let i = 0; i < this.tickGroups[group].length; ++i) {
       const tickFunction = this.tickGroups[group][i];
-      //todo: Silently reject when the tick is about to end or the function is taking too long
-      //todo: Trigger event "FunctionTaskCompletion"
+      // todo: Silently reject when the tick is about to end or the function is taking too long
+      // todo: Trigger event "FunctionTaskCompletion"
       tickFunction.run(this.currentTick);
     }
   }

@@ -6,7 +6,8 @@ import {
   type IRenderingPlatform,
   type TRenderMessage,
   type TRenderMessageData,
-  type TRenderMessageType
+  type TRenderMessageType,
+  type TRenderStartMessage
 } from '../common';
 
 export interface BrowserRenderingPlatformOptions {
@@ -106,6 +107,10 @@ export class BrowserRenderingPlatform implements IRenderingPlatform {
         }
       };
     });
+  }
+
+  public start() {
+    this.send<TRenderStartMessage>({ type: 'start' });
   }
 
   public send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(

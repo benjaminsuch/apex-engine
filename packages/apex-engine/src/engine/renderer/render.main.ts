@@ -37,7 +37,7 @@ export default class RenderMainThread extends EventTarget implements EventListen
     initialCanvasHeight,
     initialCanvasWidth,
     messagePort,
-    flags
+    flags,
   }: TRenderWorkerInitData) {
     const logger = new ConsoleLogger();
     const services = new ServiceCollection([IConsoleLogger, logger]);

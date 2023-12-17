@@ -5,10 +5,10 @@ import { type IEngineLoopTickContext } from './EngineLoop';
 import { type GameInstance } from './GameInstance';
 import { type GameMode } from './GameMode';
 import { type Level } from './Level';
+import { type NetConnection } from './net';
 import { type Player } from './Player';
 import { type PlayerController } from './PlayerController';
 import { ETickGroup, TickFunctionManager } from './TickFunctionManager';
-import { type NetConnection } from './net';
 
 export class World {
   private readonly playerControllers: Set<PlayerController> = new Set();
@@ -43,7 +43,7 @@ export class World {
     if (this.currentLevel !== level) {
       this.currentLevel = level;
       this.currentLevel.world = this;
-      //todo: Broadcast level-changed event
+      // todo: Broadcast level-changed event
     }
   }
 
@@ -111,8 +111,8 @@ export class World {
     for (const actor of this.actors) {
       actor.beginPlay();
     }
-    //todo: StartPlay via GameMode
-    //todo: Broadcast begin-play event
+    // todo: StartPlay via GameMode
+    // todo: Broadcast begin-play event
   }
 
   public cleanUp() {
@@ -173,7 +173,7 @@ export class World {
 
   public welcomePlayer(connection: NetConnection) {
     this.getGameMode().welcomePlayer(connection);
-    //connection.controlChannel.send(welcomeData)
-    //connection.flush()
+    // connection.controlChannel.send(welcomeData)
+    // connection.flush()
   }
 }

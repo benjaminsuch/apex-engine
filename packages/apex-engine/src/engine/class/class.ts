@@ -2,8 +2,6 @@ export type ClassDecoratorFunction = (constructor: TClass) => TClass;
 
 export function CLASS(...classFns: ClassDecoratorFunction[]) {
   return function <T extends TClass>(constructor: T, ...rest: unknown[]) {
-    console.log('CLASS:', constructor.name, rest);
-
     if (!getClassSchema(constructor)) {
       Reflect.defineMetadata('schema', {}, constructor);
     }
@@ -20,7 +18,11 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
     }
 
     Reflect.defineMetadata('schema', schema, constructor);
-    console.log('schema', Reflect.getOwnMetadata('schema', constructor));
+
+    if (IS_DEV) {
+      console.log('CLASS:', constructor.name);
+      console.log(Reflect.getOwnMetadata('schema', constructor));
+    }
 
     let byteLength = 0;
     let prevSchema: PropSchema | undefined;
@@ -56,8 +58,6 @@ export function PROP(...args: Function[]) {
     for (const fn of args) {
       fn(target, prop);
     }
-
-    console.log('PROP:', prop);
   };
 }
 
@@ -72,8 +72,6 @@ export function FUNC(...args: Function[]) {
     for (const fn of args) {
       fn(target, prop, descriptor);
     }
-
-    console.log('FUNC:', prop);
   };
 }
 

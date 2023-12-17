@@ -1,15 +1,15 @@
-import * as THREE from 'three';
+import type * as THREE from 'three';
 
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderingPlatform } from '../platform/rendering/common';
-import { type IProxyOrigin } from './class/specifiers/proxy';
-import * as components from './components';
-import { type RenderProxy, type Renderer } from './renderer';
 import { BoxGeometryProxy } from './BoxGeometry';
 import { BufferGeometryProxy } from './BufferGeometry';
+import { type IProxyOrigin } from './class/specifiers/proxy';
+import * as components from './components';
 import { type IEngineLoopTickContext } from './EngineLoop';
-import { ProxyTask } from './ProxyTask';
+import { type ProxyTask } from './ProxyTask';
+import { type Renderer, type RenderProxy } from './renderer';
 import { ETickGroup, TickFunction } from './TickFunctionManager';
 
 export class ProxyManager<T> {
@@ -60,15 +60,14 @@ export class ProxyManager<T> {
     this.registerTickFunctions();
 
     ProxyManager.instance = this;
-    console.log('ProxyManager', this);
   }
 
   public queueTask<T extends new (...args: any[]) => ProxyTask<any>>(
     TaskConstructor: T,
-    //todo: Re-add `never` to `? R : any`
+    // todo: Re-add `never` to `? R : any`
     ...args: [T extends typeof ProxyTask<infer R> ? R : any, ...any[]]
   ) {
-    //todo: Improve types
+    // todo: Improve types
     this.tasks.push(this.instantiationService.createInstance(TaskConstructor as TClass, ...args));
     return true;
   }
@@ -85,7 +84,7 @@ export class ProxyManager<T> {
         // this.tasks.splice(i, 1);
         // i--;
       } else {
-        //todo: Replace with `IS_DEV` (the variable does not exist in worker context)
+        // todo: Replace with `IS_DEV` (the variable does not exist in worker context)
         if (true) {
           this.logger.debug(`${task.constructor.name} failed`);
         } else {
@@ -118,7 +117,7 @@ export class ProxyManager<T> {
       } else {
         this.logger.warn(this.constructor.name, `"${task.constructor.name}" failed.`);
       }
-      //todo: Remove
+      // todo: Remove
       this.tasks.splice(i, 1);
       i--;
     }

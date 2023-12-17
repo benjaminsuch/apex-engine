@@ -1,9 +1,10 @@
-import nodeResolve from '@rollup/plugin-node-resolve';
-import typescript from '@rollup/plugin-typescript';
 import { unlinkSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { rollup, type Plugin, type RollupBuild } from 'rollup';
+
+import nodeResolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
+import { type Plugin, rollup, type RollupBuild } from 'rollup';
 
 import { dynamicImport } from './utils';
 
@@ -20,16 +21,16 @@ export type Target = 'client' | 'game' | 'server';
 
 export enum NetDriver {
   WebSocket = 'WebSocketNetDriver',
-  WebRTC = 'WebRTCNetDriver'
+  WebRTC = 'WebRTCNetDriver',
 }
 
 export const defaultTargetConfig: TargetConfig = {
   defaultLevel: './maps/index.js',
   platform: 'browser',
   net: {
-    netDriver: NetDriver.WebSocket
+    netDriver: NetDriver.WebSocket,
   },
-  target: 'game'
+  target: 'game',
 };
 
 export interface TargetConfig {
@@ -60,9 +61,9 @@ export const CONFIG_FILE_NAME = 'apex.config';
 export const APEX_DIR = resolve('.apex');
 
 // Using defineConfig in apex.config.ts leads to an MISSING_EXPORTS error for some dependencies :shrug:
-/*export function defineConfig(config: ApexConfig) {
+/* export function defineConfig(config: ApexConfig) {
   return config;
-}*/
+} */
 
 export async function loadConfigFromBundledFile(
   root: string,
@@ -91,7 +92,7 @@ export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_
     bundle = await rollup({
       input: configFile,
       plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
-      onwarn() {}
+      onwarn() {},
     });
 
     const result = await bundle.generate({
@@ -99,7 +100,7 @@ export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_
       format: 'esm',
       externalLiveBindings: false,
       freeze: false,
-      sourcemap: false
+      sourcemap: false,
     });
     const [chunkOrAsset] = result.output;
 
@@ -108,7 +109,7 @@ export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_
     }
   } catch (error) {
     console.log(error);
-    //debug(error);
+    // debug(error);
   }
 
   if (bundle) {

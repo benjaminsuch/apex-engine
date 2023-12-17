@@ -5,6 +5,7 @@ import { basename, dirname, extname, isAbsolute, join, posix, sep } from 'node:p
 import { InputPluginOption, OutputChunk, RollupBuild, rollup } from 'rollup';
 
 import { APEX_DIR, TargetConfig } from '../config';
+import { createRollupPlugins } from '../utils';
 
 const _require = createRequire(import.meta.url);
 
@@ -82,9 +83,14 @@ export function workersPlugin({
       }
 
       try {
+        const plugins = createRollupPlugins('', target);
+        plugins.pop();
+        plugins.push(typescript());
+
         bundle = await rollup({
           input: id,
-          plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+          plugins,
+          // plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
           onwarn() {}
         });
 

@@ -3,9 +3,9 @@ import { Euler, Vector3 } from 'three';
 import { IInstatiationService } from '../platform/di/common';
 import { IConsoleLogger } from '../platform/logging/common';
 import { IRenderingPlatform } from '../platform/rendering/common';
+import { CameraComponent } from './components';
 import { Pawn } from './Pawn';
 import { InputActionMap, InputAxisMap } from './PlayerInput';
-import { CameraComponent } from './components';
 
 const euler = new Euler();
 euler.order = 'YXZ';

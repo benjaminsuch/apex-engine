@@ -7,7 +7,6 @@ import { type EngineLoop, type IEngineLoopTickContext } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { type Level } from './Level';
 import { GameProxyManager, type ProxyManager } from './ProxyManager';
-import { ETickGroup, TickFunctionManager } from './TickFunctionManager';
 
 export abstract class ApexEngine {
   public static GAME_FLAGS: Uint8Array = new Uint8Array(
@@ -92,7 +91,7 @@ export abstract class ApexEngine {
    * @param url
    */
   public async loadLevel(url: string) {
-    //todo: Broadcast pre-load-level event
+    // todo: Broadcast pre-load-level event
     this.logger.info(`Attempt to load level: ${url}`);
 
     try {
@@ -111,7 +110,7 @@ export abstract class ApexEngine {
         //   (We call the clean up function after we clean up the player in case that it might execute code or spawn actors)
 
         world.currentLevel.dispose();
-        //todo: Broadcast level-removed-from-world event
+        // todo: Broadcast level-removed-from-world event
       }
 
       const { default: LoadedLevel }: { default: typeof Level } = await import(url);
@@ -136,7 +135,7 @@ export abstract class ApexEngine {
         gameInstance.getPlayer().spawnPlayActor(world);
       }
 
-      //todo: Broadcast load-level-completed event
+      // todo: Broadcast load-level-completed event
     } catch (error) {
       console.log(error);
     }

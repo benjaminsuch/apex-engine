@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 
 import { InstantiationService } from '../../di/common';
-import { TripleBuffer } from '../../memory/common';
+import { type TripleBuffer } from '../../memory/common';
 
 export type TRenderMessageType =
   | 'init'
@@ -9,6 +9,7 @@ export type TRenderMessageType =
   | 'ref'
   | 'rpc'
   | 'set-camera'
+  | 'start'
   | 'viewport-resize';
 
 export type TRenderMessageData<T = { [k: string]: unknown }> = {
@@ -57,6 +58,8 @@ export type TRenderSceneProxyMessage = TRenderMessage<
   }
 >;
 
+export type TRenderStartMessage = TRenderMessage<'start', {}>;
+
 export type TRenderRPCData = TRenderMessageData<{
   name: string;
   params: unknown[];
@@ -69,11 +72,11 @@ export interface IRenderingPlatform {
   readonly _injectibleService: undefined;
   getRenderingInfo(): any;
   init(flags: Uint8Array[]): void;
+  start(): void;
   send<T extends TRenderMessage<TRenderMessageType, TRenderMessageData>>(
     message: T,
     transferList?: Transferable[]
   ): void;
 }
 
-export const IRenderingPlatform =
-  InstantiationService.createDecorator<IRenderingPlatform>('renderer');
+export const IRenderingPlatform = InstantiationService.createDecorator<IRenderingPlatform>('renderer');

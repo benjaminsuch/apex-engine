@@ -32,7 +32,7 @@ export class RenderCreateProxyInstanceTask extends ProxyTask<
         return false;
       }
 
-      //todo: See comment in `ProxyManager.tick`
+      // todo: See comment in `ProxyManager.tick`
       // if (proxyManager.currentTick.id !== tick) {
       //   //todo: `IS_DEV` does not exist in worker environment (this needs to be fixed in abt/cli.ts).
       //   this.logger.info(
