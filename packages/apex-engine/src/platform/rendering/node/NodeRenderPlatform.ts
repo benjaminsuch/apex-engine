@@ -1,4 +1,4 @@
-import { IRenderingPlatform } from '../common';
+import { type IRenderingPlatform } from '../common';
 
 /**
  * This is just a temporary renderer-class for the "node" platform, to avoid Typescript
@@ -16,4 +16,6 @@ export class NodeRenderPlatform implements IRenderingPlatform {
   public async init() {}
 
   public send() {}
+
+  public start() {}
 }

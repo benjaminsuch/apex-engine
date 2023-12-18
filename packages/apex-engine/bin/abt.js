@@ -1,20 +1,20 @@
 #!/usr/bin/env node
-import nodeResolve from '@rollup/plugin-node-resolve';
-import replace from '@rollup/plugin-replace';
-import typescript from '@rollup/plugin-typescript';
-import { cac } from 'cac';
-import glob from 'glob';
-import fs from 'fs-extra';
-import mime from 'mime';
 import { writeFileSync, unlinkSync, existsSync, readFileSync, mkdirSync, readFile } from 'node:fs';
 import { createServer } from 'node:http';
 import { resolve, dirname, join, isAbsolute, extname, basename, posix, sep, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import nodeResolve from '@rollup/plugin-node-resolve';
+import replace from '@rollup/plugin-replace';
+import typescript from '@rollup/plugin-typescript';
+import { cac } from 'cac';
+import fs from 'fs-extra';
+import glob from 'glob';
+import mime from 'mime';
 import { rimraf } from 'rimraf';
 import { rollup, watch } from 'rollup';
 import { WebSocketServer } from 'ws';
-import commonjs from '@rollup/plugin-commonjs';
 import { builtinModules, createRequire } from 'node:module';
+import commonjs from '@rollup/plugin-commonjs';
 import { spawn } from 'node:child_process';
 import html, { makeHtmlAttributes } from '@rollup/plugin-html';
 
@@ -32,7 +32,7 @@ new Set([
     'stream/web',
     'timers/promises',
     'util/types',
-    'wasi'
+    'wasi',
 ]);
 const dynamicImport = new Function('file', 'return import(file)');
 function getLauncherPath(launcher) {
@@ -56,12 +56,12 @@ function createRollupPlugins(buildDir, { defaultLevel, platform, renderer, targe
                 IS_GAME: String(target === 'game'),
                 IS_SERVER: String(target === 'server'),
                 IS_BROWSER: String(platform === 'browser'),
-                RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false)
-            }
+                RENDER_ON_MAIN_THREAD: String(renderer?.runOnMainThread ?? false),
+            },
         }),
         nodeResolve({ preferBuiltins: true }),
         typescript({ outDir: buildDir }),
-        commonjs()
+        commonjs(),
     ];
 }
 
@@ -74,16 +74,16 @@ const defaultTargetConfig = {
     defaultLevel: './maps/index.js',
     platform: 'browser',
     net: {
-        netDriver: NetDriver.WebSocket
+        netDriver: NetDriver.WebSocket,
     },
-    target: 'game'
+    target: 'game',
 };
 const CONFIG_FILE_NAME = 'apex.config';
 const APEX_DIR = resolve('.apex');
 // Using defineConfig in apex.config.ts leads to an MISSING_EXPORTS error for some dependencies :shrug:
-/*export function defineConfig(config: ApexConfig) {
+/* export function defineConfig(config: ApexConfig) {
   return config;
-}*/
+} */
 async function loadConfigFromBundledFile(root, bundledCode) {
     const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
     writeFileSync(fileNameTmp, bundledCode);
@@ -105,14 +105,14 @@ async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
         bundle = await rollup({
             input: configFile,
             plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
-            onwarn() { }
+            onwarn() { },
         });
         const result = await bundle.generate({
             exports: 'named',
             format: 'esm',
             externalLiveBindings: false,
             freeze: false,
-            sourcemap: false
+            sourcemap: false,
         });
         const [chunkOrAsset] = result.output;
         if (chunkOrAsset.type === 'chunk') {
@@ -121,7 +121,7 @@ async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
     }
     catch (error) {
         console.log(error);
-        //debug(error);
+        // debug(error);
     }
     if (bundle) {
         await bundle.close();
@@ -148,10 +148,10 @@ function getElectronPath() {
 }
 function startElectron(path = './build/electron/main.js') {
     const ps = spawn(getElectronPath(), [path]);
-    ps.stdout.on('data', chunk => {
+    ps.stdout.on('data', (chunk) => {
         console.log(chunk.toString());
     });
-    ps.stderr.on('data', chunk => {
+    ps.stderr.on('data', (chunk) => {
         console.log(chunk.toString());
     });
     return ps;
@@ -419,7 +419,7 @@ async function buildBrowserTarget(target) {
         bundle = await rollup({
             ...createRollupConfig('browser'),
             plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target), htmlPlugin()],
-            onwarn() { }
+            onwarn() { },
         });
         await bundle.write({
             dir: buildDir,
@@ -427,7 +427,7 @@ async function buildBrowserTarget(target) {
             format: 'esm',
             externalLiveBindings: false,
             freeze: false,
-            sourcemap: 'inline'
+            sourcemap: 'inline',
         });
     }
     catch (error) {
@@ -449,17 +449,17 @@ async function buildElectronTarget(target) {
         mainBundle = await rollup({
             ...createRollupConfig('electron-main', {
                 input: {
-                    main: getLauncherPath('electron-main')
+                    main: getLauncherPath('electron-main'),
                 },
                 plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target)],
                 external: ['electron'],
-                onwarn() { }
-            })
+                onwarn() { },
+            }),
         });
         sandboxBundle = await rollup({
             ...createRollupConfig('electron-sandbox', {
                 input: {
-                    sandbox: getLauncherPath('electron-sandbox')
+                    sandbox: getLauncherPath('electron-sandbox'),
                 },
                 plugins: [
                     // electron-sandbox is a browser, so we change the platform to "browser".
@@ -469,13 +469,13 @@ async function buildElectronTarget(target) {
                         meta: [
                             {
                                 'http-equiv': 'Content-Security-Policy',
-                                content: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
-                            }
-                        ]
-                    })
+                                'content': 'default-src \'self\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'',
+                            },
+                        ],
+                    }),
                 ],
-                onwarn() { }
-            })
+                onwarn() { },
+            }),
         });
         const outputOptions = {
             dir: buildDir,
@@ -483,7 +483,7 @@ async function buildElectronTarget(target) {
             format: 'esm',
             externalLiveBindings: false,
             freeze: false,
-            sourcemap: 'inline'
+            sourcemap: 'inline',
         };
         await mainBundle.write({ ...outputOptions, entryFileNames: '[name].cjs', format: 'cjs' });
         await sandboxBundle.write(outputOptions);
@@ -509,13 +509,13 @@ async function buildNodeTarget(target) {
                 replace({
                     preventAssignment: true,
                     values: {
-                        DEFAULT_LEVEL: JSON.stringify(target.defaultLevel)
-                    }
+                        DEFAULT_LEVEL: JSON.stringify(target.defaultLevel),
+                    },
                 }),
                 nodeResolve({ preferBuiltins: true }),
-                typescript({ esModuleInterop: true, outDir: buildDir })
+                typescript({ esModuleInterop: true, outDir: buildDir }),
             ],
-            onwarn() { }
+            onwarn() { },
         });
         await bundle.write({
             dir: buildDir,
@@ -525,7 +525,7 @@ async function buildNodeTarget(target) {
             format: 'esm',
             externalLiveBindings: false,
             freeze: false,
-            sourcemap: 'inline'
+            sourcemap: 'inline',
         });
     }
     catch (error) {
@@ -542,12 +542,12 @@ async function serveBrowserTarget(target) {
     if (existsSync(buildDir)) {
         await rimraf(buildDir);
     }
-    fs.copy('src/assets', resolve(buildDir, 'assets'), err => {
+    fs.copy('src/assets', resolve(buildDir, 'assets'), (err) => {
         if (err) {
             console.error('Error copying folder:', err);
         }
     });
-    wss.on('connection', ws => {
+    wss.on('connection', (ws) => {
         ws.on('error', console.error);
     });
     server = createServer((req, res) => {
@@ -558,7 +558,7 @@ async function serveBrowserTarget(target) {
                 res.writeHead(200, {
                     'Content-Type': mime.getType(filePath) ?? 'text/plain',
                     'Cross-Origin-Opener-Policy': 'same-origin',
-                    'Cross-Origin-Embedder-Policy': 'require-corp'
+                    'Cross-Origin-Embedder-Policy': 'require-corp',
                 });
                 res.end(content, 'utf-8');
             }
@@ -572,9 +572,12 @@ async function serveBrowserTarget(target) {
     });
     closeServerOnTermination();
     const watcher = watch({
+        watch: {
+            buildDelay: 250,
+        },
         ...createRollupConfig('browser', {
             output: {
-                dir: buildDir
+                dir: buildDir,
             },
             plugins: [
                 workersPlugin({ target }),
@@ -595,12 +598,13 @@ async function serveBrowserTarget(target) {
                     `      window.location.reload()`,
                     `    }`,
                     `  })`,
-                    `</script>`
-                ].join('\n'))
+                    `</script>`,
+                ].join('\n')),
             ],
-            onwarn() { }
-        })
+            onwarn() { },
+        }),
     });
+    let updateTimeoutId;
     watcher.on('event', async (event) => {
         log(`[${new Date().toLocaleTimeString()}] [browser:watcher]`, event.code);
         if (event.code === 'END') {
@@ -611,18 +615,21 @@ async function serveBrowserTarget(target) {
             }
         }
         if (event.code === 'BUNDLE_END') {
-            wss.clients.forEach(socket => {
-                socket.send(JSON.stringify({ type: 'update' }));
-            });
+            updateTimeoutId = setTimeout(() => {
+                wss.clients.forEach((socket) => {
+                    socket.send(JSON.stringify({ type: 'update' }));
+                });
+            }, 250);
             event.result.close();
         }
         if (event.code === 'ERROR') {
             console.log(event);
         }
     });
-    watcher.on('change', file => {
+    watcher.on('change', (file) => {
         log(`\n[${new Date().toLocaleTimeString()}] [browser:watcher]`, 'File changed');
         debug(file);
+        clearTimeout(updateTimeoutId);
     });
     watcher.on('restart', () => { });
     watcher.on('close', () => { });
@@ -633,7 +640,7 @@ async function serveElectronTarget(target) {
     if (existsSync(buildDir)) {
         await rimraf(buildDir);
     }
-    fs.copy('src/assets', resolve(buildDir, 'assets'), err => {
+    fs.copy('src/assets', resolve(buildDir, 'assets'), (err) => {
         if (err) {
             console.error('Error copying folder:', err);
         }
@@ -642,25 +649,25 @@ async function serveElectronTarget(target) {
     const watcherMain = watch({
         ...createRollupConfig('electron-main', {
             input: {
-                main: getLauncherPath('electron-main')
+                main: getLauncherPath('electron-main'),
             },
             output: {
                 dir: buildDir,
                 format: 'cjs',
-                sourcemap: false
+                sourcemap: false,
             },
             plugins: createRollupPlugins(buildDir, target),
             external: ['electron'],
-            onwarn() { }
-        })
+            onwarn() { },
+        }),
     });
-    watcherMain.on('event', event => {
+    watcherMain.on('event', (event) => {
         log('[electron-main:watcher]', event.code);
         if (event.code === 'ERROR') {
             console.log(event.error);
         }
     });
-    watcherMain.on('change', file => {
+    watcherMain.on('change', (file) => {
         log('[electron-main:watcher]', 'File changed');
         debug(file);
     });
@@ -670,22 +677,22 @@ async function serveElectronTarget(target) {
         ...createRollupConfig('electron-sandbox', {
             input: {
                 sandbox: getLauncherPath('electron-sandbox'),
-                ...getGameMaps()
+                ...getGameMaps(),
             },
             output: {
-                dir: buildDir
+                dir: buildDir,
             },
             plugins: [
                 // electron-sandbox is a browser, so we change the platform to "browser".
                 workersPlugin({ target: { ...target, platform: 'browser' } }),
                 ...createRollupPlugins(buildDir, { ...target, platform: 'browser' }),
-                htmlPlugin('./sandbox.js')
+                htmlPlugin('./sandbox.js'),
             ],
-            onwarn() { }
-        })
+            onwarn() { },
+        }),
     });
     let isRunning = false;
-    watcherSandbox.on('event', event => {
+    watcherSandbox.on('event', (event) => {
         log('[electron-sandbox:watcher]', event.code);
         if (event.code === 'BUNDLE_END') ;
         if (event.code === 'END' && !isRunning) {
@@ -693,7 +700,7 @@ async function serveElectronTarget(target) {
             isRunning = true;
         }
     });
-    watcherSandbox.on('change', file => {
+    watcherSandbox.on('change', (file) => {
         log('[electron-sandbox:watcher]', 'File changed');
         debug(file);
     });
@@ -714,11 +721,11 @@ async function serveNodeTarget(target) {
                 externalLiveBindings: false,
                 format: 'esm',
                 freeze: false,
-                sourcemap: false
+                sourcemap: false,
             },
             plugins: [workersPlugin({ target }), ...createRollupPlugins(buildDir, target)],
-            onwarn() { }
-        })
+            onwarn() { },
+        }),
     });
     watcher.on('event', async (event) => {
         log('[node:watcher]', event.code);
@@ -743,7 +750,7 @@ function readFileFromContentBase(contentBase, urlPath, callback) {
 }
 function closeServerOnTermination() {
     const terminationSignals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP'];
-    terminationSignals.forEach(signal => {
+    terminationSignals.forEach((signal) => {
         process.on(signal, () => {
             debug('process signal:', signal);
             if (server) {
@@ -759,7 +766,7 @@ function getEngineSourceFiles() {
         .sync('src/engine/**/*.ts')
         .map(file => [
         relative('src', file.slice(0, file.length - extname(file).length)),
-        fileURLToPath(pathToFileURL(resolve(file)))
+        fileURLToPath(pathToFileURL(resolve(file))),
     ]));
 }
 function getGameMaps() {
@@ -767,14 +774,14 @@ function getGameMaps() {
         .sync('src/game/maps/**/*.ts')
         .map(file => [
         relative('src/game', file.slice(0, file.length - extname(file).length)),
-        fileURLToPath(pathToFileURL(resolve(file)))
+        fileURLToPath(pathToFileURL(resolve(file))),
     ]));
 }
 function createRollupConfig(launcher, { output, ...options } = {}) {
     const input = {
         index: getLauncherPath(launcher),
         ...getEngineSourceFiles(),
-        ...getGameMaps()
+        ...getGameMaps(),
     };
     return {
         input,
@@ -788,7 +795,7 @@ function createRollupConfig(launcher, { output, ...options } = {}) {
             // manualChunks: {
             //   vendor: ['three']
             // },
-            ...output
+            ...output,
         },
         onwarn(warning, warn) {
             if (warning.message.includes('Circular dependency')) {
@@ -796,6 +803,6 @@ function createRollupConfig(launcher, { output, ...options } = {}) {
             }
             warn(warning);
         },
-        ...options
+        ...options,
     };
 }

@@ -3,7 +3,6 @@ import { createServer, type Server } from 'node:http';
 import { extname, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
@@ -12,21 +11,13 @@ import fs from 'fs-extra';
 import glob from 'glob';
 import mime from 'mime';
 import { rimraf } from 'rimraf';
-import { type OutputOptions,
-  type Plugin,
-  rollup,
-  type RollupBuild,
-  type RollupOptions,
-  watch } from 'rollup';
+import { type OutputOptions, type Plugin, rollup, type RollupBuild, type RollupOptions, watch } from 'rollup';
 import { WebSocketServer } from 'ws';
 
 import { APEX_DIR, defaultTargetConfig, getApexConfig, type TargetConfig } from './config';
 import { startElectron } from './electron';
 import { htmlPlugin, workersPlugin } from './plugins';
-import { createRollupPlugins,
-  filterDuplicateOptions,
-  getLauncherPath,
-  type Launcher } from './utils';
+import { createRollupPlugins, filterDuplicateOptions, getLauncherPath, type Launcher } from './utils';
 
 interface CLIOptions {
   config?: string;
@@ -319,6 +310,9 @@ async function serveBrowserTarget(target: TargetConfig) {
   closeServerOnTermination();
 
   const watcher = watch({
+    watch: {
+      buildDelay: 250,
+    },
     ...createRollupConfig('browser', {
       output: {
         dir: buildDir,
@@ -353,6 +347,8 @@ async function serveBrowserTarget(target: TargetConfig) {
     }),
   });
 
+  let updateTimeoutId: NodeJS.Timeout;
+
   watcher.on('event', async (event) => {
     log(`[${new Date().toLocaleTimeString()}] [browser:watcher]`, event.code);
 
@@ -365,10 +361,11 @@ async function serveBrowserTarget(target: TargetConfig) {
     }
 
     if (event.code === 'BUNDLE_END') {
-      wss.clients.forEach((socket) => {
-        socket.send(JSON.stringify({ type: 'update' }));
-      });
-
+      updateTimeoutId = setTimeout(() => {
+        wss.clients.forEach((socket) => {
+          socket.send(JSON.stringify({ type: 'update' }));
+        });
+      }, 250);
       event.result.close();
     }
 
@@ -380,6 +377,7 @@ async function serveBrowserTarget(target: TargetConfig) {
   watcher.on('change', (file) => {
     log(`\n[${new Date().toLocaleTimeString()}] [browser:watcher]`, 'File changed');
     debug(file);
+    clearTimeout(updateTimeoutId);
   });
 
   watcher.on('restart', () => {});
