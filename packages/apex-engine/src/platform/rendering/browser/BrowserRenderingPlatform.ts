@@ -1,14 +1,7 @@
 import { IInstatiationService } from '../../di/common';
 import { IConsoleLogger } from '../../logging/common';
 import { TripleBuffer } from '../../memory/common';
-import {
-  RenderingInfo,
-  type IRenderingPlatform,
-  type TRenderMessage,
-  type TRenderMessageData,
-  type TRenderMessageType,
-  type TRenderStartMessage
-} from '../common';
+import { type IRenderingPlatform, RenderingInfo, type TRenderMessage, type TRenderMessageData, type TRenderMessageType, type TRenderStartMessage } from '../common';
 
 export interface BrowserRenderingPlatformOptions {
   multithreaded?: boolean;
@@ -77,7 +70,7 @@ export class BrowserRenderingPlatform implements IRenderingPlatform {
           initialCanvasHeight: this.canvas.clientHeight,
           initialCanvasWidth: this.canvas.clientWidth,
           messagePort,
-          flags
+          flags,
         },
         [offscreenCanvas, messagePort]
       );
@@ -87,8 +80,8 @@ export class BrowserRenderingPlatform implements IRenderingPlatform {
 
     this.isInitialized = true;
 
-    return new Promise<void>(resolve => {
-      this.messageChannel.port1.onmessage = event => {
+    return new Promise<void>((resolve) => {
+      this.messageChannel.port1.onmessage = (event) => {
         if (typeof event.data !== 'object') {
           return;
         }
