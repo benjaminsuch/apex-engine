@@ -1,8 +1,8 @@
 import { IInstatiationService } from '../../platform/di/common';
 import { IConsoleLogger } from '../../platform/logging/common';
-import { TRenderSceneProxyMessage } from '../../platform/rendering/common';
+import { type TRenderSceneProxyMessage } from '../../platform/rendering/common';
 import { getTargetId } from '../class';
-import type { TProxyOriginConstructor, IProxyOrigin } from '../class/specifiers/proxy';
+import { type IProxyOrigin, type TProxyOriginConstructor } from '../class/specifiers/proxy';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type GameProxyManager } from '../ProxyManager';
 import { ProxyTask } from '../ProxyTask';
@@ -29,13 +29,13 @@ export class GameCreateProxyInstanceTask extends ProxyTask<IProxyOrigin> {
 
     GameCreateProxyInstanceTask.currentBatch.push({
       type: 'proxy',
-      //@ts-ignore
+      // @ts-ignore
       constructor,
       args: this.args,
       id: getTargetId(this.data) as number,
       tb: this.data.tripleBuffer,
       messagePort,
-      tick: context.id
+      tick: context.id,
     });
     GameCreateProxyInstanceTask.transferables.push(messagePort);
 

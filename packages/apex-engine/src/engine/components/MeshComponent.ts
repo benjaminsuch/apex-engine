@@ -19,17 +19,14 @@ export class MeshComponentProxy extends SceneComponentProxy {
 
 @CLASS(proxy(MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
-  @PROP(serialize(ref))
-  public geometry: BufferGeometry;
-
   constructor(
-    geometry: BufferGeometry,
+    defaults: any,
+    geometry: any,
+    material: any,
     @IInstatiationService protected override readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
     @IRenderingPlatform protected readonly renderer: IRenderingPlatform
   ) {
     super(instantiationService, logger);
-
-    this.geometry = geometry;
   }
 }

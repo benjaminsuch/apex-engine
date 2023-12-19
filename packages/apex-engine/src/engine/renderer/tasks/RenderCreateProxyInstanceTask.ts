@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 import { IInstatiationService } from '../../../platform/di/common';
 import { IConsoleLogger } from '../../../platform/logging/common';
 import { TripleBuffer } from '../../../platform/memory/common';
@@ -19,8 +21,8 @@ export class RenderCreateProxyInstanceTask extends ProxyTask<
   }
 
   public run(proxyManager: RenderProxyManager, context: any) {
-    const data = Array.isArray(this.data) ? this.data : [this.data];
-
+    const data = (Array.isArray(this.data) ? this.data : [this.data]).sort((a, b) => a.constructor === 'BoneComponentProxy' ? b.constructor === 'BoneComponentProxy' ? 0 : -1 : 1);
+    console.log('data', data);
     let hasError = false;
 
     for (let i = 0; i < data.length; ++i) {

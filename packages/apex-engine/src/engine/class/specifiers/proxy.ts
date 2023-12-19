@@ -1,10 +1,10 @@
 import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { TripleBuffer } from '../../../platform/memory/common';
-import { GameCreateProxyInstanceTask } from '../../tasks';
 import { ApexEngine } from '../../ApexEngine';
 import { type IEngineLoopTickContext } from '../../EngineLoop';
 import { GameProxyManager } from '../../ProxyManager';
+import { GameCreateProxyInstanceTask } from '../../tasks';
 import { getClassSchema, getTargetId, isPropSchema } from '../class';
 import { id } from './id';
 
@@ -12,7 +12,7 @@ export interface IProxyOrigin {
   readonly id?: number;
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
-  //todo: Remove
+  // todo: Remove
   readonly proxyMessageChannel: MessageChannel;
   getProxyMessagePort(): MessagePort;
 }
@@ -38,8 +38,8 @@ export function proxy(proxyClass: TClass) {
 
       public static readonly proxyClassName: string = proxyClass.name;
 
-      //todo: We should only create a message channel for classes that have rpcs.
-      //todo: I don't think we have to store the message channel and instead could just store the port1 and port2.
+      // todo: We should only create a message channel for classes that have rpcs.
+      // todo: I don't think we have to store the message channel and instead could just store the port1 and port2.
       public readonly proxyMessageChannel!: MessageChannel;
 
       public readonly tripleBuffer!: TripleBuffer;
@@ -91,7 +91,7 @@ export function proxy(proxyClass: TClass) {
             const initialVal = this[key] as any;
 
             let accessors:
-              | { get: (this: any) => any; set: (this: any, val: any) => void }
+              | { get: (this: any) => any, set: (this: any, val: any) => void }
               | undefined;
 
             switch (type) {
@@ -104,7 +104,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: number | Float32Array) {
                     dv.setUint8(offset, val ? 1 : 0);
-                  }
+                  },
                 };
                 break;
               case 'float32':
@@ -127,7 +127,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: number | Float32Array) {
                     setNumber(Float32Array, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'int8':
@@ -145,7 +145,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: number | Int8Array) {
                     setNumber(Int8Array, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'int16':
@@ -168,7 +168,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: number | Int16Array) {
                     setNumber(Int16Array, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'int32':
@@ -191,7 +191,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: number | Int32Array) {
                     setNumber(Int32Array, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'mat4':
@@ -211,7 +211,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(this, val: Matrix4) {
                     setMat4(this, key, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'quat':
@@ -232,12 +232,12 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(this, val: Quaternion) {
                     setQuat(this, key, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'ref':
                 if (initialVal) {
-                  //todo: `id(initialVal)` only works if we have a proxy with that id (which does not work for 3rd-party instances)
+                  // todo: `id(initialVal)` only works if we have a proxy with that id (which does not work for 3rd-party instances)
                   const refId = getTargetId(initialVal) ?? id(initialVal);
                   dv.setUint32(offset, refId, true);
                 }
@@ -253,7 +253,7 @@ export function proxy(proxyClass: TClass) {
                     dv.setUint32(offset, refId, true);
 
                     Reflect.defineMetadata('value', val, this, key);
-                  }
+                  },
                 };
                 break;
               case 'string':
@@ -268,7 +268,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: string) {
                     setString(val, dv, offset, size);
-                  }
+                  },
                 };
                 break;
               case 'uint16':
@@ -291,7 +291,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: number | Uint16Array) {
                     setNumber(Uint16Array, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'uint32':
@@ -314,7 +314,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: number | Uint32Array) {
                     setNumber(Uint32Array, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'uint8':
@@ -332,7 +332,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: number | Uint8Array) {
                     setNumber(Uint8Array, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'vec2':
@@ -351,7 +351,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(this, val: Vector2) {
                     setVec2(this, key, val, dv, offset);
-                  }
+                  },
                 };
                 break;
               case 'vec3':
@@ -371,7 +371,7 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(this, val: Vector3) {
                     setVec3(this, key, val, dv, offset);
-                  }
+                  },
                 };
                 break;
             }
@@ -382,13 +382,16 @@ export function proxy(proxyClass: TClass) {
           }
         }
 
+        const filterArgs = (arg: any) => typeof arg === 'object'
+          // Only arrays or POJO's (no class instances)
+          ? Array.isArray(arg) || Object.getPrototypeOf(arg) === Object.prototype
+          : typeof arg === 'boolean' || typeof arg === 'string' || typeof arg === 'number';
+
         GameProxyManager.getInstance().registerProxy(this);
         GameProxyManager.getInstance().queueTask(
           GameCreateProxyInstanceTask,
           this,
-          args.filter(
-            val => typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
-          )
+          args.filter(filterArgs)
         );
 
         // We only create the message channel, but don't listen to any incoming messages.
@@ -418,7 +421,7 @@ const setters = new Map<TypedArray, string>([
   [Int32Array, 'setInt32'],
   [Uint8Array, 'setUint8'],
   [Uint16Array, 'setUint16'],
-  [Uint32Array, 'setUint32']
+  [Uint32Array, 'setUint32'],
 ]);
 
 function setNumber(
@@ -448,7 +451,7 @@ function setMat4(target: any, prop: string | symbol, val: Matrix4, dv: DataView,
         }
 
         return Reflect.get(target, prop);
-      }
+      },
     }),
     target,
     prop
@@ -472,7 +475,7 @@ function setQuat(
         if (prop === 'w') dv.setFloat32(offset + 12, val, true);
 
         return Reflect.set(target, prop, val);
-      }
+      },
     }),
     target,
     prop
@@ -488,7 +491,7 @@ function setVec2(target: any, prop: string | symbol, val: Vector2, dv: DataView,
         if (prop === 'y') dv.setFloat32(offset + 4, val, true);
 
         return Reflect.set(target, prop, val);
-      }
+      },
     }),
     target,
     prop
@@ -505,7 +508,7 @@ function setVec3(target: any, prop: string | symbol, val: Vector3, dv: DataView,
         if (prop === 'z') dv.setFloat32(offset + 8, val, true);
 
         return Reflect.set(target, prop, val);
-      }
+      },
     }),
     target,
     prop
