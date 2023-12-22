@@ -10,6 +10,66 @@ import { rollup, watch } from 'rollup';
 import { builtinModules } from 'node:module';
 import { WebSocketServer } from 'ws';
 
+var name = "apex-engine";
+var description = "A cross-platform game engine written in Typescript.";
+var version = "1.0.0-0";
+var author = "Benjamin Such";
+var license = "BSD-3-Clause";
+var type = "module";
+var engines = {
+	node: "^20.0.0"
+};
+var bin = {
+	abt: "bin/abt.js"
+};
+var files = [
+	"bin",
+	"src",
+	"types",
+	"package.json"
+];
+var repository = {
+	type: "git",
+	url: "git+https://github.com/benjaminsuch/apex-engine.git",
+	directory: "packages/apex-engine"
+};
+var scripts = {
+	"dev-cli": "yarn build-cli -w",
+	"build-cli": "rollup --config rollup.config.ts --bundleConfigAsCjs"
+};
+var devDependencies = {
+	"@types/node": "^20.10.5",
+	"@types/three": "^0.159.0",
+	"@types/ws": "^8.5.10",
+	tslib: "^2.6.2",
+	typescript: "^5.3.3"
+};
+var dependencies = {
+	"@rollup/plugin-json": "^6.1.0",
+	"@rollup/plugin-node-resolve": "^15.2.3",
+	"@rollup/plugin-typescript": "^11.1.5",
+	cac: "^6.7.14",
+	"fast-glob": "^3.3.2",
+	"reflect-metadata": "^0.2.1",
+	rollup: "^4.9.1",
+	ws: "^8.15.1"
+};
+var pkg = {
+	name: name,
+	description: description,
+	version: version,
+	author: author,
+	license: license,
+	type: type,
+	engines: engines,
+	bin: bin,
+	files: files,
+	repository: repository,
+	scripts: scripts,
+	devDependencies: devDependencies,
+	dependencies: dependencies
+};
+
 new Set([
     ...builtinModules,
     'assert/strict',
@@ -123,7 +183,7 @@ async function serveBrowserTarget(target) {
     });
 }
 
-const cli = cac('apex-build-tool').version('0.2.0').help();
+const cli = cac('apex-build-tool').version(pkg.version).help();
 cli
     .option('-d, --debug', 'Shows debug messages when enabled.')
     .option('-c, --config', '[string] An optional path to the apex-config file.')

@@ -1,8 +1,9 @@
 import { cac } from 'cac';
 
+import pkg from '../../package.json' assert { type: 'json' };
 import { getApexConfig } from './config';
 import { serveBrowserTarget } from './serve';
-import { filterDuplicateOptions } from './utils';
+import { filterDuplicateOptions } from './utils'; ;
 
 interface CLIOptions {
   config?: string;
@@ -11,7 +12,7 @@ interface CLIOptions {
   target?: 'client' | 'game' | 'server';
 }
 
-const cli = cac('apex-build-tool').version('0.2.0').help();
+const cli = cac('apex-build-tool').version(pkg.version).help();
 
 cli
   .option('-d, --debug', 'Shows debug messages when enabled.')

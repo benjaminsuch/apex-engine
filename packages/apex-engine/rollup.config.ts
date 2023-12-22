@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import json from '@rollup/plugin-json';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import { defineConfig } from 'rollup';
@@ -24,6 +25,7 @@ export default defineConfig([
     plugins: [
       nodeResolve({ preferBuiltins: true }),
       typescript({ sourceMap: false, exclude: ['node_modules', 'rollup.config.ts'] }),
+      json(),
     ],
     onwarn(warning, warn) {
       if (warning.message.includes('Circular dependency')) {

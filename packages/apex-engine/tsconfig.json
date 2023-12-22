@@ -5,6 +5,7 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "lib": ["DOM"],
-    "noEmit": true
+    "noEmit": true,
+    "resolveJsonModule": true
   }
 }

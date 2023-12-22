@@ -20,16 +20,11 @@ export interface BuildConfig {
   plugins?: BuildPlugin[];
 }
 
-export interface TargetModules {
-  include: any[];
-  exclude: any[];
-}
-
 export interface TargetConfig {
   defaultMap: string;
   platform: Platform;
   target: Target;
-  modules: TargetModules;
+  plugins: any[];
 }
 
 export interface ApexConfig {
