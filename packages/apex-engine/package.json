@@ -6,7 +6,7 @@
   "license": "BSD-3-Clause",
   "type": "module",
   "engines": {
-    "node": "^16.0.0"
+    "node": "^20.0.0"
   },
   "bin": {
     "abt": "bin/abt.js"
@@ -22,47 +22,14 @@
     "url": "git+https://github.com/benjaminsuch/apex-engine.git",
     "directory": "packages/apex-engine"
   },
-  "scripts": {
-    "dev": "yarn build -w",
-    "build": "rollup --config rollup.config.ts --configPlugin typescript",
-    "build-dt": "dts-bundle-generator --no-banner --project ./tsconfig.types.json --out-file apex-engine.d.ts src/index.ts"
+  "stableVersion": "0.1.2",
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/three": "^0.159.0",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@rollup/plugin-html": "^1.0.2",
-    "@rollup/plugin-node-resolve": "^15.0.1",
-    "@rollup/plugin-replace": "^5.0.2",
-    "@rollup/plugin-typescript": "^11.0.0",
-    "@rollup/pluginutils": "^5.0.2",
-    "@types/glob": "^8",
-    "@types/mime": "^3.0.1",
-    "@types/ws": "^8.5.4",
-    "cac": "^6.7.14",
-    "fs-extra": "^11.1.1",
-    "glob": "^8.1.0",
-    "mime": "^3.0.0",
-    "reflect-metadata": "^0.1.13",
-    "rimraf": "^4.1.2",
-    "rollup": "^3.14.0",
-    "ws": "^8.12.1"
-  },
-  "devDependencies": {
-    "@rollup/plugin-commonjs": "^24.0.1",
-    "@rollup/plugin-json": "^6.0.0",
-    "@types/fs-extra": "^11",
-    "@types/node": "^18.11.18",
-    "@types/three": "^0.153.0",
-    "@types/ws": "^8",
-    "dts-bundle-generator": "^8.0.1",
-    "electron": "^23.1.0",
-    "three": "^0.154.0",
-    "three-stdlib": "^2.24.1",
-    "tslib": "^2.5.0",
-    "typescript": "^5.0.3"
-  },
-  "peerDependencies": {
-    "electron": "^23.1.0",
-    "three": "^0.154.0",
-    "ws": "^8.13.0"
-  },
-  "stableVersion": "0.1.2"
+    "reflect-metadata": "^0.2.1"
+  }
 }
