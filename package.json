@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "sandbox"
+    "sandbox",
+    "sandboxes"
   ],
   "packageManager": "yarn@3.2.2",
   "devDependencies": {

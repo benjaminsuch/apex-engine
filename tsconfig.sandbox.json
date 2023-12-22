@@ -21,11 +21,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ESNext",
-    "useDefineForClassFields": true,
-    "paths": {
-      "engine/*": ["./sandbox/src/engine/*"],
-      "game/*": ["./sandbox/src/game/*"]
-    }
+    "useDefineForClassFields": true
   },
   "include": ["packages/apex-engine/src", "sandbox/apex.config.ts", "sandbox/src", "sandbox/types"]
 }
