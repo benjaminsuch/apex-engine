@@ -1,7 +1,7 @@
 {
   "name": "apex-engine",
   "description": "A cross-platform game engine written in Typescript.",
-  "version": "0.11.1-0",
+  "version": "1.0.0-0",
   "author": "Benjamin Such",
   "license": "BSD-3-Clause",
   "type": "module",
@@ -22,14 +22,24 @@
     "url": "git+https://github.com/benjaminsuch/apex-engine.git",
     "directory": "packages/apex-engine"
   },
-  "stableVersion": "0.1.2",
+  "scripts": {
+    "dev-cli": "yarn build-cli -w",
+    "build-cli": "rollup --config rollup.config.ts --bundleConfigAsCjs"
+  },
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/three": "^0.159.0",
+    "@types/ws": "^8.5.10",
     "tslib": "^2.6.2",
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "reflect-metadata": "^0.2.1"
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "cac": "^6.7.14",
+    "fast-glob": "^3.3.2",
+    "reflect-metadata": "^0.2.1",
+    "rollup": "^4.9.1",
+    "ws": "^8.15.1"
   }
 }

@@ -1,0 +1,154 @@
+#!/usr/bin/env node
+import { cac } from 'cac';
+import { writeFileSync, unlinkSync } from 'node:fs';
+import { resolve, relative, extname } from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import nodeResolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
+import glob from 'fast-glob';
+import { rollup, watch } from 'rollup';
+import { builtinModules } from 'node:module';
+import { WebSocketServer } from 'ws';
+
+new Set([
+    ...builtinModules,
+    'assert/strict',
+    'diagnostics_channel',
+    'dns/promises',
+    'fs/promises',
+    'path/posix',
+    'path/win32',
+    'readline/promises',
+    'stream/consumers',
+    'stream/promises',
+    'stream/web',
+    'timers/promises',
+    'util/types',
+    'wasi',
+]);
+const dynamicImport = new Function('file', 'return import(file)');
+function filterDuplicateOptions(options) {
+    for (const [key, value] of Object.entries(options)) {
+        if (Array.isArray(value)) {
+            options[key] = value[value.length - 1];
+        }
+    }
+}
+
+const CONFIG_FILE_NAME = 'apex.config';
+const APEX_DIR = resolve('.apex');
+async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
+    let bundle;
+    let config;
+    try {
+        bundle = await rollup({
+            input: configFile,
+            plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+            onwarn() { },
+        });
+        const result = await bundle.generate({
+            exports: 'named',
+            format: 'esm',
+            externalLiveBindings: false,
+            freeze: false,
+            sourcemap: false,
+        });
+        const [chunkOrAsset] = result.output;
+        if (chunkOrAsset.type === 'chunk') {
+            config = await loadConfigFromBundledFile(process.cwd(), chunkOrAsset.code);
+        }
+    }
+    catch (error) {
+        console.log(error);
+    }
+    if (bundle) {
+        await bundle.close();
+    }
+    if (!config) {
+        throw new Error(`No config found.`);
+    }
+    return config;
+}
+async function loadConfigFromBundledFile(root, bundledCode) {
+    const fileNameTmp = resolve(root, `${CONFIG_FILE_NAME}.${Date.now()}.mjs`);
+    writeFileSync(fileNameTmp, bundledCode);
+    const fileUrl = pathToFileURL(fileNameTmp);
+    try {
+        return (await dynamicImport(fileUrl)).default;
+    }
+    finally {
+        try {
+            unlinkSync(fileNameTmp);
+        }
+        catch { }
+    }
+}
+function getLauncherPath(launcher) {
+    return fileURLToPath(new URL(`../src/launch/${launcher}/index.ts`, import.meta.url));
+}
+function getEngineSourceFiles() {
+    return Object.fromEntries(glob
+        .sync('src/engine/**/*.ts')
+        .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file))),
+    ]));
+}
+
+// import { closeServerOnTermination } from './server';
+async function serveBrowserTarget(target) {
+    const buildDir = resolve(APEX_DIR, 'build/browser');
+    const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
+    wss.on('connection', (ws) => {
+        ws.on('error', console.error);
+    });
+    // closeServerOnTermination()
+    const input = {
+        index: getLauncherPath('browser'),
+        ...getEngineSourceFiles(),
+    };
+    console.log('input', input);
+    const watcher = watch({
+        input,
+        output: {
+            dir: buildDir,
+        },
+        plugins: [
+            nodeResolve({ preferBuiltins: true }),
+            typescript({ outDir: buildDir }),
+        ],
+    });
+    watcher.on('event', async (event) => {
+        console.log(`[${new Date().toLocaleTimeString()}] [browser:watcher]`, event.code);
+    });
+}
+
+const cli = cac('apex-build-tool').version('0.2.0').help();
+cli
+    .option('-d, --debug', 'Shows debug messages when enabled.')
+    .option('-c, --config', '[string] An optional path to the apex-config file.')
+    .option('-t, --target <target>', 'client | game | server')
+    .option('-p, --platform <platform>', 'browser | electron | node');
+cli
+    .command('serve')
+    .alias('dev')
+    .action(async (options) => {
+    filterDuplicateOptions(options);
+    const { config: configFile, debug, platform, target } = options;
+    try {
+        const { targets } = await getApexConfig(configFile);
+        for (const targetConfig of targets) {
+            if (platform && targetConfig.platform !== platform) {
+                continue;
+            }
+            if (targetConfig.platform === 'browser') {
+                await serveBrowserTarget(targetConfig);
+            }
+        }
+        process.exit();
+    }
+    catch (error) {
+        console.log(error);
+    }
+});
+cli.parse();
