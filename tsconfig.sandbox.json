@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
-    "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
+    "incremental": false,
     "isolatedModules": false,
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
@@ -13,8 +13,8 @@
     "noEmit": true,
     "noImplicitOverride": true,
     "paths": {
-      "engine/*": ["./sandbox/src/engine/*"],
-      "game/*": ["./sandbox/src/game/*"]
+      "engine/*": ["./src/engine/*"],
+      "game/*": ["./src/game/*"]
     },
     "resolveJsonModule": true,
     "rootDir": ".",
@@ -23,5 +23,6 @@
     "target": "ESNext",
     "useDefineForClassFields": true
   },
-  "include": ["packages/apex-engine/src", "sandbox/apex.config.ts", "sandbox/src", "sandbox/types"]
+  "include": ["packages/apex-engine/src", "sandboxes/*/src", "sandboxes/*/types"],
+  "exclude": ["node_modules"]
 }

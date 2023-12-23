@@ -1,9 +1,10 @@
 import { cac } from 'cac';
 
 import pkg from '../../package.json' assert { type: 'json' };
+import { buildBrowserTarget } from './build';
 import { getApexConfig } from './config';
 import { serveBrowserTarget } from './serve';
-import { filterDuplicateOptions } from './utils'; ;
+import { filterDuplicateOptions, measure } from './utils';
 
 interface CLIOptions {
   config?: string;
@@ -26,24 +27,58 @@ cli
   .action(async (options: CLIOptions) => {
     filterDuplicateOptions(options);
 
-    const { config: configFile, debug, platform, target } = options;
+    const { config: configFile, platform } = options;
 
     try {
+      const readApexConfig = measure();
       const { targets } = await getApexConfig(configFile);
+      readApexConfig.done('Bundle apex config (%ss)');
 
       for (const targetConfig of targets) {
         if (platform && targetConfig.platform !== platform) {
           continue;
         }
+
         if (targetConfig.platform === 'browser') {
           await serveBrowserTarget(targetConfig);
         }
       }
-
-      process.exit();
     } catch (error) {
       console.log(error);
     }
   });
+
+cli.command('build').action(async (options: CLIOptions) => {
+  const buildCmd = measure();
+
+  filterDuplicateOptions(options);
+
+  const { config: configFile, platform } = options;
+
+  try {
+    const readApexConfig = measure();
+    const { targets } = await getApexConfig(configFile);
+    readApexConfig.done('Bundle apex config (%ss)');
+
+    for (const targetConfig of targets) {
+      if (platform && targetConfig.platform !== platform) {
+        continue;
+      }
+
+      const buildTarget = measure();
+
+      if (targetConfig.platform === 'browser') {
+        await buildBrowserTarget(targetConfig);
+      }
+
+      buildTarget.done(`Build project (%ss)`);
+    }
+  } catch (error) {
+    console.log(error);
+  } finally {
+    buildCmd.done('All tasks done in %ss');
+    process.exit();
+  }
+});
 
 cli.parse();

@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 import { cac } from 'cac';
-import { writeFileSync, unlinkSync } from 'node:fs';
 import { resolve, relative, extname } from 'node:path';
-import { pathToFileURL, fileURLToPath } from 'node:url';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
-import glob from 'fast-glob';
 import { rollup, watch } from 'rollup';
+import { writeFileSync, unlinkSync } from 'node:fs';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import glob from 'fast-glob';
 import { builtinModules } from 'node:module';
+import commonjs from '@rollup/plugin-commonjs';
 import { WebSocketServer } from 'ws';
 
 var name = "apex-engine";
@@ -45,9 +46,12 @@ var devDependencies = {
 	typescript: "^5.3.3"
 };
 var dependencies = {
+	"@rollup/plugin-commonjs": "^25.0.7",
 	"@rollup/plugin-json": "^6.1.0",
 	"@rollup/plugin-node-resolve": "^15.2.3",
+	"@rollup/plugin-swc": "^0.3.0",
 	"@rollup/plugin-typescript": "^11.1.5",
+	"@swc/core": "^1.3.101",
 	cac: "^6.7.14",
 	"fast-glob": "^3.3.2",
 	"reflect-metadata": "^0.2.1",
@@ -94,6 +98,15 @@ function filterDuplicateOptions(options) {
         }
     }
 }
+function measure() {
+    const startTime = performance.now();
+    return {
+        done: (message = 'Operation done in %ss') => {
+            const endTime = performance.now();
+            console.log(message, ((endTime - startTime) / 1000).toFixed(2));
+        },
+    };
+}
 
 const CONFIG_FILE_NAME = 'apex.config';
 const APEX_DIR = resolve('.apex');
@@ -109,8 +122,6 @@ async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
         const result = await bundle.generate({
             exports: 'named',
             format: 'esm',
-            externalLiveBindings: false,
-            freeze: false,
             sourcemap: false,
         });
         const [chunkOrAsset] = result.output;
@@ -155,23 +166,83 @@ function getEngineSourceFiles() {
     ]));
 }
 
-// import { closeServerOnTermination } from './server';
+async function buildPluginsFile(dir, plugins) {
+    const buildDir = resolve(dir, 'plugins');
+    const bundle = await rollup({
+        input: plugins.map(id => resolve(id)),
+        plugins: [
+            nodeResolve({ preferBuiltins: true }),
+            typescript(),
+            commonjs(),
+        ],
+    });
+    await bundle.write({
+        dir: buildDir,
+        exports: 'named',
+        format: 'esm',
+        sourcemap: false,
+    });
+    await bundle.close();
+    const code = [
+        'export const pluginMap = new Map()',
+        '',
+        ...plugins.map(id => `pluginMap.set('${id}', import('${id}'))`),
+        'console.log("plugins:", pluginMap)',
+    ].join('\n');
+    writeFileSync(resolve(buildDir, 'index.js'), code, 'utf-8');
+}
+
+async function buildBrowserTarget(target) {
+    const buildDir = resolve('build/browser');
+    await buildPluginsFile(buildDir, target.plugins);
+    const bundle = await rollup({
+        input: {
+            index: getLauncherPath('browser'),
+            ...getEngineSourceFiles(),
+        },
+        plugins: [
+            nodeResolve({ preferBuiltins: true }),
+            typescript(),
+        ],
+        onwarn() { },
+    });
+    await bundle.write({
+        dir: buildDir,
+        exports: 'named',
+        format: 'esm',
+        sourcemap: false,
+    });
+    await bundle.close();
+}
+
+function closeServerOnTermination(server) {
+    const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT', 'SIGHUP'];
+    signals.forEach((signal) => {
+        process.on(signal, () => {
+            if (server) {
+                server.close();
+                process.exit();
+            }
+        });
+    });
+}
+
 async function serveBrowserTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/browser');
     const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
     wss.on('connection', (ws) => {
         ws.on('error', console.error);
     });
-    // closeServerOnTermination()
-    const input = {
-        index: getLauncherPath('browser'),
-        ...getEngineSourceFiles(),
-    };
-    console.log('input', input);
+    closeServerOnTermination(wss);
     const watcher = watch({
-        input,
+        input: {
+            index: getLauncherPath('browser'),
+            ...getEngineSourceFiles(),
+        },
         output: {
             dir: buildDir,
+            exports: 'named',
+            format: 'esm',
         },
         plugins: [
             nodeResolve({ preferBuiltins: true }),
@@ -194,9 +265,11 @@ cli
     .alias('dev')
     .action(async (options) => {
     filterDuplicateOptions(options);
-    const { config: configFile, debug, platform, target } = options;
+    const { config: configFile, platform } = options;
     try {
+        const readApexConfig = measure();
         const { targets } = await getApexConfig(configFile);
+        readApexConfig.done('Bundle apex config (%ss)');
         for (const targetConfig of targets) {
             if (platform && targetConfig.platform !== platform) {
                 continue;
@@ -205,10 +278,36 @@ cli
                 await serveBrowserTarget(targetConfig);
             }
         }
-        process.exit();
     }
     catch (error) {
         console.log(error);
+    }
+});
+cli.command('build').action(async (options) => {
+    const buildCmd = measure();
+    filterDuplicateOptions(options);
+    const { config: configFile, platform } = options;
+    try {
+        const readApexConfig = measure();
+        const { targets } = await getApexConfig(configFile);
+        readApexConfig.done('Bundle apex config (%ss)');
+        for (const targetConfig of targets) {
+            if (platform && targetConfig.platform !== platform) {
+                continue;
+            }
+            const buildTarget = measure();
+            if (targetConfig.platform === 'browser') {
+                await buildBrowserTarget(targetConfig);
+            }
+            buildTarget.done(`Build project (%ss)`);
+        }
+    }
+    catch (error) {
+        console.log(error);
+    }
+    finally {
+        buildCmd.done('All tasks done in %ss');
+        process.exit();
     }
 });
 cli.parse();

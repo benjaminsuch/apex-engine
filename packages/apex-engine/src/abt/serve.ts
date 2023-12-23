@@ -6,7 +6,7 @@ import { watch } from 'rollup';
 import { WebSocketServer } from 'ws';
 
 import { APEX_DIR, getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
-// import { closeServerOnTermination } from './server';
+import { closeServerOnTermination } from './server';
 
 export async function serveBrowserTarget(target: TargetConfig) {
   const buildDir = resolve(APEX_DIR, 'build/browser');
@@ -16,17 +16,17 @@ export async function serveBrowserTarget(target: TargetConfig) {
     ws.on('error', console.error);
   });
 
-  // closeServerOnTermination()
+  closeServerOnTermination(wss);
 
-  const input = {
-    index: getLauncherPath('browser'),
-    ...getEngineSourceFiles(),
-  };
-  console.log('input', input);
   const watcher = watch({
-    input,
+    input: {
+      index: getLauncherPath('browser'),
+      ...getEngineSourceFiles(),
+    },
     output: {
       dir: buildDir,
+      exports: 'named',
+      format: 'esm',
     },
     plugins: [
       nodeResolve({ preferBuiltins: true }),

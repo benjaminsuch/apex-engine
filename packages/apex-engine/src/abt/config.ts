@@ -24,7 +24,7 @@ export interface TargetConfig {
   defaultMap: string;
   platform: Platform;
   target: Target;
-  plugins: any[];
+  plugins: string[];
 }
 
 export interface ApexConfig {
@@ -36,7 +36,7 @@ export const CONFIG_FILE_NAME = 'apex.config';
 
 export const APEX_DIR = resolve('.apex');
 
-export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_NAME}.ts`)) {
+export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_NAME}.ts`)): Promise<ApexConfig> {
   let bundle: RollupBuild | undefined;
   let config: ApexConfig | undefined;
 
@@ -50,8 +50,6 @@ export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_
     const result = await bundle.generate({
       exports: 'named',
       format: 'esm',
-      externalLiveBindings: false,
-      freeze: false,
       sourcemap: false,
     });
     const [chunkOrAsset] = result.output;

@@ -30,3 +30,14 @@ export function filterDuplicateOptions<T extends object>(options: T) {
     }
   }
 }
+
+export function measure() {
+  const startTime = performance.now();
+
+  return {
+    done: (message: string = 'Operation done in %ss') => {
+      const endTime = performance.now();
+      console.log(message, ((endTime - startTime) / 1000).toFixed(2));
+    },
+  };
+}
