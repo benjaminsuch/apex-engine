@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 import { cac } from 'cac';
-import { resolve, relative, extname, basename } from 'node:path';
+import { resolve, relative, extname, posix } from 'node:path';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import virtual from '@rollup/plugin-virtual';
 import { rollup, watch } from 'rollup';
-import { writeFileSync, unlinkSync } from 'node:fs';
+import { writeFileSync, unlinkSync, readFile } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import glob from 'fast-glob';
 import { builtinModules } from 'node:module';
+import { createServer } from 'node:http';
+import mime from 'mime';
 import { WebSocketServer } from 'ws';
-import commonjs from '@rollup/plugin-commonjs';
+import html, { makeHtmlAttributes } from '@rollup/plugin-html';
 
 var name = "apex-engine";
 var description = "A cross-platform game engine written in Typescript.";
@@ -48,6 +50,7 @@ var devDependencies = {
 };
 var dependencies = {
 	"@rollup/plugin-commonjs": "^25.0.7",
+	"@rollup/plugin-html": "^1.0.3",
 	"@rollup/plugin-inject": "^5.0.5",
 	"@rollup/plugin-json": "^6.1.0",
 	"@rollup/plugin-node-resolve": "^15.2.3",
@@ -55,8 +58,10 @@ var dependencies = {
 	"@rollup/plugin-typescript": "^11.1.5",
 	"@rollup/plugin-virtual": "^3.0.2",
 	"@swc/core": "^1.3.101",
+	"@types/mime": "^3.0.4",
 	cac: "^6.7.14",
 	"fast-glob": "^3.3.2",
+	mime: "^4.0.1",
 	"reflect-metadata": "^0.2.1",
 	rollup: "^4.9.1",
 	ws: "^8.15.1"
@@ -189,7 +194,6 @@ async function buildBrowserTarget(target) {
             nodeResolve({ preferBuiltins: true }),
             typescript(),
         ],
-        onwarn() { },
     });
     await bundle.write({
         dir: resolve('build/browser'),
@@ -200,43 +204,57 @@ async function buildBrowserTarget(target) {
     await bundle.close();
 }
 
-function apexPlugins({ plugins }, { buildDir }) {
-    const input = plugins.map(id => resolve(id));
-    return {
-        name: 'apex-plugins',
-        async buildStart() {
-            console.log('build start');
-            let bundle;
-            try {
-                bundle = await rollup({
-                    input,
-                    plugins: [
-                        nodeResolve({ preferBuiltins: true }),
-                        typescript(),
-                        commonjs(),
-                    ],
-                });
-                await bundle.write({
-                    dir: resolve(buildDir, 'plugins'),
-                    format: 'esm',
-                    exports: 'named',
-                    sourcemap: false,
-                });
-                const code = [
-                    'export const pluginMap = new Map()',
-                    '',
-                    ...plugins.map(id => `pluginMap.set('${id}', import('${basename(id)}'))`),
-                ].join('\n');
-                // writeFileSync(resolve(buildDir, 'plugins/index.js'), code, 'utf-8');
+function readFileFromContentBase(contentBase, urlPath, callback) {
+    let filePath = resolve(contentBase, '.' + urlPath);
+    if (urlPath.endsWith('/')) {
+        filePath = resolve(filePath, 'index.html');
+    }
+    readFile(filePath, (error, content) => {
+        callback(error, content, filePath);
+    });
+}
+
+function htmlPlugin(entryFile = './index.js', options, body = '') {
+    return html({
+        title: 'Apex Engine',
+        ...options,
+        template(options) {
+            if (!options) {
+                return '';
             }
-            catch (error) {
-                console.log(error);
-            }
-            if (bundle) {
-                await bundle.close();
-            }
+            const { attributes, files, meta, publicPath, title } = options;
+            const links = (files.css || [])
+                .map(({ fileName }) => `<link href="${publicPath}${fileName}" rel="stylesheet"${makeHtmlAttributes(attributes.link)}>`)
+                .join('\n');
+            const metas = meta.map(input => `<meta${makeHtmlAttributes(input)}>`).join('\n');
+            return [
+                `<!doctype html>`,
+                `<html${makeHtmlAttributes(attributes.html)}>`,
+                `  <head>`,
+                `    ${metas}`,
+                `    <title>${title}</title>`,
+                `    ${links}`,
+                `    <style>`,
+                `      body {`,
+                `        margin: 0;`,
+                `        overflow: hidden;`,
+                `      }`,
+                ``,
+                `      #canvas {`,
+                `        height: 100vh;`,
+                `        width: 100vw;`,
+                `      }`,
+                `    </style>`,
+                `  </head>`,
+                `  <body>`,
+                `    <canvas id="canvas"></canvas>`,
+                `    <script type="module" src="${entryFile}"></script>`,
+                `    ${body}`,
+                `  </body>`,
+                `</html>`,
+            ].join('\n');
         },
-    };
+    });
 }
 
 function closeServerOnTermination(server) {
@@ -251,13 +269,34 @@ function closeServerOnTermination(server) {
     });
 }
 
+let server;
 async function serveBrowserTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/browser');
     const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
     wss.on('connection', (ws) => {
         ws.on('error', console.error);
     });
-    closeServerOnTermination(wss);
+    server = createServer((req, res) => {
+        const unsafePath = decodeURI((req.url ?? '').split('?')[0]);
+        const urlPath = posix.normalize(unsafePath);
+        readFileFromContentBase(buildDir, urlPath, (error, content, filePath) => {
+            if (!error) {
+                res.writeHead(200, {
+                    'Content-Type': mime.getType(filePath) ?? 'text/plain',
+                    'Cross-Origin-Opener-Policy': 'same-origin',
+                    'Cross-Origin-Embedder-Policy': 'require-corp',
+                });
+                res.end(content, 'utf-8');
+            }
+            else {
+                if (filePath.includes('favicon')) {
+                    return;
+                }
+                console.log(error);
+            }
+        });
+    });
+    closeServerOnTermination(server);
     const watcher = watch({
         input: {
             index: getLauncherPath('browser'),
@@ -269,14 +308,54 @@ async function serveBrowserTarget(target) {
             format: 'esm',
         },
         plugins: [
+            virtual({
+                'build:info': [
+                    'export const plugins = new Map()',
+                    '',
+                    ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
+                ].join('\n'),
+            }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
-            apexPlugins(target, { buildDir }),
+            htmlPlugin('./index.js', {}, [
+                `<script type="module">`,
+                `  const ws = new WebSocket('ws://localhost:24678')`,
+                ``,
+                `  ws.addEventListener('message', async ({data}) => {`,
+                `    let parsed`,
+                ``,
+                `    try {`,
+                `      parsed = JSON.parse(String(data))`,
+                `    } catch {}`,
+                ``,
+                `    if (parsed && parsed.type === 'update') {`,
+                `      window.location.reload()`,
+                `    }`,
+                `  })`,
+                `</script>`,
+            ].join('\n')),
         ],
     });
     watcher.on('event', async (event) => {
         console.log(`[${new Date().toLocaleTimeString()}] [browser:watcher]`, event.code);
+        if (event.code === 'END') {
+            if (!server.listening) {
+                server.listen(3000, 'localhost', () => {
+                    console.log('\nLocal: http://localhost:3000');
+                });
+            }
+        }
+        if (event.code === 'BUNDLE_END') {
+            wss.clients.forEach((socket) => {
+                socket.send(JSON.stringify({ type: 'update' }));
+            });
+            event.result.close();
+        }
+        if (event.code === 'ERROR') {
+            console.log(event);
+        }
     });
+    watcher.close();
 }
 
 const cli = cac('apex-build-tool').version(pkg.version).help();

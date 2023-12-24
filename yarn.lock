@@ -194,6 +194,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@rollup/plugin-html@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "@rollup/plugin-html@npm:1.0.3"
+  peerDependencies:
+    rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+  peerDependenciesMeta:
+    rollup:
+      optional: true
+  checksum: f71fb47a5e3b4f9a3223de385217d350814dd330c9d82ec822c37c566f1effb83cd251c8df7e034b5605394654db6b21abc0501e69bf911dd3bce67cc4944a4f
+  languageName: node
+  linkType: hard
+
 "@rollup/plugin-inject@npm:^5.0.5":
   version: 5.0.5
   resolution: "@rollup/plugin-inject@npm:5.0.5"
@@ -672,6 +684,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/mime@npm:^3.0.4":
+  version: 3.0.4
+  resolution: "@types/mime@npm:3.0.4"
+  checksum: a6139c8e1f705ef2b064d072f6edc01f3c099023ad7c4fce2afc6c2bf0231888202adadbdb48643e8e20da0ce409481a49922e737eca52871b3dc08017455843
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:*, @types/node@npm:^18.11.18, @types/node@npm:^18.7.1":
   version: 18.16.2
   resolution: "@types/node@npm:18.16.2"
@@ -1006,6 +1025,7 @@ __metadata:
   resolution: "apex-engine@workspace:packages/apex-engine"
   dependencies:
     "@rollup/plugin-commonjs": ^25.0.7
+    "@rollup/plugin-html": ^1.0.3
     "@rollup/plugin-inject": ^5.0.5
     "@rollup/plugin-json": ^6.1.0
     "@rollup/plugin-node-resolve": ^15.2.3
@@ -1013,11 +1033,13 @@ __metadata:
     "@rollup/plugin-typescript": ^11.1.5
     "@rollup/plugin-virtual": ^3.0.2
     "@swc/core": ^1.3.101
+    "@types/mime": ^3.0.4
     "@types/node": ^20.10.5
     "@types/three": ^0.159.0
     "@types/ws": ^8.5.10
     cac: ^6.7.14
     fast-glob: ^3.3.2
+    mime: ^4.0.1
     reflect-metadata: ^0.2.1
     rollup: ^4.9.1
     tslib: ^2.6.2
@@ -2342,6 +2364,15 @@ __metadata:
     braces: ^3.0.2
     picomatch: ^2.3.1
   checksum: 02a17b671c06e8fefeeb6ef996119c1e597c942e632a21ef589154f23898c9c6a9858526246abb14f8bca6e77734aa9dcf65476fca47cedfb80d9577d52843fc
+  languageName: node
+  linkType: hard
+
+"mime@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "mime@npm:4.0.1"
+  bin:
+    mime: bin/cli.js
+  checksum: a931283bc31570cc9c63fbad24fdf178b4dd545462f93543eff634b24d2b65064585eb347cdf0720316bfa5ca0943115694672f2bc4895f8e2366d280ad481f2
   languageName: node
   linkType: hard
 

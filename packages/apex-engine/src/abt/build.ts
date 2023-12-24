@@ -24,7 +24,6 @@ export async function buildBrowserTarget(target: TargetConfig) {
       nodeResolve({ preferBuiltins: true }),
       typescript(),
     ],
-    onwarn() {},
   });
 
   await bundle.write({
