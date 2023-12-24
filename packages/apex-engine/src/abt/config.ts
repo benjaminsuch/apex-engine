@@ -36,9 +36,14 @@ export const CONFIG_FILE_NAME = 'apex.config';
 
 export const APEX_DIR = resolve('.apex');
 
+let config: ApexConfig | undefined;
+
 export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_NAME}.ts`)): Promise<ApexConfig> {
   let bundle: RollupBuild | undefined;
-  let config: ApexConfig | undefined;
+
+  if (config) {
+    return config;
+  }
 
   try {
     bundle = await rollup({

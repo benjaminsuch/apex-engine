@@ -1,9 +1,12 @@
 import '../bootstrap';
 import '../bootstrap-window';
 
-import { BrowserMain } from './BrowserMain';
+import { plugins } from 'build:info';
+
+import { BrowserMain } from './BrowserMain'; ;
 
 (() => {
+  console.log(plugins);
   const browser = new BrowserMain();
   browser.init();
 })();

@@ -7,3 +7,7 @@ declare module '*?worker' {
 
   export default workerConstructor;
 }
+
+declare module 'build:info' {
+  export const plugins: Map<string, string>;
+}

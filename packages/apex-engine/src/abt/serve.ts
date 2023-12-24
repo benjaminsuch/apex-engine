@@ -6,6 +6,7 @@ import { watch } from 'rollup';
 import { WebSocketServer } from 'ws';
 
 import { APEX_DIR, getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
+import { apexPlugins } from './plugins';
 import { closeServerOnTermination } from './server';
 
 export async function serveBrowserTarget(target: TargetConfig) {
@@ -30,7 +31,8 @@ export async function serveBrowserTarget(target: TargetConfig) {
     },
     plugins: [
       nodeResolve({ preferBuiltins: true }),
-      typescript({ outDir: buildDir }),
+      typescript(),
+      apexPlugins(target, { buildDir }),
     ],
   });
 

@@ -2,22 +2,25 @@ import { resolve } from 'node:path';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
+import virtual from '@rollup/plugin-virtual';
 import { rollup } from 'rollup';
 
 import { getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
-import { buildPluginsFile } from './plugins';
 
 export async function buildBrowserTarget(target: TargetConfig) {
-  const buildDir = resolve('build/browser');
-
-  await buildPluginsFile(buildDir, target.plugins);
-
   const bundle = await rollup({
     input: {
       index: getLauncherPath('browser'),
       ...getEngineSourceFiles(),
     },
     plugins: [
+      virtual({
+        'build:info': [
+          'export const plugins = new Map()',
+          '',
+          ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
+        ].join('\n'),
+      }),
       nodeResolve({ preferBuiltins: true }),
       typescript(),
     ],
@@ -25,7 +28,7 @@ export async function buildBrowserTarget(target: TargetConfig) {
   });
 
   await bundle.write({
-    dir: buildDir,
+    dir: resolve('build/browser'),
     exports: 'named',
     format: 'esm',
     sourcemap: false,

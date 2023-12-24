@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 import { cac } from 'cac';
-import { resolve, relative, extname } from 'node:path';
+import { resolve, relative, extname, basename } from 'node:path';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
+import virtual from '@rollup/plugin-virtual';
 import { rollup, watch } from 'rollup';
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import glob from 'fast-glob';
 import { builtinModules } from 'node:module';
-import commonjs from '@rollup/plugin-commonjs';
 import { WebSocketServer } from 'ws';
+import commonjs from '@rollup/plugin-commonjs';
 
 var name = "apex-engine";
 var description = "A cross-platform game engine written in Typescript.";
@@ -47,10 +48,12 @@ var devDependencies = {
 };
 var dependencies = {
 	"@rollup/plugin-commonjs": "^25.0.7",
+	"@rollup/plugin-inject": "^5.0.5",
 	"@rollup/plugin-json": "^6.1.0",
 	"@rollup/plugin-node-resolve": "^15.2.3",
 	"@rollup/plugin-swc": "^0.3.0",
 	"@rollup/plugin-typescript": "^11.1.5",
+	"@rollup/plugin-virtual": "^3.0.2",
 	"@swc/core": "^1.3.101",
 	cac: "^6.7.14",
 	"fast-glob": "^3.3.2",
@@ -110,9 +113,12 @@ function measure() {
 
 const CONFIG_FILE_NAME = 'apex.config';
 const APEX_DIR = resolve('.apex');
+let config;
 async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
     let bundle;
-    let config;
+    if (config) {
+        return config;
+    }
     try {
         bundle = await rollup({
             input: configFile,
@@ -166,53 +172,71 @@ function getEngineSourceFiles() {
     ]));
 }
 
-async function buildPluginsFile(dir, plugins) {
-    const buildDir = resolve(dir, 'plugins');
-    const bundle = await rollup({
-        input: plugins.map(id => resolve(id)),
-        plugins: [
-            nodeResolve({ preferBuiltins: true }),
-            typescript(),
-            commonjs(),
-        ],
-    });
-    await bundle.write({
-        dir: buildDir,
-        exports: 'named',
-        format: 'esm',
-        sourcemap: false,
-    });
-    await bundle.close();
-    const code = [
-        'export const pluginMap = new Map()',
-        '',
-        ...plugins.map(id => `pluginMap.set('${id}', import('${id}'))`),
-        'console.log("plugins:", pluginMap)',
-    ].join('\n');
-    writeFileSync(resolve(buildDir, 'index.js'), code, 'utf-8');
-}
-
 async function buildBrowserTarget(target) {
-    const buildDir = resolve('build/browser');
-    await buildPluginsFile(buildDir, target.plugins);
     const bundle = await rollup({
         input: {
             index: getLauncherPath('browser'),
             ...getEngineSourceFiles(),
         },
         plugins: [
+            virtual({
+                'build:info': [
+                    'export const plugins = new Map()',
+                    '',
+                    ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
+                ].join('\n'),
+            }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
         ],
         onwarn() { },
     });
     await bundle.write({
-        dir: buildDir,
+        dir: resolve('build/browser'),
         exports: 'named',
         format: 'esm',
         sourcemap: false,
     });
     await bundle.close();
+}
+
+function apexPlugins({ plugins }, { buildDir }) {
+    const input = plugins.map(id => resolve(id));
+    return {
+        name: 'apex-plugins',
+        async buildStart() {
+            console.log('build start');
+            let bundle;
+            try {
+                bundle = await rollup({
+                    input,
+                    plugins: [
+                        nodeResolve({ preferBuiltins: true }),
+                        typescript(),
+                        commonjs(),
+                    ],
+                });
+                await bundle.write({
+                    dir: resolve(buildDir, 'plugins'),
+                    format: 'esm',
+                    exports: 'named',
+                    sourcemap: false,
+                });
+                const code = [
+                    'export const pluginMap = new Map()',
+                    '',
+                    ...plugins.map(id => `pluginMap.set('${id}', import('${basename(id)}'))`),
+                ].join('\n');
+                // writeFileSync(resolve(buildDir, 'plugins/index.js'), code, 'utf-8');
+            }
+            catch (error) {
+                console.log(error);
+            }
+            if (bundle) {
+                await bundle.close();
+            }
+        },
+    };
 }
 
 function closeServerOnTermination(server) {
@@ -246,7 +270,8 @@ async function serveBrowserTarget(target) {
         },
         plugins: [
             nodeResolve({ preferBuiltins: true }),
-            typescript({ outDir: buildDir }),
+            typescript(),
+            apexPlugins(target, { buildDir }),
         ],
     });
     watcher.on('event', async (event) => {
