@@ -1,7 +1,7 @@
-import { IInstatiationService } from '../platform/di/common';
+import { IInstatiationService } from '../platform/di/common/InstantiationService';
 import { AssetLoader, IAssetLoader } from './AssetLoader';
 import { GameContext, IGameContext } from './GameContext';
-import { IRenderContext, RenderContext } from './renderer';
+import { IRenderContext, RenderContext } from './renderer/RenderContext';
 
 export class EngineLoop {
   constructor(@IInstatiationService private readonly instantiationService: IInstatiationService) {

@@ -1,4 +1,4 @@
-import { type IInjectibleService, InstantiationService } from '../../platform/di/common';
+import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { AbstractWorkerInitiator } from '../AbstractWorkerInitiator';
 import RenderWorker from './RenderWorker?worker';
 
