@@ -67,6 +67,10 @@ var dependencies = {
 	rollup: "^4.9.1",
 	ws: "^8.15.1"
 };
+var peerDependencies = {
+	electron: "^23.1.0",
+	three: "^0.154.0"
+};
 var pkg = {
 	name: name,
 	description: description,
@@ -80,7 +84,8 @@ var pkg = {
 	repository: repository,
 	scripts: scripts,
 	devDependencies: devDependencies,
-	dependencies: dependencies
+	dependencies: dependencies,
+	peerDependencies: peerDependencies
 };
 
 new Set([

@@ -1,4 +1,4 @@
-import { InstantiationService } from '../../InstantiationService';
+import { InstantiationService } from '../../di/common/InstantiationService';
 import { AbstractLogger, type ILogger } from './AbstractLogger';
 
 export class ConsoleLogger extends AbstractLogger implements IConsoleLogger {
