@@ -18,7 +18,7 @@ export interface IInjectibleService {
   readonly _injectibleService: undefined;
 }
 
-export interface IInstatiationService extends IInjectibleService {
+export interface IInstantiationService extends IInjectibleService {
   createInstance<C extends TClass, R extends InstanceType<C>>(
     Constructor: C,
     ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
@@ -33,7 +33,7 @@ export interface IInstatiationService extends IInjectibleService {
 const DI_TARGET = '$di$target';
 const DI_DEPENDENCIES = '$di$dependencies';
 
-export class InstantiationService implements IInstatiationService {
+export class InstantiationService implements IInstantiationService {
   declare readonly _injectibleService: undefined;
 
   private static readonly registeredServices = new Map<string, IServiceIdentifier<any>>();
@@ -86,7 +86,7 @@ export class InstantiationService implements IInstatiationService {
   }
 
   constructor(private readonly services: ServiceCollection = new ServiceCollection()) {
-    this.services.set(IInstatiationService, this);
+    this.services.set(IInstantiationService, this);
   }
 
   /**
@@ -185,4 +185,4 @@ export class InstantiationService implements IInstatiationService {
   }
 }
 
-export const IInstatiationService = InstantiationService.createDecorator<IInstatiationService>('instantiationService');
+export const IInstantiationService = InstantiationService.createDecorator<IInstantiationService>('InstantiationService');
