@@ -33,8 +33,8 @@ export class EngineLoop {
 
     // Activate plugins
     {
-      plugins.forEach((module) => {
-        module.startup?.();
+      plugins.forEach(async (module) => {
+        await module.startup?.();
       });
     }
   }
