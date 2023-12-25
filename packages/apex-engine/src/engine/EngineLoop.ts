@@ -1,7 +1,8 @@
 import { IInstatiationService } from '../platform/di/common/InstantiationService';
 import { AssetLoader, IAssetLoader } from './AssetLoader';
 import { GameContext, IGameContext } from './GameContext';
-import { IRenderContext, RenderContext } from './renderer/RenderContext';
+import { IPhysicsContext, PhysicsContext } from './PhysicsContext';
+import { IRenderContext, RenderContext } from './renderer/RenderContext'; ;
 
 export class EngineLoop {
   constructor(@IInstatiationService private readonly instantiationService: IInstatiationService) {
@@ -22,6 +23,10 @@ export class EngineLoop {
       const renderContext = new RenderContext();
       await renderContext.init();
       this.instantiationService.setServiceInstance(IRenderContext, renderContext);
+
+      const physicsContext = new PhysicsContext();
+      await physicsContext.init();
+      this.instantiationService.setServiceInstance(IPhysicsContext, physicsContext);
     }
   }
 }

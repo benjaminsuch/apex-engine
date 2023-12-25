@@ -12,6 +12,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@dimforge/rapier3d-compat@npm:^0.11.2":
+  version: 0.11.2
+  resolution: "@dimforge/rapier3d-compat@npm:0.11.2"
+  checksum: f0fbf99feaef4ea3b5cb3d81892c1caf14bd35c89c90ce31462f3707f068f5677d5a2c845efdefa2951a90b276a6ba63a9453f139badda66c4b322b661bf6b81
+  languageName: node
+  linkType: hard
+
 "@electron/get@npm:^2.0.0":
   version: 2.0.2
   resolution: "@electron/get@npm:2.0.2"
@@ -1039,6 +1046,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "apex-engine@workspace:packages/apex-engine"
   dependencies:
+    "@dimforge/rapier3d-compat": ^0.11.2
     "@rollup/plugin-commonjs": ^25.0.7
     "@rollup/plugin-html": ^1.0.3
     "@rollup/plugin-inject": ^5.0.5
