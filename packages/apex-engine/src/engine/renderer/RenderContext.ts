@@ -2,7 +2,7 @@ import { type IInjectibleService, InstantiationService } from '../../platform/di
 import { AbstractWorkerInitiator } from '../AbstractWorkerInitiator';
 import RenderWorker from './RenderWorker?worker';
 
-export class RenderContext extends AbstractWorkerInitiator implements IInjectibleService {
+export class RenderContext extends AbstractWorkerInitiator implements IRenderContext {
   declare readonly _injectibleService: undefined;
 
   constructor() {

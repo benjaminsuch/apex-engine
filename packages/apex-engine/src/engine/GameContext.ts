@@ -2,7 +2,7 @@ import { type IInjectibleService, InstantiationService } from '../platform/di/co
 import { AbstractWorkerInitiator } from './AbstractWorkerInitiator';
 import GameWorker from './GameWorker?worker';
 
-export class GameContext extends AbstractWorkerInitiator implements IInjectibleService {
+export class GameContext extends AbstractWorkerInitiator implements IGameContext {
   declare readonly _injectibleService: undefined;
 
   constructor() {

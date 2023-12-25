@@ -2,7 +2,7 @@ import { type IInjectibleService, InstantiationService } from '../platform/di/co
 import { AbstractWorkerInitiator } from './AbstractWorkerInitiator';
 import AssetWorker from './AssetWorker?worker';
 
-export class AssetLoader extends AbstractWorkerInitiator implements IInjectibleService {
+export class AssetLoader extends AbstractWorkerInitiator implements IAssetLoader {
   declare readonly _injectibleService: undefined;
 
   constructor() {
