@@ -3,16 +3,17 @@ import { cac } from 'cac';
 import { resolve, relative, extname, dirname, join, isAbsolute, basename, posix, sep } from 'node:path';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
-import virtual from '@rollup/plugin-virtual';
 import { rollup, watch } from 'rollup';
-import { writeFileSync, unlinkSync, readFile } from 'node:fs';
+import { writeFileSync, unlinkSync, existsSync, readFileSync, readFile } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import glob from 'fast-glob';
 import { builtinModules, createRequire } from 'node:module';
+import virtual from '@rollup/plugin-virtual';
 import html, { makeHtmlAttributes } from '@rollup/plugin-html';
 import { createServer } from 'node:http';
 import mime from 'mime';
 import { WebSocketServer } from 'ws';
+import { spawn } from 'node:child_process';
 
 var name = "apex-engine";
 var description = "A cross-platform game engine written in Typescript.";
@@ -61,15 +62,13 @@ var dependencies = {
 	"@swc/core": "^1.3.101",
 	"@types/mime": "^3.0.4",
 	cac: "^6.7.14",
+	electron: "^28.1.0",
 	"fast-glob": "^3.3.2",
 	mime: "^4.0.1",
 	"reflect-metadata": "^0.2.1",
 	rollup: "^4.9.1",
+	three: "^0.160.0",
 	ws: "^8.15.1"
-};
-var peerDependencies = {
-	electron: "^23.1.0",
-	three: "^0.154.0"
 };
 var pkg = {
 	name: name,
@@ -84,8 +83,7 @@ var pkg = {
 	repository: repository,
 	scripts: scripts,
 	devDependencies: devDependencies,
-	dependencies: dependencies,
-	peerDependencies: peerDependencies
+	dependencies: dependencies
 };
 
 new Set([
@@ -183,6 +181,16 @@ function getEngineSourceFiles() {
     ]));
 }
 
+function buildInfo(target) {
+    return virtual({
+        'build:info': [
+            'export const plugins = new Map()',
+            '',
+            ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
+        ].join('\n'),
+    });
+}
+
 function htmlPlugin(entryFile = './index.js', options, body = '') {
     return html({
         title: 'Apex Engine',
@@ -226,7 +234,7 @@ function htmlPlugin(entryFile = './index.js', options, body = '') {
     });
 }
 
-const _require = createRequire(import.meta.url);
+const _require$1 = createRequire(import.meta.url);
 function workerPlugin({ inline, isBuild = false, target, }) {
     const cache = new Map();
     return {
@@ -239,11 +247,11 @@ function workerPlugin({ inline, isBuild = false, target, }) {
                 if (!cache.has(fileName)) {
                     if (importer) {
                         const folder = dirname(importer);
-                        const paths = _require.resolve.paths(importer);
+                        const paths = _require$1.resolve.paths(importer);
                         if (paths) {
                             paths.push(folder);
                         }
-                        target = _require.resolve(join(folder, `${fileName}.ts`), {
+                        target = _require$1.resolve(join(folder, `${fileName}.ts`), {
                             paths: ['.ts'],
                         });
                     }
@@ -363,13 +371,7 @@ async function buildBrowserTarget(target) {
             ...getEngineSourceFiles(),
         },
         plugins: [
-            virtual({
-                'build:info': [
-                    'export const plugins = new Map()',
-                    '',
-                    ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
-                ].join('\n'),
-            }),
+            buildInfo(target),
             workerPlugin({ isBuild: true, target }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
@@ -382,6 +384,31 @@ async function buildBrowserTarget(target) {
         sourcemap: false,
     });
     await bundle.close();
+}
+
+const _require = createRequire(import.meta.url);
+function getElectronPath() {
+    let electronExecPath = process.env.ELECTRON_EXEC_PATH ?? '';
+    if (!electronExecPath) {
+        const electronPath = dirname(_require.resolve('electron'));
+        const pathFile = join(electronPath, 'path.txt');
+        if (existsSync(pathFile)) {
+            const execPath = readFileSync(pathFile, 'utf-8');
+            electronExecPath = join(electronPath, 'dist', execPath);
+            process.env.ELECTRON_EXEC_PATH = electronExecPath;
+        }
+    }
+    return electronExecPath;
+}
+function startElectron(path = './build/electron/main.js') {
+    const ps = spawn(getElectronPath(), [path]);
+    ps.stdout.on('data', (chunk) => {
+        console.log(chunk.toString());
+    });
+    ps.stderr.on('data', (chunk) => {
+        console.log(chunk.toString());
+    });
+    return ps;
 }
 
 function readFileFromContentBase(contentBase, urlPath, callback) {
@@ -445,13 +472,7 @@ async function serveBrowserTarget(target) {
             format: 'esm',
         },
         plugins: [
-            virtual({
-                'build:info': [
-                    'export const plugins = new Map()',
-                    '',
-                    ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
-                ].join('\n'),
-            }),
+            buildInfo(target),
             workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
@@ -495,6 +516,71 @@ async function serveBrowserTarget(target) {
     });
     watcher.close();
 }
+async function serveElectronTarget(target) {
+    const buildDir = resolve(APEX_DIR, 'build/electron');
+    process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
+    const main = watch({
+        input: {
+            main: getLauncherPath('electron-main'),
+        },
+        output: {
+            dir: buildDir,
+            format: 'cjs',
+            sourcemap: false,
+        },
+        plugins: [
+            buildInfo(target),
+            workerPlugin({ target }),
+            nodeResolve({ preferBuiltins: true }),
+            typescript(),
+        ],
+        external: ['electron'],
+    });
+    main.on('event', (event) => {
+        console.log('[electron-main:watcher]', event.code);
+        if (event.code === 'ERROR') {
+            console.log(event.error);
+        }
+    });
+    main.on('change', (file) => {
+        console.log('[electron-main:watcher]', 'File changed');
+    });
+    const sandbox = watch({
+        input: {
+            sandbox: getLauncherPath('electron-sandbox'),
+        },
+        output: {
+            dir: buildDir,
+        },
+        plugins: [
+            buildInfo(target),
+            workerPlugin({ target: { ...target, platform: 'browser' } }),
+            nodeResolve({ preferBuiltins: true }),
+            typescript(),
+            htmlPlugin('./sandbox.js', {
+                meta: [
+                    { charset: 'utf-8' },
+                    { 'http-equiv': 'Content-Security-Policy', 'content': 'default-src \'self\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'' },
+                ],
+            }),
+        ],
+    });
+    let isRunning = false;
+    sandbox.on('event', (event) => {
+        console.log('[electron-sandbox:watcher]', event.code);
+        if (event.code === 'BUNDLE_END') ;
+        if (event.code === 'END' && !isRunning) {
+            startElectron(buildDir + '/main.js');
+            isRunning = true;
+        }
+        if (event.code === 'ERROR') {
+            console.log(event.error);
+        }
+    });
+    sandbox.on('change', (file) => {
+        console.log('[electron-sandbox:watcher]', 'File changed');
+    });
+}
 
 const cli = cac('apex-build-tool').version(pkg.version).help();
 cli
@@ -518,6 +604,9 @@ cli
             }
             if (targetConfig.platform === 'browser') {
                 await serveBrowserTarget(targetConfig);
+            }
+            if (targetConfig.platform === 'electron') {
+                await serveElectronTarget(targetConfig);
             }
         }
     }

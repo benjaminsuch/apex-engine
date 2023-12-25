@@ -5,7 +5,6 @@ declare global {
   var IS_DEV: string;
   var IS_GAME: boolean;
   var IS_SERVER: boolean;
-  var pluginMap: any;
 
   type TClass<T = any> = { new (...args: any[]): T };
 

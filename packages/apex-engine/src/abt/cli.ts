@@ -3,7 +3,7 @@ import { cac } from 'cac';
 import pkg from '../../package.json' assert { type: 'json' };
 import { buildBrowserTarget } from './build';
 import { getApexConfig } from './config';
-import { serveBrowserTarget } from './serve';
+import { serveBrowserTarget, serveElectronTarget } from './serve';
 import { filterDuplicateOptions, measure } from './utils';
 
 interface CLIOptions {
@@ -41,6 +41,9 @@ cli
 
         if (targetConfig.platform === 'browser') {
           await serveBrowserTarget(targetConfig);
+        }
+        if (targetConfig.platform === 'electron') {
+          await serveElectronTarget(targetConfig);
         }
       }
     } catch (error) {

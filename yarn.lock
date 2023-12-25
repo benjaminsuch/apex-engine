@@ -1054,10 +1054,12 @@ __metadata:
     "@types/three": ^0.159.0
     "@types/ws": ^8.5.10
     cac: ^6.7.14
+    electron: ^28.1.0
     fast-glob: ^3.3.2
     mime: ^4.0.1
     reflect-metadata: ^0.2.1
     rollup: ^4.9.1
+    three: ^0.160.0
     tslib: ^2.6.2
     typescript: ^5.3.3
     ws: ^8.15.1
@@ -1396,6 +1398,19 @@ __metadata:
   bin:
     electron: cli.js
   checksum: 3d2959d736f3d448f768d12d5d225b9569837695aa07706a6d5b8d6705f5fabaa643ed4b3319a35cec00234bdf7a15a86cabbe04439baff8c9ad7b9e2425c45d
+  languageName: node
+  linkType: hard
+
+"electron@npm:^28.1.0":
+  version: 28.1.0
+  resolution: "electron@npm:28.1.0"
+  dependencies:
+    "@electron/get": ^2.0.0
+    "@types/node": ^18.11.18
+    extract-zip: ^2.0.1
+  bin:
+    electron: cli.js
+  checksum: 4b45e007acc544570ca7c58b4374a47fb4ce3bc0c87a11c9ece4172a03dfa23a0eb4ab32bb3877c9dbc58fb3f02311e034554ec4b1342851c6b48d41a07b7b58
   languageName: node
   linkType: hard
 
@@ -3252,6 +3267,13 @@ __metadata:
   version: 0.159.0
   resolution: "three@npm:0.159.0"
   checksum: 41f03abf140d7872f64d3f980eb8cf05ef15385914969435a0b60f006f4ed846c6473aaa992e9e770baac4b4e8fdfc288c6276a74b75977cef6a5b9e76f40eb3
+  languageName: node
+  linkType: hard
+
+"three@npm:^0.160.0":
+  version: 0.160.0
+  resolution: "three@npm:0.160.0"
+  checksum: ae9aadbcdfcbf2afdfeebc376abacd980c4cbcd0177dbe56e1420305bcc3dea9115b865932937b74445d937f463623a496e9784c39e238b32f982d6a22c6311d
   languageName: node
   linkType: hard
 

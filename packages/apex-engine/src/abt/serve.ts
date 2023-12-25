@@ -1,16 +1,16 @@
 import { createServer, type Server } from 'node:http';
-import { posix, resolve } from 'node:path';
+import { join, posix, resolve } from 'node:path';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
-import virtual from '@rollup/plugin-virtual';
 import mime from 'mime';
 import { watch } from 'rollup';
 import { WebSocketServer } from 'ws';
 
 import { APEX_DIR, getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
+import { startElectron } from './electron';
 import { readFileFromContentBase } from './file';
-import { htmlPlugin, workerPlugin } from './plugins';
+import { buildInfo, htmlPlugin, workerPlugin } from './plugins';
 import { closeServerOnTermination } from './server';
 
 let server: Server;
@@ -57,13 +57,7 @@ export async function serveBrowserTarget(target: TargetConfig) {
       format: 'esm',
     },
     plugins: [
-      virtual({
-        'build:info': [
-          'export const plugins = new Map()',
-          '',
-          ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
-        ].join('\n'),
-      }),
+      buildInfo(target),
       workerPlugin({ target }),
       nodeResolve({ preferBuiltins: true }),
       typescript(),
@@ -116,4 +110,85 @@ export async function serveBrowserTarget(target: TargetConfig) {
   });
 
   watcher.close();
+}
+
+export async function serveElectronTarget(target: TargetConfig) {
+  const buildDir = resolve(APEX_DIR, 'build/electron');
+
+  process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
+
+  const main = watch({
+    input: {
+      main: getLauncherPath('electron-main'),
+    },
+    output: {
+      dir: buildDir,
+      format: 'cjs',
+      sourcemap: false,
+    },
+    plugins: [
+      buildInfo(target),
+      workerPlugin({ target }),
+      nodeResolve({ preferBuiltins: true }),
+      typescript(),
+    ],
+    external: ['electron'],
+  });
+
+  main.on('event', (event) => {
+    console.log('[electron-main:watcher]', event.code);
+
+    if (event.code === 'ERROR') {
+      console.log(event.error);
+    }
+  });
+
+  main.on('change', (file) => {
+    console.log('[electron-main:watcher]', 'File changed');
+  });
+
+  const sandbox = watch({
+    input: {
+      sandbox: getLauncherPath('electron-sandbox'),
+    },
+    output: {
+      dir: buildDir,
+    },
+    plugins: [
+      buildInfo(target),
+      workerPlugin({ target: { ...target, platform: 'browser' } }),
+      nodeResolve({ preferBuiltins: true }),
+      typescript(),
+      htmlPlugin(
+        './sandbox.js',
+        {
+          meta: [
+            { charset: 'utf-8' },
+            { 'http-equiv': 'Content-Security-Policy', 'content': 'default-src \'self\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'' },
+          ],
+        }
+      ),
+    ],
+  });
+
+  let isRunning = false;
+
+  sandbox.on('event', (event) => {
+    console.log('[electron-sandbox:watcher]', event.code);
+
+    if (event.code === 'BUNDLE_END') {
+      // send message to electron-main to reload (via MessageChannel)
+    }
+    if (event.code === 'END' && !isRunning) {
+      startElectron(buildDir + '/main.js');
+      isRunning = true;
+    }
+    if (event.code === 'ERROR') {
+      console.log(event.error);
+    }
+  });
+
+  sandbox.on('change', (file) => {
+    console.log('[electron-sandbox:watcher]', 'File changed');
+  });
 }
