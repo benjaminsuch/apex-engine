@@ -6,6 +6,7 @@ import virtual from '@rollup/plugin-virtual';
 import { rollup } from 'rollup';
 
 import { getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
+import { workerPlugin } from './plugins';
 
 export async function buildBrowserTarget(target: TargetConfig) {
   const bundle = await rollup({
@@ -21,6 +22,7 @@ export async function buildBrowserTarget(target: TargetConfig) {
           ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
         ].join('\n'),
       }),
+      workerPlugin({ isBuild: true, target }),
       nodeResolve({ preferBuiltins: true }),
       typescript(),
     ],

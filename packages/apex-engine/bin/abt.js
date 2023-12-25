@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { cac } from 'cac';
-import { resolve, relative, extname, posix } from 'node:path';
+import { resolve, relative, extname, dirname, join, isAbsolute, basename, posix, sep } from 'node:path';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import virtual from '@rollup/plugin-virtual';
@@ -8,11 +8,11 @@ import { rollup, watch } from 'rollup';
 import { writeFileSync, unlinkSync, readFile } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import glob from 'fast-glob';
-import { builtinModules } from 'node:module';
+import { builtinModules, createRequire } from 'node:module';
+import html, { makeHtmlAttributes } from '@rollup/plugin-html';
 import { createServer } from 'node:http';
 import mime from 'mime';
 import { WebSocketServer } from 'ws';
-import html, { makeHtmlAttributes } from '@rollup/plugin-html';
 
 var name = "apex-engine";
 var description = "A cross-platform game engine written in Typescript.";
@@ -54,6 +54,7 @@ var dependencies = {
 	"@rollup/plugin-inject": "^5.0.5",
 	"@rollup/plugin-json": "^6.1.0",
 	"@rollup/plugin-node-resolve": "^15.2.3",
+	"@rollup/plugin-replace": "^5.0.5",
 	"@rollup/plugin-swc": "^0.3.0",
 	"@rollup/plugin-typescript": "^11.1.5",
 	"@rollup/plugin-virtual": "^3.0.2",
@@ -177,43 +178,6 @@ function getEngineSourceFiles() {
     ]));
 }
 
-async function buildBrowserTarget(target) {
-    const bundle = await rollup({
-        input: {
-            index: getLauncherPath('browser'),
-            ...getEngineSourceFiles(),
-        },
-        plugins: [
-            virtual({
-                'build:info': [
-                    'export const plugins = new Map()',
-                    '',
-                    ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
-                ].join('\n'),
-            }),
-            nodeResolve({ preferBuiltins: true }),
-            typescript(),
-        ],
-    });
-    await bundle.write({
-        dir: resolve('build/browser'),
-        exports: 'named',
-        format: 'esm',
-        sourcemap: false,
-    });
-    await bundle.close();
-}
-
-function readFileFromContentBase(contentBase, urlPath, callback) {
-    let filePath = resolve(contentBase, '.' + urlPath);
-    if (urlPath.endsWith('/')) {
-        filePath = resolve(filePath, 'index.html');
-    }
-    readFile(filePath, (error, content) => {
-        callback(error, content, filePath);
-    });
-}
-
 function htmlPlugin(entryFile = './index.js', options, body = '') {
     return html({
         title: 'Apex Engine',
@@ -254,6 +218,174 @@ function htmlPlugin(entryFile = './index.js', options, body = '') {
                 `</html>`,
             ].join('\n');
         },
+    });
+}
+
+const _require = createRequire(import.meta.url);
+function workerPlugin({ inline, isBuild = false, target, }) {
+    const cache = new Map();
+    return {
+        name: 'workers',
+        resolveId(id, importer) {
+            const match = id.match(/(.+)\?worker/);
+            let target = null;
+            if (match) {
+                const [, fileName] = match;
+                if (!cache.has(fileName)) {
+                    if (importer) {
+                        const folder = dirname(importer);
+                        const paths = _require.resolve.paths(importer);
+                        if (paths) {
+                            paths.push(folder);
+                        }
+                        target = _require.resolve(join(folder, `${fileName}.ts`), {
+                            paths: ['.ts'],
+                        });
+                    }
+                    else if (isAbsolute(fileName)) {
+                        target = fileName;
+                    }
+                    if (target) {
+                        const extension = extname(target);
+                        const workerName = basename(target, extension);
+                        cache.set(target, {
+                            id: `${workerName}.js`,
+                            target,
+                            outputPath: null,
+                            chunk: null,
+                        });
+                        return target;
+                    }
+                    return null;
+                }
+            }
+        },
+        async load(id) {
+            let bundle;
+            const cacheEntry = cache.get(id);
+            if (!cacheEntry) {
+                return;
+            }
+            try {
+                bundle = await rollup({
+                    input: id,
+                    plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+                    onwarn() { },
+                });
+                const { output } = await bundle.generate({ sourcemap: false });
+                if (cacheEntry) {
+                    const [chunk] = output.filter((chunk) => chunk.type === 'chunk');
+                    // TODO: To support HMR we can add all the files in `chunk.modules` to a watch-list.
+                    chunk.fileName = posix.join('worker', cacheEntry.id);
+                    cacheEntry.chunk = chunk;
+                    return {
+                        code: chunk.code,
+                    };
+                }
+            }
+            catch (error) {
+                console.error(error);
+            }
+            if (bundle) {
+                await bundle.close();
+            }
+        },
+        transform(code, id) {
+            const entry = cache.get(id);
+            if (entry?.chunk) {
+                let code = [
+                    `export default function WorkerFactory() {`,
+                    `  return new Worker("${entry.chunk.fileName}", { type: "module" });`,
+                    `};`,
+                ];
+                if (target.platform === 'browser') {
+                    if (inline) {
+                        return {
+                            code: `
+                const encodedJs = "${Buffer.from(`//${entry.id}\n\n${code}`).toString('base64')}";
+                const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+    
+                export default function WorkerWrapper() {
+                  let objURL;
+                  try {
+                    objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+                    if (!objURL) throw ''
+                    return new Worker(objURL)
+                  } catch(e) {
+                    return new Worker("data:application/javascript;base64," + encodedJs, { type: 'module' });
+                  } finally {
+                    objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                  }
+                }
+              `,
+                            map: `{ "version":3, "file": "${basename(id)}", "sources":[], "sourcesContent":[], "names":[], "mappings": "" }`,
+                        };
+                    }
+                }
+                else {
+                    const path = isBuild
+                        ? `build/${target.platform}`
+                        : `${APEX_DIR}/build/${target.platform}`;
+                    const fileName = posix.join(path, entry.chunk.fileName).split(sep).join(posix.sep);
+                    code = [
+                        `import { Worker } from "node:worker_threads"`,
+                        ``,
+                        `export default function WorkerFactory(options) {`,
+                        `  return new Worker("${fileName}", options);`,
+                        `};`,
+                    ];
+                }
+                return {
+                    code: code.join('\n'),
+                };
+            }
+        },
+        renderChunk(code, chunk, options, meta) { },
+        generateBundle(options, bundle) {
+            for (const [id, worker] of cache) {
+                if (worker.chunk) {
+                    bundle[worker.id] = worker.chunk;
+                }
+            }
+        },
+    };
+}
+
+async function buildBrowserTarget(target) {
+    const bundle = await rollup({
+        input: {
+            index: getLauncherPath('browser'),
+            ...getEngineSourceFiles(),
+        },
+        plugins: [
+            virtual({
+                'build:info': [
+                    'export const plugins = new Map()',
+                    '',
+                    ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
+                ].join('\n'),
+            }),
+            workerPlugin({ isBuild: true, target }),
+            nodeResolve({ preferBuiltins: true }),
+            typescript(),
+        ],
+    });
+    await bundle.write({
+        dir: resolve('build/browser'),
+        exports: 'named',
+        format: 'esm',
+        sourcemap: false,
+    });
+    await bundle.close();
+}
+
+function readFileFromContentBase(contentBase, urlPath, callback) {
+    let filePath = resolve(contentBase, '.' + urlPath);
+    if (urlPath.endsWith('/')) {
+        filePath = resolve(filePath, 'index.html');
+    }
+    readFile(filePath, (error, content) => {
+        callback(error, content, filePath);
     });
 }
 
@@ -315,6 +447,7 @@ async function serveBrowserTarget(target) {
                     ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
                 ].join('\n'),
             }),
+            workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
             htmlPlugin('./index.js', {}, [

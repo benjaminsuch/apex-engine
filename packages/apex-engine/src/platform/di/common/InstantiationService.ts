@@ -1,32 +1,33 @@
-import { ServiceCollection, type ServiceIdentifier } from './ServiceCollection';
+import { type IServiceIdentifier, ServiceCollection } from './ServiceCollection';
 
-export interface ServicesAccessor {
-  get<T>(id: ServiceIdentifier<T>): T;
+export interface IServicesAccessor {
+  get<T>(id: IServiceIdentifier<T>): T;
 }
 
-export type ServiceDependencies = { id: ServiceIdentifier<any>, index: number, optional: boolean };
-
-export type RegisteredService = { _injectibleService: undefined };
+export type ServiceDependencies = { id: IServiceIdentifier<any>, index: number, optional: boolean };
 
 export type GetLeadingNonServiceArgs<TArgs extends any[]> = TArgs extends []
   ? []
-  : TArgs extends [...infer TFirst, RegisteredService]
+  : TArgs extends [...infer TFirst, IInjectibleService]
     ? GetLeadingNonServiceArgs<TFirst>
     : TArgs;
 
-export type SingletonRegistry = [ServiceIdentifier<any>, new (...services: any[]) => any][];
+export type SingletonRegistry = [IServiceIdentifier<any>, TClass][];
 
-export interface IInstatiationService {
+export interface IInjectibleService {
   readonly _injectibleService: undefined;
-  createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(
+}
+
+export interface IInstatiationService extends IInjectibleService {
+  createInstance<C extends TClass, R extends InstanceType<C>>(
     Constructor: C,
     ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
   ): R;
   invokeFunction<R, TS extends any[] = []>(
-    fn: (accessor: ServicesAccessor, ...args: TS) => R,
+    fn: (accessor: IServicesAccessor, ...args: TS) => R,
     ...args: TS
   ): R;
-  setServiceInstance<T>(id: ServiceIdentifier<T>, instance: T): void;
+  setServiceInstance<T>(id: IServiceIdentifier<T>, instance: T): void;
 }
 
 const DI_TARGET = '$di$target';
@@ -35,9 +36,9 @@ const DI_DEPENDENCIES = '$di$dependencies';
 export class InstantiationService implements IInstatiationService {
   declare readonly _injectibleService: undefined;
 
-  private static readonly registeredServices = new Map<string, ServiceIdentifier<any>>();
+  private static readonly registeredServices = new Map<string, IServiceIdentifier<any>>();
 
-  private static registerServiceDependency(id: Function, target: Function, index: number): void {
+  private static registerServiceDependency(id: Function, target: TClass, index: number): void {
     const service = target as any;
 
     if (service[DI_TARGET] === target) {
@@ -52,12 +53,12 @@ export class InstantiationService implements IInstatiationService {
     return Constructor[DI_DEPENDENCIES] ?? [];
   }
 
-  public static createDecorator<T>(serviceId: string): ServiceIdentifier<T> {
+  public static createDecorator<T>(serviceId: string): IServiceIdentifier<T> {
     if (this.registeredServices.has(serviceId)) {
-      return this.registeredServices.get(serviceId) as ServiceIdentifier<T>;
+      return this.registeredServices.get(serviceId) as IServiceIdentifier<T>;
     }
 
-    const id = function (target: Function, key: string, index: number): any {
+    const id = function (target: TClass, key: string, index: number): any {
       if (arguments.length !== 3) {
         throw new Error('@IServiceName-decorator can only be used to decorate a parameter');
       }
@@ -73,8 +74,8 @@ export class InstantiationService implements IInstatiationService {
 
   private static readonly singletonRegistry: SingletonRegistry = [];
 
-  public static registerSingleton<T, Services extends RegisteredService[]>(
-    id: ServiceIdentifier<T>,
+  public static registerSingleton<T, Services extends IInjectibleService[]>(
+    id: IServiceIdentifier<T>,
     Constructor: new (...services: Services) => T
   ): void {
     this.singletonRegistry.push([id, Constructor]);
@@ -104,7 +105,7 @@ export class InstantiationService implements IInstatiationService {
    * @param Constructor The class to create an instance from.
    * @param args Constructor parameters of that class.
    */
-  public createInstance<C extends new (...args: any[]) => any, R extends InstanceType<C>>(
+  public createInstance<C extends TClass, R extends InstanceType<C>>(
     Constructor: C,
     ...args: GetLeadingNonServiceArgs<ConstructorParameters<C>>
   ): R {
@@ -149,14 +150,14 @@ export class InstantiationService implements IInstatiationService {
   }
 
   public invokeFunction<R, TS extends any[] = []>(
-    fn: (accessor: ServicesAccessor, ...args: TS) => R,
+    fn: (accessor: IServicesAccessor, ...args: TS) => R,
     ...args: TS
   ): R {
     let done = false;
 
     try {
-      const accessor: ServicesAccessor = {
-        get: <T>(id: ServiceIdentifier<T>) => {
+      const accessor: IServicesAccessor = {
+        get: <T>(id: IServiceIdentifier<T>) => {
           if (done) {
             throw new Error(
               'service accessor is only valid during the invocation of its target method'
@@ -179,7 +180,7 @@ export class InstantiationService implements IInstatiationService {
     }
   }
 
-  public setServiceInstance<T>(id: ServiceIdentifier<T>, instance: T): void {
+  public setServiceInstance<T>(id: IServiceIdentifier<T>, instance: T): void {
     this.services.set(id, instance);
   }
 }

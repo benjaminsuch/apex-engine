@@ -23,6 +23,6 @@
     "target": "ESNext",
     "useDefineForClassFields": true
   },
-  "include": ["packages/apex-engine/src", "packages/apex-engine/types", "sandboxes/*/src", "sandboxes/*/types"],
+  "include": ["packages/apex-engine/src", "packages/apex-engine/types", "sandboxes/v1/src", "sandboxes/v1/types"],
   "exclude": ["node_modules"]
 }

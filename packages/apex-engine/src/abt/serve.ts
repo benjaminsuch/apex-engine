@@ -10,7 +10,7 @@ import { WebSocketServer } from 'ws';
 
 import { APEX_DIR, getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
 import { readFileFromContentBase } from './file';
-import { htmlPlugin } from './plugins';
+import { htmlPlugin, workerPlugin } from './plugins';
 import { closeServerOnTermination } from './server';
 
 let server: Server;
@@ -64,6 +64,7 @@ export async function serveBrowserTarget(target: TargetConfig) {
           ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
         ].join('\n'),
       }),
+      workerPlugin({ target }),
       nodeResolve({ preferBuiltins: true }),
       typescript(),
       htmlPlugin(
