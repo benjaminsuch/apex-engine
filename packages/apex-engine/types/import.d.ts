@@ -9,5 +9,5 @@ declare module '*?worker' {
 }
 
 declare module 'build:info' {
-  export const plugins: Map<string, string>;
+  export const plugins: Map<string, { startup?: Function, shutdown?: Function }>;
 }

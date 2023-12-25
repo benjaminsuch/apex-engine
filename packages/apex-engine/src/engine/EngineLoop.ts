@@ -1,3 +1,5 @@
+import { plugins } from 'build:info';
+
 import { IInstatiationService } from '../platform/di/common/InstantiationService';
 import { AssetLoader, IAssetLoader } from './AssetLoader';
 import { GameContext, IGameContext } from './GameContext';
@@ -27,6 +29,13 @@ export class EngineLoop {
       const physicsContext = new PhysicsContext();
       await physicsContext.init();
       this.instantiationService.setServiceInstance(IPhysicsContext, physicsContext);
+    }
+
+    // Activate plugins
+    {
+      plugins.forEach((module) => {
+        module.startup?.();
+      });
     }
   }
 }
