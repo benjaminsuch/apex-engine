@@ -54,6 +54,7 @@
     "reflect-metadata": "^0.2.1",
     "rollup": "^4.9.1",
     "three": "^0.160.0",
+    "three-stdlib": "^2.28.9",
     "ws": "^8.15.1"
   }
 }

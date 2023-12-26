@@ -1072,6 +1072,7 @@ __metadata:
     reflect-metadata: ^0.2.1
     rollup: ^4.9.1
     three: ^0.160.0
+    three-stdlib: ^2.28.9
     tslib: ^2.6.2
     typescript: ^5.3.3
     ws: ^8.15.1
@@ -3289,6 +3290,22 @@ __metadata:
   peerDependencies:
     three: ">=0.128.0"
   checksum: e392dc8757a2543645bfe187b08a84e3993d2b2cb0c5d291b5f9fb5e0c3bd0c076f779691e29b7073c2b6c6cc064f45e2ec84f1af3b8812838b28ea6e80a317e
+  languageName: node
+  linkType: hard
+
+"three-stdlib@npm:^2.28.9":
+  version: 2.28.9
+  resolution: "three-stdlib@npm:2.28.9"
+  dependencies:
+    "@types/draco3d": ^1.4.0
+    "@types/offscreencanvas": ^2019.6.4
+    "@types/webxr": ^0.5.2
+    draco3d: ^1.4.1
+    fflate: ^0.6.9
+    potpack: ^1.0.1
+  peerDependencies:
+    three: ">=0.128.0"
+  checksum: 2b4b2f86dacfc02b65e53d6515f5c36bc29813512ac26dcb542d09bab2d16cf41baec81e1ee65cb35d2ebec56e0d5373255f8fed4e9825e00e81b71f46d22857
   languageName: node
   linkType: hard
 

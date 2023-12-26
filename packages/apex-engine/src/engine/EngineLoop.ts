@@ -51,7 +51,6 @@ export class EngineLoop {
 
     const engine = this.instantiationService.createInstance(ApexEngine);
     engine.init();
-    console.log(DEFAULT_MAP);
   }
 
   public tick(): IntervalReturn {

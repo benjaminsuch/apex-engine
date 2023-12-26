@@ -25,6 +25,6 @@ export class ApexEngine {
   }
 
   public async loadMap(url: string): Promise<void> {
-
+    const content = await this.assetLoader.loadGLTF(url);
   }
 }
