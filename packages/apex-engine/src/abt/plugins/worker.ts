@@ -106,6 +106,8 @@ export function workerPlugin({
       if (bundle) {
         await bundle.close();
       }
+
+      return {};
     },
     transform(code, id) {
       const entry = cache.get(id);
@@ -159,6 +161,8 @@ export function workerPlugin({
           code: code.join('\n'),
         };
       }
+
+      return {};
     },
     renderChunk(code, chunk, options, meta) {},
     generateBundle(options, bundle) {

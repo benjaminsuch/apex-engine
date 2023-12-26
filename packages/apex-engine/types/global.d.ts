@@ -1,5 +1,5 @@
 declare global {
-  var DEFAULT_LEVEL: string;
+  var DEFAULT_MAP: string;
   var IS_BROWSER: string;
   var IS_CLIENT: boolean;
   var IS_DEV: string;

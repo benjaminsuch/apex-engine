@@ -3,6 +3,7 @@ import { cac } from 'cac';
 import { resolve, relative, extname, dirname, join, isAbsolute, basename, posix, sep } from 'node:path';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
+import fs from 'fs-extra';
 import { rollup, watch } from 'rollup';
 import { writeFileSync, unlinkSync, existsSync, readFileSync, readFile } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -10,6 +11,7 @@ import glob from 'fast-glob';
 import { builtinModules, createRequire } from 'node:module';
 import virtual from '@rollup/plugin-virtual';
 import html, { makeHtmlAttributes } from '@rollup/plugin-html';
+import replace from '@rollup/plugin-replace';
 import { createServer } from 'node:http';
 import mime from 'mime';
 import { WebSocketServer } from 'ws';
@@ -43,6 +45,7 @@ var scripts = {
 	"build-cli": "rollup --config rollup.config.ts --bundleConfigAsCjs"
 };
 var devDependencies = {
+	"@types/fs-extra": "^11",
 	"@types/node": "^20.10.5",
 	"@types/three": "^0.159.0",
 	"@types/ws": "^8.5.10",
@@ -57,7 +60,6 @@ var dependencies = {
 	"@rollup/plugin-json": "^6.1.0",
 	"@rollup/plugin-node-resolve": "^15.2.3",
 	"@rollup/plugin-replace": "^5.0.5",
-	"@rollup/plugin-swc": "^0.3.0",
 	"@rollup/plugin-typescript": "^11.1.5",
 	"@rollup/plugin-virtual": "^3.0.2",
 	"@swc/core": "^1.3.101",
@@ -65,6 +67,7 @@ var dependencies = {
 	cac: "^6.7.14",
 	electron: "^28.1.0",
 	"fast-glob": "^3.3.2",
+	"fs-extra": "^11.2.0",
 	mime: "^4.0.1",
 	"reflect-metadata": "^0.2.1",
 	rollup: "^4.9.1",
@@ -235,6 +238,20 @@ function htmlPlugin(entryFile = './index.js', options, body = '') {
     });
 }
 
+function replacePlugin(target) {
+    return replace({
+        preventAssignment: true,
+        values: {
+            DEFAULT_MAP: JSON.stringify(target.defaultMap),
+            IS_DEV: 'true',
+            IS_CLIENT: String(target.target === 'client'),
+            IS_GAME: String(target.target === 'game'),
+            IS_SERVER: String(target.target === 'server'),
+            IS_BROWSER: String(target.platform === 'browser'),
+        },
+    });
+}
+
 const _require$1 = createRequire(import.meta.url);
 function workerPlugin({ inline, isBuild = false, target, }) {
     const cache = new Map();
@@ -303,6 +320,7 @@ function workerPlugin({ inline, isBuild = false, target, }) {
             if (bundle) {
                 await bundle.close();
             }
+            return {};
         },
         transform(code, id) {
             const entry = cache.get(id);
@@ -353,6 +371,7 @@ function workerPlugin({ inline, isBuild = false, target, }) {
                     code: code.join('\n'),
                 };
             }
+            return {};
         },
         renderChunk(code, chunk, options, meta) { },
         generateBundle(options, bundle) {
@@ -366,12 +385,24 @@ function workerPlugin({ inline, isBuild = false, target, }) {
 }
 
 async function buildBrowserTarget(target) {
+    const buildDir = resolve('build/browser');
+    fs.copy('src/assets', resolve(buildDir, 'assets'), (err) => {
+        if (err) {
+            console.error('Error copying folder:', err);
+        }
+    });
+    fs.copy('src/game/maps', resolve(buildDir, 'maps'), (err) => {
+        if (err) {
+            console.error('Error copying folder:', err);
+        }
+    });
     const bundle = await rollup({
         input: {
             index: getLauncherPath('browser'),
             ...getEngineSourceFiles(),
         },
         plugins: [
+            replacePlugin(target),
             buildInfo(target),
             workerPlugin({ isBuild: true, target }),
             nodeResolve({ preferBuiltins: true }),
@@ -379,7 +410,7 @@ async function buildBrowserTarget(target) {
         ],
     });
     await bundle.write({
-        dir: resolve('build/browser'),
+        dir: buildDir,
         exports: 'named',
         format: 'esm',
         sourcemap: false,
@@ -462,6 +493,16 @@ async function serveBrowserTarget(target) {
         });
     });
     closeServerOnTermination(server);
+    fs.copy('src/assets', resolve(buildDir, 'assets'), (err) => {
+        if (err) {
+            console.error('Error copying folder:', err);
+        }
+    });
+    fs.copy('src/game/maps', resolve(buildDir, 'maps'), (err) => {
+        if (err) {
+            console.error('Error copying folder:', err);
+        }
+    });
     const watcher = watch({
         input: {
             index: getLauncherPath('browser'),
@@ -473,6 +514,7 @@ async function serveBrowserTarget(target) {
             format: 'esm',
         },
         plugins: [
+            replacePlugin(target),
             buildInfo(target),
             workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
@@ -530,6 +572,7 @@ async function serveElectronTarget(target) {
             sourcemap: false,
         },
         plugins: [
+            replacePlugin(target),
             buildInfo(target),
             workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
@@ -554,6 +597,7 @@ async function serveElectronTarget(target) {
             dir: buildDir,
         },
         plugins: [
+            replacePlugin(target),
             buildInfo(target),
             workerPlugin({ target: { ...target, platform: 'browser' } }),
             nodeResolve({ preferBuiltins: true }),

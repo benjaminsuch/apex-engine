@@ -1,8 +1,8 @@
 import { plugins } from 'build:info';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
+import { ApexEngine } from './ApexEngine';
 import { AssetLoader, IAssetLoader } from './AssetLoader';
-import { GameContext, IGameContext } from './GameContext';
 import { IPhysicsContext, PhysicsContext } from './PhysicsContext';
 import { IRenderContext, RenderContext } from './renderer/RenderContext';
 
@@ -30,9 +30,6 @@ export class EngineLoop {
       const assetLoader = new AssetLoader();
       this.instantiationService.setServiceInstance(IAssetLoader, assetLoader);
 
-      const gameContext = new GameContext();
-      this.instantiationService.setServiceInstance(IGameContext, gameContext);
-
       const renderContext = new RenderContext();
       this.instantiationService.setServiceInstance(IRenderContext, renderContext);
 
@@ -41,7 +38,6 @@ export class EngineLoop {
 
       // The order is important. The asset loader needs to be available to load the map or cinematics.
       await assetLoader.init();
-      await gameContext.init();
       await renderContext.init();
       await physicsContext.init();
     }
@@ -52,6 +48,10 @@ export class EngineLoop {
         await module.startup?.();
       });
     }
+
+    const engine = this.instantiationService.createInstance(ApexEngine);
+    engine.init();
+    console.log(DEFAULT_MAP);
   }
 
   public tick(): IntervalReturn {

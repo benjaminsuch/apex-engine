@@ -3,14 +3,15 @@ import { join, posix, resolve } from 'node:path';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
+import fs from 'fs-extra';
 import mime from 'mime';
 import { watch } from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import { APEX_DIR, getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
+import { APEX_DIR, getEngineSourceFiles, getGameMaps, getLauncherPath, type TargetConfig } from './config';
 import { startElectron } from './electron';
 import { readFileFromContentBase } from './file';
-import { buildInfo, htmlPlugin, workerPlugin } from './plugins';
+import { buildInfo, htmlPlugin, replace, workerPlugin } from './plugins';
 import { closeServerOnTermination } from './server';
 
 let server: Server;
@@ -46,6 +47,18 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
 
   closeServerOnTermination(server);
 
+  fs.copy('src/assets', resolve(buildDir, 'assets'), (err: any) => {
+    if (err) {
+      console.error('Error copying folder:', err);
+    }
+  });
+
+  fs.copy('src/game/maps', resolve(buildDir, 'maps'), (err: any) => {
+    if (err) {
+      console.error('Error copying folder:', err);
+    }
+  });
+
   const watcher = watch({
     input: {
       index: getLauncherPath('browser'),
@@ -57,6 +70,7 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
       format: 'esm',
     },
     plugins: [
+      replace(target),
       buildInfo(target),
       workerPlugin({ target }),
       nodeResolve({ preferBuiltins: true }),
@@ -127,6 +141,7 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
       sourcemap: false,
     },
     plugins: [
+      replace(target),
       buildInfo(target),
       workerPlugin({ target }),
       nodeResolve({ preferBuiltins: true }),
@@ -155,6 +170,7 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
       dir: buildDir,
     },
     plugins: [
+      replace(target),
       buildInfo(target),
       workerPlugin({ target: { ...target, platform: 'browser' } }),
       nodeResolve({ preferBuiltins: true }),
