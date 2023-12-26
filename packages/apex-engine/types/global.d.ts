@@ -20,6 +20,8 @@ declare global {
   type MaybePromise<T> = Promise<T> | T;
 
   type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
+
+  type IntervalReturn = number | NodeJS.Timer | undefined;
 }
 
 export {};
