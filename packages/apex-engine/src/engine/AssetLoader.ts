@@ -1,18 +1,19 @@
 import { type IInjectibleService, InstantiationService } from '../platform/di/common/InstantiationService';
-import { AbstractWorkerInitiator } from './AbstractWorkerInitiator';
 import AssetWorker from './AssetWorker?worker';
 
-export class AssetLoader extends AbstractWorkerInitiator implements IAssetLoader {
+export class AssetLoader implements IAssetLoader {
   declare readonly _injectibleService: undefined;
 
+  private readonly worker: Worker;
+
   constructor() {
-    super(new AssetWorker());
+    this.worker = new AssetWorker();
   }
 
   public async init() {
-    return Promise.all([this.workerReady(), new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       resolve();
-    })]);
+    });
   }
 }
 

@@ -1,18 +1,19 @@
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
-import { AbstractWorkerInitiator } from '../AbstractWorkerInitiator';
 import RenderWorker from './RenderWorker?worker';
 
-export class RenderContext extends AbstractWorkerInitiator implements IRenderContext {
+export class RenderContext implements IRenderContext {
   declare readonly _injectibleService: undefined;
 
+  private readonly worker: Worker;
+
   constructor() {
-    super(new RenderWorker());
+    this.worker = new RenderWorker();
   }
 
   public async init() {
-    return Promise.all([this.workerReady(), new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       resolve();
-    })]);
+    });
   }
 }
 
