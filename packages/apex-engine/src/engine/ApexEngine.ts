@@ -1,4 +1,6 @@
+import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IAssetLoader } from './assets/AssetLoader';
+import { GameInstance } from './GameInstance';
 
 export class ApexEngine {
   private static instance?: ApexEngine;
@@ -10,9 +12,18 @@ export class ApexEngine {
     return this.instance;
   }
 
+  private gameInstance?: GameInstance;
+
+  public getGameInstance(): GameInstance {
+    if (!this.gameInstance) {
+      throw new Error(`Cannot access GameInstance before the Engine has been initialized.`);
+    }
+    return this.gameInstance;
+  }
+
   public isInitialized: boolean = false;
 
-  constructor(@IAssetLoader private readonly assetLoader: IAssetLoader) {
+  constructor(@IInstantiationService protected readonly instantiationService: IInstantiationService, @IAssetLoader protected readonly assetLoader: IAssetLoader) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the ApexEngine already exists.`);
     }
@@ -21,7 +32,14 @@ export class ApexEngine {
   }
 
   public init(): void {
+    this.gameInstance = this.instantiationService.createInstance(GameInstance, this);
+    this.gameInstance.init();
+
     this.isInitialized = true;
+  }
+
+  public start(): void {
+    this.getGameInstance().start();
   }
 
   public async loadMap(url: string): Promise<void> {
