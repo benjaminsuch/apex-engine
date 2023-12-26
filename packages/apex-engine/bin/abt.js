@@ -50,6 +50,7 @@ var devDependencies = {
 	typescript: "^5.3.3"
 };
 var dependencies = {
+	"@dimforge/rapier3d-compat": "^0.11.2",
 	"@rollup/plugin-commonjs": "^25.0.7",
 	"@rollup/plugin-html": "^1.0.3",
 	"@rollup/plugin-inject": "^5.0.5",

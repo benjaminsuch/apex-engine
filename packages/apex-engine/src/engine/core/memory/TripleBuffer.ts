@@ -5,17 +5,17 @@
  * Link to the code specifically: https://github.com/matrix-org/thirdroom/blob/main/src/engine/allocator/TripleBuffer.ts
  */
 export class TripleBuffer {
-  public static getReadBufferIndexFromFlags(flags: Uint8Array) {
+  public static getReadBufferIndexFromFlags(flags: Uint8Array): number {
     return Atomics.load(flags, 0) & 0x3;
   }
 
-  public static swapWriteBufferFlags(flags: Uint8Array) {
+  public static swapWriteBufferFlags(flags: Uint8Array): void {
     const f = Atomics.load(flags, 0);
 
     while (Atomics.compareExchange(flags, 0, f, this.swapWriteWithTempAndMarkChanged(f)) === f);
   }
 
-  public static swapReadBufferFlags(flags: Uint8Array) {
+  public static swapReadBufferFlags(flags: Uint8Array): boolean {
     const f = Atomics.load(flags, 0);
 
     do {
@@ -27,15 +27,15 @@ export class TripleBuffer {
     return true;
   }
 
-  private static swapWriteWithTempAndMarkChanged(flags: number) {
+  private static swapWriteWithTempAndMarkChanged(flags: number): number {
     return 0x40 | ((flags & 0xc) << 2) | ((flags & 0x30) >> 2) | (flags & 0x3);
   }
 
-  private static readyToRead(flags: number) {
+  private static readyToRead(flags: number): boolean {
     return (flags & 0x40) !== 0;
   }
 
-  private static swapReadWithTemp(flags: number) {
+  private static swapReadWithTemp(flags: number): number {
     return (flags & 0x30) | ((flags & 0x3) << 2) | ((flags & 0xc) >> 2);
   }
 
@@ -56,35 +56,35 @@ export class TripleBuffer {
     ]
   ) {}
 
-  public getReadBufferIndex() {
+  public getReadBufferIndex(): number {
     return Atomics.load(this.flags, 0) & 0x3;
   }
 
-  public getReadBuffer() {
+  public getReadBuffer(): SharedArrayBuffer {
     return this.buffers[this.getReadBufferIndex()];
   }
 
-  public getReadView() {
+  public getReadView(): Uint8Array {
     return this.byteViews[this.getReadBufferIndex()];
   }
 
-  public getWriteBufferIndex() {
+  public getWriteBufferIndex(): number {
     return (Atomics.load(this.flags, 0) & 0x30) >> 4;
   }
 
-  public getWriteBuffer() {
+  public getWriteBuffer(): SharedArrayBuffer {
     return this.buffers[this.getWriteBufferIndex()];
   }
 
-  public copyToWriteBuffer(byteView: Uint8Array) {
+  public copyToWriteBuffer(byteView: Uint8Array): void {
     return this.byteViews[this.getWriteBufferIndex()].set(byteView);
   }
 
-  public swapReadBuffer() {
+  public swapReadBuffer(): boolean {
     return TripleBuffer.swapReadBufferFlags(this.flags);
   }
 
-  public swapWriteBuffer() {
+  public swapWriteBuffer(): void {
     return TripleBuffer.swapWriteBufferFlags(this.flags);
   }
 }

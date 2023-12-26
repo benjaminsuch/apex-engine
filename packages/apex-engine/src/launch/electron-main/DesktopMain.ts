@@ -17,7 +17,7 @@ export class DesktopMain {
     this.instantiationService = new InstantiationService(services);
   }
 
-  public init() {
+  public init(): void {
     // ? We have to keep in mind, that this window can be modified by the engine
     // ? during runtime (e.g. the user changes the game resolution).
     this.window = new BrowserWindow({

@@ -10,7 +10,7 @@ export class AssetLoader implements IAssetLoader {
     this.worker = new AssetWorker();
   }
 
-  public async init() {
+  public async init(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       resolve();
     });

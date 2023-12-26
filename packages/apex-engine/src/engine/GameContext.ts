@@ -10,7 +10,7 @@ export class GameContext implements IGameContext {
     this.worker = new GameWorker();
   }
 
-  public async init() {
+  public async init(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       resolve();
     });

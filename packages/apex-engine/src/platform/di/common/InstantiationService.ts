@@ -65,7 +65,7 @@ export class InstantiationService implements IInstantiationService {
       InstantiationService.registerServiceDependency(id, target, index);
     };
 
-    id.toString = () => serviceId;
+    id.toString = (): string => serviceId;
 
     this.registeredServices.set(serviceId, id);
 

@@ -11,7 +11,7 @@ export class BrowserMain {
     this.instantiationService = new InstantiationService(services);
   }
 
-  public init() {
+  public init(): void {
     const engineLoop = this.instantiationService.createInstance(EngineLoop);
     engineLoop.init();
   }

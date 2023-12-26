@@ -13,7 +13,7 @@ Menu.setApplicationMenu(null);
  *
  * @param args CLI arguments for the engine (not to be confused with arguments of our build-scripts).
  */
-export async function main(args: string[]) {
+export function main(args: string[]): void {
   app.whenReady().then(() => {
     const desktop = new DesktopMain(args);
     desktop.init();

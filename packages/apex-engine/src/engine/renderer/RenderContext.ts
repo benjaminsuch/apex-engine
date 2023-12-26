@@ -10,7 +10,7 @@ export class RenderContext implements IRenderContext {
     this.worker = new RenderWorker();
   }
 
-  public async init() {
+  public async init(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       resolve();
     });

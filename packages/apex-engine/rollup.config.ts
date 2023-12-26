@@ -16,15 +16,12 @@ export default defineConfig([
       dir: 'bin',
       exports: 'named',
       format: 'esm',
-      externalLiveBindings: false,
-      freeze: false,
-      sourcemap: false,
       banner: '#!/usr/bin/env node',
     },
     external: [...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies)],
     plugins: [
       nodeResolve({ preferBuiltins: true }),
-      typescript({ sourceMap: false, exclude: ['node_modules', 'rollup.config.ts'] }),
+      typescript({ tsconfig: 'tsconfig.cli.json', exclude: ['node_modules', 'rollup.config.ts'] }),
       json(),
     ],
     onwarn(warning, warn) {

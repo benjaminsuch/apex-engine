@@ -146,6 +146,9 @@ module.exports = {
         fixStyle: 'inline-type-imports',
       },
     ],
+    '@typescript-eslint/explicit-function-return-type': 'error',
+    '@typescript-eslint/no-inferrable-types': 'error',
+    '@typescript-eslint/no-mixed-enums': 'error',
     'simple-import-sort/imports': 'error',
   },
 };

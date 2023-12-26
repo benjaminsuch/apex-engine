@@ -15,20 +15,22 @@ export class EngineLoop {
     // Setup important workers
     {
       const assetLoader = new AssetLoader();
-      await assetLoader.init();
       this.instantiationService.setServiceInstance(IAssetLoader, assetLoader);
 
       const gameContext = new GameContext();
-      await gameContext.init();
       this.instantiationService.setServiceInstance(IGameContext, gameContext);
 
       const renderContext = new RenderContext();
-      await renderContext.init();
       this.instantiationService.setServiceInstance(IRenderContext, renderContext);
 
       const physicsContext = new PhysicsContext();
-      await physicsContext.init();
       this.instantiationService.setServiceInstance(IPhysicsContext, physicsContext);
+
+      // The order is important. The asset loader needs to be available to load the map or cinematics.
+      await assetLoader.init();
+      await gameContext.init();
+      await renderContext.init();
+      await physicsContext.init();
     }
 
     // Activate plugins
