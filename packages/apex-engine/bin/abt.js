@@ -114,7 +114,7 @@ function filterDuplicateOptions(options) {
 function measure() {
     const startTime = performance.now();
     return {
-        done: (message = 'Operation done in %ss') => {
+        done(message = 'Operation done in %ss') {
             const endTime = performance.now();
             console.log(message, ((endTime - startTime) / 1000).toFixed(2));
         },
@@ -270,9 +270,9 @@ function workerPlugin({ inline, isBuild = false, target, }) {
                         });
                         return target;
                     }
-                    return null;
                 }
             }
+            return null;
         },
         async load(id) {
             let bundle;

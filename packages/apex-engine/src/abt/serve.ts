@@ -15,7 +15,7 @@ import { closeServerOnTermination } from './server';
 
 let server: Server;
 
-export async function serveBrowserTarget(target: TargetConfig) {
+export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
   const buildDir = resolve(APEX_DIR, 'build/browser');
   const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
 
@@ -112,7 +112,7 @@ export async function serveBrowserTarget(target: TargetConfig) {
   watcher.close();
 }
 
-export async function serveElectronTarget(target: TargetConfig) {
+export async function serveElectronTarget(target: TargetConfig): Promise<void> {
   const buildDir = resolve(APEX_DIR, 'build/electron');
 
   process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');

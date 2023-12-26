@@ -96,11 +96,11 @@ export async function loadConfigFromBundledFile(
   }
 }
 
-export function getLauncherPath(launcher: 'browser' | 'electron-main' | 'electron-sandbox' | 'node') {
+export function getLauncherPath(launcher: 'browser' | 'electron-main' | 'electron-sandbox' | 'node'): string {
   return fileURLToPath(new URL(`../src/launch/${launcher}/index.ts`, import.meta.url));
 }
 
-export function getEngineSourceFiles() {
+export function getEngineSourceFiles(): Record<string, string> {
   return Object.fromEntries(
     glob
       .sync('src/engine/**/*.ts')

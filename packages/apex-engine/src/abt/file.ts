@@ -5,7 +5,7 @@ export function readFileFromContentBase(
   contentBase: string,
   urlPath: string,
   callback: (err: NodeJS.ErrnoException | null, data: Buffer, filePath: string) => void
-) {
+): void {
   let filePath = resolve(contentBase, '.' + urlPath);
 
   if (urlPath.endsWith('/')) {

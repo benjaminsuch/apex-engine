@@ -23,7 +23,7 @@ export function isBuiltin(id: string): boolean {
 
 export const dynamicImport = new Function('file', 'return import(file)');
 
-export function filterDuplicateOptions<T extends object>(options: T) {
+export function filterDuplicateOptions<T extends object>(options: T): void {
   for (const [key, value] of Object.entries(options)) {
     if (Array.isArray(value)) {
       options[key as keyof T] = value[value.length - 1];
@@ -31,13 +31,17 @@ export function filterDuplicateOptions<T extends object>(options: T) {
   }
 }
 
-export function measure() {
+export interface MeasureReturn {
+  done(message?: string): void;
+}
+
+export function measure(): MeasureReturn {
   const startTime = performance.now();
 
   return {
-    done: (message: string = 'Operation done in %ss') => {
+    done(message = 'Operation done in %ss') {
       const endTime = performance.now();
       console.log(message, ((endTime - startTime) / 1000).toFixed(2));
     },
-  };
+  } as MeasureReturn;
 }

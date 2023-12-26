@@ -7,7 +7,7 @@ import { rollup } from 'rollup';
 import { getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
 import { buildInfo, workerPlugin } from './plugins';
 
-export async function buildBrowserTarget(target: TargetConfig) {
+export async function buildBrowserTarget(target: TargetConfig): Promise<void> {
   const bundle = await rollup({
     input: {
       index: getLauncherPath('browser'),

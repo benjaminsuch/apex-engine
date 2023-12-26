@@ -67,10 +67,10 @@ export function workerPlugin({
 
             return target;
           }
-
-          return null;
         }
       }
+
+      return null;
     },
     async load(id) {
       let bundle: RollupBuild | undefined;
@@ -168,5 +168,5 @@ export function workerPlugin({
         }
       }
     },
-  };
+  } as InputPluginOption;
 }
