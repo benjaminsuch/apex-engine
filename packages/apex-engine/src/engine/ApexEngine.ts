@@ -1,4 +1,4 @@
-import { IAssetLoader } from './AssetLoader';
+import { IAssetLoader } from './assets/AssetLoader';
 
 export class ApexEngine {
   private static instance?: ApexEngine;

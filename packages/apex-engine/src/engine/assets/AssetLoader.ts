@@ -1,4 +1,4 @@
-import { type IInjectibleService, InstantiationService } from '../platform/di/common/InstantiationService';
+import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import AssetWorker from './AssetWorker?worker';
 
 export class AssetLoader implements IAssetLoader {

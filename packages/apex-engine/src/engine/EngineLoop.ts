@@ -2,8 +2,8 @@ import { plugins } from 'build:info';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { ApexEngine } from './ApexEngine';
-import { AssetLoader, IAssetLoader } from './AssetLoader';
-import { IPhysicsContext, PhysicsContext } from './PhysicsContext';
+import { AssetLoader, IAssetLoader } from './assets/AssetLoader';
+import { IPhysicsContext, PhysicsContext } from './physics/PhysicsContext';
 import { IRenderContext, RenderContext } from './renderer/RenderContext';
 
 const TICK_RATE = 60;

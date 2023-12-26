@@ -1,4 +1,4 @@
-import { type IInjectibleService, InstantiationService } from '../platform/di/common/InstantiationService';
+import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import PhysicsWorker from './PhysicsWorker?worker';
 
 export class PhysicsContext implements IPhysicsContext {
