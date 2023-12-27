@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
+// import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
 import fs from 'fs-extra';
 import { rollup } from 'rollup';
@@ -34,6 +35,7 @@ export async function buildBrowserTarget(target: TargetConfig): Promise<void> {
       workerPlugin({ isBuild: true, target }),
       nodeResolve({ preferBuiltins: true }),
       typescript(),
+      // terser({ keep_classnames: true, module: true }),
     ],
   });
 

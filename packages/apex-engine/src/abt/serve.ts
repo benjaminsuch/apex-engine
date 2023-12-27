@@ -2,13 +2,14 @@ import { createServer, type Server } from 'node:http';
 import { join, posix, resolve } from 'node:path';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
+// import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
 import fs from 'fs-extra';
 import mime from 'mime';
 import { watch } from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import { APEX_DIR, getEngineSourceFiles, getGameMaps, getLauncherPath, type TargetConfig } from './config';
+import { APEX_DIR, getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
 import { startElectron } from './electron';
 import { readFileFromContentBase } from './file';
 import { buildInfo, htmlPlugin, replace, workerPlugin } from './plugins';
@@ -96,6 +97,7 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
           `</script>`,
         ].join('\n')
       ),
+      // terser({ keep_classnames: true, module: true }),
     ],
   });
 

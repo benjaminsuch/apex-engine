@@ -60,6 +60,7 @@ var dependencies = {
 	"@rollup/plugin-json": "^6.1.0",
 	"@rollup/plugin-node-resolve": "^15.2.3",
 	"@rollup/plugin-replace": "^5.0.5",
+	"@rollup/plugin-terser": "^0.4.4",
 	"@rollup/plugin-typescript": "^11.1.5",
 	"@rollup/plugin-virtual": "^3.0.2",
 	"@swc/core": "^1.3.101",
@@ -72,6 +73,7 @@ var dependencies = {
 	"reflect-metadata": "^0.2.1",
 	rollup: "^4.9.1",
 	three: "^0.160.0",
+	"three-stdlib": "^2.28.9",
 	ws: "^8.15.1"
 };
 var pkg = {
@@ -407,6 +409,7 @@ async function buildBrowserTarget(target) {
             workerPlugin({ isBuild: true, target }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
+            // terser({ keep_classnames: true, module: true }),
         ],
     });
     await bundle.write({
@@ -536,6 +539,7 @@ async function serveBrowserTarget(target) {
                 `  })`,
                 `</script>`,
             ].join('\n')),
+            // terser({ keep_classnames: true, module: true }),
         ],
     });
     watcher.on('event', async (event) => {

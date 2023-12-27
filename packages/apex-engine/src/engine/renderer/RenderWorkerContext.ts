@@ -1,13 +1,13 @@
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
-import PhysicsWorker from './PhysicsWorker?worker';
+import RenderWorker from './RenderWorker?worker';
 
-export class PhysicsContext implements IPhysicsContext {
+export class RenderWorkerContext implements IRenderWorkerContext {
   declare readonly _injectibleService: undefined;
 
   private readonly worker: Worker;
 
   constructor() {
-    this.worker = new PhysicsWorker();
+    this.worker = new RenderWorker();
   }
 
   public async init(): Promise<void> {
@@ -17,6 +17,6 @@ export class PhysicsContext implements IPhysicsContext {
   }
 }
 
-export interface IPhysicsContext extends IInjectibleService {}
+export interface IRenderWorkerContext extends IInjectibleService {}
 
-export const IPhysicsContext = InstantiationService.createDecorator<IPhysicsContext>('PhysicsContext');
+export const IRenderWorkerContext = InstantiationService.createDecorator<IRenderWorkerContext>('RenderWorkerContext');

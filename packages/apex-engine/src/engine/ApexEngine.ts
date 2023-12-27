@@ -1,5 +1,5 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
-import { IAssetLoader } from './assets/AssetLoader';
+import { IAssetWorkerContext } from './assets/AssetWorkerContext';
 import { GameInstance } from './GameInstance';
 
 export class ApexEngine {
@@ -23,7 +23,7 @@ export class ApexEngine {
 
   public isInitialized: boolean = false;
 
-  constructor(@IInstantiationService protected readonly instantiationService: IInstantiationService, @IAssetLoader protected readonly assetLoader: IAssetLoader) {
+  constructor(@IInstantiationService protected readonly instantiationService: IInstantiationService, @IAssetWorkerContext protected readonly assetWorker: IAssetWorkerContext) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the ApexEngine already exists.`);
     }
@@ -43,6 +43,6 @@ export class ApexEngine {
   }
 
   public async loadMap(url: string): Promise<void> {
-    const content = await this.assetLoader.loadGLTF(url);
+    const content = await this.assetWorker.loadGLTF(url);
   }
 }

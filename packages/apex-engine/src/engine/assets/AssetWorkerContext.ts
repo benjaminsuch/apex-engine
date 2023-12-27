@@ -1,7 +1,7 @@
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import AssetWorker from './AssetWorker?worker';
 
-export class AssetLoader implements IAssetLoader {
+export class AssetWorkerContext implements IAssetWorkerContext {
   declare readonly _injectibleService: undefined;
 
   private readonly worker: Worker;
@@ -38,8 +38,8 @@ export class AssetLoader implements IAssetLoader {
   }
 }
 
-export interface IAssetLoader extends IInjectibleService {
+export interface IAssetWorkerContext extends IInjectibleService {
   loadGLTF(url: string): Promise<any>;
 }
 
-export const IAssetLoader = InstantiationService.createDecorator<IAssetLoader>('AssetLoader');
+export const IAssetWorkerContext = InstantiationService.createDecorator<IAssetWorkerContext>('AssetWorkerContext');

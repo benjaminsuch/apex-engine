@@ -2,9 +2,9 @@ import { plugins } from 'build:info';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { ApexEngine } from './ApexEngine';
-import { AssetLoader, IAssetLoader } from './assets/AssetLoader';
-import { IPhysicsContext, PhysicsContext } from './physics/PhysicsContext';
-import { IRenderContext, RenderContext } from './renderer/RenderContext';
+import { AssetWorkerContext, IAssetWorkerContext } from './assets/AssetWorkerContext';
+import { IPhysicsWorkerContext, PhysicsWorkerContext } from './physics/PhysicsWorkerContext';
+import { IRenderWorkerContext, RenderWorkerContext } from './renderer/RenderWorkerContext';
 
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
@@ -27,17 +27,17 @@ export class EngineLoop {
   public async init(): Promise<void> {
     // Setup important workers
     {
-      const assetLoader = new AssetLoader();
-      this.instantiationService.setServiceInstance(IAssetLoader, assetLoader);
+      const assetContext = new AssetWorkerContext();
+      this.instantiationService.setServiceInstance(IAssetWorkerContext, assetContext);
 
-      const renderContext = new RenderContext();
-      this.instantiationService.setServiceInstance(IRenderContext, renderContext);
+      const renderContext = new RenderWorkerContext();
+      this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
 
-      const physicsContext = new PhysicsContext();
-      this.instantiationService.setServiceInstance(IPhysicsContext, physicsContext);
+      const physicsContext = new PhysicsWorkerContext();
+      this.instantiationService.setServiceInstance(IPhysicsWorkerContext, physicsContext);
 
       // The order is important. The asset loader needs to be available to load the map or cinematics.
-      await assetLoader.init();
+      await assetContext.init();
       await renderContext.init();
       await physicsContext.init();
     }
@@ -50,7 +50,9 @@ export class EngineLoop {
     }
 
     const engine = this.instantiationService.createInstance(ApexEngine);
+
     engine.init();
+    engine.start();
   }
 
   public tick(): IntervalReturn {
