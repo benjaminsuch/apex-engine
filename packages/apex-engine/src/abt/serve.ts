@@ -99,6 +99,9 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
       ),
       // terser({ keep_classnames: true, module: true }),
     ],
+    watch: {
+      buildDelay: 250,
+    },
   });
 
   watcher.on('event', async (event) => {
@@ -150,6 +153,9 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
       typescript(),
     ],
     external: ['electron'],
+    watch: {
+      buildDelay: 250,
+    },
   });
 
   main.on('event', (event) => {
@@ -187,6 +193,9 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
         }
       ),
     ],
+    watch: {
+      buildDelay: 250,
+    },
   });
 
   let isRunning = false;

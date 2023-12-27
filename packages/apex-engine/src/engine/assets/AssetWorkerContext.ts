@@ -19,27 +19,28 @@ export class AssetWorkerContext implements IAssetWorkerContext {
   public async loadGLTF(url: string): Promise<any> {
     let timeoutId: NodeJS.Timeout;
 
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<JSON>((resolve, reject) => {
       timeoutId = setTimeout(() => {
         reject(`Loading GLTF file took too long`);
       }, 60000);
 
       const handleResponse = (event: MessageEvent): void => {
-        if (event.data.id === 1) {
+        console.log('response received1', event.data);
+        if (event.data.type === 'ipc-response' && event.data.originId === 1) {
           clearTimeout(timeoutId);
           this.worker.removeEventListener('message', handleResponse);
-          resolve();
+          resolve(event.data.returnValue);
         }
       };
 
       this.worker.addEventListener('message', handleResponse);
-      this.worker.postMessage({ id: 1, type: 'ipc', name: 'loadGLTF', params: [url] });
+      this.worker.postMessage({ id: 1, type: 'ipc-request', name: 'loadGLTF', params: [url] });
     });
   }
 }
 
 export interface IAssetWorkerContext extends IInjectibleService {
-  loadGLTF(url: string): Promise<any>;
+  loadGLTF(url: string): Promise<JSON>;
 }
 
 export const IAssetWorkerContext = InstantiationService.createDecorator<IAssetWorkerContext>('AssetWorkerContext');

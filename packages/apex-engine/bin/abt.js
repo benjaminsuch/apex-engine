@@ -541,6 +541,9 @@ async function serveBrowserTarget(target) {
             ].join('\n')),
             // terser({ keep_classnames: true, module: true }),
         ],
+        watch: {
+            buildDelay: 250,
+        },
     });
     watcher.on('event', async (event) => {
         console.log(`[${new Date().toLocaleTimeString()}] [browser:watcher]`, event.code);
@@ -583,6 +586,9 @@ async function serveElectronTarget(target) {
             typescript(),
         ],
         external: ['electron'],
+        watch: {
+            buildDelay: 250,
+        },
     });
     main.on('event', (event) => {
         console.log('[electron-main:watcher]', event.code);
@@ -613,6 +619,9 @@ async function serveElectronTarget(target) {
                 ],
             }),
         ],
+        watch: {
+            buildDelay: 250,
+        },
     });
     let isRunning = false;
     sandbox.on('event', (event) => {

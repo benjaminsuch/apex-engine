@@ -43,6 +43,11 @@ export class ApexEngine {
   }
 
   public async loadMap(url: string): Promise<void> {
-    const content = await this.assetWorker.loadGLTF(url);
+    try {
+      const content = await this.assetWorker.loadGLTF(url);
+      console.log('received gltf data from worker:', content);
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
