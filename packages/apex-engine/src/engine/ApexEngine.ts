@@ -1,4 +1,5 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { IAssetWorkerContext } from './assets/AssetWorkerContext';
 import { GameInstance } from './GameInstance';
 
@@ -23,7 +24,7 @@ export class ApexEngine {
 
   public isInitialized: boolean = false;
 
-  constructor(@IInstantiationService protected readonly instantiationService: IInstantiationService, @IAssetWorkerContext protected readonly assetWorker: IAssetWorkerContext) {
+  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger, @IInstantiationService protected readonly instantiationService: IInstantiationService, @IAssetWorkerContext protected readonly assetWorker: IAssetWorkerContext) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the ApexEngine already exists.`);
     }
@@ -43,9 +44,11 @@ export class ApexEngine {
   }
 
   public async loadMap(url: string): Promise<void> {
+    this.logger.info('Attempting to load map:', url);
+
     try {
       const content = await this.assetWorker.loadGLTF(url);
-      console.log('received gltf data from worker:', content);
+      this.logger.info('Map loaded:', content);
     } catch (error) {
       console.log(error);
     }

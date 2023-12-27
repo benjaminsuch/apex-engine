@@ -27,13 +27,13 @@ export class EngineLoop {
   public async init(): Promise<void> {
     // Setup important workers
     {
-      const assetContext = new AssetWorkerContext();
+      const assetContext = this.instantiationService.createInstance(AssetWorkerContext);
       this.instantiationService.setServiceInstance(IAssetWorkerContext, assetContext);
 
-      const renderContext = new RenderWorkerContext();
+      const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
       this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
 
-      const physicsContext = new PhysicsWorkerContext();
+      const physicsContext = this.instantiationService.createInstance(PhysicsWorkerContext);
       this.instantiationService.setServiceInstance(IPhysicsWorkerContext, physicsContext);
 
       // The order is important. The asset loader needs to be available to load the map or cinematics.

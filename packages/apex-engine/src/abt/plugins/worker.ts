@@ -6,6 +6,7 @@ import typescript from '@rollup/plugin-typescript';
 import { type InputPluginOption, type OutputChunk, rollup, type RollupBuild } from 'rollup';
 
 import { APEX_DIR, type TargetConfig } from '../config';
+import { replace } from '.';
 
 const _require = createRequire(import.meta.url);
 
@@ -83,7 +84,11 @@ export function workerPlugin({
       try {
         bundle = await rollup({
           input: id,
-          plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+          plugins: [
+            replace(target),
+            nodeResolve({ preferBuiltins: true }),
+            typescript(),
+          ],
           onwarn() {},
         });
 

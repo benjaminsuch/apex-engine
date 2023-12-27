@@ -9,7 +9,7 @@ export class GameInstance {
 
   public start(): void {
     this.engine.loadMap(DEFAULT_MAP).then(() => {
-      console.log('Default map loaded.');
+
     });
   }
 }

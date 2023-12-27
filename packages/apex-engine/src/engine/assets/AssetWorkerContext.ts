@@ -1,4 +1,5 @@
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import AssetWorker from './AssetWorker?worker';
 
 export class AssetWorkerContext implements IAssetWorkerContext {
@@ -6,7 +7,7 @@ export class AssetWorkerContext implements IAssetWorkerContext {
 
   private readonly worker: Worker;
 
-  constructor() {
+  constructor(@IConsoleLogger private readonly logger: IConsoleLogger) {
     this.worker = new AssetWorker();
   }
 
@@ -25,7 +26,7 @@ export class AssetWorkerContext implements IAssetWorkerContext {
       }, 60000);
 
       const handleResponse = (event: MessageEvent): void => {
-        console.log('response received1', event.data);
+        this.logger.debug('Response received from AssetWorker:', event.data);
         if (event.data.type === 'ipc-response' && event.data.originId === 1) {
           clearTimeout(timeoutId);
           this.worker.removeEventListener('message', handleResponse);

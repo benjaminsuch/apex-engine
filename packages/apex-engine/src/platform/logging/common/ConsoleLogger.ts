@@ -15,7 +15,7 @@ export class ConsoleLogger extends AbstractLogger implements IConsoleLogger {
   }
 
   public info(message: string, ...args: any[]): void {
-    console.log('%cINFO', 'color: #42e9f5', message, ...args);
+    console.info('%cINFO', 'color: #42e9f5', message, ...args);
   }
 
   public warn(message: string, ...args: any[]): void {

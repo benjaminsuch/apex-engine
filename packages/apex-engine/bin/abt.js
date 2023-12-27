@@ -302,7 +302,11 @@ function workerPlugin({ inline, isBuild = false, target, }) {
             try {
                 bundle = await rollup({
                     input: id,
-                    plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+                    plugins: [
+                        replacePlugin(target),
+                        nodeResolve({ preferBuiltins: true }),
+                        typescript(),
+                    ],
                     onwarn() { },
                 });
                 const { output } = await bundle.generate({ sourcemap: false });
