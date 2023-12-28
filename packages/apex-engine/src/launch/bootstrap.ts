@@ -11,3 +11,4 @@
  *
  * Improtant: Code in this file will be executed before all other bootstrap files.
  */
+import 'reflect-metadata';
