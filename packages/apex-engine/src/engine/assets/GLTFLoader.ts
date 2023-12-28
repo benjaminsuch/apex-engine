@@ -1,10 +1,15 @@
-import { type GLTF, GLTFLoader as BaseGLTFLoader } from 'three-stdlib';
+import { DRACOLoader, type GLTF, GLTFLoader as BaseGLTFLoader } from 'three-stdlib';
 
 export class GLTFLoader {
   private readonly loader: BaseGLTFLoader;
 
   constructor() {
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    dracoLoader.setDecoderConfig({ type: 'js' });
+
     this.loader = new BaseGLTFLoader();
+    this.loader.setDRACOLoader(dracoLoader);
   }
 
   public load(

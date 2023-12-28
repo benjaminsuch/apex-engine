@@ -573,6 +573,16 @@ async function serveBrowserTarget(target) {
 async function serveElectronTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/electron');
     process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
+    fs.copy('src/assets', resolve(buildDir, 'assets'), (err) => {
+        if (err) {
+            console.error('Error copying folder:', err);
+        }
+    });
+    fs.copy('src/game/maps', resolve(buildDir, 'maps'), (err) => {
+        if (err) {
+            console.error('Error copying folder:', err);
+        }
+    });
     const main = watch({
         input: {
             main: getLauncherPath('electron-main'),

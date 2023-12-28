@@ -136,6 +136,18 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
 
   process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
 
+  fs.copy('src/assets', resolve(buildDir, 'assets'), (err: any) => {
+    if (err) {
+      console.error('Error copying folder:', err);
+    }
+  });
+
+  fs.copy('src/game/maps', resolve(buildDir, 'maps'), (err: any) => {
+    if (err) {
+      console.error('Error copying folder:', err);
+    }
+  });
+
   const main = watch({
     input: {
       main: getLauncherPath('electron-main'),
