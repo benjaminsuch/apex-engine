@@ -9,9 +9,6 @@ export interface IProxyOrigin {
   readonly id?: number;
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
-  // todo: Remove
-  readonly proxyMessageChannel: MessageChannel;
-  getProxyMessagePort(): MessagePort;
 }
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
@@ -39,10 +36,6 @@ export function proxy(proxyClass: TClass) {
 
       public static readonly proxyClassName: string = proxyClass.name;
 
-      // todo: We should only create a message channel for classes that have rpcs.
-      // todo: I don't think we have to store the message channel and instead could just store the port1 and port2.
-      public readonly proxyMessageChannel!: MessageChannel;
-
       public readonly tripleBuffer!: TripleBuffer;
 
       public readonly byteView!: Uint8Array;
@@ -52,7 +45,8 @@ export function proxy(proxyClass: TClass) {
       constructor(...args: any[]) {
         super(...args);
 
-        // This check is necessary, to prevent parent classes to also push into the `messageQueue`.
+        // This check is necessary, to prevent allocating memory in case this class is a parent
+        // class of another proxy origin.
         //
         // Here's a more detailed explanation:
         // When a class is assigned the `proxy` specifier, the original class is exchanged with this
@@ -67,8 +61,8 @@ export function proxy(proxyClass: TClass) {
         //
         // This fact leads to a problem when you instantiate `MeshComponent`. The code in this
         // constructor is not execute once, but twice (`class extends SceneComponent` executes it too).
-        // As a consequence of that,we would allocate more memory and push two objects into `messageQueue`
-        // (from `MessageComponent` and `class extends SceneComponent`).
+        // As a consequence of that, we would allocate more memory (from `MessageComponent` and
+        // `class extends SceneComponent`).
         //
         // The check below ensures that we only run our constructor code, when the prototype matches the
         // original class constructor.
@@ -208,7 +202,7 @@ export function proxy(proxyClass: TClass) {
 
                 accessors = {
                   get(this): Matrix4 {
-                    return Reflect.getMetadata('value', this, key);
+                    return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: Matrix4): void {
                     setMat4(this, key, val, dv, offset);
@@ -229,7 +223,7 @@ export function proxy(proxyClass: TClass) {
 
                 accessors = {
                   get(this): Quaternion {
-                    return Reflect.getMetadata('value', this, key);
+                    return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: Quaternion): void {
                     setQuat(this, key, val, dv, offset);
@@ -247,7 +241,7 @@ export function proxy(proxyClass: TClass) {
 
                 accessors = {
                   get(this): InstanceType<TClass> {
-                    return Reflect.getMetadata('value', this, key);
+                    return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: InstanceType<TClass>): void {
                     const refId = getTargetId(val) ?? id(val);
@@ -348,7 +342,7 @@ export function proxy(proxyClass: TClass) {
 
                 accessors = {
                   get(this): Vector2 {
-                    return Reflect.getMetadata('value', this, key);
+                    return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: Vector2): void {
                     setVec2(this, key, val, dv, offset);
@@ -382,14 +376,6 @@ export function proxy(proxyClass: TClass) {
             }
           }
         }
-
-        // We only create the message channel, but don't listen to any incoming messages.
-        // Currently there is no reason for Proxies to send messages back, but this may change in the future.
-        this.proxyMessageChannel = new MessageChannel();
-      }
-
-      public getProxyMessagePort(): MessagePort {
-        return this.proxyMessageChannel.port2;
       }
     };
   };
