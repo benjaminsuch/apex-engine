@@ -1,5 +1,7 @@
 import { DRACOLoader, type GLTF, GLTFLoader as BaseGLTFLoader } from 'three-stdlib';
 
+export type GLTFOnLoadResult = Pick<GLTF, 'animations' | 'cameras' | 'scenes'>;
+
 export class GLTFLoader {
   private readonly loader: BaseGLTFLoader;
 
@@ -14,15 +16,15 @@ export class GLTFLoader {
 
   public load(
     url: string,
-    onLoad: (gltf: Pick<GLTF, 'animations' | 'scene'>) => void,
+    onLoad: (gltf: GLTFOnLoadResult) => void,
     onProgress?: ((event: ProgressEvent<EventTarget>) => void) | undefined,
     onError?: ((event: ErrorEvent) => void) | undefined
   ): void {
     this.loader.load(
       url,
       (gltf) => {
-        const { animations, scene } = gltf;
-        onLoad({ animations, scene });
+        const { animations, cameras, scenes } = gltf;
+        onLoad({ animations, cameras, scenes });
       },
       onProgress,
       onError

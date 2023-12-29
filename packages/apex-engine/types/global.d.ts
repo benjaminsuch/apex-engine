@@ -22,6 +22,8 @@ declare global {
   type TypeOfClassMethod<T, M extends keyof T> = T[M] extends Function ? T[M] : never;
 
   type IntervalReturn = number | NodeJS.Timer | undefined;
+
+  type TimeoutReturn = number | NodeJS.Timeout | undefined;
 }
 
 export {};

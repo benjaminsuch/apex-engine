@@ -1,3 +1,6 @@
+import * as Comlink from 'comlink';
+import { type GLTF } from 'three-stdlib';
+
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import AssetWorker from './AssetWorker?worker';
@@ -7,8 +10,11 @@ export class AssetWorkerContext implements IAssetWorkerContext {
 
   private readonly worker: Worker;
 
+  private readonly comlink: Comlink.Remote<IAssetWorkerContext>;
+
   constructor(@IConsoleLogger private readonly logger: IConsoleLogger) {
     this.worker = new AssetWorker();
+    this.comlink = Comlink.wrap<IAssetWorkerContext>(this.worker);
   }
 
   public async init(): Promise<void> {
@@ -17,31 +23,15 @@ export class AssetWorkerContext implements IAssetWorkerContext {
     });
   }
 
-  public async loadGLTF(url: string): Promise<any> {
-    let timeoutId: NodeJS.Timeout;
-
-    return new Promise<JSON>((resolve, reject) => {
-      timeoutId = setTimeout(() => {
-        reject(`Loading GLTF file took too long`);
-      }, 60000);
-
-      const handleResponse = (event: MessageEvent): void => {
-        this.logger.debug('Response received from AssetWorker:', event.data);
-        if (event.data.type === 'ipc-response' && event.data.originId === 1) {
-          clearTimeout(timeoutId);
-          this.worker.removeEventListener('message', handleResponse);
-          resolve(event.data.returnValue);
-        }
-      };
-
-      this.worker.addEventListener('message', handleResponse);
-      this.worker.postMessage({ id: 1, type: 'ipc-request', name: 'loadGLTF', params: [url] });
-    });
+  public async loadGLTF(url: string): Promise<GLTFResult> {
+    return this.comlink.loadGLTF(url);
   }
 }
 
+export type GLTFResult = Pick<GLTF, 'animations' | 'scene'>;
+
 export interface IAssetWorkerContext extends IInjectibleService {
-  loadGLTF(url: string): Promise<JSON>;
+  loadGLTF(url: string): Promise<GLTFResult>;
 }
 
 export const IAssetWorkerContext = InstantiationService.createDecorator<IAssetWorkerContext>('AssetWorkerContext');
