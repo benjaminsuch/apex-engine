@@ -2,6 +2,8 @@ import { type GetLeadingNonServiceArgs, IInstantiationService } from '../platfor
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type ActorComponent } from './components/ActorComponent';
 import { type SceneComponent } from './components/SceneComponent';
+import { type Level } from './Level';
+import { type World } from './World';
 
 export type ActorComponentType = new (...args: any[]) => ActorComponent;
 
@@ -9,12 +11,11 @@ export class Actor {
   protected rootComponent?: SceneComponent;
 
   public setRootComponent(component: SceneComponent): boolean {
-    // todo: Dispose previous root component
-    // todo: Send message to render-thread
     if (component === this.rootComponent) {
       return false;
     }
 
+    // ? Can we just override?
     if (this.rootComponent) {
       this.logger.warn(`Cannot set root component: A root component is already defined.`);
       return false;
@@ -32,7 +33,7 @@ export class Actor {
     return this.rootComponent;
   }
 
-  public readonly components: Set<ActorComponent> = new Set();
+  public readonly components: ActorComponent[] = [];
 
   public getComponent<T extends ActorComponentType>(ComponentClass: T): InstanceType<T> | void {
     for (const component of this.components) {
@@ -43,7 +44,7 @@ export class Actor {
   }
 
   public hasComponent(component: ActorComponent): boolean {
-    return this.components.has(component);
+    return this.components.includes(component);
   }
 
   public addComponent<T extends ActorComponentType, R extends InstanceType<T>>(
@@ -55,14 +56,44 @@ export class Actor {
     const component = this.instantiationService.createInstance(ComponentClass, ...args) as R;
 
     component.registerWithActor(this);
-    this.components.add(component);
+    this.components.push(component);
 
     return component;
+  }
+
+  private level?: Level;
+
+  public getLevel(): Level {
+    if (!this.level) {
+      throw new Error(`This actor has not been added to a level.`);
+    }
+    return this.level;
+  }
+
+  private world?: World;
+
+  public getWorld(): World {
+    if (!this.world) {
+      throw new Error(`This actor is not part of a world.`);
+    }
+    return this.world;
   }
 
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-  ) {
+  ) {}
+
+  public registerWithLevel(level: Level): void {
+    if (level.hasActor(this)) {
+      throw new Error(`This instance is already registered in this level.`);
+    }
+
+    this.level = level;
+    this.world = level.world;
+
+    this.onRegister();
   }
+
+  protected onRegister(): void {}
 }

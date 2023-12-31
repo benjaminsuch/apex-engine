@@ -2,6 +2,7 @@ import { IInstantiationService } from '../platform/di/common/InstantiationServic
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { IAssetWorkerContext } from './assets/AssetWorkerContext';
 import { GameInstance } from './GameInstance';
+import { Level } from './Level';
 
 export class ApexEngine {
   private static instance?: ApexEngine;
@@ -24,7 +25,11 @@ export class ApexEngine {
 
   public isInitialized: boolean = false;
 
-  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger, @IInstantiationService protected readonly instantiationService: IInstantiationService, @IAssetWorkerContext protected readonly assetWorker: IAssetWorkerContext) {
+  constructor(
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
+    @IInstantiationService protected readonly instantiationService: IInstantiationService,
+    @IAssetWorkerContext protected readonly assetWorker: IAssetWorkerContext
+  ) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the ApexEngine already exists.`);
     }
@@ -44,13 +49,25 @@ export class ApexEngine {
   }
 
   public async loadMap(url: string): Promise<void> {
-    this.logger.info('Attempting to load map:', url);
-
+    // todo: Dispose previous level
     try {
+      this.logger.info('Attempting to load map:', url);
+
+      const world = this.getGameInstance().getWorld();
+
+      if (!world.isInitialized) {
+        throw new Error(`Cannot load map: World is not initialized.`);
+      }
+
       const content = await this.assetWorker.loadGLTF(url);
-      this.logger.info('Map loaded:', content);
+      const level = this.instantiationService.createInstance(Level);
+
+      world.setCurrentLevel(level);
+      level.load(content);
+
+      this.logger.info('Map content loaded');
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
 }

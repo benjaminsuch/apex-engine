@@ -1,8 +1,9 @@
 import * as Comlink from 'comlink';
-import { type GLTF } from 'three-stdlib';
+import * as THREE from 'three';
 
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
+import { type LoadGLTFResponse } from './AssetWorker';
 import AssetWorker from './AssetWorker?worker';
 
 export class AssetWorkerContext implements IAssetWorkerContext {
@@ -23,15 +24,13 @@ export class AssetWorkerContext implements IAssetWorkerContext {
     });
   }
 
-  public async loadGLTF(url: string): Promise<GLTFResult> {
+  public async loadGLTF(url: string): Promise<LoadGLTFResponse> {
     return this.comlink.loadGLTF(url);
   }
 }
 
-export type GLTFResult = Pick<GLTF, 'animations' | 'scene'>;
-
 export interface IAssetWorkerContext extends IInjectibleService {
-  loadGLTF(url: string): Promise<GLTFResult>;
+  loadGLTF(url: string): Promise<LoadGLTFResponse>;
 }
 
 export const IAssetWorkerContext = InstantiationService.createDecorator<IAssetWorkerContext>('AssetWorkerContext');

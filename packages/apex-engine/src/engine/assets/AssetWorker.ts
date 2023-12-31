@@ -1,14 +1,13 @@
 import * as Comlink from 'comlink';
 
-import { GLTFLoader, type GLTFOnLoadResult } from './GLTFLoader';
+import { GLTFLoader } from './GLTFLoader';
 
 const gltfLoader = new GLTFLoader();
 
 const context = {
-  loadGLTF(url: string): Promise<GLTFOnLoadResult> {
+  loadGLTF(url: string): Promise<LoadGLTFResponse> {
     return new Promise((resolve, reject) => {
       gltfLoader.load(`../${url}`, (gltf) => {
-        console.log('GLTF file loaded:', gltf);
         resolve({
           scenes: gltf.scenes.map(scene => scene.toJSON()),
           animations: [],
@@ -17,6 +16,14 @@ const context = {
       });
     });
   },
-};
+} as const;
+
+export interface LoadGLTFResponse {
+  animations: any[];
+  cameras: any[];
+  scenes: any[];
+}
+
+export type ExposedAssetWorkerContext = typeof context;
 
 Comlink.expose(context);
