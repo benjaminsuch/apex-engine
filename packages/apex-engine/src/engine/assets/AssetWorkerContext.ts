@@ -1,5 +1,4 @@
 import * as Comlink from 'comlink';
-import * as THREE from 'three';
 
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';

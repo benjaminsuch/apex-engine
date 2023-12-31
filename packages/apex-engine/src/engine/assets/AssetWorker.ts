@@ -24,6 +24,4 @@ export interface LoadGLTFResponse {
   scenes: any[];
 }
 
-export type ExposedAssetWorkerContext = typeof context;
-
 Comlink.expose(context);

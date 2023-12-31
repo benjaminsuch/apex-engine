@@ -1,3 +1,5 @@
+import * as Comlink from 'comlink';
+
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import RenderWorker from './RenderWorker?worker';
 
@@ -6,8 +8,11 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
   private readonly worker: Worker;
 
+  private readonly comlink: Comlink.Remote<IRenderWorkerContext>;
+
   constructor() {
     this.worker = new RenderWorker();
+    this.comlink = Comlink.wrap<IRenderWorkerContext>(this.worker);
   }
 
   public async init(): Promise<void> {
