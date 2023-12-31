@@ -1,5 +1,6 @@
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type Actor } from './Actor';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { type GameInstance } from './GameInstance';
 import { type Level } from './Level';
 
@@ -42,6 +43,8 @@ export class World {
     this.gameInstance = gameInstance;
     this.isInitialized = true;
   }
+
+  public tick(tick: IEngineLoopTickContext): void {}
 
   public beginPlay(): void {
     this.logger.debug(this.constructor.name, 'Begin Play');

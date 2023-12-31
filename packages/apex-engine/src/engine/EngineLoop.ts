@@ -6,6 +6,12 @@ import { AssetWorkerContext, IAssetWorkerContext } from './assets/AssetWorkerCon
 import { IPhysicsWorkerContext, PhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { IRenderWorkerContext, RenderWorkerContext } from './renderer/RenderWorkerContext';
 
+export interface IEngineLoopTickContext {
+  id: number;
+  delta: number;
+  elapsed: number;
+}
+
 const TICK_RATE = 60;
 const MS_PER_UPDATE = 1000 / TICK_RATE;
 

@@ -1,10 +1,20 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { IAssetWorkerContext } from './assets/AssetWorkerContext';
+import { TripleBuffer } from './core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { GameInstance } from './GameInstance';
 import { Level } from './Level';
 
 export class ApexEngine {
+  public static GAME_FLAGS: Uint8Array = new Uint8Array(
+    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
+  ).fill(0x6);
+
+  public static RENDER_FLAGS: Uint8Array = new Uint8Array(
+    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
+  ).fill(0x6);
+
   private static instance?: ApexEngine;
 
   public static getInstance(): ApexEngine {
@@ -42,6 +52,14 @@ export class ApexEngine {
     this.gameInstance.init();
 
     this.isInitialized = true;
+  }
+
+  public tick(tick: IEngineLoopTickContext): void {
+    TripleBuffer.swapReadBufferFlags(ApexEngine.RENDER_FLAGS);
+
+    this.getGameInstance().getWorld().tick(tick);
+
+    TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
   }
 
   public start(): void {
