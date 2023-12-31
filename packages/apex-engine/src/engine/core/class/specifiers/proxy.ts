@@ -13,10 +13,6 @@ export interface IProxyOrigin {
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
 
-const GAME_FLAGS = new Uint8Array(
-  new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
-).fill(0x6);
-
 /**
  * @param proxyClass The class which is used to instantiate the proxy on the render-thread.
  * @returns An anonymous class that is derived from the original class.
@@ -76,7 +72,7 @@ export function proxy(proxyClass: TClass) {
         const dv = new DataView(buf);
 
         this.byteView = new Uint8Array(buf);
-        this.tripleBuffer = new TripleBuffer(GAME_FLAGS, bufSize);
+        this.tripleBuffer = new TripleBuffer(ApexEngine.GAME_FLAGS, bufSize);
 
         for (const key in schema) {
           const propSchema = schema[key];
