@@ -84,6 +84,12 @@ export class Actor {
     @IConsoleLogger protected readonly logger: IConsoleLogger,
   ) {}
 
+  public beginPlay(): void {
+    for (const component of this.components) {
+      component.beginPlay();
+    }
+  }
+
   public registerWithLevel(level: Level): void {
     if (level.hasActor(this)) {
       throw new Error(`This instance is already registered in this level.`);

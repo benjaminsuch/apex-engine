@@ -44,6 +44,16 @@ export class Level {
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {}
 
+  public initActors(): void {}
+
+  public beginPlay(): void {
+    this.logger.debug(this.constructor.name, 'Begin play');
+  }
+
+  public isCurrentLevel(): boolean {
+    return this.world?.getCurrentLevel() === this;
+  }
+
   public load(content: LoadGLTFResponse): void {
     this.logger.debug('Loading content for level');
 

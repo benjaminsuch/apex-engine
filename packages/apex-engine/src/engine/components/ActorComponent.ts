@@ -20,12 +20,13 @@ export class ActorComponent {
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-  ) {
-  }
+  ) {}
 
   public init(): void {
     this.isInitialized = true;
   }
+
+  public beginPlay(): void {}
 
   public registerWithActor(actor: Actor): void {
     if (actor.hasComponent(this)) {

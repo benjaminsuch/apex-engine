@@ -46,8 +46,31 @@ export class World {
 
   public tick(tick: IEngineLoopTickContext): void {}
 
+  public initActorsForPlay(): void {
+    if (!this.isInitialized) {
+      throw new Error(`World has not been initialized.`);
+    }
+
+    this.logger.debug(
+      this.constructor.name,
+      'Initialize actors for play',
+      IS_BROWSER ? this.actors : this.actors.length
+    );
+
+    if (this.currentLevel) {
+      this.currentLevel.initActors();
+    }
+  }
+
   public beginPlay(): void {
     this.logger.debug(this.constructor.name, 'Begin Play');
+    this.getCurrentLevel().beginPlay();
+
+    for (const actor of this.actors) {
+      actor.beginPlay();
+    }
+    // todo: StartPlay via GameMode
+    // todo: Broadcast begin-play event
   }
 
   public spawnActor<T extends typeof Actor>(
