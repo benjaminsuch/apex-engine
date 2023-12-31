@@ -37,6 +37,12 @@ export async function buildBrowserTarget(target: TargetConfig): Promise<void> {
       typescript(),
       // terser({ keep_classnames: true, module: true }),
     ],
+    onwarn(warning, warn) {
+      if (warning.message.includes('Circular dependency')) {
+        return;
+      }
+      warn(warning);
+    },
   });
 
   await bundle.write({

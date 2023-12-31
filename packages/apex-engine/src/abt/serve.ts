@@ -102,6 +102,12 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
     watch: {
       buildDelay: 250,
     },
+    onwarn(warning, warn) {
+      if (warning.message.includes('Circular dependency')) {
+        return;
+      }
+      warn(warning);
+    },
   });
 
   watcher.on('event', async (event) => {

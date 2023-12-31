@@ -66,6 +66,7 @@ var dependencies = {
 	"@swc/core": "^1.3.101",
 	"@types/mime": "^3.0.4",
 	cac: "^6.7.14",
+	comlink: "^4.4.1",
 	electron: "^28.1.0",
 	"fast-glob": "^3.3.2",
 	"fs-extra": "^11.2.0",
@@ -415,6 +416,12 @@ async function buildBrowserTarget(target) {
             typescript(),
             // terser({ keep_classnames: true, module: true }),
         ],
+        onwarn(warning, warn) {
+            if (warning.message.includes('Circular dependency')) {
+                return;
+            }
+            warn(warning);
+        },
     });
     await bundle.write({
         dir: buildDir,
@@ -547,6 +554,12 @@ async function serveBrowserTarget(target) {
         ],
         watch: {
             buildDelay: 250,
+        },
+        onwarn(warning, warn) {
+            if (warning.message.includes('Circular dependency')) {
+                return;
+            }
+            warn(warning);
         },
     });
     watcher.on('event', async (event) => {
