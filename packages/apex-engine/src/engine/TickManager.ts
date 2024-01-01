@@ -10,12 +10,12 @@ export enum ETickGroup {
   MAX,
 }
 
-export class TickFunctionManager {
-  private static instance?: TickFunctionManager;
+export class TickManager {
+  private static instance?: TickManager;
 
-  public static getInstance(): TickFunctionManager {
+  public static getInstance(): TickManager {
     if (!this.instance) {
-      throw new Error(`No instance of TickFunctionManager available.`);
+      throw new Error(`No instance of TickManager available.`);
     }
     return this.instance;
   }
@@ -56,15 +56,15 @@ export class TickFunctionManager {
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {
-    if (TickFunctionManager.instance) {
-      throw new Error(`An instance of TickFunctionManager already exists.`);
+    if (TickManager.instance) {
+      throw new Error(`An instance of TickManager already exists.`);
     }
 
     for (let i = 0; i < ETickGroup.MAX; ++i) {
       this.tickGroups.push([]);
     }
 
-    TickFunctionManager.instance = this;
+    TickManager.instance = this;
   }
 
   public addTickFunction<T extends TickFunction<any>>(tickFunction: T): boolean {
@@ -242,7 +242,7 @@ export class TickFunction<T> {
    * @returns `true` if successful, `false` otherwise
    */
   public enable(): boolean {
-    return TickFunctionManager.getInstance().enableTickFunction(this);
+    return TickManager.getInstance().enableTickFunction(this);
   }
 
   /**
@@ -254,12 +254,12 @@ export class TickFunction<T> {
    * @returns `true` if successful, `false` otherwise
    */
   public disable(): boolean {
-    return TickFunctionManager.getInstance().disableTickFunction(this);
+    return TickManager.getInstance().disableTickFunction(this);
   }
 
   public register(): boolean {
     if (!this.isRegistered) {
-      return TickFunctionManager.getInstance().addTickFunction(this);
+      return TickManager.getInstance().addTickFunction(this);
     }
     return false;
   }

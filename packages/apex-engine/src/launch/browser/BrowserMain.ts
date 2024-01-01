@@ -16,6 +16,9 @@ export class BrowserMain {
 
   public init(): void {
     const engineLoop = this.instantiationService.createInstance(EngineLoop);
-    engineLoop.init();
+
+    engineLoop.init().then(() => {
+      engineLoop.tick();
+    });
   }
 }

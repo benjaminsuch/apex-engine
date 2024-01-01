@@ -5,7 +5,7 @@ import { ApexEngine } from './ApexEngine';
 import { AssetWorkerContext, IAssetWorkerContext } from './assets/AssetWorkerContext';
 import { IPhysicsWorkerContext, PhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { IRenderWorkerContext, RenderWorkerContext } from './renderer/RenderWorkerContext';
-import { TickFunctionManager } from './TickFunctionManager';
+import { TickManager } from './TickManager';
 
 export interface IEngineLoopTickContext {
   id: number;
@@ -19,18 +19,18 @@ const MS_PER_UPDATE = 1000 / TICK_RATE;
 export class EngineLoop {
   private tickInterval: IntervalReturn;
 
-  private tickManager: TickFunctionManager;
+  private tickManager: TickManager;
+
+  private ticks: number = 0;
 
   public delta: number = 0;
 
   public elapsed: number = 0;
 
-  public ticks: number = 0;
-
   public fps: number = 0;
 
   constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
-    this.tickManager = this.instantiationService.createInstance(TickFunctionManager);
+    this.tickManager = this.instantiationService.createInstance(TickManager);
   }
 
   public async init(): Promise<void> {
