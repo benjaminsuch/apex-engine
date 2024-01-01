@@ -1,5 +1,5 @@
 import * as Comlink from 'comlink';
-import { BoxGeometry, type Camera, Color, Fog, LinearToneMapping, Mesh, MeshPhongMaterial, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { BoxGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight, LinearToneMapping, Mesh, MeshPhongMaterial, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
@@ -64,12 +64,27 @@ function onInit(event: MessageEvent): void {
     context.scene.background = new Color(0xa0a0a0);
     context.scene.fog = new Fog(0xa0a0a0, 65, 75);
 
-    const cube = new Mesh(
-      new BoxGeometry(1, 1, 1),
-      new MeshPhongMaterial({ color: 0xeb4034, depthWrite: false })
-    );
+    const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 3);
+    hemiLight.position.set(0, 20, 0);
+
+    context.scene.add(hemiLight);
+
+    const dirLight = new DirectionalLight(0xffffff, 3);
+    dirLight.castShadow = true;
+    dirLight.shadow.camera.top = 2;
+    dirLight.shadow.camera.bottom = -2;
+    dirLight.shadow.camera.left = -2;
+    dirLight.shadow.camera.right = 2;
+    dirLight.shadow.camera.near = 0.1;
+    dirLight.shadow.camera.far = 40;
+    dirLight.position.set(-1, 2, 4);
+
+    context.scene.add(dirLight);
+
+    const cube = new Mesh(new BoxGeometry(1, 1, 1), new MeshPhongMaterial({ color: 0xeb4034, depthWrite: false }));
     cube.name = 'TestCube';
     cube.visible = true;
+
     context.scene.add(cube);
 
     context.setSize(initialHeight, initialWidth);
