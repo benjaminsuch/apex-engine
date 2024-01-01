@@ -1,6 +1,7 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type ApexEngine } from './ApexEngine';
+import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { World } from './World';
 
 export class GameInstance {
@@ -16,7 +17,8 @@ export class GameInstance {
   constructor(
     private readonly engine: ApexEngine,
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected readonly logger: IConsoleLogger
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
+    @IRenderWorkerContext protected readonly renderWorker: IRenderWorkerContext
   ) {}
 
   public init(): void {
@@ -28,6 +30,7 @@ export class GameInstance {
 
   public start(): void {
     this.engine.loadMap(DEFAULT_MAP).then(() => {
+      this.renderWorker.start();
       this.getWorld().beginPlay();
     });
   }

@@ -1,6 +1,6 @@
 import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
-import { ApexEngine } from '../../../ApexEngine';
+import { Flags } from '../../../Flags';
 import { TripleBuffer } from '../../memory/TripleBuffer';
 import { getClassSchema, getTargetId, isPropSchema } from '../decorators';
 import { id } from './id';
@@ -72,7 +72,7 @@ export function proxy(proxyClass: TClass) {
         const dv = new DataView(buf);
 
         this.byteView = new Uint8Array(buf);
-        this.tripleBuffer = new TripleBuffer(ApexEngine.GAME_FLAGS, bufSize);
+        this.tripleBuffer = new TripleBuffer(Flags.GAME_FLAGS, bufSize);
 
         for (const key in schema) {
           const propSchema = schema[key];

@@ -3,6 +3,7 @@ import { plugins } from 'build:info';
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { ApexEngine } from './ApexEngine';
 import { AssetWorkerContext, IAssetWorkerContext } from './assets/AssetWorkerContext';
+import { Flags } from './Flags';
 import { IPhysicsWorkerContext, PhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { IRenderWorkerContext, RenderWorkerContext } from './renderer/RenderWorkerContext';
 import { TickManager } from './TickManager';
@@ -47,7 +48,7 @@ export class EngineLoop {
 
       // The order is important. The asset loader needs to be available to load the map or cinematics.
       await assetContext.init();
-      await renderContext.init();
+      await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
       await physicsContext.init();
     }
 
