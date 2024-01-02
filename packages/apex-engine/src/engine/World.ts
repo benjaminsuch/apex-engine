@@ -50,7 +50,7 @@ export class World {
 
   public tick(tick: IEngineLoopTickContext): void {
     TickManager.getInstance().startTick(tick, this);
-    console.log('last frame', this.renderWorker.getRendererInfo().lastFrame);
+
     this.runTickGroup(ETickGroup.PrePhysics);
     this.runTickGroup(ETickGroup.DuringPhysics);
     this.runTickGroup(ETickGroup.PostPhysics);

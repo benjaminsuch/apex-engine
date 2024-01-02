@@ -32,7 +32,6 @@ const context: IInternalRenderWorkerContext = {
   scene: new Scene(),
   webGLRenderer: null!,
   createProxies(proxies) {
-    console.log('create proxies from render-thread!', proxies);
   },
   start() {
     this.webGLRenderer.setAnimationLoop(time => this.tick(time));
