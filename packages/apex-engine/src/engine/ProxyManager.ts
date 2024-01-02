@@ -2,6 +2,7 @@ import { IInstantiationService } from '../platform/di/common/InstantiationServic
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { components } from './components';
 import { type IProxyOrigin } from './core/class/specifiers/proxy';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { type RenderProxy } from './renderer/RenderProxy';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { ETickGroup, TickFunction } from './TickManager';
@@ -65,7 +66,7 @@ export class ProxyManager<T> {
 
   public init(): void {}
 
-  public tick(): void {}
+  public tick(tick: IEngineLoopTickContext): void {}
 
   protected registerTickFunctions(): void {
     if (!this.managerTick.isRegistered) {
@@ -89,8 +90,8 @@ export class GameProxyManager extends ProxyManager<IProxyOrigin> {
     super(instantiationService, logger);
   }
 
-  public override tick(): void {
-    super.tick();
+  public override tick(tick: IEngineLoopTickContext): void {
+    super.tick(tick);
 
     if (this.proxyQueue.length > 0) {
       this.renderWorker.createProxies(this.proxyQueue);
@@ -122,6 +123,18 @@ export class RenderProxyManager extends ProxyManager<RenderProxy> {
     for (const proxy of this.proxies) {
       if (proxy.id === id) {
         return proxy;
+      }
+    }
+  }
+
+  public override tick(tick: IEngineLoopTickContext): void {
+    super.tick(tick);
+
+    for (let i = 0; i < this.proxies.entries; ++i) {
+      const proxy = this.proxies.getProxyByIndex(i);
+
+      if (proxy) {
+        proxy.tick(tick);
       }
     }
   }
@@ -161,7 +174,7 @@ class ProxyRegistry<T> {
 }
 
 class ProxyManagerTickFunction extends TickFunction<ProxyManager<any>> {
-  public override run(): void {
-    this.target.tick();
+  public override run(tick: IEngineLoopTickContext): void {
+    this.target.tick(tick);
   }
 }

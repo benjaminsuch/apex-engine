@@ -1,5 +1,6 @@
 import { getClassSchema, isPropSchema } from '../core/class/decorators';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type IInternalRenderWorkerContext } from './RenderWorker';
 
 export abstract class RenderProxy {
@@ -80,7 +81,7 @@ export abstract class RenderProxy {
     }
   }
 
-  // public tick(tick: IRenderTickContext) {}
+  public tick(tick: IEngineLoopTickContext): void {}
 }
 
 const getters = new Map<TypedArray, string>([
