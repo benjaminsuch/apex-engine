@@ -12,7 +12,7 @@ import { RenderingInfo } from './RenderingInfo';
 export interface IInternalRenderWorkerContext {
   camera: Camera;
   frameId: number;
-  rendererInfo: RenderingInfo;
+  renderingInfo: RenderingInfo;
   scene: Scene;
   webGLRenderer: WebGLRenderer;
   createProxies(proxies: IProxyData[]): void;
@@ -28,7 +28,7 @@ const instantiationService = new InstantiationService(services);
 const context: IInternalRenderWorkerContext = {
   camera: new PerspectiveCamera(),
   frameId: 0,
-  rendererInfo: null!,
+  renderingInfo: null!,
   scene: new Scene(),
   webGLRenderer: null!,
   createProxies(proxies) {
@@ -46,7 +46,7 @@ const context: IInternalRenderWorkerContext = {
 
     TripleBuffer.swapReadBufferFlags(Flags.GAME_FLAGS);
 
-    this.rendererInfo.tick(tickContext);
+    this.renderingInfo.tick(tickContext);
     this.webGLRenderer.render(this.scene, this.camera);
 
     TripleBuffer.swapWriteBufferFlags(Flags.RENDER_FLAGS);
@@ -104,8 +104,8 @@ function onInit(event: MessageEvent): void {
     context.scene.add(cube);
     context.setSize(initialHeight, initialWidth);
 
-    context.rendererInfo = instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
-    context.rendererInfo.init();
+    context.renderingInfo = instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
+    context.renderingInfo.init();
   }
 }
 
