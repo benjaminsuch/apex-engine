@@ -1,8 +1,7 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type ApexEngine } from './ApexEngine';
-import { type IProxyOrigin } from './core/class/specifiers/proxy';
-import { GameProxyManager, type ProxyManager } from './ProxyManager';
+import { GameProxyManager } from './GameProxyManager';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { World } from './World';
 
@@ -16,9 +15,9 @@ export class GameInstance {
     return this.world;
   }
 
-  private proxyManager?: ProxyManager<IProxyOrigin>;
+  private proxyManager?: GameProxyManager;
 
-  public getProxyManager(): ProxyManager<IProxyOrigin> {
+  public getProxyManager(): GameProxyManager {
     if (!this.proxyManager) {
       throw new Error(`No instance of ProxyManager available.`);
     }

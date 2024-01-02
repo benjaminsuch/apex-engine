@@ -1,10 +1,6 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { components } from './components';
-import { type IProxyOrigin } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
-import { type RenderProxy } from './renderer/RenderProxy';
-import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { ETickGroup, TickFunction } from './TickManager';
 
 export interface IEnqueuedProxy<T> {
@@ -77,69 +73,6 @@ export class ProxyManager<T> {
   }
 }
 
-export class GameProxyManager extends ProxyManager<IProxyOrigin> {
-  public static override getInstance(): GameProxyManager {
-    return super.getInstance() as GameProxyManager;
-  }
-
-  constructor(
-    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IRenderWorkerContext protected readonly renderWorker: IRenderWorkerContext
-  ) {
-    super(instantiationService, logger);
-  }
-
-  public override tick(tick: IEngineLoopTickContext): void {
-    super.tick(tick);
-
-    if (this.proxyQueue.length > 0) {
-      this.renderWorker.createProxies(this.proxyQueue);
-      this.proxyQueue = [];
-    }
-
-    for (let i = 0; i < this.proxies.entries; ++i) {
-      const proxy = this.proxies.getProxyByIndex(i);
-
-      if (proxy) {
-        proxy.tripleBuffer.copyToWriteBuffer(proxy.byteView);
-      }
-    }
-  }
-}
-
-const proxyConstructors = { ...components };
-
-export class RenderProxyManager extends ProxyManager<RenderProxy> {
-  public static override getInstance(): RenderProxyManager {
-    return super.getInstance() as RenderProxyManager;
-  }
-
-  public getProxyConstructor(id: string): TClass {
-    return proxyConstructors[id as keyof typeof proxyConstructors];
-  }
-
-  public getProxy(id: number): RenderProxy | void {
-    for (const proxy of this.proxies) {
-      if (proxy.id === id) {
-        return proxy;
-      }
-    }
-  }
-
-  public override tick(tick: IEngineLoopTickContext): void {
-    super.tick(tick);
-
-    for (let i = 0; i < this.proxies.entries; ++i) {
-      const proxy = this.proxies.getProxyByIndex(i);
-
-      if (proxy) {
-        proxy.tick(tick);
-      }
-    }
-  }
-}
-
 class ProxyRegistry<T> {
   private readonly list: T[] = [];
 
@@ -151,7 +84,7 @@ class ProxyRegistry<T> {
     const idx = this.list.indexOf(proxy);
 
     if (idx > -1) {
-      this.logger.warn(`Proxy is already registered. Aborting.`);
+      this.logger.warn(`Proxy is already registered. Aborting.1`);
       return false;
     }
 

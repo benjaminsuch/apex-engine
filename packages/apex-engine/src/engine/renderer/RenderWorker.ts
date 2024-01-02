@@ -7,8 +7,9 @@ import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/Con
 import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
-import { RenderProxyManager } from '../ProxyManager';
+import { TickManager } from '../TickManager';
 import { RenderingInfo } from './RenderingInfo';
+import { RenderProxyManager } from './RenderProxyManager';
 
 export interface IInternalRenderWorkerContext {
   camera: Camera;
@@ -16,6 +17,7 @@ export interface IInternalRenderWorkerContext {
   proxyManager: RenderProxyManager;
   renderingInfo: RenderingInfo;
   scene: Scene;
+  tickManager: TickManager;
   webGLRenderer: WebGLRenderer;
   createProxies(proxies: IProxyConstructionData[]): void;
   setSize(height: number, width: number): void;
@@ -36,6 +38,7 @@ const context: IInternalRenderWorkerContext = {
   proxyManager: null!,
   renderingInfo: null!,
   scene: new Scene(),
+  tickManager: null!,
   webGLRenderer: null!,
   createProxies(proxies) {
     for (let i = 0; i < proxies.length; ++i) {
@@ -129,6 +132,7 @@ function onInit(event: MessageEvent): void {
     context.scene.add(cube);
     context.setSize(initialHeight, initialWidth);
 
+    context.tickManager = instantiationService.createInstance(TickManager);
     context.proxyManager = instantiationService.createInstance(RenderProxyManager);
     context.renderingInfo = instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
     context.renderingInfo.init();

@@ -1,7 +1,7 @@
 import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { Flags } from '../../../Flags';
-import { GameProxyManager } from '../../../ProxyManager';
+import { GameProxyManager } from '../../../GameProxyManager';
 import { TripleBuffer } from '../../memory/TripleBuffer';
 import { getClassSchema, getTargetId, isPropSchema } from '../decorators';
 import { id } from './id';
