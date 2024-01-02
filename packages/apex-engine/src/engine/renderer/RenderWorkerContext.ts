@@ -1,6 +1,10 @@
 import * as Comlink from 'comlink';
 
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { getTargetId } from '../core/class/decorators';
+import { type IProxyData, type IProxyOrigin } from '../core/class/specifiers/proxy';
+import { type IEnqueuedProxy } from '../ProxyManager';
+import { type IInternalRenderWorkerContext } from './RenderWorker';
 import RenderWorker from './RenderWorker?worker';
 
 export class RenderWorkerContext implements IRenderWorkerContext {
@@ -8,7 +12,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
   private readonly worker: Worker;
 
-  private readonly comlink: Comlink.Remote<IRenderWorkerContext>;
+  private readonly comlink: Comlink.Remote<IInternalRenderWorkerContext>;
 
   private canvas?: HTMLCanvasElement;
 
@@ -16,7 +20,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
   constructor() {
     this.worker = new RenderWorker();
-    this.comlink = Comlink.wrap<IRenderWorkerContext>(this.worker);
+    this.comlink = Comlink.wrap<IInternalRenderWorkerContext>(this.worker);
   }
 
   public async init(flags: Uint8Array[]): Promise<void> {
@@ -48,18 +52,30 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     });
   }
 
-  public start(): void {
-    this.comlink.start();
+  public createProxies(proxies: IEnqueuedProxy<IProxyOrigin>[]): Promise<void> {
+    const data: IProxyData[] = [];
+
+    for (let i = 0; i < proxies.length; ++i) {
+      const { target, args } = proxies[i];
+      data[i] = { id: getTargetId(target) as number, tb: target.tripleBuffer, args };
+    }
+
+    return this.comlink.createProxies(data);
   }
 
-  public setSize(height: number, width: number): void {
-    this.comlink.setSize(height, width);
+  public start(): Promise<void> {
+    return this.comlink.start();
+  }
+
+  public setSize(height: number, width: number): Promise<void> {
+    return this.comlink.setSize(height, width);
   }
 }
 
 export interface IRenderWorkerContext extends IInjectibleService {
-  setSize(height: number, width: number): void;
-  start(): void;
+  createProxies(proxies: IEnqueuedProxy<IProxyOrigin>[]): Promise<void>;
+  setSize(height: number, width: number): Promise<void>;
+  start(): Promise<void>;
 }
 
 export const IRenderWorkerContext = InstantiationService.createDecorator<IRenderWorkerContext>('RenderWorkerContext');

@@ -1,9 +1,16 @@
 import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { Flags } from '../../../Flags';
+import { GameProxyManager } from '../../../ProxyManager';
 import { TripleBuffer } from '../../memory/TripleBuffer';
 import { getClassSchema, getTargetId, isPropSchema } from '../decorators';
 import { id } from './id';
+
+export interface IProxyData {
+  id: number;
+  tb: any;
+  args: unknown;
+}
 
 export interface IProxyOrigin {
   readonly id?: number;
@@ -372,6 +379,8 @@ export function proxy(proxyClass: TClass) {
             }
           }
         }
+
+        GameProxyManager.getInstance().enqueueProxy(this, args);
       }
     };
   };

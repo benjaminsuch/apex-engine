@@ -1,15 +1,18 @@
 import * as Comlink from 'comlink';
 import { BoxGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight, LinearToneMapping, Mesh, MeshPhongMaterial, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
+import { type IProxyData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
-import { type IRenderWorkerContext } from './RenderWorkerContext';
 
-interface IInternalRenderWorkerContext extends Omit<IRenderWorkerContext, '_injectibleService'> {
+export interface IInternalRenderWorkerContext {
   camera: Camera;
   frameId: number;
   scene: Scene;
   webGLRenderer: WebGLRenderer;
+  createProxies(proxies: IProxyData[]): void;
+  setSize(height: number, width: number): void;
+  start(): void;
   tick(time: number): void;
 }
 
@@ -18,13 +21,16 @@ const context: IInternalRenderWorkerContext = {
   frameId: 0,
   scene: new Scene(),
   webGLRenderer: null!,
+  createProxies(proxies) {
+    console.log('create proxies from render-thread!', proxies);
+  },
   start() {
     this.webGLRenderer.setAnimationLoop(time => this.tick(time));
   },
-  setSize(this, height: number, width: number): void {
+  setSize(this, height, width): void {
     this.webGLRenderer.setSize(width, height, false);
   },
-  tick(time: number): void {
+  tick(time): void {
     ++this.frameId;
 
     const context = { id: this.frameId, delta: 0, elapsed: time };
