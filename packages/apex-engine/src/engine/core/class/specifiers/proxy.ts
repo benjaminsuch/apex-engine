@@ -6,7 +6,8 @@ import { TripleBuffer } from '../../memory/TripleBuffer';
 import { getClassSchema, getTargetId, isPropSchema } from '../decorators';
 import { id } from './id';
 
-export interface IProxyData {
+export interface IProxyConstructionData {
+  constructor: string;
   id: number;
   tb: any;
   args: unknown;

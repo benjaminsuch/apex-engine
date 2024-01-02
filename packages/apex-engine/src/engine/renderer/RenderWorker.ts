@@ -4,34 +4,59 @@ import { BoxGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight
 import { InstantiationService } from '../../platform/di/common/InstantiationService';
 import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { type IProxyData } from '../core/class/specifiers/proxy';
+import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
+import { RenderProxyManager } from '../ProxyManager';
 import { RenderingInfo } from './RenderingInfo';
 
 export interface IInternalRenderWorkerContext {
   camera: Camera;
   frameId: number;
+  proxyManager: RenderProxyManager;
   renderingInfo: RenderingInfo;
   scene: Scene;
   webGLRenderer: WebGLRenderer;
-  createProxies(proxies: IProxyData[]): void;
+  createProxies(proxies: IProxyConstructionData[]): void;
   setSize(height: number, width: number): void;
   start(): void;
   tick(time: number): void;
 }
 
 const services = new ServiceCollection();
-services.set(IConsoleLogger, new ConsoleLogger());
+const logger = new ConsoleLogger();
+
+services.set(IConsoleLogger, logger);
+
 const instantiationService = new InstantiationService(services);
 
 const context: IInternalRenderWorkerContext = {
   camera: new PerspectiveCamera(),
   frameId: 0,
+  proxyManager: null!,
   renderingInfo: null!,
   scene: new Scene(),
   webGLRenderer: null!,
   createProxies(proxies) {
+    for (let i = 0; i < proxies.length; ++i) {
+      const { constructor, id, tb, args } = proxies[i];
+      const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
+
+      if (!ProxyConstructor) {
+        logger.warn(`Constructor (${constructor}) not found for proxy "${id}".`);
+        return;
+      }
+
+      this.proxyManager.registerProxy(
+        instantiationService.createInstance(
+          ProxyConstructor,
+          args,
+          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+          id,
+          this
+        )
+      );
+    }
   },
   start() {
     this.webGLRenderer.setAnimationLoop(time => this.tick(time));
@@ -104,6 +129,7 @@ function onInit(event: MessageEvent): void {
     context.scene.add(cube);
     context.setSize(initialHeight, initialWidth);
 
+    context.proxyManager = instantiationService.createInstance(RenderProxyManager);
     context.renderingInfo = instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
     context.renderingInfo.init();
   }

@@ -1,6 +1,8 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
+import { components } from './components';
 import { type IProxyOrigin } from './core/class/specifiers/proxy';
+import { type RenderProxy } from './renderer/RenderProxy';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { ETickGroup, TickFunction } from './TickManager';
 
@@ -105,6 +107,26 @@ export class GameProxyManager extends ProxyManager<IProxyOrigin> {
   }
 }
 
+const proxyConstructors = { ...components };
+
+export class RenderProxyManager extends ProxyManager<RenderProxy> {
+  public static override getInstance(): RenderProxyManager {
+    return super.getInstance() as RenderProxyManager;
+  }
+
+  public getProxyConstructor(id: string): TClass {
+    return proxyConstructors[id as keyof typeof proxyConstructors];
+  }
+
+  public getProxy(id: number): RenderProxy | void {
+    for (const proxy of this.proxies) {
+      if (proxy.id === id) {
+        return proxy;
+      }
+    }
+  }
+}
+
 class ProxyRegistry<T> {
   private readonly list: T[] = [];
 
@@ -129,7 +151,7 @@ class ProxyRegistry<T> {
 
   constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {}
 
-  public *[Symbol.iterator](): Generator<any, any, T> {
+  public *[Symbol.iterator](): Generator<T, any, any> {
     let idx = 0;
 
     while (idx < this.list.length) {
