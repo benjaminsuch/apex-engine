@@ -7,12 +7,12 @@ import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/Con
 import { type IProxyData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
-import { RendererInfo } from './RendererInfo';
+import { RenderingInfo } from './RenderingInfo';
 
 export interface IInternalRenderWorkerContext {
   camera: Camera;
   frameId: number;
-  rendererInfo: RendererInfo;
+  rendererInfo: RenderingInfo;
   scene: Scene;
   webGLRenderer: WebGLRenderer;
   createProxies(proxies: IProxyData[]): void;
@@ -104,7 +104,7 @@ function onInit(event: MessageEvent): void {
     context.scene.add(cube);
     context.setSize(initialHeight, initialWidth);
 
-    context.rendererInfo = instantiationService.createInstance(RendererInfo, Flags.RENDER_FLAGS, undefined);
+    context.rendererInfo = instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
     context.rendererInfo.init();
   }
 }

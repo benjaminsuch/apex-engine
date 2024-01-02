@@ -3,7 +3,7 @@ import { TripleBuffer } from '../core/memory/TripleBuffer';
 
 const IS_RENDER_THREAD = typeof window === 'undefined';
 
-export class RendererInfo {
+export class RenderingInfo {
   private static readonly BUFFER_SIZE: number = Uint32Array.BYTES_PER_ELEMENT;
 
   private readonly buffer: ArrayBuffer;
@@ -21,10 +21,10 @@ export class RendererInfo {
 
   constructor(
     flags: Uint8Array,
-    private readonly tripleBuffer: TripleBuffer = new TripleBuffer(flags, RendererInfo.BUFFER_SIZE),
+    private readonly tripleBuffer: TripleBuffer = new TripleBuffer(flags, RenderingInfo.BUFFER_SIZE),
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
-    const size = this.tripleBuffer ? this.tripleBuffer.byteLength : RendererInfo.BUFFER_SIZE;
+    const size = this.tripleBuffer ? this.tripleBuffer.byteLength : RenderingInfo.BUFFER_SIZE;
     const buffers = this.tripleBuffer.buffers;
 
     this.buffer = new ArrayBuffer(size);

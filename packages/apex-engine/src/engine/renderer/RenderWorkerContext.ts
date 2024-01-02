@@ -5,7 +5,7 @@ import { getTargetId } from '../core/class/decorators';
 import { type IProxyData, type IProxyOrigin } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEnqueuedProxy } from '../ProxyManager';
-import { RendererInfo } from './RendererInfo';
+import { RenderingInfo } from './RenderingInfo';
 import { type IInternalRenderWorkerContext } from './RenderWorker';
 import RenderWorker from './RenderWorker?worker';
 
@@ -18,9 +18,9 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
   private canvas?: HTMLCanvasElement;
 
-  private rendererInfo?: RendererInfo;
+  private rendererInfo?: RenderingInfo;
 
-  public getRendererInfo(): RendererInfo {
+  public getRenderingInfo(): RenderingInfo {
     if (!this.rendererInfo) {
       throw new Error(
         `The renderer1 info is not available yet. The renderer has most likely not finished his initialization or is not running.`
@@ -76,7 +76,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
           const { flags, byteLength, buffers, byteViews } = data;
 
           this.rendererInfo = this.instantiationService.createInstance(
-            RendererInfo,
+            RenderingInfo,
             flags,
             new TripleBuffer(flags, byteLength, buffers, byteViews)
           );
@@ -110,7 +110,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
 export interface IRenderWorkerContext extends IInjectibleService {
   createProxies(proxies: IEnqueuedProxy<IProxyOrigin>[]): Promise<void>;
-  getRendererInfo(): RendererInfo;
+  getRenderingInfo(): RenderingInfo;
   setSize(height: number, width: number): Promise<void>;
   start(): Promise<void>;
 }
