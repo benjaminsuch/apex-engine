@@ -1,9 +1,11 @@
 import * as Comlink from 'comlink';
 
-import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { getTargetId } from '../core/class/decorators';
 import { type IProxyData, type IProxyOrigin } from '../core/class/specifiers/proxy';
+import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEnqueuedProxy } from '../ProxyManager';
+import { RendererInfo } from './RendererInfo';
 import { type IInternalRenderWorkerContext } from './RenderWorker';
 import RenderWorker from './RenderWorker?worker';
 
@@ -16,9 +18,20 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
   private canvas?: HTMLCanvasElement;
 
+  private rendererInfo?: RendererInfo;
+
+  public getRendererInfo(): RendererInfo {
+    if (!this.rendererInfo) {
+      throw new Error(
+        `The renderer1 info is not available yet. The renderer has most likely not finished his initialization or is not running.`
+      );
+    }
+    return this.rendererInfo;
+  }
+
   private isInitialized = false;
 
-  constructor() {
+  constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
     this.worker = new RenderWorker();
     this.comlink = Comlink.wrap<IInternalRenderWorkerContext>(this.worker);
   }
@@ -48,7 +61,30 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     this.isInitialized = true;
 
     return new Promise<void>((resolve, reject) => {
-      resolve();
+      let timeoutId = setTimeout(() => {
+        reject(`Render-Worker initialization failed.`);
+      }, 30000);
+
+      this.worker.onmessage = (event): void => {
+        if (typeof event.data !== 'object') {
+          return;
+        }
+
+        const { type, data } = event.data;
+
+        if (type === 'init-response') {
+          const { flags, byteLength, buffers, byteViews } = data;
+
+          this.rendererInfo = this.instantiationService.createInstance(
+            RendererInfo,
+            flags,
+            new TripleBuffer(flags, byteLength, buffers, byteViews)
+          );
+
+          clearTimeout(timeoutId);
+          resolve();
+        }
+      };
     });
   }
 
@@ -74,6 +110,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
 export interface IRenderWorkerContext extends IInjectibleService {
   createProxies(proxies: IEnqueuedProxy<IProxyOrigin>[]): Promise<void>;
+  getRendererInfo(): RendererInfo;
   setSize(height: number, width: number): Promise<void>;
   start(): Promise<void>;
 }

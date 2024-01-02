@@ -6,7 +6,7 @@ import { ETickGroup, TickFunction } from './TickManager';
 
 export interface IEnqueuedProxy<T> {
   target: T;
-  args: unknown;
+  args: unknown[];
 }
 
 export class ProxyManager<T> {
@@ -26,7 +26,7 @@ export class ProxyManager<T> {
 
   protected proxyQueue: IEnqueuedProxy<T>[] = [];
 
-  public enqueueProxy(proxy: T, args: unknown): boolean {
+  public enqueueProxy(proxy: T, args: unknown[]): boolean {
     const idx = this.proxyQueue.findIndex(({ target }) => target === proxy);
 
     if (idx === -1) {
@@ -54,7 +54,7 @@ export class ProxyManager<T> {
     }
 
     this.proxies = this.instantiationService.createInstance(ProxyRegistry);
-    this.managerTick = this.instantiationService.createInstance(TickFunction, this);
+    this.managerTick = this.instantiationService.createInstance(ProxyManagerTickFunction, this);
 
     this.registerTickFunctions();
 
@@ -135,5 +135,11 @@ class ProxyRegistry<T> {
     while (idx < this.list.length) {
       yield this.list[idx++];
     }
+  }
+}
+
+class ProxyManagerTickFunction extends TickFunction<ProxyManager<any>> {
+  public override run(): void {
+    this.target.tick();
   }
 }

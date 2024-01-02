@@ -3,6 +3,8 @@ import { type Actor } from './Actor';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type GameInstance } from './GameInstance';
 import { type Level } from './Level';
+import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
+import { ETickGroup, TickManager } from './TickManager';
 
 export class World {
   private gameInstance: GameInstance | null = null;
@@ -33,9 +35,11 @@ export class World {
     }
   }
 
+  public tickGroup: ETickGroup = ETickGroup.PrePhysics;
+
   public isInitialized: boolean = false;
 
-  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {}
+  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger, @IRenderWorkerContext protected readonly renderWorker: IRenderWorkerContext) {}
 
   public init(gameInstance: GameInstance): void {
     this.logger.debug(this.constructor.name, 'Initialize');
@@ -44,7 +48,15 @@ export class World {
     this.isInitialized = true;
   }
 
-  public tick(tick: IEngineLoopTickContext): void {}
+  public tick(tick: IEngineLoopTickContext): void {
+    TickManager.getInstance().startTick(tick, this);
+    console.log('last frame', this.renderWorker.getRendererInfo().lastFrame);
+    this.runTickGroup(ETickGroup.PrePhysics);
+    this.runTickGroup(ETickGroup.DuringPhysics);
+    this.runTickGroup(ETickGroup.PostPhysics);
+
+    TickManager.getInstance().endTick();
+  }
 
   public initActorsForPlay(): void {
     if (!this.isInitialized) {
@@ -87,5 +99,10 @@ export class World {
     this.actors.push(actor);
 
     return actor;
+  }
+
+  protected runTickGroup(group: ETickGroup): void {
+    this.tickGroup = group;
+    TickManager.getInstance().runTickGroup(group);
   }
 }

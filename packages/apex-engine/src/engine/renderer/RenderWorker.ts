@@ -1,13 +1,18 @@
 import * as Comlink from 'comlink';
 import { BoxGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight, LinearToneMapping, Mesh, MeshPhongMaterial, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
+import { InstantiationService } from '../../platform/di/common/InstantiationService';
+import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
+import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type IProxyData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
+import { RendererInfo } from './RendererInfo';
 
 export interface IInternalRenderWorkerContext {
   camera: Camera;
   frameId: number;
+  rendererInfo: RendererInfo;
   scene: Scene;
   webGLRenderer: WebGLRenderer;
   createProxies(proxies: IProxyData[]): void;
@@ -16,9 +21,14 @@ export interface IInternalRenderWorkerContext {
   tick(time: number): void;
 }
 
+const services = new ServiceCollection();
+services.set(IConsoleLogger, new ConsoleLogger());
+const instantiationService = new InstantiationService(services);
+
 const context: IInternalRenderWorkerContext = {
   camera: new PerspectiveCamera(),
   frameId: 0,
+  rendererInfo: null!,
   scene: new Scene(),
   webGLRenderer: null!,
   createProxies(proxies) {
@@ -33,10 +43,11 @@ const context: IInternalRenderWorkerContext = {
   tick(time): void {
     ++this.frameId;
 
-    const context = { id: this.frameId, delta: 0, elapsed: time };
+    const tickContext = { id: this.frameId, delta: 0, elapsed: time };
 
     TripleBuffer.swapReadBufferFlags(Flags.GAME_FLAGS);
 
+    this.rendererInfo.tick(tickContext);
     this.webGLRenderer.render(this.scene, this.camera);
 
     TripleBuffer.swapWriteBufferFlags(Flags.RENDER_FLAGS);
@@ -92,8 +103,10 @@ function onInit(event: MessageEvent): void {
     cube.visible = true;
 
     context.scene.add(cube);
-
     context.setSize(initialHeight, initialWidth);
+
+    context.rendererInfo = instantiationService.createInstance(RendererInfo, Flags.RENDER_FLAGS, undefined);
+    context.rendererInfo.init();
   }
 }
 

@@ -13,7 +13,6 @@ export interface IProxyData {
 }
 
 export interface IProxyOrigin {
-  readonly id?: number;
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
 }
@@ -380,10 +379,18 @@ export function proxy(proxyClass: TClass) {
           }
         }
 
-        GameProxyManager.getInstance().enqueueProxy(this, args);
+        GameProxyManager.getInstance().enqueueProxy(this, filterArgs(args));
       }
     };
   };
+}
+
+function filterArgs(args: unknown[]): any[] {
+  return args.filter(
+    val => Array.isArray(val)
+      ? filterArgs(val)
+      : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
+  );
 }
 
 function setString(val: string, dv: DataView, offset: number, size: number): void {

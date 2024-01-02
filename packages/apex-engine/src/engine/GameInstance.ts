@@ -43,9 +43,8 @@ export class GameInstance {
   }
 
   public start(): void {
-    this.engine.loadMap(DEFAULT_MAP).then(() => {
-      this.renderWorker.start();
-      this.getWorld().beginPlay();
-    });
+    this.engine.loadMap(DEFAULT_MAP)
+      .then(() => this.renderWorker.start())
+      .then(() => this.getWorld().beginPlay());
   }
 }
