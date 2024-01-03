@@ -1,7 +1,7 @@
 import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { Flags } from '../../../Flags';
-import { GameProxyManager } from '../../../GameProxyManager';
+import { ProxyManager } from '../../../ProxyManager';
 import { TripleBuffer } from '../../memory/TripleBuffer';
 import { getClassSchema, getTargetId, isPropSchema } from '../decorators';
 import { id } from './id';
@@ -380,7 +380,14 @@ export function proxy(proxyClass: TClass) {
           }
         }
 
-        GameProxyManager.getInstance().enqueueProxy(this, filterArgs(args));
+        // We have to use `ProxyManager` here and not `GameProxyManager` or it will lead to an
+        // issue, when loading the module, during the build-phase.
+        //
+        // Background: The `proxy` specifier that is used on classes, will also be executed, when
+        // the Worker is loading the Proxy-Classes (e.g. SceneComponentProxy) and thus, will load
+        // the `GameProxyManager`, which imports the `IRenderWorkerContext`, which imports from
+        // `RenderWorker`. This will lead to a "BAD_IMPORT" error from rollup.
+        ProxyManager.getInstance().enqueueProxy(this, filterArgs(args));
       }
     };
   };

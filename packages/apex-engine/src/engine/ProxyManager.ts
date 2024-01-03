@@ -84,7 +84,7 @@ class ProxyRegistry<T> {
     const idx = this.list.indexOf(proxy);
 
     if (idx > -1) {
-      this.logger.warn(`Proxy is already registered. Aborting.1`);
+      this.logger.warn(`Proxy is already registered. Aborting.`);
       return false;
     }
 

@@ -2,7 +2,7 @@ import * as Comlink from 'comlink';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { getTargetId } from '../core/class/decorators';
-import { type IProxyConstructionData, type IProxyOrigin } from '../core/class/specifiers/proxy';
+import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEnqueuedProxy } from '../ProxyManager';
 import { RenderingInfo } from './RenderingInfo';
@@ -95,7 +95,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
       const { target, args } = proxies[i];
 
       data[i] = {
-        constructor: target.constructor.name,
+        constructor: (target.constructor as TProxyOriginConstructor).proxyClassName,
         id: getTargetId(target) as number,
         tb: target.tripleBuffer,
         args,

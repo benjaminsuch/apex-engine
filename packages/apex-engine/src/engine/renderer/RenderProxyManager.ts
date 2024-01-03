@@ -1,6 +1,7 @@
+import { proxyComponents } from '../components';
 import { ProxyManager } from '../ProxyManager';
 
-const proxyConstructors = {};
+const proxyConstructors = { ...proxyComponents };
 
 export class RenderProxyManager extends ProxyManager<any> {
   public static override getInstance(): RenderProxyManager {

@@ -5,9 +5,10 @@ import { CLASS, PROP } from '../core/class/decorators';
 import { proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { RenderProxy } from '../renderer/RenderProxy';
 import { ActorComponent } from './ActorComponent';
 
-export class SceneComponentProxy {
+export class SceneComponentProxy extends RenderProxy {
   declare position: [number, number, number];
 
   declare rotation: [number, number, number];

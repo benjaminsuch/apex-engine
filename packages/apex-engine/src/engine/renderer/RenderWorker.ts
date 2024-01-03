@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import * as Comlink from 'comlink';
 import { BoxGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight, LinearToneMapping, Mesh, MeshPhongMaterial, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 

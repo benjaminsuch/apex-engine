@@ -1,4 +1,4 @@
-import { MeshComponent } from './MeshComponent';
-import { SceneComponent } from './SceneComponent';
+import { MeshComponentProxy } from './MeshComponent';
+import { SceneComponentProxy } from './SceneComponent';
 
-export const components = { MeshComponent, SceneComponent } as const;
+export const proxyComponents = { MeshComponentProxy, SceneComponentProxy } as const;
