@@ -3,6 +3,11 @@ import { TripleBuffer } from '../core/memory/TripleBuffer';
 
 const IS_RENDER_THREAD = typeof window === 'undefined';
 
+/**
+ * A separate class to store the info in a triple buffer to make it available
+ * for the game-thread. The class is used on both threads, except that only the
+ * render-thread writes into the buffer.
+ */
 export class RenderingInfo {
   private static readonly BUFFER_SIZE: number = Uint32Array.BYTES_PER_ELEMENT;
 

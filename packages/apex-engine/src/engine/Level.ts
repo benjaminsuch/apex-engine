@@ -55,6 +55,11 @@ export class Level {
     return this.world?.getCurrentLevel() === this;
   }
 
+  /**
+   * Creates the actors and its components.
+   *
+   * @param content The content from the AssetWorker's `loadGLTF`
+   */
   public load(content: LoadGLTFResponse): void {
     this.logger.debug('Loading content for level');
 
