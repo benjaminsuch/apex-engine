@@ -1,3 +1,11 @@
+/**
+ * This code is from the VSCode instantiation service.
+ *
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ *
+ * Link: https://github.com/microsoft/vscode/blob/main/src/vs/platform/instantiation/common/serviceCollection.ts
+ */
 export interface IServiceIdentifier<T> {
   (...args: any[]): void;
 }
