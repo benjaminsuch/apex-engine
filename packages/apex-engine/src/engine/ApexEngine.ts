@@ -55,8 +55,8 @@ export class ApexEngine {
     TripleBuffer.swapWriteBufferFlags(Flags.GAME_FLAGS);
   }
 
-  public start(): void {
-    this.getGameInstance().start();
+  public async start(): Promise<void> {
+    await this.getGameInstance().start();
   }
 
   public async loadMap(url: string): Promise<void> {

@@ -22,7 +22,7 @@ export class EngineLoop {
 
   private tickManager: TickManager;
 
-  private ticks: number = 0;
+  private tickId: number = 0;
 
   public delta: number = 0;
 
@@ -62,20 +62,20 @@ export class EngineLoop {
     const engine = this.instantiationService.createInstance(ApexEngine);
 
     engine.init();
-    engine.start();
+    await engine.start();
   }
 
   public tick(): IntervalReturn {
     this.tickInterval = setInterval(() => {
-      this.ticks++;
+      ++this.tickId;
 
       const then = performance.now();
 
       this.delta = then - this.elapsed / 1000;
       this.elapsed = then;
-      this.fps = (this.ticks * 1000) / then;
+      this.fps = (this.tickId * 1000) / then;
 
-      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.ticks };
+      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.tickId };
 
       try {
         ApexEngine.getInstance().tick(currentTick);

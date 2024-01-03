@@ -23,7 +23,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
   public getRenderingInfo(): RenderingInfo {
     if (!this.rendererInfo) {
       throw new Error(
-        `The renderer1 info is not available yet. The renderer has most likely not finished his initialization or is not running.`
+        `The renderer1 info is not available yet. The renderer has most likely not finished his initialization or is not running.1`
       );
     }
     return this.rendererInfo;

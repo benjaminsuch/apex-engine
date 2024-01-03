@@ -2,6 +2,7 @@ import { IInstantiationService } from '../platform/di/common/InstantiationServic
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
 import { type LoadGLTFResponse } from './assets/AssetWorker';
+import { getComponentClassByObjectType } from './components';
 import { SceneComponent } from './components/SceneComponent';
 import { type World } from './World';
 
@@ -61,8 +62,7 @@ export class Level {
 
     function traverseChildren(children: THREE.Object3D[] = [], parent: SceneComponent): void {
       for (const child of children) {
-        // todo: Use component class based on `child.type`.
-        const component = parent.getOwner().addComponent(SceneComponent);
+        const component = parent.getOwner().addComponent(getComponentClassByObjectType(child.type));
 
         component.attachToComponent(parent);
         traverseChildren(child.children, component);

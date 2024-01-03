@@ -41,8 +41,8 @@ export class GameInstance {
     this.world.init(this);
   }
 
-  public start(): void {
-    this.engine.loadMap(DEFAULT_MAP)
+  public async start(): Promise<void> {
+    return this.engine.loadMap(DEFAULT_MAP)
       .then(() => this.renderWorker.start())
       .then(() => this.getWorld().beginPlay());
   }
