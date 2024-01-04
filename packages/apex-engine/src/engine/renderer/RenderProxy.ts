@@ -1,7 +1,7 @@
 import { getClassSchema, isPropSchema } from '../core/class/decorators';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
-import { type IInternalRenderWorkerContext } from './RenderWorker';
+import { type IInternalRenderWorkerContext } from './Render.worker';
 
 export abstract class RenderProxy {
   public name: string = '';

@@ -1,7 +1,9 @@
+import { type IObject3DJSON, type ISceneJSON, type Object3DChild } from 'three';
+
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
-import { type LoadGLTFResponse } from './assets/AssetWorker';
+import { type ILoadGLTFResponse } from './assets/Assets.worker';
 import { getComponentClassByObjectType } from './components';
 import { SceneComponent } from './components/SceneComponent';
 import { type World } from './World';
@@ -60,14 +62,16 @@ export class Level {
    *
    * @param content The content from the AssetWorker's `loadGLTF`
    */
-  public load(content: LoadGLTFResponse): void {
-    this.logger.debug('Loading content for level');
+  public load(content: ILoadGLTFResponse): void {
+    this.logger.debug('Loading content for level', content);
 
     const { scenes: [scene] } = content;
 
-    function traverseChildren(children: THREE.Object3D[] = [], parent: SceneComponent): void {
+    function traverseChildren(children: IObject3DJSON['children'] = [], parent: SceneComponent): void {
       for (const child of children) {
-        const component = parent.getOwner().addComponent(getComponentClassByObjectType(child.type));
+        const args = getComponentArgs(child, scene);
+        // @ts-ignore
+        const component = parent.getOwner().addComponent(getComponentClassByObjectType(child.type), ...args);
 
         component.attachToComponent(parent);
         traverseChildren(child.children, component);
@@ -82,4 +86,13 @@ export class Level {
       traverseChildren(children, rootComponent);
     }
   }
+}
+
+function getComponentArgs(child: Object3DChild, scene: ISceneJSON): any[] {
+  if (child.type === 'Mesh') {
+    const geometry = scene.geometries.find(({ uuid }) => child.geometry === uuid);
+    const material = scene.materials.find(({ uuid }) => child.material === uuid);
+    return [geometry, material];
+  }
+  return [];
 }

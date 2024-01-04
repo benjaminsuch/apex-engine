@@ -5,9 +5,9 @@ import { getTargetId } from '../core/class/decorators';
 import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEnqueuedProxy } from '../ProxyManager';
+import { type IInternalRenderWorkerContext } from './Render.worker';
+import RenderWorker from './Render.worker?worker';
 import { RenderingInfo } from './RenderingInfo';
-import { type IInternalRenderWorkerContext } from './RenderWorker';
-import RenderWorker from './RenderWorker?worker';
 
 export class RenderWorkerContext implements IRenderWorkerContext {
   declare readonly _injectibleService: undefined;

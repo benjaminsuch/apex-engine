@@ -27,3 +27,111 @@ declare global {
 }
 
 export {};
+
+module 'three' {
+  export interface IImageJSON {
+    url?: string;
+    uuid: string;
+  }
+
+  export interface IMaterialJSON {
+    aoMap: string;
+    aoMapIntensity: number;
+    blendColor: number;
+    color: number;
+    emissive: number;
+    envMapIntensity: number;
+    map: string;
+    metalness: number;
+    metalnessMap: string;
+    name: string;
+    normalMap: string;
+    normalMapType: number;
+    normalScale: [number, number];
+    roughness: number;
+    roughnessMap: string;
+    side: number;
+    type: string;
+    uuid: string;
+  }
+
+  export interface ITextureJSON {
+    anisotropy: number;
+    center: [number, number];
+    channel: number;
+    colorSpace: 'srgb';
+    flipY: boolean;
+    format: number;
+    generateMipmaps: boolean;
+    image: string;
+    internalFormat: null;
+    magFilter: number;
+    mapping: number;
+    minFilter: number;
+    name: string;
+    offset: [number, number];
+    premultiplyAlpha: boolean;
+    repeat: [number, number];
+    rotation: number;
+    type: number;
+    unpackAlignment: number;
+    userData: Record<string, unknown>;
+    uuid: string;
+    wrap: [number, number];
+  }
+
+  export interface IBufferAttributeJSON {
+    array: number[];
+    itemSize: number;
+    normalized: boolean;
+    type: string;
+  }
+
+  export interface IGeometryData {
+    attributes: {
+      normal: IBufferAttributeJSON;
+      position: IBufferAttributeJSON;
+      uv: IBufferAttributeJSON;
+    };
+    boundingSphere: {
+      center: number[];
+      radius: number;
+    };
+    index: {
+      array: number[];
+      type: string;
+    };
+  }
+
+  export interface IGeometryJSON {
+    data: IGeometryData;
+    type: string;
+    uuid: string;
+  }
+
+  export type Object3DChild = IObject3DJSON | IMeshJSON;
+
+  export interface IObject3DJSON<T extends string = 'Object3D'> {
+    children: Array<Object3DChild>;
+    layers: number;
+    matrix: number[];
+    name: string;
+    type: T;
+    up: [number, number, number];
+    userData: Record<string, unknown>;
+    uuid: string;
+  }
+
+  export interface IMeshJSON extends IObject3DJSON<'Mesh'> {
+    geometry: string;
+    material: string;
+  }
+
+  export interface ISceneJSON {
+    geometries: IGeometryJSON[];
+    images: IImageJSON[];
+    materials: IMaterialJSON[];
+    object: IObject3DJSON<'Group'>;
+    textures: ITextureJSON[];
+  }
+}
