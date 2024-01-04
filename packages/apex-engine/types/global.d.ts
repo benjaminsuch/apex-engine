@@ -1,3 +1,5 @@
+import { type NormalMapTypes, type Side } from 'three';
+
 declare global {
   var DEFAULT_MAP: string;
   var IS_BROWSER: string;
@@ -46,11 +48,11 @@ module 'three' {
     metalnessMap: string;
     name: string;
     normalMap: string;
-    normalMapType: number;
+    normalMapType: NormalMapTypes;
     normalScale: [number, number];
     roughness: number;
     roughnessMap: string;
-    side: number;
+    side: Side;
     type: string;
     uuid: string;
   }

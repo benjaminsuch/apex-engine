@@ -43,6 +43,7 @@ const context: IInternalRenderWorkerContext = {
   tickManager: null!,
   webGLRenderer: null!,
   createProxies(proxies) {
+    console.log('Creating proxies:', proxies);
     for (let i = 0; i < proxies.length; ++i) {
       const { constructor, id, tb, args } = proxies[i];
       const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
@@ -138,6 +139,8 @@ function onInit(event: MessageEvent): void {
     context.proxyManager = instantiationService.createInstance(RenderProxyManager);
     context.renderingInfo = instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
     context.renderingInfo.init();
+
+    console.log('Render worker:', context);
   }
 }
 

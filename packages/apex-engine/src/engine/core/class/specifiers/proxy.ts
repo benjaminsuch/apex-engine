@@ -395,10 +395,18 @@ export function proxy(proxyClass: TClass) {
 
 function filterArgs(args: unknown[]): any[] {
   return args.filter(
-    val => Array.isArray(val)
-      ? filterArgs(val)
-      : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
+    val => typeof val === 'object'
+      ? Array.isArray(val)
+        ? filterArgs(val)
+        : isObjectConstructor(val)
+          ? filterArgs(Object.values(val)).length
+          : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
+      : false
   );
+}
+
+function isObjectConstructor(obj: any): obj is object {
+  return Object.getPrototypeOf(obj).constructor === Object;
 }
 
 function setString(val: string, dv: DataView, offset: number, size: number): void {

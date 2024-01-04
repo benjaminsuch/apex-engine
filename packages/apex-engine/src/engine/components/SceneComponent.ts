@@ -5,6 +5,7 @@ import { CLASS, PROP } from '../core/class/decorators';
 import { proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { RenderProxy } from '../renderer/RenderProxy';
 import { ActorComponent } from './ActorComponent';
 
@@ -52,7 +53,18 @@ export class SceneComponentProxy extends RenderProxy {
 
   public childIndex: number = -1;
 
-  public sceneObject: THREE.Object3D = new THREE.Object3D();
+  public sceneObject: THREE.Object3D;
+
+  constructor(
+args: unknown[] = [],
+tb: TripleBuffer,
+public override readonly id: number,
+protected override readonly renderer: IInternalRenderWorkerContext
+  ) {
+    super(args, tb, id, renderer);
+
+    this.sceneObject = new THREE.Object3D();
+  }
 }
 
 @CLASS(proxy(SceneComponentProxy))
