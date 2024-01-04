@@ -5,16 +5,16 @@ import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type ILoadGLTFResponse } from './Assets.worker';
 import AssetWorker from './Assets.worker?worker';
 
-export class AssetWorkerContext implements IAssetWorkerContext {
+export class AssetsWorkerContext implements IAssetsWorkerContext {
   declare readonly _injectibleService: undefined;
 
   private readonly worker: Worker;
 
-  private readonly comlink: Comlink.Remote<IAssetWorkerContext>;
+  private readonly comlink: Comlink.Remote<IAssetsWorkerContext>;
 
   constructor(@IConsoleLogger private readonly logger: IConsoleLogger) {
     this.worker = new AssetWorker();
-    this.comlink = Comlink.wrap<IAssetWorkerContext>(this.worker);
+    this.comlink = Comlink.wrap<IAssetsWorkerContext>(this.worker);
   }
 
   public async init(): Promise<void> {
@@ -28,8 +28,8 @@ export class AssetWorkerContext implements IAssetWorkerContext {
   }
 }
 
-export interface IAssetWorkerContext extends IInjectibleService {
+export interface IAssetsWorkerContext extends IInjectibleService {
   loadGLTF(url: string): Promise<ILoadGLTFResponse>;
 }
 
-export const IAssetWorkerContext = InstantiationService.createDecorator<IAssetWorkerContext>('AssetWorkerContext');
+export const IAssetsWorkerContext = InstantiationService.createDecorator<IAssetsWorkerContext>('AssetsWorkerContext');

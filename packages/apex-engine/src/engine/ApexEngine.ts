@@ -1,6 +1,6 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { IAssetWorkerContext } from './assets/AssetWorkerContext';
+import { IAssetsWorkerContext } from './assets/AssetsWorkerContext';
 import { TripleBuffer } from './core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Flags } from './Flags';
@@ -31,7 +31,7 @@ export class ApexEngine {
   constructor(
     @IConsoleLogger protected readonly logger: IConsoleLogger,
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
-    @IAssetWorkerContext protected readonly assetWorker: IAssetWorkerContext
+    @IAssetsWorkerContext protected readonly assetWorker: IAssetsWorkerContext
   ) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the ApexEngine already exists.`);

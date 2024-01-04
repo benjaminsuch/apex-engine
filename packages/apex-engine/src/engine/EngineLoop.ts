@@ -2,7 +2,7 @@ import { plugins } from 'build:info';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { ApexEngine } from './ApexEngine';
-import { AssetWorkerContext, IAssetWorkerContext } from './assets/AssetWorkerContext';
+import { AssetsWorkerContext, IAssetsWorkerContext } from './assets/AssetsWorkerContext';
 import { Flags } from './Flags';
 import { IPhysicsWorkerContext, PhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { IRenderWorkerContext, RenderWorkerContext } from './renderer/RenderWorkerContext';
@@ -37,8 +37,8 @@ export class EngineLoop {
   public async init(): Promise<void> {
     // Setup important workers
     {
-      const assetContext = this.instantiationService.createInstance(AssetWorkerContext);
-      this.instantiationService.setServiceInstance(IAssetWorkerContext, assetContext);
+      const assetContext = this.instantiationService.createInstance(AssetsWorkerContext);
+      this.instantiationService.setServiceInstance(IAssetsWorkerContext, assetContext);
 
       const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
       this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
