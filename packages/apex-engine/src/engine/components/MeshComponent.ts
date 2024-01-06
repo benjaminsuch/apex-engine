@@ -21,7 +21,7 @@ export class MeshComponentProxy extends SceneComponentProxy {
     const args: [THREE.BufferGeometry | undefined, THREE.Material | undefined] = [undefined, undefined];
 
     if (geometryData) {
-      const { attributes, index } = geometryData.data;
+      const { attributes, boundingSphere, index } = geometryData.data;
 
       if (geometryData.type === 'BufferGeometry') {
         const geometry = new THREE.BufferGeometry();
@@ -30,6 +30,7 @@ export class MeshComponentProxy extends SceneComponentProxy {
         geometry.setAttribute('normal', createBufferAttribute(attributes.normal));
         geometry.setAttribute('uv', createBufferAttribute(attributes.uv));
         geometry.setIndex(index.array);
+        geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
 
         args[0] = geometry;
       }
@@ -39,7 +40,10 @@ export class MeshComponentProxy extends SceneComponentProxy {
       const { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...params } = materialData;
 
       if (type === 'MeshStandardMaterial') {
-        const material = new THREE.MeshStandardMaterial({ ...params, normalScale: new THREE.Vector2(...normalScale) });
+        const material = new THREE.MeshStandardMaterial({
+          ...params,
+          normalScale: new THREE.Vector2(...normalScale),
+        });
         args[1] = material;
       }
     }

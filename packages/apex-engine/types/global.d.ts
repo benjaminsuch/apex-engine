@@ -37,7 +37,7 @@ module 'three' {
   }
 
   export interface IMaterialJSON {
-    aoMap: string;
+    aoMap: string | null;
     aoMapIntensity: number;
     blendColor: number;
     color: number;
@@ -45,16 +45,23 @@ module 'three' {
     envMapIntensity: number;
     map: string;
     metalness: number;
-    metalnessMap: string;
+    metalnessMap: string | null;
     name: string;
-    normalMap: string;
+    normalMap: string | null;
     normalMapType: NormalMapTypes;
     normalScale: [number, number];
     roughness: number;
-    roughnessMap: string;
+    roughnessMap: string | null;
     side: Side;
     type: string;
     uuid: string;
+  }
+
+  export interface INormalizedMaterialJSON extends Omit<IMaterialJSON, 'aoMap' | 'map' | 'metalnessMap' | 'roughnessMap'> {
+    aoMap?: ITextureJSON;
+    map?: ITextureJSON;
+    metalnessMap?: ITextureJSON;
+    roughnessMap?: ITextureJSON;
   }
 
   export interface ITextureJSON {

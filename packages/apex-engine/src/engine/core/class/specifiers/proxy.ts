@@ -406,7 +406,7 @@ function filterArgs(args: unknown[]): any[] {
 }
 
 function isObjectConstructor(obj: any): obj is object {
-  return Object.getPrototypeOf(obj).constructor === Object;
+  return obj && Object.getPrototypeOf(obj).constructor === Object;
 }
 
 function setString(val: string, dv: DataView, offset: number, size: number): void {

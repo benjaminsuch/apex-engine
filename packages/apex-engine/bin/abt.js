@@ -616,6 +616,12 @@ async function serveElectronTarget(target) {
         watch: {
             buildDelay: 250,
         },
+        onwarn(warning, warn) {
+            if (warning.message.includes('Circular dependency')) {
+                return;
+            }
+            warn(warning);
+        },
     });
     main.on('event', (event) => {
         console.log('[electron-main:watcher]', event.code);
@@ -648,6 +654,12 @@ async function serveElectronTarget(target) {
         ],
         watch: {
             buildDelay: 250,
+        },
+        onwarn(warning, warn) {
+            if (warning.message.includes('Circular dependency')) {
+                return;
+            }
+            warn(warning);
         },
     });
     let isRunning = false;

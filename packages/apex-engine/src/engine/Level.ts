@@ -1,4 +1,4 @@
-import { type IObject3DJSON, type ISceneJSON, type Object3DChild } from 'three';
+import { type IMaterialJSON, type INormalizedMaterialJSON, type IObject3DJSON, type ISceneJSON, ITextureJSON, type Object3DChild } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
@@ -22,7 +22,7 @@ export class Level {
     const idx = this.actors.indexOf(actor);
 
     if (idx === -1) {
-      this.logger.warn(`Cannot remove actor from level: Actor is unknown.`);
+      this.logger.warn(`Cannot remove actor from level: Actor is unknown.1`);
       return;
     }
 
@@ -90,8 +90,19 @@ export class Level {
 
 function getComponentArgs(child: Object3DChild, scene: ISceneJSON): any[] {
   if (child.type === 'Mesh') {
-    const geometry = scene.geometries.find(({ uuid }) => child.geometry === uuid);
-    const material = scene.materials.find(({ uuid }) => child.material === uuid);
+    let geometry = scene.geometries.find(({ uuid }) => child.geometry === uuid);
+    let material: IMaterialJSON | INormalizedMaterialJSON | undefined = scene.materials.find(({ uuid }) => child.material === uuid);
+
+    if (material) {
+      material = {
+        ...material,
+        aoMap: scene.textures.find(({ uuid }) => uuid === material?.aoMap),
+        map: scene.textures.find(({ uuid }) => uuid === material?.map),
+        metalnessMap: scene.textures.find(({ uuid }) => uuid === material?.map),
+        roughnessMap: scene.textures.find(({ uuid }) => uuid === material?.map),
+      };
+    }
+
     return [geometry, material];
   }
   return [];

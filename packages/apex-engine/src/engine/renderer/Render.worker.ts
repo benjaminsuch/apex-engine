@@ -6,6 +6,7 @@ import { BoxGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight
 import { InstantiationService } from '../../platform/di/common/InstantiationService';
 import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
+import { type SceneComponentProxy } from '../components/SceneComponent';
 import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
@@ -43,7 +44,8 @@ const context: IInternalRenderWorkerContext = {
   tickManager: null!,
   webGLRenderer: null!,
   createProxies(proxies) {
-    console.log('Creating proxies:', proxies);
+    logger.debug('Creating proxies:', proxies);
+
     for (let i = 0; i < proxies.length; ++i) {
       const { constructor, id, tb, args } = proxies[i];
       const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
@@ -53,15 +55,16 @@ const context: IInternalRenderWorkerContext = {
         return;
       }
 
-      this.proxyManager.registerProxy(
-        instantiationService.createInstance(
-          ProxyConstructor,
-          args,
-          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
-          id,
-          this
-        )
-      );
+      const proxy = instantiationService.createInstance(
+        ProxyConstructor,
+        args,
+        new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+        id,
+        this
+      ) as SceneComponentProxy;
+
+      this.proxyManager.registerProxy(proxy);
+      this.scene.add(proxy.sceneObject);
     }
   },
   start() {
