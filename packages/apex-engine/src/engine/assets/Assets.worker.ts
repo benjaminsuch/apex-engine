@@ -22,13 +22,10 @@ const context: IInternalAssetsWorkerContext = {
         `../${url}`,
         function onLoad(gltf) {
           const scenes: ISceneJSON[] = gltf.scenes.map(transformScene);
+          const cameras = gltf.cameras.map(camera => camera.toJSON());
           const transferables = scenes.map(scene => scene.images.map((image: any) => image.source.data)).flat();
 
-          resolve(Comlink.transfer({
-            scenes,
-            animations: [],
-            cameras: gltf.cameras.map(camera => camera.toJSON()),
-          }, transferables));
+          resolve(Comlink.transfer({ scenes, animations: [], cameras }, transferables));
         },
         undefined,
         function onError(event) { reject(event); }
@@ -40,7 +37,7 @@ const context: IInternalAssetsWorkerContext = {
 Comlink.expose(context);
 
 function transformScene(scene: Object3D): any {
-  const json: ISceneJSON = scene.toJSON();
+  const { images = [], materials = [], textures = [], ...json }: ISceneJSON = scene.toJSON();
   const bitmaps: Source[] = [];
 
   scene.traverse((child) => {
@@ -61,6 +58,8 @@ function transformScene(scene: Object3D): any {
 
   return {
     ...json,
-    images: json.images.map(image => ({ uuid: image.uuid, source: bitmaps.find(source => source.uuid === image.uuid) })),
+    images: images.map(image => ({ uuid: image.uuid, source: bitmaps.find(source => source.uuid === image.uuid) })),
+    materials,
+    textures,
   };
 }

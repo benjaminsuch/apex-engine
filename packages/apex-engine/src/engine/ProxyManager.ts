@@ -49,7 +49,7 @@ export class ProxyManager<T> {
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {
     if (ProxyManager.instance) {
-      throw new Error(`An instance of the ProxyManager already exists.`);
+      throw new Error(`An instance of the ProxyManager already exists.1`);
     }
 
     this.proxies = this.instantiationService.createInstance(ProxyRegistry);

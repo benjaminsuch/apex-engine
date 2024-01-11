@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Euler, Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
 import { type Actor } from '../Actor';
 import { CLASS, PROP } from '../core/class/decorators';
@@ -53,7 +53,7 @@ export class SceneComponentProxy extends RenderProxy {
 
   public childIndex: number = -1;
 
-  public sceneObject: THREE.Object3D;
+  public sceneObject: Object3D;
 
   constructor(
 args: unknown[] = [],
@@ -63,7 +63,7 @@ protected override readonly renderer: IInternalRenderWorkerContext
   ) {
     super(args, tb, id, renderer);
 
-    this.sceneObject = new THREE.Object3D();
+    this.sceneObject = new Object3D();
   }
 }
 
@@ -74,22 +74,22 @@ export class SceneComponent extends ActorComponent {
   declare tripleBuffer: TripleBuffer;
 
   @PROP(serialize(vec3))
-  public position: THREE.Vector3 = new THREE.Vector3();
+  public position: Vector3 = new Vector3();
 
   @PROP(serialize(vec3))
-  public rotation: THREE.Euler = new THREE.Euler();
+  public rotation: Euler = new Euler();
 
   @PROP(serialize(vec3))
-  public scale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
+  public scale: Vector3 = new Vector3(1, 1, 1);
 
   @PROP(serialize(mat4))
-  public matrix: THREE.Matrix4 = new THREE.Matrix4();
+  public matrix: Matrix4 = new Matrix4();
 
   @PROP(serialize(quat))
-  public quaternion: THREE.Quaternion = new THREE.Quaternion();
+  public quaternion: Quaternion = new Quaternion();
 
   @PROP(serialize(vec3))
-  public up: THREE.Vector3 = THREE.Object3D.DEFAULT_UP;
+  public up: Vector3 = Object3D.DEFAULT_UP;
 
   @PROP(serialize(boolean))
   public visible: boolean = true;

@@ -1,11 +1,11 @@
-import { type IMaterialJSON, type INormalizedMaterialJSON, type IObject3DJSON, type ISceneJSON, ITextureJSON, type Object3DChild } from 'three';
+import { type IObject3DJSON, type ISceneJSON, type Object3DChild } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
 import { type ILoadGLTFResponse } from './assets/Assets.worker';
-import { getComponentClassByObjectType } from './components';
-import { SceneComponent } from './components/SceneComponent';
+import { resolveComponent } from './components';
+import { type SceneComponent } from './components/SceneComponent';
 import { type World } from './World';
 
 export class Level {
@@ -67,43 +67,26 @@ export class Level {
 
     const { scenes: [scene] } = content;
 
+    function addComponent(child: Object3DChild, scene: ISceneJSON, actor: Actor): SceneComponent {
+      const [ComponentConstructor, args] = resolveComponent(child, scene);
+      // @ts-ignore
+      return actor.addComponent(ComponentConstructor, ...args);
+    }
+
     function traverseChildren(children: IObject3DJSON['children'] = [], parent: SceneComponent): void {
       for (const child of children) {
-        const args = getComponentArgs(child, scene);
-        // @ts-ignore
-        const component = parent.getOwner().addComponent(getComponentClassByObjectType(child.type), ...args);
-
+        const component = addComponent(child, scene, parent.getOwner());
         component.attachToComponent(parent);
         traverseChildren(child.children, component);
       }
     }
 
-    for (const { children } of scene.object.children) {
+    for (const child of scene.object.children) {
       const actor = this.getWorld().spawnActor(Actor, this);
-      const rootComponent = actor.addComponent(SceneComponent);
+      const rootComponent = addComponent(child, scene, actor);
 
       rootComponent.setAsRoot(actor);
-      traverseChildren(children, rootComponent);
+      traverseChildren(child.children, rootComponent);
     }
   }
-}
-
-function getComponentArgs(child: Object3DChild, scene: ISceneJSON): any[] {
-  if (child.type === 'Mesh') {
-    let geometry = scene.geometries.find(({ uuid }) => child.geometry === uuid);
-    let material: IMaterialJSON | INormalizedMaterialJSON | undefined = scene.materials.find(({ uuid }) => child.material === uuid);
-
-    if (material) {
-      material = {
-        ...material,
-        aoMap: scene.textures.find(({ uuid }) => uuid === material?.aoMap),
-        map: scene.textures.find(({ uuid }) => uuid === material?.map),
-        metalnessMap: scene.textures.find(({ uuid }) => uuid === material?.map),
-        roughnessMap: scene.textures.find(({ uuid }) => uuid === material?.map),
-      };
-    }
-
-    return [geometry, material];
-  }
-  return [];
 }

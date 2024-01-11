@@ -138,10 +138,9 @@ export class TickManager {
     }
 
     let iterations = 0;
+    let tickFunction: undefined | TickFunction<any>;
 
-    while (queue.length > 0) {
-      const tickFunction = queue.shift()!;
-
+    while (tickFunction = queue.shift()) {
       if (tickFunction.canTick) {
         this.tickGroups[tickFunction.tickGroup].push(tickFunction);
       }
