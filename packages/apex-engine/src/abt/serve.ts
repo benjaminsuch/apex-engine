@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:http';
-import { join, posix, resolve } from 'node:path';
+import { basename, extname, join, posix, relative, resolve } from 'node:path';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
 // import terser from '@rollup/plugin-terser';
@@ -9,7 +9,7 @@ import mime from 'mime';
 import { watch } from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import { APEX_DIR, getEngineSourceFiles, getLauncherPath, type TargetConfig } from './config';
+import { APEX_DIR, getEngineSourceFiles, getGameMaps, getLauncherPath, type TargetConfig } from './config';
 import { startElectron } from './electron';
 import { readFileFromContentBase } from './file';
 import { buildInfo, htmlPlugin, replace, workerPlugin } from './plugins';
@@ -20,6 +20,7 @@ let server: Server;
 export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
   const buildDir = resolve(APEX_DIR, 'build/browser');
   const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
+  const levels = Object.entries(getGameMaps());
 
   wss.on('connection', (ws) => {
     ws.on('error', console.error);
@@ -54,10 +55,8 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
     }
   });
 
-  fs.copy('src/game/maps', resolve(buildDir, 'maps'), (err: any) => {
-    if (err) {
-      console.error('Error copying folder:', err);
-    }
+  Object.entries(getGameMaps()).forEach(([p1, p2]) => {
+    fs.copySync(p2, `${resolve(buildDir, 'maps', relative('game/maps', p1))}${extname(p2)}`);
   });
 
   const watcher = watch({
@@ -72,7 +71,7 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
     },
     plugins: [
       replace(target),
-      buildInfo(target),
+      buildInfo(target, levels),
       workerPlugin({ target }),
       nodeResolve({ preferBuiltins: true }),
       typescript(),

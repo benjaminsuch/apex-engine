@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { cac } from 'cac';
-import { resolve, relative, extname, dirname, join, isAbsolute, basename, posix, sep } from 'node:path';
+import { resolve, dirname, join, relative, extname, isAbsolute, basename, posix, sep } from 'node:path';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import fs from 'fs-extra';
 import { rollup, watch } from 'rollup';
 import { writeFileSync, unlinkSync, existsSync, readFileSync, readFile } from 'node:fs';
-import { pathToFileURL, fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import glob from 'fast-glob';
 import { builtinModules, createRequire } from 'node:module';
 import virtual from '@rollup/plugin-virtual';
@@ -19,7 +19,7 @@ import { spawn } from 'node:child_process';
 
 var name = "apex-engine";
 var description = "A cross-platform game engine written in Typescript.";
-var version = "1.0.0-0";
+var version = "0.12.0-0";
 var author = "Benjamin Such";
 var license = "BSD-3-Clause";
 var type = "module";
@@ -129,6 +129,7 @@ function measure() {
 
 const CONFIG_FILE_NAME = 'apex.config';
 const APEX_DIR = resolve('.apex');
+const ENGINE_PATH = dirname(join(fileURLToPath(import.meta.url), '../'));
 let config;
 async function getApexConfig(configFile = resolve(`${CONFIG_FILE_NAME}.ts`)) {
     let bundle;
@@ -187,15 +188,34 @@ function getEngineSourceFiles() {
         fileURLToPath(pathToFileURL(resolve(file))),
     ]));
 }
+function getGameMaps() {
+    return Object.fromEntries(glob
+        .sync('src/game/maps/**/*.(gltf|glb)')
+        .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file))),
+    ]));
+}
 
-function buildInfo(target) {
-    return virtual({
+function buildInfo(target, levels = []) {
+    // console.log('levels', levels);
+    const virt = {
         'build:info': [
-            'export const plugins = new Map()',
+            // Plugins
+            'export const plugins = new Map();',
             '',
-            ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'))`),
+            ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'));`),
+            // Levels
+            'export const levels = {',
+            ...levels
+                .map(([p1, p2]) => [p1, `${p2.slice(0, p2.length - extname(p2).length)}.ts`])
+                .filter(([, p2]) => fs.existsSync(p2))
+                .map(([p1, p2]) => `  '${relative('game/maps', p1).replaceAll('\\', '/')}': async () => import('${relative(ENGINE_PATH, p2).replaceAll('\\', '/')}'),`),
+            '};',
         ].join('\n'),
-    });
+    };
+    console.log('virt', virt);
+    return virtual(virt);
 }
 
 function htmlPlugin(entryFile = './index.js', options, body = '') {
@@ -483,6 +503,7 @@ let server;
 async function serveBrowserTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/browser');
     const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
+    const levels = Object.entries(getGameMaps());
     wss.on('connection', (ws) => {
         ws.on('error', console.error);
     });
@@ -512,10 +533,8 @@ async function serveBrowserTarget(target) {
             console.error('Error copying folder:', err);
         }
     });
-    fs.copy('src/game/maps', resolve(buildDir, 'maps'), (err) => {
-        if (err) {
-            console.error('Error copying folder:', err);
-        }
+    Object.entries(getGameMaps()).forEach(([p1, p2]) => {
+        fs.copySync(p2, `${resolve(buildDir, 'maps', relative('game/maps', p1))}${extname(p2)}`);
     });
     const watcher = watch({
         input: {
@@ -529,7 +548,7 @@ async function serveBrowserTarget(target) {
         },
         plugins: [
             replacePlugin(target),
-            buildInfo(target),
+            buildInfo(target, levels),
             workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),

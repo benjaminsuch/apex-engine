@@ -19,7 +19,7 @@ const context: IInternalAssetsWorkerContext = {
   loadGLTF(url: string): Promise<any> {
     return new Promise((resolve, reject) => {
       gltfLoader.load(
-        `../${url}`,
+        `../${url}.glb`,
         function onLoad(gltf) {
           const scenes: ISceneJSON[] = gltf.scenes.map(transformScene);
           const cameras = gltf.cameras.map(camera => camera.toJSON());

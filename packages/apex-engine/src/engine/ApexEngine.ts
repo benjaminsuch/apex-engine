@@ -1,3 +1,5 @@
+import { levels } from 'build:info';
+
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { IAssetsWorkerContext } from './assets/AssetsWorkerContext';
@@ -5,7 +7,7 @@ import { TripleBuffer } from './core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Flags } from './Flags';
 import { GameInstance } from './GameInstance';
-import { Level } from './Level';
+import { type Level } from './Level';
 
 export class ApexEngine {
   private static instance?: ApexEngine;
@@ -70,8 +72,9 @@ export class ApexEngine {
         throw new Error(`Cannot load map: World is not initialized.`);
       }
 
-      const content = await this.assetWorker.loadGLTF(url);
-      const level = this.instantiationService.createInstance(Level);
+      const content = await this.assetWorker.loadGLTF(`maps/${url}`);
+      const { default: LoadedLevel }: { default: typeof Level } = await levels[url]();
+      const level = this.instantiationService.createInstance(LoadedLevel);
 
       world.setCurrentLevel(level);
       level.load(content);

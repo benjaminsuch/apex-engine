@@ -1,5 +1,5 @@
 import { unlinkSync, writeFileSync } from 'node:fs';
-import { extname, relative, resolve } from 'node:path';
+import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
@@ -35,6 +35,8 @@ export interface ApexConfig {
 export const CONFIG_FILE_NAME = 'apex.config';
 
 export const APEX_DIR = resolve('.apex');
+
+export const ENGINE_PATH = dirname(join(fileURLToPath(import.meta.url), '../'));
 
 let config: ApexConfig | undefined;
 
