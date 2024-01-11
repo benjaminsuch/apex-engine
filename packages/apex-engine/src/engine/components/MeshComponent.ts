@@ -1,5 +1,4 @@
-import * as THREE from 'three';
-import { type IGeometryJSON, type IMaterialJSON } from 'three';
+import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryJSON, type IMaterialJSON, type Material, Mesh, MeshPhongMaterial, MeshStandardMaterial, Sphere, Vector2, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -18,19 +17,19 @@ export class MeshComponentProxy extends SceneComponentProxy {
   ) {
     super([geometryData, materialData], tb, id, renderer);
 
-    const args: [THREE.BufferGeometry | undefined, THREE.Material | undefined] = [undefined, undefined];
+    const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
     if (geometryData) {
       const { attributes, boundingSphere, index } = geometryData.data;
 
       if (geometryData.type === 'BufferGeometry') {
-        const geometry = new THREE.BufferGeometry();
+        const geometry = new BufferGeometry();
 
         geometry.setAttribute('position', createBufferAttribute(attributes.position));
         geometry.setAttribute('normal', createBufferAttribute(attributes.normal));
         geometry.setAttribute('uv', createBufferAttribute(attributes.uv));
         geometry.setIndex(index.array);
-        geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
+        geometry.boundingSphere = new Sphere(new Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
 
         args[0] = geometry;
       }
@@ -40,15 +39,19 @@ export class MeshComponentProxy extends SceneComponentProxy {
       const { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...params } = materialData;
 
       if (type === 'MeshStandardMaterial') {
-        const material = new THREE.MeshStandardMaterial({
+        const material = new MeshStandardMaterial({
           ...params,
-          normalScale: new THREE.Vector2(...normalScale),
+          normalScale: new Vector2(...normalScale),
         });
         args[1] = material;
       }
     }
 
-    this.sceneObject = new THREE.Mesh(...args);
+    if (IS_DEV) {
+      args[1] = new MeshPhongMaterial({ color: [0xe7cf7c, 0xe75e4f][Math.round(Math.random())], depthWrite: false });
+    }
+
+    this.sceneObject = new Mesh(...args);
   }
 }
 
@@ -64,7 +67,7 @@ export class MeshComponent extends SceneComponent {
   }
 }
 
-function createBufferAttribute({ type, array, itemSize, normalized }: THREE.IBufferAttributeJSON): THREE.BufferAttribute {
+function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
   let ArrayConstructor: undefined | TypedArray;
 
   if (type === 'Uint16Array') {
@@ -84,7 +87,7 @@ function createBufferAttribute({ type, array, itemSize, normalized }: THREE.IBuf
   }
 
   if (ArrayConstructor) {
-    return new THREE.BufferAttribute(new ArrayConstructor(array), itemSize, normalized);
+    return new BufferAttribute(new ArrayConstructor(array), itemSize, normalized);
   }
 
   throw new Error(`Unknown array type.`);

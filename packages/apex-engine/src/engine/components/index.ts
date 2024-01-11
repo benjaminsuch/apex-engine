@@ -11,16 +11,16 @@ const objectComponentMap = {
   Object3D: SceneComponent,
 } as const;
 
-export type ComponentType<T = typeof objectComponentMap> = T[keyof T];
+export type SceneComponentType<T = typeof objectComponentMap> = T[keyof T];
 
-export function getComponentClassByObjectType(type: string): ComponentType {
+export function getComponentClassByObjectType(type: string): SceneComponentType {
   if (type in objectComponentMap) {
     return objectComponentMap[type as keyof typeof objectComponentMap];
   }
   throw new Error(`Cannot find component class for object type "${type}".`);
 }
 
-export function resolveComponent(child: Object3DChild, scene: ISceneJSON): [ComponentType, any[]] {
+export function resolveComponent(child: Object3DChild, scene: ISceneJSON): [SceneComponentType, any[]] {
   return [getComponentClassByObjectType(child.type), getComponentArgs(child, scene)];
 }
 
