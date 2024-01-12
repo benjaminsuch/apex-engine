@@ -3,6 +3,7 @@ import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type ApexEngine } from './ApexEngine';
 import { GameMode } from './GameMode';
 import { GameProxyManager } from './GameProxyManager';
+import { Player } from './Player';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { World } from './World';
 
@@ -23,6 +24,15 @@ export class GameInstance {
       throw new Error(`No instance of ProxyManager available.`);
     }
     return this.proxyManager;
+  }
+
+  private player: Player | null = null;
+
+  public getPlayer(): Player {
+    if (!this.player) {
+      throw new Error(`No player set.`);
+    }
+    return this.player;
   }
 
   constructor(
@@ -46,6 +56,19 @@ export class GameInstance {
     return this.engine.loadMap(DEFAULT_MAP)
       .then(() => this.renderWorker.start())
       .then(() => this.getWorld().beginPlay());
+  }
+
+  public createPlayer(withPlayerController: boolean = false): void {
+    if (this.player) {
+      throw new Error(`A player already exists.`);
+    }
+
+    this.logger.debug(this.constructor.name, 'Creating player');
+    this.player = this.instantiationService.createInstance(Player);
+
+    if (this.world && withPlayerController) {
+      this.player.spawnPlayActor(this.world);
+    }
   }
 
   public async createGameModeFromURL(url: URL): Promise<GameMode> {

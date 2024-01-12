@@ -2,20 +2,21 @@ import { Matrix4 } from 'three';
 
 import { Actor } from './Actor';
 import { Pawn } from './Pawn';
+import { type Player } from './Player';
 import { PlayerController } from './PlayerController';
 
 export class GameMode extends Actor {
   public preLogin(): void {}
 
-  public login(): PlayerController {
+  public login(player: Player): PlayerController {
     const playerController = this.spawnPlayerController();
     this.initPlayer(playerController);
 
     return playerController;
   }
 
-  public postLogin(player: PlayerController): void {
-    this.restartPlayer(player);
+  public postLogin(playerController: PlayerController): void {
+    this.restartPlayer(playerController);
   }
 
   public restartPlayer(playerController: PlayerController, transform: Matrix4 = this.findPlayerStartLocation()): void {

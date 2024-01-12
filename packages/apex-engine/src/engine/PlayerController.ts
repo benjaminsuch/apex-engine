@@ -4,6 +4,7 @@ import { Actor } from './Actor';
 import { InputComponent } from './components/InputComponent';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Pawn } from './Pawn';
+import { type Player } from './Player';
 import { PlayerInput } from './PlayerInput';
 
 export class PlayerController extends Actor {
@@ -18,6 +19,19 @@ export class PlayerController extends Actor {
 
   public setPawn(pawn: PlayerController['pawn']): void {
     this.pawn = pawn;
+  }
+
+  protected player?: Player;
+
+  public getPlayer(): Player {
+    if (!this.player) {
+      throw new Error(`Player not set.`);
+    }
+    return this.player;
+  }
+
+  public setPlayer(player: Player): void {
+    this.player = player;
   }
 
   protected camera?: any;
@@ -41,7 +55,7 @@ export class PlayerController extends Actor {
   }
 
   public possess(pawn: Pawn): void {
-    this.pawn?.controller?.unpossess();
+    this.getPawn().getController().unpossess();
 
     this.logger.debug(this.constructor.name, 'Possess new pawn:', pawn.constructor.name);
     this.setPawn(pawn);

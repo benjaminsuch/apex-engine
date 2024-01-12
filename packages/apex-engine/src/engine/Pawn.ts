@@ -3,9 +3,16 @@ import { InputComponent } from './components/InputComponent';
 import { type PlayerController } from './PlayerController';
 
 export class Pawn extends Actor {
-  public controller: PlayerController | null = null;
+  protected controller?: PlayerController | null = null;
 
-  public inputComponent: InputComponent | null = null;
+  public getController(): PlayerController {
+    if (!this.controller) {
+      throw new Error(`Controller not set.`);
+    }
+    return this.controller;
+  }
+
+  protected inputComponent?: InputComponent;
 
   public possessBy(player: PlayerController): void {
     this.controller = player;

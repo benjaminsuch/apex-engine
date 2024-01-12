@@ -4,11 +4,13 @@ import { type IEngineLoopTickContext } from './EngineLoop';
 import { type GameInstance } from './GameInstance';
 import { type GameMode } from './GameMode';
 import { type Level } from './Level';
+import { type Player } from './Player';
+import { type PlayerController } from './PlayerController';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { ETickGroup, TickManager } from './TickManager';
 
 export class World {
-  private gameMode: GameMode | null = null;
+  private gameMode?: GameMode;
 
   public async setGameMode(url: string): Promise<void> {
     if (!IS_CLIENT && !this.gameMode) {
@@ -31,7 +33,7 @@ export class World {
     return this.gameMode;
   }
 
-  private gameInstance: GameInstance | null = null;
+  private gameInstance?: GameInstance;
 
   public getGameInstance(): GameInstance {
     if (!this.gameInstance) {
@@ -42,7 +44,7 @@ export class World {
 
   public readonly actors: Actor[] = [];
 
-  public currentLevel: Level | null = null;
+  public currentLevel?: Level;
 
   public getCurrentLevel(): Level {
     if (!this.currentLevel) {
@@ -116,7 +118,7 @@ export class World {
 
   public spawnActor<T extends typeof Actor>(
     ActorClass: T,
-    level: Level | null = this.currentLevel
+    level: Level | undefined = this.currentLevel
   ): InstanceType<T> {
     this.logger.debug(this.constructor.name, 'Spawn actor:', ActorClass.name);
 
@@ -128,6 +130,17 @@ export class World {
     this.actors.push(actor);
 
     return actor;
+  }
+
+  public spawnPlayActor(player: Player): PlayerController {
+    this.logger.debug(this.constructor.name, 'Spawn play actor');
+
+    const playerController = this.getGameMode().login(player);
+    playerController.setPlayer(player);
+
+    this.getGameMode().postLogin(playerController);
+
+    return playerController;
   }
 
   protected runTickGroup(group: ETickGroup): void {

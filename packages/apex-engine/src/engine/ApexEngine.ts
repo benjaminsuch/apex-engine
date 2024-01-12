@@ -46,6 +46,10 @@ export class ApexEngine {
     this.gameInstance = this.instantiationService.createInstance(GameInstance, this);
     this.gameInstance.init();
 
+    if (IS_BROWSER) {
+      this.gameInstance.createPlayer();
+    }
+
     this.isInitialized = true;
   }
 
