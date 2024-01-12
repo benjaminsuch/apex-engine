@@ -65,6 +65,13 @@ export class ApexEngine {
     await this.getGameInstance().start();
   }
 
+  /**
+   * Loads the level and creates the game mode from the given `url`. When successful
+   * the level and all actors will be initialized for play and a play actor will be
+   * spawned.
+   *
+   * @param url
+   */
   public async loadMap(url: string): Promise<void> {
     // todo: Dispose previous level
     try {
