@@ -45,9 +45,8 @@ export class Controller extends Actor {
       } catch {}
     }
 
-    this.setPawn(pawn);
-
     pawn.possessedBy(this);
+    this.setPawn(pawn);
     pawn.restart();
   }
 }
