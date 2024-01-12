@@ -2,11 +2,35 @@ import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type Actor } from './Actor';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type GameInstance } from './GameInstance';
+import { type GameMode } from './GameMode';
 import { type Level } from './Level';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { ETickGroup, TickManager } from './TickManager';
 
 export class World {
+  private gameMode: GameMode | null = null;
+
+  public async setGameMode(url: string): Promise<void> {
+    if (!IS_CLIENT && !this.gameMode) {
+      let urlObj: URL;
+
+      try {
+        urlObj = new URL(url);
+      } catch {
+        urlObj = new URL(`file://${url}`);
+      }
+
+      this.gameMode = await this.getGameInstance().createGameModeFromURL(urlObj);
+    }
+  }
+
+  public getGameMode(): GameMode {
+    if (!this.gameMode) {
+      throw new Error(`The game mode has not been set yet.`);
+    }
+    return this.gameMode;
+  }
+
   private gameInstance: GameInstance | null = null;
 
   public getGameInstance(): GameInstance {
@@ -89,7 +113,7 @@ export class World {
     ActorClass: T,
     level: Level | null = this.currentLevel
   ): InstanceType<T> {
-    this.logger.debug(this.constructor.name, 'Spawning actor', ActorClass.name);
+    this.logger.debug(this.constructor.name, 'Spawn actor:', ActorClass.name);
 
     if (!level) {
       throw new Error(`Cannot spawn actor: Please set a current level before spawning actors.`);

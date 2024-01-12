@@ -42,10 +42,21 @@ export class Level {
     return this.world;
   }
 
+  public isInitialized: boolean = false;
+
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {}
+
+  public init(): void {
+    if (this.isInitialized) {
+      this.logger.warn(this.constructor.name, 'Already initialized.');
+      return;
+    }
+
+    this.isInitialized = true;
+  }
 
   public initActors(): void {}
 

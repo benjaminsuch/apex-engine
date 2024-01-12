@@ -68,6 +68,7 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
       dir: buildDir,
       exports: 'named',
       format: 'esm',
+      chunkFileNames: '[name].js',
     },
     plugins: [
       replace(target),

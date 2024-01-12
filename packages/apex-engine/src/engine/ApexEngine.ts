@@ -79,6 +79,11 @@ export class ApexEngine {
       world.setCurrentLevel(level);
       level.load(content);
 
+      await world.setGameMode(url);
+
+      level.init();
+      world.initActorsForPlay();
+
       this.logger.info('Map content loaded');
     } catch (error) {
       console.error(error);

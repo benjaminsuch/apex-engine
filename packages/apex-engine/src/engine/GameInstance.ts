@@ -1,6 +1,7 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type ApexEngine } from './ApexEngine';
+import { GameMode } from './GameMode';
 import { GameProxyManager } from './GameProxyManager';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { World } from './World';
@@ -45,5 +46,9 @@ export class GameInstance {
     return this.engine.loadMap(DEFAULT_MAP)
       .then(() => this.renderWorker.start())
       .then(() => this.getWorld().beginPlay());
+  }
+
+  public async createGameModeFromURL(url: URL): Promise<GameMode> {
+    return this.getWorld().spawnActor(GameMode);
   }
 }
