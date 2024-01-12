@@ -1,26 +1,13 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { Actor } from './Actor';
 import { InputComponent } from './components/InputComponent';
+import { Controller } from './Controller';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Pawn } from './Pawn';
 import { type Player } from './Player';
 import { PlayerInput } from './PlayerInput';
 
-export class PlayerController extends Actor {
-  protected pawn: Pawn | null = null;
-
-  public getPawn(): Pawn {
-    if (!this.pawn) {
-      throw new Error(`Pawn not set.`);
-    }
-    return this.pawn;
-  }
-
-  public setPawn(pawn: PlayerController['pawn']): void {
-    this.pawn = pawn;
-  }
-
+export class PlayerController extends Controller {
   protected player?: Player;
 
   public getPlayer(): Player {
@@ -54,22 +41,21 @@ export class PlayerController extends Actor {
     super.tick(tick);
   }
 
-  public possess(pawn: Pawn): void {
+  protected override onPossess(pawn: Pawn): void {
     if (this.pawn) {
-      this.pawn.getController().unpossess();
+      try {
+        this.pawn.getController().unpossess();
+      } catch {}
     }
 
-    this.logger.debug(this.constructor.name, 'Possess new pawn:', pawn.constructor.name);
+    pawn.possessedBy(this);
     this.setPawn(pawn);
 
-    pawn.possessBy(this);
-    pawn.restart();
-  }
-
-  public unpossess(): void {
-    this.logger.debug(this.constructor.name, 'Unpossess old pawn:', this.pawn?.constructor.name);
-    this.pawn?.unpossessed();
-    this.setPawn(null);
+    if (IS_SERVER) {
+      pawn.restart();
+    } else {
+      pawn.restart(true);
+    }
   }
 
   private buildInputStack(): InputComponent[] {

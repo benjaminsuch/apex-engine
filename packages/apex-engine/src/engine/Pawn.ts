@@ -1,11 +1,11 @@
 import { Actor } from './Actor';
 import { InputComponent } from './components/InputComponent';
-import { type PlayerController } from './PlayerController';
+import { type Controller } from './Controller';
 
 export class Pawn extends Actor {
-  protected controller?: PlayerController | null = null;
+  protected controller?: Controller | null = null;
 
-  public getController(): PlayerController {
+  public getController(): Controller {
     if (!this.controller) {
       throw new Error(`Controller not set.`);
     }
@@ -14,8 +14,14 @@ export class Pawn extends Actor {
 
   protected inputComponent?: InputComponent;
 
-  public possessBy(player: PlayerController): void {
-    this.controller = player;
+  public possessedBy(controller: Controller): void {
+    const oldController = this.controller;
+
+    this.controller = controller;
+
+    if (oldController !== controller) {
+      // todo: Broadcast controller changed event
+    }
   }
 
   /**
@@ -30,7 +36,13 @@ export class Pawn extends Actor {
     this.controller = null;
   }
 
-  public restart(): void {
+  public restart(isClient: boolean = false): void {
+    if (isClient) {
+      this.clientRestart();
+    }
+  }
+
+  protected clientRestart(): void {
     if (this.controller) {
       if (!this.inputComponent) {
         this.inputComponent = this.addComponent(InputComponent);
