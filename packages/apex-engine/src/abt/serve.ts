@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:http';
-import { basename, extname, join, posix, relative, resolve } from 'node:path';
+import { extname, join, posix, relative, resolve } from 'node:path';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
 // import terser from '@rollup/plugin-terser';
