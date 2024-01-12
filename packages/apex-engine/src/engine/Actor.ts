@@ -2,6 +2,7 @@ import { type GetLeadingNonServiceArgs, IInstantiationService } from '../platfor
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type ActorComponent } from './components/ActorComponent';
 import { type SceneComponent } from './components/SceneComponent';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Level } from './Level';
 import { type World } from './World';
 
@@ -83,6 +84,8 @@ export class Actor {
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
   ) {}
+
+  public tick(context: IEngineLoopTickContext): void {}
 
   public beginPlay(): void {
     for (const component of this.components) {

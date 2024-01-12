@@ -66,6 +66,11 @@ export class World {
   constructor(@IConsoleLogger protected readonly logger: IConsoleLogger, @IRenderWorkerContext protected readonly renderWorker: IRenderWorkerContext) {}
 
   public init(gameInstance: GameInstance): void {
+    if (this.isInitialized) {
+      this.logger.warn(this.constructor.name, 'Already initialized.');
+      return;
+    }
+
     this.logger.debug(this.constructor.name, 'Initialize');
 
     this.gameInstance = gameInstance;

@@ -22,7 +22,7 @@ export class Level {
     const idx = this.actors.indexOf(actor);
 
     if (idx === -1) {
-      this.logger.warn(`Cannot remove actor from level: Actor is unknown.1`);
+      this.logger.warn(`Cannot remove actor from level: Actor is unknown.`);
       return;
     }
 
@@ -54,6 +54,8 @@ export class Level {
       this.logger.warn(this.constructor.name, 'Already initialized.');
       return;
     }
+
+    this.logger.debug(this.constructor.name, 'Initialize');
 
     this.isInitialized = true;
   }
