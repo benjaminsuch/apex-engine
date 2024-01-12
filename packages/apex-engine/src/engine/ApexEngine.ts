@@ -70,7 +70,8 @@ export class ApexEngine {
     try {
       this.logger.info('Attempting to load map:', url);
 
-      const world = this.getGameInstance().getWorld();
+      const gameInstance = this.getGameInstance();
+      const world = gameInstance.getWorld();
 
       if (!world.isInitialized) {
         throw new Error(`Cannot load map: World is not initialized.`);
@@ -87,6 +88,10 @@ export class ApexEngine {
 
       level.init();
       world.initActorsForPlay();
+
+      if (IS_BROWSER) {
+        gameInstance.getPlayer().spawnPlayActor(world);
+      }
 
       this.logger.info('Map content loaded');
     } catch (error) {

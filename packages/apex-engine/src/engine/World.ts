@@ -116,10 +116,7 @@ export class World {
     // todo: Broadcast begin-play event
   }
 
-  public spawnActor<T extends typeof Actor>(
-    ActorClass: T,
-    level: Level | undefined = this.currentLevel
-  ): InstanceType<T> {
+  public spawnActor<T extends typeof Actor>(ActorClass: T, level: Level | undefined = this.currentLevel): InstanceType<T> {
     this.logger.debug(this.constructor.name, 'Spawn actor:', ActorClass.name);
 
     if (!level) {
@@ -133,7 +130,7 @@ export class World {
   }
 
   public spawnPlayActor(player: Player): PlayerController {
-    this.logger.debug(this.constructor.name, 'Spawn play actor');
+    this.logger.debug(this.constructor.name, 'Spawn play actor:', player.constructor.name);
 
     const playerController = this.getGameMode().login(player);
     playerController.setPlayer(player);

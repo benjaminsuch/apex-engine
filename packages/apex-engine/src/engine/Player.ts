@@ -19,8 +19,6 @@ export class Player {
   ) {}
 
   public spawnPlayActor(world: World): void {
-    this.logger.debug(this.constructor.name, 'Spawn play actor');
-
     if (this.playerController) {
       throw new Error(`A play actor has already been spawned.`);
     }

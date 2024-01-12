@@ -55,7 +55,9 @@ export class PlayerController extends Actor {
   }
 
   public possess(pawn: Pawn): void {
-    this.getPawn().getController().unpossess();
+    if (this.pawn) {
+      this.pawn.getController().unpossess();
+    }
 
     this.logger.debug(this.constructor.name, 'Possess new pawn:', pawn.constructor.name);
     this.setPawn(pawn);

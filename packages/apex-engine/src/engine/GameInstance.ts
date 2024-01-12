@@ -26,7 +26,7 @@ export class GameInstance {
     return this.proxyManager;
   }
 
-  private player: Player | null = null;
+  private player?: Player;
 
   public getPlayer(): Player {
     if (!this.player) {
@@ -66,8 +66,8 @@ export class GameInstance {
     this.logger.debug(this.constructor.name, 'Creating player');
     this.player = this.instantiationService.createInstance(Player);
 
-    if (this.world && withPlayerController) {
-      this.player.spawnPlayActor(this.world);
+    if (withPlayerController) {
+      this.player.spawnPlayActor(this.world!);
     }
   }
 
