@@ -34,8 +34,7 @@ export class Controller extends Actor {
 
   public unpossess(): void {
     this.logger.debug(this.constructor.name, 'Unpossess old pawn:', this.pawn?.constructor.name);
-    this.pawn?.unpossessed();
-    this.setPawn(null);
+    this.onUnPossess();
   }
 
   protected onPossess(pawn: Pawn): void {
@@ -48,5 +47,12 @@ export class Controller extends Actor {
     pawn.possessedBy(this);
     this.setPawn(pawn);
     pawn.restart();
+  }
+
+  protected onUnPossess(): void {
+    if (this.pawn) {
+      this.pawn.unpossessed();
+      this.setPawn(null);
+    }
   }
 }
