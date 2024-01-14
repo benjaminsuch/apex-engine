@@ -16,6 +16,7 @@ export class GameProxyManager extends ProxyManager<IProxyOrigin> {
     @IRenderWorkerContext protected readonly renderWorker: IRenderWorkerContext
   ) {
     super(instantiationService, logger);
+    this.logger.debug(this.constructor.name, this);
   }
 
   public override tick(tick: IEngineLoopTickContext): void {

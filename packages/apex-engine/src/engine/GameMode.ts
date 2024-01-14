@@ -1,7 +1,6 @@
-import { Matrix4 } from 'three';
-
 import { Actor } from './Actor';
-import { Pawn } from './Pawn';
+import { Character } from './Character';
+import { type Pawn } from './Pawn';
 import { type Player } from './Player';
 import { PlayerController } from './PlayerController';
 
@@ -9,6 +8,8 @@ export class GameMode extends Actor {
   public preLogin(): void {}
 
   public login(player: Player): PlayerController {
+    this.logger.debug(this.constructor.name, `Login`);
+
     const playerController = this.spawnPlayerController();
     this.initPlayer(playerController);
 
@@ -19,15 +20,20 @@ export class GameMode extends Actor {
     this.restartPlayer(playerController);
   }
 
-  public restartPlayer(playerController: PlayerController, transform: Matrix4 = this.findPlayerStartLocation()): void {
+  public restartPlayer(playerController: PlayerController, playerStart: Actor | undefined = this.findPlayerStart(playerController)): void {
     this.logger.debug(this.constructor.name, `Restart player`);
-    // InitStartSpot
-    // FinishRestartPlayer
+
+    if (!playerStart) {
+      this.logger.debug(`Player start not found.`);
+      return;
+    }
+
+    this.initStartSpot(playerStart, playerController);
     playerController.possess(this.spawnDefaultPlayerPawn());
   }
 
-  public findPlayerStartLocation(): Matrix4 {
-    return new Matrix4();
+  public findPlayerStart(playerController: PlayerController): Actor | undefined {
+    return playerController.startSpot;
   }
 
   public spawnPlayerController(): PlayerController {
@@ -35,8 +41,21 @@ export class GameMode extends Actor {
   }
 
   public spawnDefaultPlayerPawn(): Pawn {
-    return this.getWorld().spawnActor(Pawn);
+    return this.getWorld().spawnActor(Character);
   }
 
-  private initPlayer(player: PlayerController): void {}
+  protected initStartSpot(playerStart: Actor, playerController: PlayerController): void {}
+
+  protected initPlayer(playerController: PlayerController): void {
+    this.logger.debug(this.constructor.name, `Initialize Player`);
+
+    const startSpot = this.findPlayerStart(playerController);
+
+    if (!startSpot) {
+      this.logger.error(`Unable to find start spot for player.`);
+      return;
+    }
+
+    playerController.startSpot = startSpot;
+  }
 }

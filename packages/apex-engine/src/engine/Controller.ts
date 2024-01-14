@@ -24,6 +24,8 @@ export class Controller extends Actor {
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
   ) {
     super(instantiationService, logger);
+    // todo: Temporary solution. Remove when we determine the starting spot from the level file.
+    this.startSpot = this.instantiationService.createInstance(Actor);
   }
 
   public possess(pawn: Pawn): void {
@@ -35,6 +37,7 @@ export class Controller extends Actor {
   public unpossess(): void {
     this.logger.debug(this.constructor.name, 'Unpossess old pawn:', this.pawn?.constructor.name);
     this.onUnPossess();
+    // todo: Broadcast event
   }
 
   protected onPossess(pawn: Pawn): void {

@@ -58,8 +58,8 @@ export class MeshComponentProxy extends SceneComponentProxy {
 @CLASS(proxy(MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
   constructor(
-    public geometry: IGeometryJSON | undefined = undefined,
-    public material: IMaterialJSON | undefined = undefined,
+    public geometry: BufferGeometry | undefined = undefined,
+    public material: Material | undefined = undefined,
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger
   ) {

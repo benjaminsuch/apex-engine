@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 
 import * as Comlink from 'comlink';
-import { BoxGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight, LinearToneMapping, Mesh, MeshPhongMaterial, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { type Camera, Color, DirectionalLight, Fog, HemisphereLight, LinearToneMapping, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
 import { InstantiationService } from '../../platform/di/common/InstantiationService';
 import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
@@ -130,12 +130,6 @@ function onInit(event: MessageEvent): void {
     dirLight.position.set(-1, 2, 4);
 
     context.scene.add(dirLight);
-
-    const cube = new Mesh(new BoxGeometry(1, 1, 1), new MeshPhongMaterial({ color: 0xeb4034, depthWrite: false }));
-    cube.name = 'TestCube';
-    cube.visible = true;
-
-    context.scene.add(cube);
     context.setSize(initialHeight, initialWidth);
 
     context.tickManager = instantiationService.createInstance(TickManager);
