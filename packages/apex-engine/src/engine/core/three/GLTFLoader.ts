@@ -1,5 +1,7 @@
 import { DRACOLoader, type GLTF, GLTFLoader as BaseGLTFLoader } from 'three-stdlib';
 
+import { IConsoleLogger } from '../../../platform/logging/common/ConsoleLogger';
+
 type LoadParameters = Parameters<BaseGLTFLoader['load']>;
 
 type OnProgress = LoadParameters[2];
@@ -7,7 +9,7 @@ type OnProgress = LoadParameters[2];
 export class GLTFLoader {
   private readonly loader: BaseGLTFLoader;
 
-  constructor() {
+  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
     dracoLoader.setDecoderConfig({ type: 'js' });
@@ -24,6 +26,8 @@ export class GLTFLoader {
     } catch {
       content = await this.loader.loadAsync(`${url}.gltf`, onProgress);
     }
+
+    this.logger.debug(this.constructor.name, `Content loaded:`, content);
 
     return content;
   }

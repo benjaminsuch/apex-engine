@@ -83,7 +83,7 @@ export class ApexEngine {
         throw new Error(`Cannot load map: World is not initialized.`);
       }
 
-      const loader = new GLTFLoader();
+      const loader = this.instantiationService.createInstance(GLTFLoader);
       const content = await loader.load(`maps/${url}`);
       const { default: LoadedLevel }: { default: typeof Level } = await levels[url]();
       const level = this.instantiationService.createInstance(LoadedLevel);

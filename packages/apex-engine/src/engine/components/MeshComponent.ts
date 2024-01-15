@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IGeometryJSON, type IMaterialJSON, type Material, Mesh, MeshPhongMaterial, MeshStandardMaterial, Sphere, Vector2, Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshPhongMaterial, Sphere, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -25,9 +25,9 @@ export class MeshComponentProxy extends SceneComponentProxy {
       if (type === 'BufferGeometry') {
         const geometry = new BufferGeometry();
 
-        geometry.setAttribute('position', createBufferAttribute({ ...attributes.position, type: 'Float32Array' }));
-        geometry.setAttribute('normal', createBufferAttribute({ ...attributes.normal, type: 'Float32Array' }));
-        geometry.setAttribute('uv', createBufferAttribute({ ...attributes.uv, type: 'Float32Array' }));
+        geometry.setAttribute('position', createBufferAttribute({ ...attributes.position, type: attributes.position.array.constructor.name }));
+        geometry.setAttribute('normal', createBufferAttribute({ ...attributes.normal, type: attributes.normal.array.constructor.name }));
+        geometry.setAttribute('uv', createBufferAttribute({ ...attributes.uv, type: attributes.uv.array.constructor.name }));
         geometry.setIndex(createBufferAttribute({ ...index, normalized: false, itemSize: 1, type: 'Uint16Array' }));
         geometry.boundingSphere = new Sphere(new Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
 
@@ -67,24 +67,18 @@ export class MeshComponent extends SceneComponent {
   }
 }
 
-function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
-  let ArrayConstructor: undefined | TypedArray;
+const TYPED_ARRAYS = {
+  Uint16Array,
+  Int16Array,
+  Uint8Array,
+  Int8Array,
+  Int32Array,
+  Uint32Array,
+  Float32Array,
+} as const;
 
-  if (type === 'Uint16Array') {
-    ArrayConstructor = Uint16Array;
-  } else if (type === 'Int16Array') {
-    ArrayConstructor = Int16Array;
-  } else if (type === 'Uint8Array') {
-    ArrayConstructor = Uint8Array;
-  } else if (type === 'Int8Array') {
-    ArrayConstructor = Int8Array;
-  } else if (type === 'Int32Array') {
-    ArrayConstructor = Int32Array;
-  } else if (type === 'Uint32Array') {
-    ArrayConstructor = Uint32Array;
-  } else if (type === 'Float32Array') {
-    ArrayConstructor = Float32Array;
-  }
+function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
+  const ArrayConstructor = TYPED_ARRAYS[type as keyof typeof TYPED_ARRAYS];
 
   if (ArrayConstructor) {
     return new BufferAttribute(new ArrayConstructor(array), itemSize, normalized);
