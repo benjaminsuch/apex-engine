@@ -13,7 +13,6 @@ export class CapsuleComponent extends MeshComponent {
     @IConsoleLogger protected override readonly logger: IConsoleLogger
   ) {
     const geometry = new CapsuleGeometry(1, 3);
-    console.log('geometry', geometry);
     super(undefined, undefined, instantiationService, logger);
   }
 }
