@@ -398,9 +398,11 @@ function filterArgs(args: unknown[]): any[] {
     val => typeof val === 'object'
       ? Array.isArray(val)
         ? filterArgs(val)
-        : isObjectConstructor(val)
-          ? filterArgs(Object.values(val)).length
-          : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
+        : val && typeof (val as any)['toJSON'] === 'function'
+          ? (val as any).toJSON()
+          : isObjectConstructor(val)
+            ? filterArgs(Object.values(val)).length
+            : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
       : false
   );
 }

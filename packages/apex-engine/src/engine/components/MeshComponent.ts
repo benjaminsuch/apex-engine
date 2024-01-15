@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryJSON, type IMaterialJSON, type Material, Mesh, MeshPhongMaterial, MeshStandardMaterial, Sphere, Vector2, Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IGeometryJSON, type IMaterialJSON, type Material, Mesh, MeshPhongMaterial, MeshStandardMaterial, Sphere, Vector2, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -10,7 +10,7 @@ import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
 export class MeshComponentProxy extends SceneComponentProxy {
   constructor(
-    [geometryData, materialData]: [IGeometryJSON | undefined, IMaterialJSON | undefined] = [undefined, undefined],
+    [geometryData, materialData]: [IGeometryData | undefined, IMaterialJSON | undefined] = [undefined, undefined],
     tb: TripleBuffer,
     public override readonly id: number,
     protected override readonly renderer: IInternalRenderWorkerContext
@@ -20,32 +20,32 @@ export class MeshComponentProxy extends SceneComponentProxy {
     const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
     if (geometryData) {
-      const { attributes, boundingSphere, index } = geometryData.data;
+      const { attributes, boundingSphere, index, type } = geometryData;
 
-      if (geometryData.type === 'BufferGeometry') {
+      if (type === 'BufferGeometry') {
         const geometry = new BufferGeometry();
 
-        geometry.setAttribute('position', createBufferAttribute(attributes.position));
-        geometry.setAttribute('normal', createBufferAttribute(attributes.normal));
-        geometry.setAttribute('uv', createBufferAttribute(attributes.uv));
-        geometry.setIndex(index.array);
+        geometry.setAttribute('position', createBufferAttribute({ ...attributes.position, type: 'Float32Array' }));
+        geometry.setAttribute('normal', createBufferAttribute({ ...attributes.normal, type: 'Float32Array' }));
+        geometry.setAttribute('uv', createBufferAttribute({ ...attributes.uv, type: 'Float32Array' }));
+        geometry.setIndex(createBufferAttribute({ ...index, normalized: false, itemSize: 1, type: 'Uint16Array' }));
         geometry.boundingSphere = new Sphere(new Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
 
         args[0] = geometry;
       }
     }
 
-    if (materialData) {
-      const { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...params } = materialData;
+    // if (materialData) {
+    //   const { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...params } = materialData;
 
-      if (type === 'MeshStandardMaterial') {
-        const material = new MeshStandardMaterial({
-          ...params,
-          normalScale: new Vector2(...normalScale),
-        });
-        args[1] = material;
-      }
-    }
+    //   if (type === 'MeshStandardMaterial') {
+    //     const material = new MeshStandardMaterial({
+    //       ...params,
+    //       normalScale: new Vector2(...normalScale),
+    //     });
+    //     args[1] = material;
+    //   }
+    // }
 
     if (IS_DEV) {
       args[1] = new MeshPhongMaterial({ color: [0xe7cf7c, 0xe75e4f][Math.round(Math.random())], depthWrite: false });

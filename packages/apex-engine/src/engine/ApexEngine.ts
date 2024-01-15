@@ -2,8 +2,8 @@ import { levels } from 'build:info';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { IAssetsWorkerContext } from './assets/AssetsWorkerContext';
 import { TripleBuffer } from './core/memory/TripleBuffer';
+import { GLTFLoader } from './core/three/GLTFLoader';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Flags } from './Flags';
 import { GameInstance } from './GameInstance';
@@ -33,7 +33,6 @@ export class ApexEngine {
   constructor(
     @IConsoleLogger protected readonly logger: IConsoleLogger,
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
-    @IAssetsWorkerContext protected readonly assetWorker: IAssetsWorkerContext
   ) {
     if (ApexEngine.instance) {
       throw new Error(`An instance of the ApexEngine already exists.`);
@@ -84,7 +83,8 @@ export class ApexEngine {
         throw new Error(`Cannot load map: World is not initialized.`);
       }
 
-      const content = await this.assetWorker.loadGLTF(`maps/${url}`);
+      const loader = new GLTFLoader();
+      const content = await loader.load(`maps/${url}`);
       const { default: LoadedLevel }: { default: typeof Level } = await levels[url]();
       const level = this.instantiationService.createInstance(LoadedLevel);
 

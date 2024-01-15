@@ -110,6 +110,7 @@ module 'three' {
       array: number[];
       type: string;
     };
+    type: string;
   }
 
   export interface IGeometryJSON {

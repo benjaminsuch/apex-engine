@@ -1,9 +1,9 @@
-import { type IObject3DJSON, type ISceneJSON, type Object3DChild } from 'three';
+import { type Object3D } from 'three';
+import { type GLTF } from 'three-stdlib';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
-import { type ILoadGLTFResponse } from './assets/Assets.worker';
 import { resolveComponent } from './components';
 import { type SceneComponent } from './components/SceneComponent';
 import { type World } from './World';
@@ -75,28 +75,26 @@ export class Level {
    *
    * @param content The content from the AssetWorker's `loadGLTF`
    */
-  public load(content: ILoadGLTFResponse): void {
-    this.logger.debug('Loading content for level', content);
+  public load({ scene }: GLTF): void {
+    this.logger.debug(this.constructor.name, 'Loading content');
 
-    const { scenes: [scene] } = content;
-
-    function addComponent(child: Object3DChild, scene: ISceneJSON, actor: Actor): SceneComponent {
-      const [ComponentConstructor, args] = resolveComponent(child, scene);
+    function addComponent(child: Object3D, actor: Actor): SceneComponent {
+      const [ComponentConstructor, args] = resolveComponent(child);
       // @ts-ignore
       return actor.addComponent(ComponentConstructor, ...args);
     }
 
-    function traverseChildren(children: IObject3DJSON['children'] = [], parent: SceneComponent): void {
+    function traverseChildren(children: Object3D['children'] = [], parent: SceneComponent): void {
       for (const child of children) {
-        const component = addComponent(child, scene, parent.getOwner());
+        const component = addComponent(child, parent.getOwner());
         component.attachToComponent(parent);
         traverseChildren(child.children, component);
       }
     }
 
-    for (const child of scene.object.children) {
+    for (const child of scene.children) {
       const actor = this.getWorld().spawnActor(Actor, this);
-      const rootComponent = addComponent(child, scene, actor);
+      const rootComponent = addComponent(child, actor);
 
       rootComponent.setAsRoot(actor);
       traverseChildren(child.children, rootComponent);
