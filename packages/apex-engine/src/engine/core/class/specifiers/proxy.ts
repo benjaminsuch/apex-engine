@@ -379,7 +379,9 @@ export function proxy(proxyClass: TClass) {
             }
           }
         }
-
+        if (constructor.name === 'CapsuleComponent') {
+          console.log('capsule args', args, filterArgs(args));
+        }
         // We have to use `ProxyManager` here and not `GameProxyManager` or it will lead to an
         // issue, when loading the module, during the build-phase.
         //

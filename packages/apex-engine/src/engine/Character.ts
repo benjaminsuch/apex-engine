@@ -1,10 +1,12 @@
+import { CapsuleGeometry } from 'three';
+
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { CapsuleComponent } from './components/CapsuleComponent';
+import { MeshComponent } from './components/MeshComponent';
 import { Pawn } from './Pawn';
 
 export class Character extends Pawn {
-  protected readonly capsuleComponent: CapsuleComponent;
+  protected readonly capsuleComponent: MeshComponent;
 
   constructor(
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
@@ -12,7 +14,7 @@ export class Character extends Pawn {
   ) {
     super(instantiationService, logger);
 
-    this.capsuleComponent = this.addComponent(CapsuleComponent);
+    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(1, 3), undefined);
     this.capsuleComponent.setAsRoot(this);
   }
 }

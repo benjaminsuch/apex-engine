@@ -20,19 +20,20 @@ export class MeshComponentProxy extends SceneComponentProxy {
     const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
     if (geometryData) {
-      const { attributes, boundingSphere, index, type } = geometryData;
+      const { attributes, boundingSphere, index } = geometryData;
+      const { normal, position, uv } = attributes;
+      const geometry = new BufferGeometry();
 
-      if (type === 'BufferGeometry') {
-        const geometry = new BufferGeometry();
+      geometry.setAttribute('position', createBufferAttribute({ ...position, type: position.array.constructor.name }));
+      geometry.setAttribute('normal', createBufferAttribute({ ...normal, type: normal.array.constructor.name }));
+      geometry.setAttribute('uv', createBufferAttribute({ ...uv, type: uv.array.constructor.name }));
+      geometry.setIndex(createBufferAttribute({ ...index, normalized: false, itemSize: 1, type: 'Uint16Array' }));
 
-        geometry.setAttribute('position', createBufferAttribute({ ...attributes.position, type: attributes.position.array.constructor.name }));
-        geometry.setAttribute('normal', createBufferAttribute({ ...attributes.normal, type: attributes.normal.array.constructor.name }));
-        geometry.setAttribute('uv', createBufferAttribute({ ...attributes.uv, type: attributes.uv.array.constructor.name }));
-        geometry.setIndex(createBufferAttribute({ ...index, normalized: false, itemSize: 1, type: 'Uint16Array' }));
+      if (boundingSphere) {
         geometry.boundingSphere = new Sphere(new Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
-
-        args[0] = geometry;
       }
+
+      args[0] = geometry;
     }
 
     // if (materialData) {
