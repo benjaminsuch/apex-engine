@@ -21,8 +21,6 @@ export class PlayerController extends Controller {
     this.player = player;
   }
 
-  protected camera?: any;
-
   public readonly playerInput: PlayerInput;
 
   constructor(

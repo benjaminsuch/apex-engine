@@ -70,7 +70,7 @@ export function proxy(proxyClass: TClass) {
         // The check below ensures that we only run our constructor code, when the prototype matches the
         // original class constructor.
         if (Object.getPrototypeOf(this.constructor) !== constructor) {
-          return;
+          return this;
         }
 
         id(this);
@@ -379,9 +379,7 @@ export function proxy(proxyClass: TClass) {
             }
           }
         }
-        if (constructor.name === 'CapsuleComponent') {
-          console.log('capsule args', args, filterArgs(args));
-        }
+
         // We have to use `ProxyManager` here and not `GameProxyManager` or it will lead to an
         // issue, when loading the module, during the build-phase.
         //
@@ -404,8 +402,8 @@ function filterArgs(args: unknown[]): any[] {
           ? (val as any).toJSON()
           : isObjectConstructor(val)
             ? filterArgs(Object.values(val)).length
-            : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
-      : false
+            : false
+      : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
   );
 }
 

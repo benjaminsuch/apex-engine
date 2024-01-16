@@ -1,4 +1,4 @@
-import { type NormalMapTypes, type Side } from 'three';
+import { type NormalMapTypes, type PerspectiveCamera, type Side } from 'three';
 
 declare global {
   var DEFAULT_MAP: string;
@@ -31,6 +31,13 @@ declare global {
 export {};
 
 module 'three' {
+  export interface PerspectiveCameraJSON {
+    object: Pick<PerspectiveCamera, 'aspect' | 'far' | 'filmGauge' | 'filmOffset' | 'focus' | 'fov' | 'layers' | 'near' | 'type' | 'uuid' | 'zoom'> & {
+      matrix: number[];
+      up: [number, number, number];
+    };
+  }
+
   export interface IImageJSON {
     url?: string;
     uuid: string;

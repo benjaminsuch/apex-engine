@@ -1,14 +1,20 @@
 import { type Group, Mesh, type Object3D } from 'three';
 
+import { CameraComponent, CameraComponentProxy } from './CameraComponent';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
-export const proxyComponents = { MeshComponentProxy, SceneComponentProxy } as const;
+export const proxyComponents = {
+  CameraComponentProxy,
+  MeshComponentProxy,
+  SceneComponentProxy,
+} as const;
 
 const objectComponentMap = {
   Mesh: MeshComponent,
   Group: SceneComponent,
   Object3D: SceneComponent,
+  PerspectiveCamera: CameraComponent,
 } as const;
 
 export type SceneComponentType<T = typeof objectComponentMap> = T[keyof T];
