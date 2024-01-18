@@ -1,4 +1,4 @@
-import { PerspectiveCamera } from 'three';
+import { type Camera, PerspectiveCamera } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -6,10 +6,13 @@ import { CLASS, PROP } from '../core/class/decorators';
 import { proxy } from '../core/class/specifiers/proxy';
 import { serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
 export class CameraComponentProxy extends SceneComponentProxy {
+  public override sceneObject: Camera;
+
   constructor(
     [aspect, far, fov, near]: [number, number, number, number],
     tb: TripleBuffer,
@@ -19,6 +22,7 @@ export class CameraComponentProxy extends SceneComponentProxy {
     super([aspect, far, fov, near], tb, id, renderer);
 
     this.sceneObject = new PerspectiveCamera(fov, aspect, near, far);
+    renderer.camera = this.sceneObject;
   }
 }
 
@@ -62,5 +66,11 @@ export class CameraComponent extends SceneComponent {
     this.aspect = aspect;
     this.near = near;
     this.far = far;
+
+    this.componentTick.canTick = true;
+  }
+
+  public override tick(context: IEngineLoopTickContext): void {
+    // console.log('quat', ...this.quaternion.toArray());
   }
 }

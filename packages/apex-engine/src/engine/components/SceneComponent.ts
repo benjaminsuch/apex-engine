@@ -5,6 +5,7 @@ import { CLASS, PROP } from '../core/class/decorators';
 import { proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { RenderProxy } from '../renderer/RenderProxy';
 import { ActorComponent } from './ActorComponent';
@@ -64,6 +65,16 @@ export class SceneComponentProxy extends RenderProxy {
     super(args, tb, id, renderer);
 
     this.sceneObject = new Object3D();
+  }
+
+  public override tick(tick: IEngineLoopTickContext): void {
+    super.tick(tick);
+
+    this.sceneObject.castShadow = this.castShadow;
+    this.sceneObject.receiveShadow = this.receiveShadow;
+    this.sceneObject.visible = this.visible;
+    this.sceneObject.quaternion.fromArray(this.quaternion);
+    console.log('render quat', ...this.sceneObject.quaternion.toArray());
   }
 }
 
@@ -151,7 +162,7 @@ export class SceneComponent extends ActorComponent {
       return false;
     }
 
-    // this.componentTick.addDependency(parent.componentTick);
+    this.componentTick.addDependency(parent.componentTick);
 
     this.parent = parent;
     this.childIndex = this.parent.children.push(this) - 1;

@@ -6,6 +6,7 @@ import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Pawn } from './Pawn';
 import { type Player } from './Player';
 import { PlayerInput } from './PlayerInput';
+import { ETickGroup } from './TickManager';
 
 export class PlayerController extends Controller {
   protected player?: Player;
@@ -30,6 +31,8 @@ export class PlayerController extends Controller {
     super(instantiationService, logger);
 
     this.playerInput = this.instantiationService.createInstance(PlayerInput);
+    this.actorTick.canTick = true;
+    this.actorTick.tickGroup = ETickGroup.PostPhysics;
 
     this.addComponent(InputComponent);
   }

@@ -4,11 +4,30 @@ import { type ActorComponent } from './components/ActorComponent';
 import { type SceneComponent } from './components/SceneComponent';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Level } from './Level';
+import { TickFunction } from './TickManager';
 import { type World } from './World';
 
 export type ActorComponentType = new (...args: any[]) => ActorComponent;
 
 export class Actor {
+  private level?: Level;
+
+  public getLevel(): Level {
+    if (!this.level) {
+      throw new Error(`This actor has not been added to a level.`);
+    }
+    return this.level;
+  }
+
+  private world?: World;
+
+  public getWorld(): World {
+    if (!this.world) {
+      throw new Error(`This actor is not part of a world.`);
+    }
+    return this.world;
+  }
+
   protected rootComponent?: SceneComponent;
 
   public setRootComponent(component: SceneComponent): boolean {
@@ -62,33 +81,22 @@ export class Actor {
     return component;
   }
 
-  private level?: Level;
-
-  public getLevel(): Level {
-    if (!this.level) {
-      throw new Error(`This actor has not been added to a level.`);
-    }
-    return this.level;
-  }
-
-  private world?: World;
-
-  public getWorld(): World {
-    if (!this.world) {
-      throw new Error(`This actor is not part of a world.`);
-    }
-    return this.world;
-  }
+  public actorTick: ActorTickFunction;
 
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-  ) {}
+  ) {
+    this.actorTick = this.instantiationService.createInstance(ActorTickFunction, this);
+  }
 
   public tick(context: IEngineLoopTickContext): void {}
 
   public beginPlay(): void {
+    this.registerActorTickFunction();
+
     for (const component of this.components) {
+      component.registerComponentTickFunction();
       component.beginPlay();
     }
   }
@@ -104,5 +112,17 @@ export class Actor {
     this.onRegister();
   }
 
+  public registerActorTickFunction(): void {
+    if (this.actorTick.canTick) {
+      this.actorTick.register();
+    }
+  }
+
   protected onRegister(): void {}
+}
+
+export class ActorTickFunction extends TickFunction<Actor> {
+  public override run(context: IEngineLoopTickContext): void {
+    this.target.tick(context);
+  }
 }
