@@ -36,13 +36,16 @@ export class EngineLoop {
   public async init(): Promise<void> {
     // Setup important workers
     {
-      const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
-      this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
+      if (IS_BROWSER) {
+        const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
+        this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
+
+        await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
+      }
 
       const physicsContext = this.instantiationService.createInstance(PhysicsWorkerContext);
       this.instantiationService.setServiceInstance(IPhysicsWorkerContext, physicsContext);
 
-      await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
       await physicsContext.init();
     }
 
