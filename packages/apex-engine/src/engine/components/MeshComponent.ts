@@ -49,7 +49,8 @@ export class MeshComponentProxy extends SceneComponentProxy {
     // }
 
     if (IS_DEV) {
-      args[1] = new MeshPhongMaterial({ color: [0xe7cf7c, 0xe75e4f][Math.round(Math.random())], depthWrite: false });
+      // random color: (10 ** (6 + Math.random())).toString(16).split('.').map(val => Number('0x' + val)).shift()
+      args[1] = new MeshPhongMaterial({ depthWrite: false });
     }
 
     this.sceneObject = new Mesh(...args);

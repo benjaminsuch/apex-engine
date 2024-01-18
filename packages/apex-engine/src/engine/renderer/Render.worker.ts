@@ -70,8 +70,13 @@ const context: IInternalRenderWorkerContext = {
   start() {
     this.webGLRenderer.setAnimationLoop(time => this.tick(time));
   },
-  setSize(this, height, width): void {
+  setSize(this, width, height): void {
     this.webGLRenderer.setSize(width, height, false);
+
+    if (this.camera instanceof PerspectiveCamera) {
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+    }
   },
   tick(time): void {
     ++this.frameId;
@@ -130,7 +135,7 @@ function onInit(event: MessageEvent): void {
     dirLight.position.set(-1, 2, 4);
 
     context.scene.add(dirLight);
-    context.setSize(initialHeight, initialWidth);
+    context.setSize(initialWidth, initialHeight);
 
     context.tickManager = instantiationService.createInstance(TickManager);
     context.proxyManager = instantiationService.createInstance(RenderProxyManager);

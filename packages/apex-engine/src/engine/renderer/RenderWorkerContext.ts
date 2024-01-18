@@ -56,6 +56,8 @@ export class RenderWorkerContext implements IRenderWorkerContext {
         },
         [offscreenCanvas]
       );
+
+      window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
     }
 
     this.isInitialized = true;
@@ -63,7 +65,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
         reject(`Render-Worker initialization failed.`);
-      }, 30000);
+      }, 30_000);
 
       this.worker.onmessage = (event): void => {
         if (typeof event.data !== 'object') {

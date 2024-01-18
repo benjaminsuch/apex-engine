@@ -29,12 +29,7 @@ export class InputComponent extends ActorComponent {
     this.axisBindings.splice(this.axisBindings.findIndex(binding => binding.name === name), 1);
   }
 
-  public bindAction<T extends Actor>(
-    name: InputActionBinding['name'],
-    ref: T,
-    fn: Function,
-    event: EKeyEvent
-  ): void {
+  public bindAction<T extends Actor>(name: InputActionBinding['name'], ref: T, fn: Function, event: EKeyEvent): void {
     const idx = this.axisBindings.findIndex(binding => binding.name === name);
 
     if (idx > -1) {
