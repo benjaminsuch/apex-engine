@@ -10,7 +10,7 @@ import { type SceneComponentProxy } from '../components/SceneComponent';
 import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
-import { TickManager } from '../TickManager';
+import { ETickGroup, TickManager } from '../TickManager';
 import { RenderingInfo } from './RenderingInfo';
 import { RenderProxyManager } from './RenderProxyManager';
 
@@ -84,6 +84,12 @@ const context: IInternalRenderWorkerContext = {
     const tickContext = { id: this.frameId, delta: 0, elapsed: time };
 
     TripleBuffer.swapReadBufferFlags(Flags.GAME_FLAGS);
+
+    this.tickManager.startTick(tickContext);
+    this.tickManager.runTickGroup(ETickGroup.PrePhysics);
+    this.tickManager.runTickGroup(ETickGroup.DuringPhysics);
+    this.tickManager.runTickGroup(ETickGroup.PostPhysics);
+    this.tickManager.endTick();
 
     this.renderingInfo.tick(tickContext);
     this.webGLRenderer.render(this.scene, this.camera);

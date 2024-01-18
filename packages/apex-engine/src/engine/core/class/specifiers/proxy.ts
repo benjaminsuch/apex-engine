@@ -476,10 +476,10 @@ function setQuat(
     'value',
     new Proxy(val, {
       set(target, prop, val): boolean {
-        if (prop === 'x') dv.setFloat32(offset, val, true);
-        if (prop === 'y') dv.setFloat32(offset + 4, val, true);
-        if (prop === 'z') dv.setFloat32(offset + 8, val, true);
-        if (prop === 'w') dv.setFloat32(offset + 12, val, true);
+        if (prop === '_x') dv.setFloat32(offset, val, true);
+        if (prop === '_y') dv.setFloat32(offset + 4, val, true);
+        if (prop === '_z') dv.setFloat32(offset + 8, val, true);
+        if (prop === '_w') dv.setFloat32(offset + 12, val, true);
 
         return Reflect.set(target, prop, val);
       },

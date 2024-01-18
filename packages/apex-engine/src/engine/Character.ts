@@ -31,7 +31,8 @@ export class Character extends Pawn {
     this.capsuleComponent.setAsRoot(this);
 
     this.cameraComponent = this.addComponent(CameraComponent, 50, 1, 0.1, 2000);
-    this.cameraComponent.position.set(1, 15, -25);
+    this.cameraComponent.position.set(0, 1, 0);
+    // this.cameraComponent.lookAt(0, 0, 0);
     this.cameraComponent.attachToComponent(this.getRootComponent());
   }
 

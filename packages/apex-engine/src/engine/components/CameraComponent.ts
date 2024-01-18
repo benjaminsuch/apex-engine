@@ -6,7 +6,6 @@ import { CLASS, PROP } from '../core/class/decorators';
 import { proxy } from '../core/class/specifiers/proxy';
 import { serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
-import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
@@ -68,9 +67,5 @@ export class CameraComponent extends SceneComponent {
     this.far = far;
 
     this.componentTick.canTick = true;
-  }
-
-  public override tick(context: IEngineLoopTickContext): void {
-    // console.log('quat', ...this.quaternion.toArray());
   }
 }

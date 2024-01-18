@@ -10,6 +10,10 @@ import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { RenderProxy } from '../renderer/RenderProxy';
 import { ActorComponent } from './ActorComponent';
 
+const _m1 = /* @__PURE__ */ new Matrix4();
+const _pos = /* @__PURE__ */ new Vector3();
+const _obj = /* @__PURE__ */ new Object3D();
+
 export class SceneComponentProxy extends RenderProxy {
   declare position: [number, number, number];
 
@@ -73,8 +77,11 @@ export class SceneComponentProxy extends RenderProxy {
     this.sceneObject.castShadow = this.castShadow;
     this.sceneObject.receiveShadow = this.receiveShadow;
     this.sceneObject.visible = this.visible;
+    this.sceneObject.position.fromArray(this.position);
     this.sceneObject.quaternion.fromArray(this.quaternion);
-    console.log('render quat', ...this.sceneObject.quaternion.toArray());
+    this.sceneObject.scale.fromArray(this.scale);
+    this.sceneObject.matrix.fromArray(this.matrix);
+    this.sceneObject.up.fromArray(this.up);
   }
 }
 
@@ -211,5 +218,15 @@ export class SceneComponent extends ActorComponent {
       }
     }
     return false;
+  }
+
+  public lookAt(x: number | Vector3, y: number, z: number): void {
+    if (x instanceof Vector3) {
+      _obj.lookAt(x);
+    } else {
+      _obj.lookAt(x, y, z);
+    }
+
+    this.matrix.copy(_obj.matrixWorld);
   }
 }

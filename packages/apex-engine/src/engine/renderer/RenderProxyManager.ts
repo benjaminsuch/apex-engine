@@ -1,9 +1,11 @@
 import { proxyComponents } from '../components';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyManager } from '../ProxyManager';
+import { type RenderProxy } from './RenderProxy';
 
 const proxyConstructors = { ...proxyComponents };
 
-export class RenderProxyManager extends ProxyManager<any> {
+export class RenderProxyManager extends ProxyManager<RenderProxy> {
   public static override getInstance(): RenderProxyManager {
     return this.getInstance() as RenderProxyManager;
   }
@@ -12,7 +14,7 @@ export class RenderProxyManager extends ProxyManager<any> {
     return proxyConstructors[id as keyof typeof proxyConstructors];
   }
 
-  public getProxy(id: number): any {
+  public getProxy(id: number): RenderProxy | void {
     for (const proxy of this.proxies) {
       if (proxy.id === id) {
         return proxy;
@@ -20,7 +22,7 @@ export class RenderProxyManager extends ProxyManager<any> {
     }
   }
 
-  public override tick(tick: any): void {
+  public override tick(tick: IEngineLoopTickContext): void {
     super.tick(tick);
 
     for (let i = 0; i < this.proxies.entries; ++i) {
