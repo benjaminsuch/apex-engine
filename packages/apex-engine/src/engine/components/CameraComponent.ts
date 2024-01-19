@@ -1,4 +1,4 @@
-import { type Camera, PerspectiveCamera } from 'three';
+import { PerspectiveCamera } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -6,22 +6,67 @@ import { CLASS, PROP } from '../core/class/decorators';
 import { proxy } from '../core/class/specifiers/proxy';
 import { serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
 export class CameraComponentProxy extends SceneComponentProxy {
-  public override sceneObject: Camera;
+  declare aspect: number;
+
+  declare far: number;
+
+  declare filmGauge: number;
+
+  declare filmOffset: number;
+
+  declare focus: number;
+
+  declare fov: number;
+
+  declare near: number;
+
+  declare zoom: number;
+
+  public override sceneObject: PerspectiveCamera;
 
   constructor(
-    [aspect, far, fov, near]: [number, number, number, number],
+    [fov, aspect, near, far]: [number, number, number, number],
     tb: TripleBuffer,
     public override readonly id: number,
     protected override readonly renderer: IInternalRenderWorkerContext
   ) {
     super([aspect, far, fov, near], tb, id, renderer);
 
-    this.sceneObject = new PerspectiveCamera(fov, aspect, near, far);
-    renderer.camera = this.sceneObject;
+    const camera = this.renderer.camera as PerspectiveCamera;
+    this.sceneObject = new PerspectiveCamera(fov, camera.aspect, near, far);
+    this.renderer.camera = this.sceneObject;
+  }
+
+  public override tick(tick: IEngineLoopTickContext): void {
+    super.tick(tick);
+
+    const changes = this.sceneObject.aspect - this.aspect
+      + this.sceneObject.far - this.far
+      + this.sceneObject.filmGauge - this.filmGauge
+      + this.sceneObject.filmOffset - this.filmOffset
+      + this.sceneObject.focus - this.focus
+      + this.sceneObject.fov - this.fov
+      + this.sceneObject.near - this.near
+      + this.sceneObject.zoom - this.zoom;
+
+    this.sceneObject.aspect = this.aspect;
+    this.sceneObject.far = this.far;
+    this.sceneObject.filmGauge = this.filmGauge;
+    this.sceneObject.filmOffset = this.filmOffset;
+    this.sceneObject.focus = this.focus;
+    this.sceneObject.fov = this.fov;
+    this.sceneObject.near = this.near;
+    this.sceneObject.zoom = this.zoom;
+
+    // if (changes > 0) {
+    //   console.log('changes', changes);
+    //   this.sceneObject.updateProjectionMatrix();
+    // }
   }
 }
 

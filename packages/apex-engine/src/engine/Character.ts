@@ -1,18 +1,15 @@
-import { CapsuleGeometry, Euler, Vector3 } from 'three';
+import { CapsuleGeometry, Euler, MathUtils, Vector3 } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { CameraComponent } from './components/CameraComponent';
 import { MeshComponent } from './components/MeshComponent';
+import { InputAction } from './InputAction';
+import { InputMappingContext } from './InputMappingContext';
+import { ETriggerEvent } from './InputTriggers';
 import { Pawn } from './Pawn';
 import { PlayerController } from './PlayerController';
-import { InputActionMap, InputAxisMap } from './PlayerInput';
-
-const euler = new Euler();
-euler.order = 'YXZ';
-
-const vec3 = new Vector3();
-const moveScale = 0.1;
+import { PlayerInput } from './PlayerInput';
 
 export class Character extends Pawn {
   private inputBindingsInitialized: boolean = false;
@@ -31,7 +28,7 @@ export class Character extends Pawn {
     this.capsuleComponent.setAsRoot(this);
 
     this.cameraComponent = this.addComponent(CameraComponent, 50, 1, 0.1, 2000);
-    this.cameraComponent.position.set(0, 1, 0);
+    this.cameraComponent.position.set(0, 15, -25);
     // this.cameraComponent.lookAt(0, 0, 0);
     this.cameraComponent.attachToComponent(this.getRootComponent());
   }
@@ -39,9 +36,7 @@ export class Character extends Pawn {
   public moveForward(value: number): void {
     if (IS_BROWSER) {
       if (this.cameraComponent) {
-        vec3.setFromMatrixColumn(this.cameraComponent.matrix, 0);
-        vec3.crossVectors(this.cameraComponent.up, vec3);
-        this.cameraComponent.position.addScaledVector(vec3, value * moveScale);
+
       }
     }
   }
@@ -49,8 +44,7 @@ export class Character extends Pawn {
   public moveRight(value: number): void {
     if (IS_BROWSER) {
       if (this.cameraComponent) {
-        vec3.setFromMatrixColumn(this.cameraComponent.matrix, 0);
-        this.cameraComponent.position.addScaledVector(vec3, value * moveScale);
+
       }
     }
   }
@@ -60,8 +54,6 @@ export class Character extends Pawn {
   public turn(value: number): void {
     if (IS_BROWSER) {
       if (this.cameraComponent) {
-        euler.y += value * 0.002;
-        this.cameraComponent.quaternion.setFromEuler(euler);
       }
     }
   }
@@ -69,9 +61,7 @@ export class Character extends Pawn {
   public lookUp(value: number): void {
     if (IS_BROWSER) {
       if (this.cameraComponent) {
-        euler.x -= value * 0.002;
-        euler.x = Math.max(Math.PI / 2 - Math.PI, Math.min(Math.PI / 2 - 0, euler.x));
-        this.cameraComponent.quaternion.setFromEuler(euler);
+        // console.log('lookUp value', value);
       }
     }
   }
@@ -95,11 +85,12 @@ export class Character extends Pawn {
       return;
     }
 
-    this.inputComponent.bindAxis('DefaultPawn_MoveForward', this, this.moveForward);
-    this.inputComponent.bindAxis('DefaultPawn_MoveRight', this, this.moveRight);
-    this.inputComponent.bindAxis('DefaultPawn_MoveUp', this, this.moveUp);
-    this.inputComponent.bindAxis('DefaultPawn_Turn', this, this.turn);
-    this.inputComponent.bindAxis('DefaultPawn_LookUp', this, this.lookUp);
+    this.inputComponent.bindAction(MoveAction, ETriggerEvent.Triggered, this, this.moveForward);
+    // this.inputComponent.bindAxis('DefaultPawn_MoveForward', this, this.moveForward);
+    // this.inputComponent.bindAxis('DefaultPawn_MoveRight', this, this.moveRight);
+    // this.inputComponent.bindAxis('DefaultPawn_MoveUp', this, this.moveUp);
+    // this.inputComponent.bindAxis('DefaultPawn_Turn', this, this.turn);
+    // this.inputComponent.bindAxis('DefaultPawn_LookUp', this, this.lookUp);
 
     this.logger.debug(this.constructor.name, `Setup action bindings`);
   }
@@ -115,7 +106,7 @@ export class Character extends Pawn {
       return;
     }
 
-    if (!this.controller) {
+    if (!(this.controller instanceof PlayerController)) {
       this.logger.warn(
         this.constructor.name,
         'Skipping input maps: PlayerController is not defined'
@@ -123,29 +114,18 @@ export class Character extends Pawn {
       return;
     }
 
-    if (this.controller instanceof PlayerController) {
-      const playerInput = this.controller.playerInput;
+    const moveAction = this.instantiationService.createInstance(MoveAction);
 
-      playerInput.addMapping(new InputActionMap('OpenSomething', 'KeyW'));
+    const defaultMappingContext = this.instantiationService.createInstance(InputMappingContext);
+    defaultMappingContext.mapKey(moveAction, 'KeyW');
 
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveForward', 'KeyW', 1));
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveForward', 'ArrowUp', 1));
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveForward', 'KeyS', -1));
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveForward', 'ArrowDown', -1));
+    const playerInput = this.controller.playerInput;
+    playerInput.addMappingContext(defaultMappingContext);
 
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveRight', 'KeyA', -1));
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveRight', 'ArrowLeft', -1));
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveRight', 'KeyD', 1));
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveRight', 'ArrowRight', 1));
+    this.inputBindingsInitialized = true;
 
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_MoveUp', 'Space', 1));
-
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_Turn', 'MouseX', -1));
-      playerInput.addMapping(new InputAxisMap('DefaultPawn_LookUp', 'MouseY', 1));
-
-      this.inputBindingsInitialized = true;
-
-      this.logger.debug(this.constructor.name, `Initialized input maps`);
-    }
+    this.logger.debug(this.constructor.name, `Initialized input maps`);
   }
 }
+
+class MoveAction extends InputAction {}
