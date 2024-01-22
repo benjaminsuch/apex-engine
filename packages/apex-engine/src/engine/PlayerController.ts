@@ -9,8 +9,6 @@ import { PlayerInput } from './PlayerInput';
 import { ETickGroup } from './TickManager';
 
 export class PlayerController extends Controller {
-  protected readonly inputComponent: InputComponent;
-
   protected player?: Player;
 
   public getPlayer(): Player {
@@ -35,12 +33,15 @@ export class PlayerController extends Controller {
     this.playerInput = this.instantiationService.createInstance(PlayerInput);
     this.actorTick.canTick = true;
     this.actorTick.tickGroup = ETickGroup.PostPhysics;
-
-    this.inputComponent = this.addComponent(InputComponent);
   }
 
   public override tick(tick: IEngineLoopTickContext): void {
-    this.playerInput.processInput(this.inputComponent, tick.delta);
+    const inputComponent = this.getPawn().inputComponent;
+
+    if (inputComponent) {
+      this.playerInput.processInput(inputComponent, tick.delta);
+    }
+
     super.tick(tick);
   }
 

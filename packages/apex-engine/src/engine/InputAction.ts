@@ -22,8 +22,12 @@ export class InputAction {
   public evaluateTriggers(playerInput: PlayerInput, triggers: InputTrigger[], value: Vector3, delta: number): ETriggerEvent {
     const lastTriggerState = this.triggerState;
 
-    for (const trigger of triggers) {
-      this.triggerState = trigger.run(playerInput, value, delta);
+    if (triggers.length > 0) {
+      for (const trigger of triggers) {
+        this.triggerState = trigger.run(playerInput, value, delta);
+      }
+    } else {
+      this.triggerState = ETriggerState.Triggered;
     }
 
     if (lastTriggerState === ETriggerState.None) {

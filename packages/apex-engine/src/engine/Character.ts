@@ -1,4 +1,4 @@
-import { CapsuleGeometry } from 'three';
+import { CapsuleGeometry, type Vector3 } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
@@ -15,14 +15,7 @@ export class Character extends Pawn {
 
   protected readonly capsuleComponent: MeshComponent;
 
-  protected defaultMappingContext: InputMappingContext | undefined;
-
-  public getDefaultMappingContext(): InputMappingContext {
-    if (!this.defaultMappingContext) {
-      throw new Error(`No default mapping context assigned.`);
-    }
-    return this.defaultMappingContext;
-  }
+  public defaultMappingContext: InputMappingContext;
 
   constructor(
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
@@ -37,6 +30,8 @@ export class Character extends Pawn {
     this.cameraComponent.position.set(0, 15, -25);
     // this.cameraComponent.lookAt(0, 0, 0);
     this.cameraComponent.attachToComponent(this.getRootComponent());
+
+    this.defaultMappingContext = this.instantiationService.createInstance(DefaultMappingContext);
   }
 
   public override beginPlay(): void {
@@ -54,7 +49,6 @@ export class Character extends Pawn {
       return;
     }
 
-    this.defaultMappingContext = this.instantiationService.createInstance(DefaultMappingContext);
     this.controller.playerInput.addMappingContext(this.defaultMappingContext);
   }
 
@@ -76,17 +70,10 @@ export class Character extends Pawn {
 
   public moveUp(value: number): void {}
 
-  public turn(value: number): void {
+  public lookAround(value: Vector3): void {
     if (IS_BROWSER) {
+      // console.log('lookAround', ...value.toArray());
       if (this.cameraComponent) {
-      }
-    }
-  }
-
-  public lookUp(value: number): void {
-    if (IS_BROWSER) {
-      if (this.cameraComponent) {
-        // console.log('lookUp value', value);
       }
     }
   }
@@ -108,16 +95,19 @@ export class Character extends Pawn {
       return;
     }
 
-    this.inputComponent.bindAction(MoveAction, ETriggerEvent.Triggered, this, this.moveForward);
+    const defaultMappingContext = this.defaultMappingContext as DefaultMappingContext;
+
+    this.inputComponent.bindAction(defaultMappingContext.moveAction, ETriggerEvent.Triggered, this, this.moveForward);
+    this.inputComponent.bindAction(defaultMappingContext.lookAction, ETriggerEvent.Triggered, this, this.lookAround);
 
     this.logger.debug(this.constructor.name, `Setup action bindings`);
   }
 }
 
 class DefaultMappingContext extends InputMappingContext {
-  private readonly lookAction: LookAction;
+  public readonly lookAction: LookAction;
 
-  private readonly moveAction: MoveAction;
+  public readonly moveAction: MoveAction;
 
   constructor(@IInstantiationService protected override readonly instantiationService: IInstantiationService) {
     super(instantiationService);
@@ -125,7 +115,7 @@ class DefaultMappingContext extends InputMappingContext {
     this.lookAction = this.instantiationService.createInstance(LookAction);
     this.moveAction = this.instantiationService.createInstance(MoveAction);
 
-    this.mapKey(this.lookAction, 'MouseXY');
+    const lookMapping = this.mapKey(this.lookAction, 'MouseXY');
     const moveMapping = this.mapKey(this.moveAction, 'KeyW');
     // moveMapping.modifiers.push(...)
     // moveMapping.triggers.push(...)

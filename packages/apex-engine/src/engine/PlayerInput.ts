@@ -56,20 +56,21 @@ export class PlayerInput {
           value,
           delta
         );
-      }
 
-      for (const actionBinding of inputComponent.actionBindings) {
-        if (actionBinding.triggerEvent === triggerEvent) {
-          bindingsToExecute.push(actionBinding);
+        for (const actionBinding of inputComponent.actionBindings) {
+          if (actionMapping.action === actionBinding.action && actionBinding.triggerEvent === triggerEvent) {
+            bindingsToExecute.push(actionBinding);
+          }
         }
       }
 
       for (const binding of bindingsToExecute) {
         if (binding.action.consumeInput) {
-          this.keysToConsume.delete(key);
+          this.consumeKey(key);
         }
 
         binding.exec();
+        binding.action.value = new Vector3(0, 0, 0);
       }
 
       bindingsToExecute = [];
@@ -163,6 +164,15 @@ export class PlayerInput {
 
   private getMappingContextIndex(mappingContext: InputMappingContext): number {
     return this.registeredInputContexts.findIndex(([registeredContext]) => registeredContext === mappingContext);
+  }
+
+  private consumeKey(key: TKey): void {
+    const keyState = this.keyStates[key]!;
+
+    keyState.isConsumed = true;
+    keyState.sampleCount = 0;
+
+    this.keysToConsume.delete(key);
   }
 }
 

@@ -12,7 +12,7 @@ export class Pawn extends Actor {
     return this.controller;
   }
 
-  protected inputComponent?: InputComponent;
+  public inputComponent?: InputComponent;
 
   public possessedBy(controller: Controller): void {
     const oldController = this.controller;

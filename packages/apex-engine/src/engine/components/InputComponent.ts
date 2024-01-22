@@ -7,8 +7,7 @@ import { ActorComponent } from './ActorComponent';
 export class InputComponent extends ActorComponent {
   public readonly actionBindings: InputActionBinding[] = [];
 
-  public bindAction<T extends Actor>(ActionConstructor: typeof InputAction, event: ETriggerEvent, target: T, handler: Function): InputActionBinding {
-    const action = this.instantiationService.createInstance(ActionConstructor);
+  public bindAction<T extends Actor>(action: InputAction, event: ETriggerEvent, target: T, handler: Function): InputActionBinding {
     const binding = this.instantiationService.createInstance(InputActionBinding, this, action, event);
 
     binding.bind(target, handler);
@@ -47,7 +46,7 @@ export class InputActionBinding {
       this.unbind();
     }
 
-    this.actionHandler = (): void => handler.call(target, this.action);
+    this.actionHandler = (): void => handler.call(target, this.action.value);
   }
 
   public unbind(): void {
