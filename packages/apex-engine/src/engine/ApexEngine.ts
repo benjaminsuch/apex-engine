@@ -86,9 +86,6 @@ export class ApexEngine {
       const loader = this.instantiationService.createInstance(GLTFLoader);
       const content = await loader.load(`game/maps/${url}`);
       const { default: LoadedLevel }: { default: typeof Level } = await levels[url]();
-      console.log('DEFAULT_PAWN', DEFAULT_PAWN);
-      const module = await import(DEFAULT_PAWN);
-      console.log('pawn module', module);
       const level = this.instantiationService.createInstance(LoadedLevel);
 
       world.setCurrentLevel(level);
