@@ -1,4 +1,5 @@
 import { Actor } from './Actor';
+import { ApexEngine } from './ApexEngine';
 import { Character } from './Character';
 import { type Pawn } from './Pawn';
 import { type Player } from './Player';
@@ -41,7 +42,7 @@ export class GameMode extends Actor {
   }
 
   public spawnDefaultPlayerPawn(): Pawn {
-    return this.getWorld().spawnActor(Character);
+    return this.getWorld().spawnActor(ApexEngine.DefaultPawnClass);
   }
 
   protected initStartSpot(playerStart: Actor, playerController: PlayerController): void {}
