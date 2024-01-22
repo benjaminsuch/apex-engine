@@ -1,6 +1,5 @@
 import { Actor } from './Actor';
 import { ApexEngine } from './ApexEngine';
-import { Character } from './Character';
 import { type Pawn } from './Pawn';
 import { type Player } from './Player';
 import { PlayerController } from './PlayerController';

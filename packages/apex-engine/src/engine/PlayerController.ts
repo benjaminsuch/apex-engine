@@ -1,6 +1,5 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { InputComponent } from './components/InputComponent';
 import { Controller } from './Controller';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Pawn } from './Pawn';
