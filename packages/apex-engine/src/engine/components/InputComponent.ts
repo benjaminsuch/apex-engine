@@ -20,7 +20,7 @@ export class InputComponent extends ActorComponent {
     const idx = this.actionBindings.findIndex(binding => binding.action === action);
 
     if (idx > -1) {
-      this.actionBindings.splice(idx, 1, this.actionBindings[this.actionBindings.length]).pop();
+      this.actionBindings.splice(idx, 1, this.actionBindings[this.actionBindings.length - 1]).pop();
     }
   }
 }
