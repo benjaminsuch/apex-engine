@@ -34,6 +34,25 @@ export class EngineLoop {
   }
 
   public async init(): Promise<void> {
+    // Import and assign default classes
+    {
+      const defaultPawn = await import(DEFAULT_PAWN);
+
+      if (!defaultPawn.default) {
+        throw new Error(`Invalid default pawn: Your default pawn module (defined in your apex.config.ts) does not have a "default" export.`);
+      }
+
+      ApexEngine.DefaultPawnClass = defaultPawn.default;
+
+      const defaultGameMode = await import(DEFAULT_GAME_MODE);
+
+      if (!defaultGameMode.default) {
+        throw new Error(`Invalid default game mode class: Your default game mode module (defined in your apex.config.ts) does not have a "default" export.`);
+      }
+
+      ApexEngine.DefaultGameModeClass = defaultGameMode.default;
+    }
+
     // Setup important workers
     {
       if (IS_BROWSER) {

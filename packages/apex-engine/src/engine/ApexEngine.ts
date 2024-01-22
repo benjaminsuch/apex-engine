@@ -7,7 +7,9 @@ import { GLTFLoader } from './core/three/GLTFLoader';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Flags } from './Flags';
 import { GameInstance } from './GameInstance';
+import { type GameMode } from './GameMode';
 import { type Level } from './Level';
+import { type Pawn } from './Pawn';
 
 export class ApexEngine {
   private static instance?: ApexEngine;
@@ -18,6 +20,16 @@ export class ApexEngine {
     }
     return this.instance;
   }
+
+  /**
+   * Attention: This class is only available _after_ `EngineLoop.init` has been completed.
+   */
+  public static DefaultPawnClass: typeof Pawn;
+
+  /**
+   * Attention: This class is only available _after_ `EngineLoop.init` has been completed.
+   */
+  public static DefaultGameModeClass: typeof GameMode;
 
   private gameInstance?: GameInstance;
 

@@ -59,3 +59,6 @@ export class GameMode extends Actor {
     playerController.startSpot = startSpot;
   }
 }
+
+// We need a default export for our default-class loading in `EngineLoop.init`.
+export default GameMode;
