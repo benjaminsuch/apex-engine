@@ -70,7 +70,6 @@ export class PlayerInput {
         }
 
         binding.exec();
-        binding.action.value = new Vector3(0, 0, 0);
       }
 
       bindingsToExecute = [];
@@ -149,6 +148,7 @@ export class PlayerInput {
     }
 
     state.sampleCount++;
+
     this.keysToConsume.add('MouseXY');
   }
 
@@ -156,10 +156,26 @@ export class PlayerInput {
 
   private handleMouseUp(event: MouseEvent): void {}
 
-  private handleKeyDown(event: KeyboardEvent): void {}
+  private handleKeyDown(event: KeyboardEvent): void {
+    const key = event.code as TKey;
+    let state = this.keyStates[key];
+
+    if (!state) {
+      state = this.keyStates[key] = new KeyState(new Vector3(1, 0, 0), new Vector3(1, 0, 0));
+    }
+
+    state.isPressed = true;
+    state.sampleCount++;
+
+    this.keysToConsume.add(key);
+  }
 
   private handleKeyUp(event: KeyboardEvent): void {
-    console.log(event);
+    const state = this.keyStates[event.code as TKey];
+
+    if (state) {
+      state.isPressed = false;
+    }
   }
 
   private getMappingContextIndex(mappingContext: InputMappingContext): number {
