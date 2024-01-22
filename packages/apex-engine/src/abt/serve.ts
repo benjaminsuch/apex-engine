@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:http';
-import { extname, join, posix, relative, resolve } from 'node:path';
+import { extname, join, posix, resolve } from 'node:path';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
 // import terser from '@rollup/plugin-terser';
@@ -9,7 +9,7 @@ import mime from 'mime';
 import { watch } from 'rollup';
 import { WebSocketServer } from 'ws';
 
-import { APEX_DIR, getEngineSourceFiles, getGameMaps, getLauncherPath, type TargetConfig } from './config';
+import { APEX_DIR, getEngineSourceFiles, getGameMaps, getGameSourceFiles, getLauncherPath, type TargetConfig } from './config';
 import { startElectron } from './electron';
 import { readFileFromContentBase } from './file';
 import { buildInfo, htmlPlugin, replace, workerPlugin } from './plugins';
@@ -56,13 +56,14 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
   });
 
   Object.entries(getGameMaps()).forEach(([p1, p2]) => {
-    fs.copySync(p2, `${resolve(buildDir, 'maps', relative('game/maps', p1))}${extname(p2)}`);
+    fs.copySync(p2, `${resolve(buildDir, p1)}${extname(p2)}`);
   });
 
   const watcher = watch({
     input: {
       index: getLauncherPath('browser'),
       ...getEngineSourceFiles(),
+      ...getGameSourceFiles(),
     },
     output: {
       dir: buildDir,
@@ -83,7 +84,7 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
           `<script type="module">`,
           `  const ws = new WebSocket('ws://localhost:24678')`,
           ``,
-          `  ws.addEventListener('message', async ({data}) => {`,
+          `  ws.addEventListener('message', async ({ data }) => {`,
           `    let parsed`,
           ``,
           `    try {`,
@@ -148,10 +149,8 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
     }
   });
 
-  fs.copy('src/game/maps', resolve(buildDir, 'maps'), (err: any) => {
-    if (err) {
-      console.error('Error copying folder:', err);
-    }
+  Object.entries(getGameMaps()).forEach(([p1, p2]) => {
+    fs.copySync(p2, `${resolve(buildDir, p1)}${extname(p2)}`);
   });
 
   const main = watch({

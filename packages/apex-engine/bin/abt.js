@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { cac } from 'cac';
-import { resolve, dirname, join, relative, extname, isAbsolute, basename, posix, sep } from 'node:path';
+import { resolve, dirname, join, relative, extname, posix, isAbsolute, basename, sep } from 'node:path';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import fs from 'fs-extra';
@@ -196,6 +196,14 @@ function getGameMaps() {
         fileURLToPath(pathToFileURL(resolve(file))),
     ]));
 }
+function getGameSourceFiles() {
+    return Object.fromEntries(glob
+        .sync('src/game/**/*.ts')
+        .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file))),
+    ]));
+}
 
 function buildInfo(target, levels = []) {
     return virtual({
@@ -282,10 +290,16 @@ function htmlPlugin(entryFile = './index.js', options, body = '') {
 }
 
 function replacePlugin(target) {
+    const DEFAULT_MAP = JSON.stringify(target.defaultMap);
+    // @todo: I need a better solution for this. I don't want default values hardcoded in here.
+    const DEFAULT_PAWN = JSON.stringify(target.defaultPawn ? posix.join('game', target.defaultPawn) : './DefaultPawn');
+    const DEFAULT_GAME_MODE = JSON.stringify(target.defaultGameMode ? posix.join('game', target.defaultGameMode) : './GameMode');
     return replace({
         preventAssignment: true,
         values: {
-            DEFAULT_MAP: JSON.stringify(target.defaultMap),
+            DEFAULT_MAP,
+            DEFAULT_PAWN,
+            DEFAULT_GAME_MODE,
             IS_DEV: 'true',
             IS_CLIENT: String(target.target === 'client'),
             IS_GAME: String(target.target === 'game'),
@@ -554,12 +568,13 @@ async function serveBrowserTarget(target) {
         }
     });
     Object.entries(getGameMaps()).forEach(([p1, p2]) => {
-        fs.copySync(p2, `${resolve(buildDir, 'maps', relative('game/maps', p1))}${extname(p2)}`);
+        fs.copySync(p2, `${resolve(buildDir, p1)}${extname(p2)}`);
     });
     const watcher = watch({
         input: {
             index: getLauncherPath('browser'),
             ...getEngineSourceFiles(),
+            ...getGameSourceFiles(),
         },
         output: {
             dir: buildDir,
@@ -577,7 +592,7 @@ async function serveBrowserTarget(target) {
                 `<script type="module">`,
                 `  const ws = new WebSocket('ws://localhost:24678')`,
                 ``,
-                `  ws.addEventListener('message', async ({data}) => {`,
+                `  ws.addEventListener('message', async ({ data }) => {`,
                 `    let parsed`,
                 ``,
                 `    try {`,
@@ -631,10 +646,8 @@ async function serveElectronTarget(target) {
             console.error('Error copying folder:', err);
         }
     });
-    fs.copy('src/game/maps', resolve(buildDir, 'maps'), (err) => {
-        if (err) {
-            console.error('Error copying folder:', err);
-        }
+    Object.entries(getGameMaps()).forEach(([p1, p2]) => {
+        fs.copySync(p2, `${resolve(buildDir, p1)}${extname(p2)}`);
     });
     const main = watch({
         input: {

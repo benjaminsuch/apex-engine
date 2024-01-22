@@ -12,3 +12,7 @@
  * Improtant: Code in this file will be executed before all other bootstrap files.
  */
 import 'reflect-metadata';
+
+console.log('default game mode', DEFAULT_GAME_MODE);
+console.log('default pawn', DEFAULT_PAWN);
+console.log('default map', DEFAULT_MAP);

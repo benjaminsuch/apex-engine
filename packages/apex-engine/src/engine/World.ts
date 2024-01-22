@@ -22,7 +22,11 @@ export class World {
         urlObj = new URL(`file://${url}`);
       }
 
-      this.gameMode = await this.getGameInstance().createGameModeFromURL(urlObj);
+      try {
+        this.gameMode = await this.getGameInstance().createGameModeFromURL(urlObj);
+      } catch (error: any) {
+        this.logger.error(error);
+      }
     }
   }
 

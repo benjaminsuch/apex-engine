@@ -1,7 +1,9 @@
 import { type NormalMapTypes, type PerspectiveCamera, type Side } from 'three';
 
 declare global {
+  var DEFAULT_GAME_MODE: string;
   var DEFAULT_MAP: string;
+  var DEFAULT_PAWN: string;
   var IS_BROWSER: string;
   var IS_CLIENT: boolean;
   var IS_DEV: string;

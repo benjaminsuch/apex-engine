@@ -21,7 +21,9 @@ export interface BuildConfig {
 }
 
 export interface TargetConfig {
+  defaultGameMode: string;
   defaultMap: string;
+  defaultPawn: string;
   platform: Platform;
   target: Target;
   plugins: string[];
@@ -117,6 +119,17 @@ export function getGameMaps(): Record<string, string> {
   return Object.fromEntries(
     glob
       .sync('src/game/maps/**/*.(gltf|glb)')
+      .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file))),
+      ])
+  );
+}
+
+export function getGameSourceFiles(): Record<string, string> {
+  return Object.fromEntries(
+    glob
+      .sync('src/game/**/*.ts')
       .map(file => [
         relative('src', file.slice(0, file.length - extname(file).length)),
         fileURLToPath(pathToFileURL(resolve(file))),
