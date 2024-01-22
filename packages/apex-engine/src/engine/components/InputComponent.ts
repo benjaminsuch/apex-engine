@@ -1,9 +1,7 @@
-import { type EventDispatcher } from 'three';
-
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type Actor } from '../Actor';
 import { type InputAction } from '../InputAction';
-import { ETriggerEvent } from '../InputTriggers';
+import { type ETriggerEvent } from '../InputTriggers';
 import { ActorComponent } from './ActorComponent';
 
 export class InputComponent extends ActorComponent {
@@ -21,17 +19,26 @@ export class InputComponent extends ActorComponent {
 }
 
 export class InputActionBinding {
-  private listener: Parameters<EventDispatcher['addEventListener']>[1] | undefined;
+  private actionHandler: (() => void) | undefined;
 
   constructor(
     private readonly inputComponent: InputComponent,
-    private readonly action: InputAction,
-    private readonly event: ETriggerEvent,
+    public readonly action: InputAction,
+    public readonly triggerEvent: ETriggerEvent,
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {}
 
+  public exec(): void {
+    if (!this.actionHandler) {
+      this.logger.warn(this.constructor.name, `Execution skipped: No action-handler was assigned.`);
+      return;
+    }
+
+    this.actionHandler();
+  }
+
   public bind<T extends Actor>(target: T, handler: Function, replace: boolean = false): void {
-    if (this.listener) {
+    if (this.actionHandler) {
       if (!replace) {
         this.logger.warn(`Binding aborted: An action-handler is already bound to action "${this.action.constructor.name}". Set "replace" to "true" if this is intended.`);
         return;
@@ -40,15 +47,11 @@ export class InputActionBinding {
       this.unbind();
     }
 
-    this.listener = (event): void => handler.call(target, event);
-    this.action.addEventListener(ETriggerEvent[this.event], this.listener);
+    this.actionHandler = (): void => handler.call(target, this.action);
   }
 
   public unbind(): void {
-    if (this.listener) {
-      this.action.removeEventListener(ETriggerEvent[this.event], this.listener);
-      this.listener = undefined;
-    }
+    this.actionHandler = undefined;
   }
 
   public destroy(): void {

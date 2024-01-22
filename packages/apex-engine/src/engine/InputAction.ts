@@ -1,18 +1,64 @@
-import { EventDispatcher, Vector3 } from 'three';
+import { Vector3 } from 'three';
 
 import { type InputModifier } from './InputModifiers';
-import { type InputTrigger } from './InputTriggers';
+import { ETriggerEvent, ETriggerState, type InputTrigger } from './InputTriggers';
+import { type PlayerInput } from './PlayerInput';
 
-export class InputAction extends EventDispatcher {
-  protected readonly modifiers: InputModifier[] = [];
+export class InputAction {
+  protected triggerState: ETriggerState = ETriggerState.None;
 
-  protected readonly triggers: InputTrigger[] = [];
+  public readonly modifiers: InputModifier[] = [];
 
-  protected readonly value: Vector3;
+  public readonly triggers: InputTrigger[] = [];
+
+  public value: Vector3;
+
+  public consumeInput: boolean = true;
 
   constructor() {
-    super();
-
     this.value = new Vector3(0, 0, 0);
+  }
+
+  public evaluateTriggers(playerInput: PlayerInput, triggers: InputTrigger[], value: Vector3, delta: number): ETriggerEvent {
+    const lastTriggerState = this.triggerState;
+
+    for (const trigger of triggers) {
+      this.triggerState = trigger.run(playerInput, value, delta);
+    }
+
+    if (lastTriggerState === ETriggerState.None) {
+      if (this.triggerState === ETriggerState.Ongoing) {
+        return ETriggerEvent.Started;
+      }
+      if (this.triggerState === ETriggerState.Triggered) {
+        return ETriggerEvent.Triggered;
+      }
+    }
+
+    if (lastTriggerState === ETriggerState.Ongoing) {
+      if (this.triggerState === ETriggerState.None) {
+        return ETriggerEvent.Canceled;
+      }
+      if (this.triggerState === ETriggerState.Ongoing) {
+        return ETriggerEvent.Ongoing;
+      }
+      if (this.triggerState === ETriggerState.Triggered) {
+        return ETriggerEvent.Triggered;
+      }
+    }
+
+    if (lastTriggerState === ETriggerState.Triggered) {
+      if (this.triggerState === ETriggerState.Triggered) {
+        return ETriggerEvent.Triggered;
+      }
+      if (this.triggerState === ETriggerState.Ongoing) {
+        return ETriggerEvent.Ongoing;
+      }
+      if (this.triggerState === ETriggerState.None) {
+        return ETriggerEvent.Completed;
+      }
+    }
+
+    return ETriggerEvent.None;
   }
 }

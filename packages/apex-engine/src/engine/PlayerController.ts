@@ -9,6 +9,8 @@ import { PlayerInput } from './PlayerInput';
 import { ETickGroup } from './TickManager';
 
 export class PlayerController extends Controller {
+  protected readonly inputComponent: InputComponent;
+
   protected player?: Player;
 
   public getPlayer(): Player {
@@ -34,11 +36,11 @@ export class PlayerController extends Controller {
     this.actorTick.canTick = true;
     this.actorTick.tickGroup = ETickGroup.PostPhysics;
 
-    this.addComponent(InputComponent);
+    this.inputComponent = this.addComponent(InputComponent);
   }
 
   public override tick(tick: IEngineLoopTickContext): void {
-    this.playerInput.processInputStack(this.buildInputStack(), tick.delta);
+    this.playerInput.processInput(this.inputComponent, tick.delta);
     super.tick(tick);
   }
 
@@ -57,19 +59,5 @@ export class PlayerController extends Controller {
     } else {
       pawn.restart(true);
     }
-  }
-
-  private buildInputStack(): InputComponent[] {
-    const stack: InputComponent[] = [];
-
-    for (const actor of this.getWorld().actors) {
-      const component = actor.getComponent(InputComponent);
-
-      if (component) {
-        stack.push(component);
-      }
-    }
-
-    return stack;
   }
 }

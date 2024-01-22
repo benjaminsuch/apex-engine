@@ -4,12 +4,13 @@ import { type InputModifier } from './InputModifiers';
 import { type InputTrigger } from './InputTriggers';
 
 export class InputMappingContext {
-  protected mappings: ActionKeyMapping[] = [];
+  public mappings: ActionKeyMapping[] = [];
 
   constructor(@IInstantiationService protected readonly instantiationService: IInstantiationService) {}
 
-  public mapKey(action: InputAction, key: TKey): void {
-    this.mappings.push(this.instantiationService.createInstance(ActionKeyMapping, action, key));
+  public mapKey(action: InputAction, key: TKey): ActionKeyMapping {
+    const idx = this.mappings.push(this.instantiationService.createInstance(ActionKeyMapping, action, key));
+    return this.mappings[idx - 1];
   }
 
   public unmapKey(action: InputAction, key: TKey): void {

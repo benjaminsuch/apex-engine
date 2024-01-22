@@ -1,4 +1,4 @@
-import { CapsuleGeometry, Euler, MathUtils, Vector3 } from 'three';
+import { CapsuleGeometry } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
@@ -9,14 +9,20 @@ import { InputMappingContext } from './InputMappingContext';
 import { ETriggerEvent } from './InputTriggers';
 import { Pawn } from './Pawn';
 import { PlayerController } from './PlayerController';
-import { PlayerInput } from './PlayerInput';
 
 export class Character extends Pawn {
-  private inputBindingsInitialized: boolean = false;
-
   private readonly cameraComponent: CameraComponent;
 
   protected readonly capsuleComponent: MeshComponent;
+
+  protected defaultMappingContext: InputMappingContext | undefined;
+
+  public getDefaultMappingContext(): InputMappingContext {
+    if (!this.defaultMappingContext) {
+      throw new Error(`No default mapping context assigned.`);
+    }
+    return this.defaultMappingContext;
+  }
 
   constructor(
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
@@ -31,6 +37,25 @@ export class Character extends Pawn {
     this.cameraComponent.position.set(0, 15, -25);
     // this.cameraComponent.lookAt(0, 0, 0);
     this.cameraComponent.attachToComponent(this.getRootComponent());
+  }
+
+  public override beginPlay(): void {
+    super.beginPlay();
+
+    if (IS_BROWSER) {
+      document.body.addEventListener('mousedown', this);
+    }
+
+    if (!(this.controller instanceof PlayerController)) {
+      this.logger.warn(
+        this.constructor.name,
+        'Skipping input mapping: PlayerController is not defined'
+      );
+      return;
+    }
+
+    this.defaultMappingContext = this.instantiationService.createInstance(DefaultMappingContext);
+    this.controller.playerInput.addMappingContext(this.defaultMappingContext);
   }
 
   public moveForward(value: number): void {
@@ -75,8 +100,6 @@ export class Character extends Pawn {
   }
 
   protected override setupInputComponent(): void {
-    this.initInputBindings();
-
     if (!this.inputComponent) {
       this.logger.warn(
         this.constructor.name,
@@ -86,46 +109,29 @@ export class Character extends Pawn {
     }
 
     this.inputComponent.bindAction(MoveAction, ETriggerEvent.Triggered, this, this.moveForward);
-    // this.inputComponent.bindAxis('DefaultPawn_MoveForward', this, this.moveForward);
-    // this.inputComponent.bindAxis('DefaultPawn_MoveRight', this, this.moveRight);
-    // this.inputComponent.bindAxis('DefaultPawn_MoveUp', this, this.moveUp);
-    // this.inputComponent.bindAxis('DefaultPawn_Turn', this, this.turn);
-    // this.inputComponent.bindAxis('DefaultPawn_LookUp', this, this.lookUp);
 
     this.logger.debug(this.constructor.name, `Setup action bindings`);
   }
+}
 
-  protected override onRegister(): void {
-    if (IS_BROWSER) {
-      document.body.addEventListener('mousedown', this);
-    }
-  }
+class DefaultMappingContext extends InputMappingContext {
+  private readonly lookAction: LookAction;
 
-  private initInputBindings(): void {
-    if (this.inputBindingsInitialized) {
-      return;
-    }
+  private readonly moveAction: MoveAction;
 
-    if (!(this.controller instanceof PlayerController)) {
-      this.logger.warn(
-        this.constructor.name,
-        'Skipping input maps: PlayerController is not defined'
-      );
-      return;
-    }
+  constructor(@IInstantiationService protected override readonly instantiationService: IInstantiationService) {
+    super(instantiationService);
 
-    const moveAction = this.instantiationService.createInstance(MoveAction);
+    this.lookAction = this.instantiationService.createInstance(LookAction);
+    this.moveAction = this.instantiationService.createInstance(MoveAction);
 
-    const defaultMappingContext = this.instantiationService.createInstance(InputMappingContext);
-    defaultMappingContext.mapKey(moveAction, 'KeyW');
-
-    const playerInput = this.controller.playerInput;
-    playerInput.addMappingContext(defaultMappingContext);
-
-    this.inputBindingsInitialized = true;
-
-    this.logger.debug(this.constructor.name, `Initialized input maps`);
+    this.mapKey(this.lookAction, 'MouseXY');
+    const moveMapping = this.mapKey(this.moveAction, 'KeyW');
+    // moveMapping.modifiers.push(...)
+    // moveMapping.triggers.push(...)
   }
 }
+
+class LookAction extends InputAction {}
 
 class MoveAction extends InputAction {}
