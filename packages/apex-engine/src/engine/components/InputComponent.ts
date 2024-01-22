@@ -15,6 +15,14 @@ export class InputComponent extends ActorComponent {
 
     return binding;
   }
+
+  public unbindAction(action: InputAction): void {
+    const idx = this.actionBindings.findIndex(binding => binding.action === action);
+
+    if (idx > -1) {
+      this.actionBindings.splice(idx, 1, this.actionBindings[this.actionBindings.length]).pop();
+    }
+  }
 }
 
 export class InputActionBinding {

@@ -39,6 +39,7 @@ export class Character extends Pawn {
 
     if (IS_BROWSER) {
       document.body.addEventListener('mousedown', this);
+      document.addEventListener('pointerlockchange', this);
     }
 
     if (!(this.controller instanceof PlayerController)) {
@@ -74,6 +75,7 @@ export class Character extends Pawn {
     if (IS_BROWSER) {
       // console.log('lookAround', ...value.toArray());
       if (this.cameraComponent) {
+        this.cameraComponent.updateRotation(value.x, value.y);
       }
     }
   }

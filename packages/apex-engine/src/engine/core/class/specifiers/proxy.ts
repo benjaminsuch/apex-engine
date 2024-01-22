@@ -226,6 +226,7 @@ export function proxy(proxyClass: TClass) {
 
                 accessors = {
                   get(this): Quaternion {
+                    // console.log('quat', dv.getFloat32(offset, true), dv.getFloat32(offset + 4, true), dv.getFloat32(offset + 8, true), dv.getFloat32(offset + 12, true));
                     return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: Quaternion): void {
@@ -476,10 +477,10 @@ function setQuat(
     'value',
     new Proxy(val, {
       set(target, prop, val): boolean {
-        if (prop === '_x') dv.setFloat32(offset, val, true);
-        if (prop === '_y') dv.setFloat32(offset + 4, val, true);
-        if (prop === '_z') dv.setFloat32(offset + 8, val, true);
-        if (prop === '_w') dv.setFloat32(offset + 12, val, true);
+        if (prop === '_x' || prop === 'x') dv.setFloat32(offset, val, true);
+        if (prop === '_y' || prop === 'y') dv.setFloat32(offset + 4, val, true);
+        if (prop === '_z' || prop === 'z') dv.setFloat32(offset + 8, val, true);
+        if (prop === '_w' || prop === 'w') dv.setFloat32(offset + 12, val, true);
 
         return Reflect.set(target, prop, val);
       },

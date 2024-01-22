@@ -1,4 +1,4 @@
-import { Euler, Matrix4, Object3D, Quaternion, Vector3 } from 'three';
+import { Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
 import { type Actor } from '../Actor';
 import { CLASS, PROP } from '../core/class/decorators';
@@ -16,8 +16,6 @@ const _obj = /* @__PURE__ */ new Object3D();
 
 export class SceneComponentProxy extends RenderProxy {
   declare position: [number, number, number];
-
-  declare rotation: [number, number, number];
 
   declare scale: [number, number, number];
 
@@ -40,7 +38,7 @@ export class SceneComponentProxy extends RenderProxy {
     number,
   ];
 
-  declare quaternion: [number, number, number, number];
+  declare rotation: [number, number, number, number];
 
   declare up: [number, number, number];
 
@@ -78,7 +76,7 @@ export class SceneComponentProxy extends RenderProxy {
     this.sceneObject.receiveShadow = this.receiveShadow;
     this.sceneObject.visible = this.visible;
     this.sceneObject.position.fromArray(this.position);
-    this.sceneObject.quaternion.fromArray(this.quaternion);
+    this.sceneObject.quaternion.fromArray(this.rotation);
     this.sceneObject.scale.fromArray(this.scale);
     this.sceneObject.matrix.fromArray(this.matrix);
     this.sceneObject.up.fromArray(this.up);
@@ -94,17 +92,14 @@ export class SceneComponent extends ActorComponent {
   @PROP(serialize(vec3))
   public position: Vector3 = new Vector3();
 
-  @PROP(serialize(vec3))
-  public rotation: Euler = new Euler();
+  @PROP(serialize(quat))
+  public rotation: Quaternion = new Quaternion();
 
   @PROP(serialize(vec3))
   public scale: Vector3 = new Vector3(1, 1, 1);
 
   @PROP(serialize(mat4))
   public matrix: Matrix4 = new Matrix4();
-
-  @PROP(serialize(quat))
-  public quaternion: Quaternion = new Quaternion();
 
   @PROP(serialize(vec3))
   public up: Vector3 = Object3D.DEFAULT_UP;
