@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-
 import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { Flags } from '../../../Flags';
