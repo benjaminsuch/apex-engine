@@ -1,4 +1,4 @@
-import { PerspectiveCamera, Quaternion } from 'three';
+import { PerspectiveCamera } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -43,32 +43,16 @@ export class CameraComponentProxy extends SceneComponentProxy {
   }
 
   public override tick(tick: IEngineLoopTickContext): void {
-    // console.log('rotation', ...this.rotation);
-    this.sceneObject.quaternion.fromArray(this.rotation);
-    // super.tick(tick);
+    super.tick(tick);
 
-    // const changes = this.sceneObject.aspect - this.aspect
-    //   + this.sceneObject.far - this.far
-    //   + this.sceneObject.filmGauge - this.filmGauge
-    //   + this.sceneObject.filmOffset - this.filmOffset
-    //   + this.sceneObject.focus - this.focus
-    //   + this.sceneObject.fov - this.fov
-    //   + this.sceneObject.near - this.near
-    //   + this.sceneObject.zoom - this.zoom;
-
-    // this.sceneObject.aspect = this.aspect;
-    // this.sceneObject.far = this.far;
-    // this.sceneObject.filmGauge = this.filmGauge;
-    // this.sceneObject.filmOffset = this.filmOffset;
-    // this.sceneObject.focus = this.focus;
-    // this.sceneObject.fov = this.fov;
-    // this.sceneObject.near = this.near;
-    // this.sceneObject.zoom = this.zoom;
-
-    // if (changes > 0) {
-    //   console.log('changes', changes);
-    //   this.sceneObject.updateProjectionMatrix();
-    // }
+    this.sceneObject.aspect = this.aspect;
+    this.sceneObject.far = this.far;
+    this.sceneObject.filmGauge = this.filmGauge;
+    this.sceneObject.filmOffset = this.filmOffset;
+    this.sceneObject.focus = this.focus;
+    this.sceneObject.fov = this.fov;
+    this.sceneObject.near = this.near;
+    this.sceneObject.zoom = this.zoom;
   }
 }
 
@@ -119,9 +103,5 @@ export class CameraComponent extends SceneComponent {
   public updateRotation(x: number, y: number): void {
     this.rotation.x += -y * 0.0025;
     this.rotation.y += -x * 0.0025;
-  }
-
-  public override tick(context: IEngineLoopTickContext): void {
-
   }
 }
