@@ -1,6 +1,6 @@
 import { DRACOLoader, type GLTF, GLTFLoader as BaseGLTFLoader } from 'three-stdlib';
 
-import { IConsoleLogger } from '../../../platform/logging/common/ConsoleLogger';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 
 type LoadParameters = Parameters<BaseGLTFLoader['load']>;
 

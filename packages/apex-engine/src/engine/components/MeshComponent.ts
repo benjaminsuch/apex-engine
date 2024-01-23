@@ -8,6 +8,8 @@ import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
+const v1 = new Vector3();
+
 export class MeshComponentProxy extends SceneComponentProxy {
   constructor(
     [geometryData, materialData]: [IGeometryData | undefined, IMaterialJSON | undefined] = [undefined, undefined],

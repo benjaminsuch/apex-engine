@@ -3,7 +3,7 @@ import { levels } from 'build:info';
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { TripleBuffer } from './core/memory/TripleBuffer';
-import { GLTFLoader } from './core/three/GLTFLoader';
+import { GLTFLoader } from './three/GLTFLoader';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Flags } from './Flags';
 import { GameInstance } from './GameInstance';
