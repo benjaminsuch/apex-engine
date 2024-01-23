@@ -2,9 +2,9 @@ import { IInstantiationService } from '../platform/di/common/InstantiationServic
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Controller } from './Controller';
 import { type IEngineLoopTickContext } from './EngineLoop';
+import { PlayerInput } from './input/PlayerInput';
 import { type Pawn } from './Pawn';
 import { type Player } from './Player';
-import { PlayerInput } from './PlayerInput';
 import { ETickGroup } from './TickManager';
 
 export class PlayerController extends Controller {

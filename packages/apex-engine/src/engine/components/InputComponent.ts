@@ -1,7 +1,7 @@
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type Actor } from '../Actor';
-import { type InputAction } from '../InputAction';
-import { type ETriggerEvent } from '../InputTriggers';
+import { type InputAction } from '../input/InputAction';
+import { type ETriggerEvent } from '../input/InputTriggers';
 import { ActorComponent } from './ActorComponent';
 
 export class InputComponent extends ActorComponent {

@@ -1,8 +1,8 @@
 import { Vector3 } from 'three';
 
-import { IInstantiationService } from '../platform/di/common/InstantiationService';
-import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { type InputActionBinding, type InputComponent } from './components/InputComponent';
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
+import { type InputActionBinding, type InputComponent } from '../components/InputComponent';
 import { type ActionKeyMapping, type InputMappingContext } from './InputMappingContext';
 import { ETriggerEvent } from './InputTriggers';
 

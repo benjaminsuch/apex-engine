@@ -1,4 +1,4 @@
-import { IInstantiationService } from '../platform/di/common/InstantiationService';
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { type InputAction } from './InputAction';
 import { type InputModifier } from './InputModifiers';
 import { type InputTrigger } from './InputTriggers';
