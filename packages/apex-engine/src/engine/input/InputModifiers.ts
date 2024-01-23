@@ -68,7 +68,7 @@ export class InputModifierScalar extends InputModifier {
   }
 }
 
-export class InputModifierScaleByDelta extends InputModifier {
+export class InputModifierScalarByDelta extends InputModifier {
   public override modify(value: Vector3, delta: number): Vector3 {
     return value.multiplyScalar(delta);
   }
