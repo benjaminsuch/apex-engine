@@ -58,7 +58,7 @@ module 'three' {
     name: string;
     normalMap: string | null;
     normalMapType: NormalMapTypes;
-    normalScale: [number, number];
+    normalScale: { x: number, y: number };
     roughness: number;
     roughnessMap: string | null;
     side: Side;

@@ -33,7 +33,7 @@ export class Level {
     return this.actors.includes(actor);
   }
 
-  public world?: World;
+  public world: World | null = null;
 
   public getWorld(): World {
     if (!this.world) {

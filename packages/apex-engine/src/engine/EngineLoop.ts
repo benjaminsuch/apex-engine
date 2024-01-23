@@ -87,7 +87,7 @@ export class EngineLoop {
 
       const then = performance.now();
 
-      this.delta = then - this.elapsed / 1000;
+      this.delta = (then - this.elapsed) / 1000;
       this.elapsed = then;
       this.fps = (this.tickId * 1000) / then;
 

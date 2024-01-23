@@ -6,6 +6,8 @@ import { type InputActionBinding, type InputComponent } from '../components/Inpu
 import { type ActionKeyMapping, type InputMappingContext } from './InputMappingContext';
 import { ETriggerEvent } from './InputTriggers';
 
+const vec = /* @__PURE__ */ new Vector3();
+
 export class PlayerInput {
   private readonly keyStates: Partial<Record<TKey, KeyState>> = {};
 
@@ -40,15 +42,15 @@ export class PlayerInput {
     for (const key of this.keysToConsume) {
       const actionMappings = this.keyMappings[key] ?? [];
 
-      let value = this.keyStates[key]!.value;
+      let value = vec.copy(this.keyStates[key]!.value);
       let triggerEvent: ETriggerEvent = ETriggerEvent.None;
 
       for (const actionMapping of actionMappings) {
         for (const modifier of actionMapping.modifiers.concat(actionMapping.action.modifiers)) {
-          value = modifier.modify(value);
+          value = modifier.modify(value, delta);
         }
 
-        actionMapping.action.value = value;
+        actionMapping.action.value.copy(value);
 
         triggerEvent = actionMapping.action.evaluateTriggers(
           this,
@@ -185,10 +187,12 @@ export class PlayerInput {
   private consumeKey(key: TKey): void {
     const keyState = this.keyStates[key]!;
 
-    keyState.isConsumed = true;
-    keyState.sampleCount = 0;
+    if (!keyState.isPressed) {
+      keyState.isConsumed = true;
+      keyState.sampleCount = 0;
 
-    this.keysToConsume.delete(key);
+      this.keysToConsume.delete(key);
+    }
   }
 }
 

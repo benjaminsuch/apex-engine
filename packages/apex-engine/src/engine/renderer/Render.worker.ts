@@ -119,13 +119,10 @@ function onInit(event: MessageEvent): void {
     context.webGLRenderer.toneMapping = LinearToneMapping;
     context.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
 
-    context.camera.position.set(1, 15, -25);
-    context.camera.lookAt(0, 0, 0);
-
     context.scene.background = new Color(0xa0a0a0);
     context.scene.fog = new Fog(0xa0a0a0, 65, 75);
 
-    const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 3);
+    const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 1);
     hemiLight.position.set(0, 20, 0);
 
     context.scene.add(hemiLight);

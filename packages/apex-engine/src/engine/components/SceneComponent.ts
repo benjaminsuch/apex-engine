@@ -48,8 +48,6 @@ export class SceneComponentProxy extends RenderProxy {
 
   declare receiveShadow: boolean;
 
-  declare isRootComponent: boolean;
-
   declare parent: SceneComponentProxy | null;
 
   public children: SceneComponentProxy[] = [];
@@ -108,13 +106,10 @@ export class SceneComponent extends ActorComponent {
   public visible: boolean = true;
 
   @PROP(serialize(boolean))
-  public castShadow: boolean = false;
+  public castShadow: boolean = true;
 
   @PROP(serialize(boolean))
-  public receiveShadow: boolean = false;
-
-  @PROP(serialize(boolean))
-  public isRootComponent: boolean = false;
+  public receiveShadow: boolean = true;
 
   /**
    * The component it is attached to.
@@ -130,12 +125,8 @@ export class SceneComponent extends ActorComponent {
    */
   public children: SceneComponent[] = [];
 
-  public setAsRoot(actor: Actor): boolean {
-    if (actor.setRootComponent(this)) {
-      this.isRootComponent = true;
-      return true;
-    }
-    return false;
+  public setAsRoot(actor: Actor): void {
+    actor.rootComponent = this;
   }
 
   public attachToComponent(parent: SceneComponent): boolean {
@@ -150,7 +141,7 @@ export class SceneComponent extends ActorComponent {
 
     const owner = this.getOwner();
 
-    if (owner.getRootComponent() === this) {
+    if (owner.rootComponent === this) {
       this.logger.warn(
         `This component is the root component and cannot be attached to other components.`
       );
@@ -174,10 +165,10 @@ export class SceneComponent extends ActorComponent {
     return true;
   }
 
-  public detachFromParent(parent: SceneComponent): boolean {
+  public detachFromParent(): boolean {
     if (!this.parent) {
       this.logger.warn(
-        `"${this.constructor.name}" is not attached to "${parent.constructor.name}".`
+        `"${this.constructor.name}" has no parent.`
       );
       return false;
     }

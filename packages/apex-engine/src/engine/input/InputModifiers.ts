@@ -1,7 +1,7 @@
 import { Vector3 } from 'three';
 
 export abstract class InputModifier {
-  public abstract modify(value: Vector3): Vector3;
+  public abstract modify(value: Vector3, delta: number): Vector3;
 }
 
 /**
@@ -55,5 +55,21 @@ export class InputModifierSwizzleAxis extends InputModifier {
 export class InputModifierNegate extends InputModifier {
   public override modify(value: Vector3): Vector3 {
     return value.multiply(new Vector3(value.x > 0 ? -1 : 1, value.y > 0 ? -1 : 1, value.z > 0 ? -1 : 1));
+  }
+}
+
+export class InputModifierScalar extends InputModifier {
+  constructor(public scalar: number) {
+    super();
+  }
+
+  public override modify(value: Vector3): Vector3 {
+    return value.multiplyScalar(this.scalar);
+  }
+}
+
+export class InputModifierScaleByDelta extends InputModifier {
+  public override modify(value: Vector3, delta: number): Vector3 {
+    return value.multiplyScalar(delta);
   }
 }
