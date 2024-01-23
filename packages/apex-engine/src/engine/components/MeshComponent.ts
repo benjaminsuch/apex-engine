@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshPhongMaterial, MeshStandardMaterial, Sphere, Vector2, Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshStandardMaterial, Sphere, Vector2, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -7,8 +7,6 @@ import { proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
-
-const v1 = new Vector3();
 
 export class MeshComponentProxy extends SceneComponentProxy {
   constructor(
