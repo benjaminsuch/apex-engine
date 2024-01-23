@@ -1,10 +1,11 @@
 import html, { makeHtmlAttributes, type RollupHtmlOptions } from '@rollup/plugin-html';
+import { type Plugin } from 'rollup';
 
 export function htmlPlugin(
   entryFile: string = './index.js',
   options?: RollupHtmlOptions,
   body: string = ''
-) {
+): Plugin<any> {
   return html({
     title: 'Apex Engine',
     ...options,
@@ -48,8 +49,8 @@ export function htmlPlugin(
         `    <script type="module" src="${entryFile}"></script>`,
         `    ${body}`,
         `  </body>`,
-        `</html>`
+        `</html>`,
       ].join('\n');
-    }
+    },
   });
 }

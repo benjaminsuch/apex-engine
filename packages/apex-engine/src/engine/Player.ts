@@ -1,27 +1,30 @@
-import { IInstatiationService } from '../platform/di/common';
-import { IConsoleLogger } from '../platform/logging/common';
+import { IInstantiationService } from '../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { PlayerController } from './PlayerController';
 import { type World } from './World';
 
 export class Player {
-  public playerController: PlayerController | null = null;
+  protected playerController?: PlayerController;
 
-  public getPlayerController() {
+  public getPlayerController(): PlayerController {
     if (!this.playerController) {
-      throw new Error(`No player controller set.`);
+      throw new Error(`Player controller not set.`);
     }
     return this.playerController;
   }
 
   constructor(
-    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {}
 
-  public spawnPlayActor(world: World) {
-    this.logger.debug(this.constructor.name, 'Spawn player actor');
+  public spawnPlayActor(world: World): void {
+    if (this.playerController) {
+      throw new Error(`A play actor has already been spawned.`);
+    }
 
     if (IS_CLIENT) {
+      // The client has no authority and thus will create a regular actor
       this.playerController = world.spawnActor(PlayerController);
     } else {
       this.playerController = world.spawnPlayActor(this);

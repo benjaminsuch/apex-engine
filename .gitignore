@@ -40,3 +40,4 @@ yarn-error.log*
 .env.production.local
 
 sandbox
+sandboxes

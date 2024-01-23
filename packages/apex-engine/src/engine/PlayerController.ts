@@ -1,90 +1,63 @@
-import { IInstatiationService } from '../platform/di/common';
-import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderingPlatform } from '../platform/rendering/common';
-import { Actor } from './Actor';
-import { InputComponent } from './components';
+import { IInstantiationService } from '../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
+import { Controller } from './Controller';
 import { type IEngineLoopTickContext } from './EngineLoop';
+import { PlayerInput } from './input/PlayerInput';
 import { type Pawn } from './Pawn';
-import { PlayerInput } from './PlayerInput';
+import { type Player } from './Player';
+import { ETickGroup } from './TickManager';
 
-export class PlayerController extends Actor {
-  protected pawn: Pawn | null = null;
+export class PlayerController extends Controller {
+  protected player?: Player;
 
-  public getPawn() {
-    if (!this.pawn) {
-      throw new Error(`Pawn not set.`);
+  public getPlayer(): Player {
+    if (!this.player) {
+      throw new Error(`Player not set.`);
     }
-    return this.pawn;
+    return this.player;
   }
 
-  public setPawn(pawn: PlayerController['pawn']) {
-    this.pawn = pawn;
-
-    if (pawn) {
-      // const cameraComponent = pawn.getComponent(CameraComponent);
-      // if (cameraComponent) {
-      // this.camera = cameraComponent;
-      // }
-    }
+  public setPlayer(player: Player): void {
+    this.player = player;
   }
 
-  protected camera?: any;
-
-  public readonly playerInput = new PlayerInput();
+  public readonly playerInput: PlayerInput;
 
   constructor(
-    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IRenderingPlatform public override readonly renderer: IRenderingPlatform
   ) {
-    super(instantiationService, logger, renderer);
+    super(instantiationService, logger);
 
-    this.addComponent(InputComponent);
+    this.playerInput = this.instantiationService.createInstance(PlayerInput);
+    this.actorTick.canTick = true;
+    this.actorTick.tickGroup = ETickGroup.PostPhysics;
   }
 
   public override tick(tick: IEngineLoopTickContext): void {
-    this.playerInput.processInputStack(this.buildInputStack(), tick.delta);
+    const inputComponent = this.getPawn().inputComponent;
+
+    if (inputComponent) {
+      this.playerInput.processInput(inputComponent, tick.delta);
+    }
+
     super.tick(tick);
   }
 
-  public override beginPlay(): void {
-    if (this.camera) {
-      /* this.renderer.send<TRenderSetCameraMessage>({
-        type: 'set-camera',
-        camera: this.camera.toJSON()
-      }); */
+  protected override onPossess(pawn: Pawn): void {
+    if (this.pawn) {
+      try {
+        this.pawn.getController().unpossess();
+      } catch {}
     }
 
-    super.beginPlay();
-  }
-
-  public possess(pawn: Pawn) {
-    this.pawn?.controller?.unpossess();
-
-    this.logger.debug(this.constructor.name, 'Possess new pawn:', pawn.constructor.name);
+    pawn.possessedBy(this);
     this.setPawn(pawn);
 
-    pawn.possessBy(this);
-    pawn.restart();
-  }
-
-  public unpossess() {
-    this.logger.debug(this.constructor.name, 'Unpossess old pawn:', this.pawn?.constructor.name);
-    this.pawn?.unpossessed();
-    this.setPawn(null);
-  }
-
-  private buildInputStack() {
-    const stack: InputComponent[] = [];
-
-    for (const actor of this.getWorld().actors) {
-      const component = actor.getComponent(InputComponent);
-
-      if (component) {
-        stack.push(component);
-      }
+    if (IS_SERVER) {
+      pawn.restart();
+    } else {
+      pawn.restart(true);
     }
-
-    return stack;
   }
 }

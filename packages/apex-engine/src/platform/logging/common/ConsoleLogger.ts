@@ -1,4 +1,4 @@
-import { InstantiationService } from '../../../platform/di/common';
+import { InstantiationService } from '../../di/common/InstantiationService';
 import { AbstractLogger, type ILogger } from './AbstractLogger';
 
 export class ConsoleLogger extends AbstractLogger implements IConsoleLogger {
@@ -15,7 +15,7 @@ export class ConsoleLogger extends AbstractLogger implements IConsoleLogger {
   }
 
   public info(message: string, ...args: any[]): void {
-    console.log('%cINFO', 'color: #42e9f5', message, ...args);
+    console.info('%cINFO', 'color: #42e9f5', message, ...args);
   }
 
   public warn(message: string, ...args: any[]): void {
@@ -27,4 +27,4 @@ export interface IConsoleLogger extends ILogger {
   readonly _injectibleService: undefined;
 }
 
-export const IConsoleLogger = InstantiationService.createDecorator<IConsoleLogger>('consoleLogger');
+export const IConsoleLogger = InstantiationService.createDecorator<IConsoleLogger>('ConsoleLogger');

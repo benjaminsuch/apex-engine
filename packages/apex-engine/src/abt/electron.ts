@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 
 const _require = createRequire(import.meta.url);
 
-export function getElectronPath() {
+export function getElectronPath(): string {
   let electronExecPath = process.env.ELECTRON_EXEC_PATH ?? '';
 
   if (!electronExecPath) {

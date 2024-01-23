@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "noEmit": true,
+    "noImplicitAny": false,
+    "noImplicitOverride": true,
+    "removeComments": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "sourceMap": true,
+    "target": "ESNext",
+    "types": ["@types/node"],
+  },
+  "include": ["packages/**/*.ts", "sandboxes/**/*.ts", "**/.eslintrc.cjs"]
+}

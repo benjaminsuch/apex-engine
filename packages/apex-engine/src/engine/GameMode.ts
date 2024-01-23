@@ -1,52 +1,64 @@
-import { Matrix4 } from 'three';
-
 import { Actor } from './Actor';
-import { DefaultPawn } from './DefaultPawn';
-import { type NetConnection } from './net';
+import { ApexEngine } from './ApexEngine';
 import { type Pawn } from './Pawn';
+import { type Player } from './Player';
 import { PlayerController } from './PlayerController';
 
 export class GameMode extends Actor {
-  public readonly playerPawnClass: typeof Pawn = DefaultPawn;
+  public preLogin(): void {}
 
-  public readonly playerControllerClass: typeof PlayerController = PlayerController;
+  public login(player: Player): PlayerController {
+    this.logger.debug(this.constructor.name, `Login`);
 
-  public preLogin() {}
-
-  public login() {
     const playerController = this.spawnPlayerController();
     this.initPlayer(playerController);
 
     return playerController;
   }
 
-  public postLogin(player: PlayerController) {
-    this.restartPlayer(player);
+  public postLogin(playerController: PlayerController): void {
+    this.restartPlayer(playerController);
   }
 
-  public restartPlayer(
-    playerController: PlayerController,
-    transform: Matrix4 = this.findPlayerStartLocation()
-  ) {
+  public restartPlayer(playerController: PlayerController, playerStart: Actor | undefined = this.findPlayerStart(playerController)): void {
     this.logger.debug(this.constructor.name, `Restart player`);
-    // InitStartSpot
-    // FinishRestartPlayer
+
+    if (!playerStart) {
+      this.logger.debug(`Player start not found.`);
+      return;
+    }
+
+    this.initStartSpot(playerStart, playerController);
     playerController.possess(this.spawnDefaultPlayerPawn());
   }
 
-  public findPlayerStartLocation() {
-    return new Matrix4();
+  public findPlayerStart(playerController: PlayerController): Actor | undefined {
+    return playerController.startSpot;
   }
 
-  public spawnPlayerController() {
-    return this.getWorld().spawnActor(this.playerControllerClass);
+  public spawnPlayerController(): PlayerController {
+    return this.getWorld().spawnActor(PlayerController);
   }
 
-  public spawnDefaultPlayerPawn() {
-    return this.getWorld().spawnActor(this.playerPawnClass);
+  public spawnDefaultPlayerPawn(): Pawn {
+    return this.getWorld().spawnActor(ApexEngine.DefaultPawnClass);
   }
 
-  public welcomePlayer(connection: NetConnection) {}
+  protected initStartSpot(playerStart: Actor, playerController: PlayerController): void {}
 
-  private initPlayer(player: PlayerController) {}
+  protected initPlayer(playerController: PlayerController): void {
+    this.logger.debug(this.constructor.name, `Initialize Player`);
+
+    const startSpot = this.findPlayerStart(playerController);
+
+    if (!startSpot) {
+      this.logger.error(`Unable to find start spot for player.`);
+      return;
+    }
+
+    playerController.startSpot = startSpot;
+  }
 }
+
+// We need a default export for our default-class loading in `EngineLoop.init`.
+export default GameMode;

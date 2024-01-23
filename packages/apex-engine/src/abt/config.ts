@@ -1,12 +1,17 @@
 import { unlinkSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { dirname, extname, join, relative, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
+import glob from 'fast-glob';
 import { type Plugin, rollup, type RollupBuild } from 'rollup';
 
 import { dynamicImport } from './utils';
+
+export type Platform = 'browser' | 'electron' | 'node';
+
+export type Target = 'client' | 'game' | 'server';
 
 export type BuildPlugin = Plugin | Promise<Plugin>;
 
@@ -15,34 +20,13 @@ export interface BuildConfig {
   plugins?: BuildPlugin[];
 }
 
-export type Platform = 'browser' | 'electron' | 'node';
-
-export type Target = 'client' | 'game' | 'server';
-
-export enum NetDriver {
-  WebSocket = 'WebSocketNetDriver',
-  WebRTC = 'WebRTCNetDriver',
-}
-
-export const defaultTargetConfig: TargetConfig = {
-  defaultLevel: './maps/index.js',
-  platform: 'browser',
-  net: {
-    netDriver: NetDriver.WebSocket,
-  },
-  target: 'game',
-};
-
 export interface TargetConfig {
-  defaultLevel: string;
+  defaultGameMode: string;
+  defaultMap: string;
+  defaultPawn: string;
   platform: Platform;
-  net?: {
-    netDriver?: string;
-  };
-  renderer?: {
-    runOnMainThread?: boolean;
-  };
   target: Target;
+  plugins: string[];
 }
 
 export interface ApexConfig {
@@ -50,20 +34,52 @@ export interface ApexConfig {
   targets: TargetConfig[];
 }
 
-export interface ResolvedConfig {}
-
-export interface InlineConfig {
-  configFile?: string;
-  target?: Target;
-}
-
 export const CONFIG_FILE_NAME = 'apex.config';
+
 export const APEX_DIR = resolve('.apex');
 
-// Using defineConfig in apex.config.ts leads to an MISSING_EXPORTS error for some dependencies :shrug:
-/* export function defineConfig(config: ApexConfig) {
+export const ENGINE_PATH = dirname(join(fileURLToPath(import.meta.url), '../'));
+
+let config: ApexConfig | undefined;
+
+export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_NAME}.ts`)): Promise<ApexConfig> {
+  let bundle: RollupBuild | undefined;
+
+  if (config) {
+    return config;
+  }
+
+  try {
+    bundle = await rollup({
+      input: configFile,
+      plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
+      onwarn() {},
+    });
+
+    const result = await bundle.generate({
+      exports: 'named',
+      format: 'esm',
+      sourcemap: false,
+    });
+    const [chunkOrAsset] = result.output;
+
+    if (chunkOrAsset.type === 'chunk') {
+      config = await loadConfigFromBundledFile(process.cwd(), chunkOrAsset.code);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
+  if (bundle) {
+    await bundle.close();
+  }
+
+  if (!config) {
+    throw new Error(`No config found.`);
+  }
+
   return config;
-} */
+}
 
 export async function loadConfigFromBundledFile(
   root: string,
@@ -84,41 +100,39 @@ export async function loadConfigFromBundledFile(
   }
 }
 
-export async function getApexConfig(configFile: string = resolve(`${CONFIG_FILE_NAME}.ts`)) {
-  let bundle: RollupBuild | undefined;
-  let config: ApexConfig | undefined;
+export function getLauncherPath(launcher: 'browser' | 'electron-main' | 'electron-sandbox' | 'node'): string {
+  return fileURLToPath(new URL(`../src/launch/${launcher}/index.ts`, import.meta.url));
+}
 
-  try {
-    bundle = await rollup({
-      input: configFile,
-      plugins: [nodeResolve({ preferBuiltins: true }), typescript()],
-      onwarn() {},
-    });
+export function getEngineSourceFiles(): Record<string, string> {
+  return Object.fromEntries(
+    glob
+      .sync('src/engine/**/*.ts')
+      .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file))),
+      ])
+  );
+}
 
-    const result = await bundle.generate({
-      exports: 'named',
-      format: 'esm',
-      externalLiveBindings: false,
-      freeze: false,
-      sourcemap: false,
-    });
-    const [chunkOrAsset] = result.output;
+export function getGameMaps(): Record<string, string> {
+  return Object.fromEntries(
+    glob
+      .sync('src/game/maps/**/*.(gltf|glb)')
+      .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file))),
+      ])
+  );
+}
 
-    if (chunkOrAsset.type === 'chunk') {
-      config = await loadConfigFromBundledFile(process.cwd(), chunkOrAsset.code);
-    }
-  } catch (error) {
-    console.log(error);
-    // debug(error);
-  }
-
-  if (bundle) {
-    await bundle.close();
-  }
-
-  if (!config) {
-    throw new Error(`No config found.`);
-  }
-
-  return config;
+export function getGameSourceFiles(): Record<string, string> {
+  return Object.fromEntries(
+    glob
+      .sync('src/game/**/*.ts')
+      .map(file => [
+        relative('src', file.slice(0, file.length - extname(file).length)),
+        fileURLToPath(pathToFileURL(resolve(file))),
+      ])
+  );
 }

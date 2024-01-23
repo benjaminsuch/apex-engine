@@ -1,8 +1,9 @@
-import { WindowMain } from './WindowMain';
+import '../bootstrap';
+import '../bootstrap-window';
 
-function main() {
+import { WindowMain } from './WindowMain'; ;
+
+((): void => {
   const sandbox = new WindowMain();
   sandbox.init();
-}
-
-main();
+})();

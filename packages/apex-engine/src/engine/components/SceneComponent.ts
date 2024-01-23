@@ -1,18 +1,21 @@
-import * as THREE from 'three';
+import { Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
-import { type TripleBuffer } from '../../platform/memory/common';
-import { CLASS, FUNC, PROP } from '../class';
-import { proxy } from '../class/specifiers/proxy';
-import { rpc } from '../class/specifiers/rpc';
-import { boolean, mat4, quat, ref, serialize, vec3 } from '../class/specifiers/serialize';
-import { type IRenderTickContext, RenderProxy } from '../renderer';
 import { type Actor } from '../Actor';
+import { CLASS, PROP } from '../core/class/decorators';
+import { proxy } from '../core/class/specifiers/proxy';
+import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
+import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
+import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
+import { RenderProxy } from '../renderer/RenderProxy';
 import { ActorComponent } from './ActorComponent';
+
+const _m1 = /* @__PURE__ */ new Matrix4();
+const _pos = /* @__PURE__ */ new Vector3();
+const _obj = /* @__PURE__ */ new Object3D();
 
 export class SceneComponentProxy extends RenderProxy {
   declare position: [number, number, number];
-
-  declare rotation: [number, number, number];
 
   declare scale: [number, number, number];
 
@@ -32,10 +35,10 @@ export class SceneComponentProxy extends RenderProxy {
     number,
     number,
     number,
-    number
+    number,
   ];
 
-  declare quaternion: [number, number, number, number];
+  declare rotation: [number, number, number, number];
 
   declare up: [number, number, number];
 
@@ -53,49 +56,30 @@ export class SceneComponentProxy extends RenderProxy {
 
   public childIndex: number = -1;
 
-  public sceneObject: THREE.Object3D = new THREE.Object3D();
+  public sceneObject: Object3D;
 
-  public setAsRoot() {
-    // We do not set `isRootComponent` here (this information is automatically set from the triple buffer).
-    this.renderer.scene.add(this.sceneObject);
+  constructor(
+    args: unknown[] = [],
+    tb: TripleBuffer,
+    public override readonly id: number,
+    protected override readonly renderer: IInternalRenderWorkerContext
+  ) {
+    super(args, tb, id, renderer);
+
+    this.sceneObject = new Object3D();
   }
 
-  public override tick(tick: IRenderTickContext): void {
+  public override tick(tick: IEngineLoopTickContext): void {
     super.tick(tick);
 
     this.sceneObject.castShadow = this.castShadow;
     this.sceneObject.receiveShadow = this.receiveShadow;
     this.sceneObject.visible = this.visible;
     this.sceneObject.position.fromArray(this.position);
-    // this.sceneObject.rotation.fromArray(this.rotation);
+    this.sceneObject.quaternion.fromArray(this.rotation);
     this.sceneObject.scale.fromArray(this.scale);
+    this.sceneObject.matrix.fromArray(this.matrix);
     this.sceneObject.up.fromArray(this.up);
-  }
-
-  public attachToComponent() {
-    // We use setInterval as a ugly fix. The problem is, that once the rpc call comes in,
-    // the data from the write-buffer may not been copied to the read-buffer yet.
-    //
-    // This issue should be resolved, once we include the tick information in our execution.
-    // todo: Remove setInterval
-    const interval = setInterval(() => {
-      // if (!this.parent) {
-      //   console.warn(`Cannot attach component to parent: Parent is ${typeof this.parent}.`);
-      //   return false;
-      // }
-
-      if (!this.parent) {
-        return;
-      }
-
-      const idx = this.parent.children.indexOf(this);
-
-      if (idx === -1) {
-        this.childIndex = this.parent.children.push(this) - 1;
-        this.parent.sceneObject.add(this.sceneObject);
-        clearInterval(interval);
-      }
-    });
   }
 }
 
@@ -106,22 +90,19 @@ export class SceneComponent extends ActorComponent {
   declare tripleBuffer: TripleBuffer;
 
   @PROP(serialize(vec3))
-  public position: THREE.Vector3 = new THREE.Vector3();
-
-  @PROP(serialize(vec3))
-  public rotation: THREE.Euler = new THREE.Euler();
-
-  @PROP(serialize(vec3))
-  public scale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
-
-  @PROP(serialize(mat4))
-  public matrix: THREE.Matrix4 = new THREE.Matrix4();
+  public position: Vector3 = new Vector3();
 
   @PROP(serialize(quat))
-  public quaternion: THREE.Quaternion = new THREE.Quaternion();
+  public rotation: Quaternion = new Quaternion();
 
   @PROP(serialize(vec3))
-  public up: THREE.Vector3 = THREE.Object3D.DEFAULT_UP;
+  public scale: Vector3 = new Vector3(1, 1, 1);
+
+  @PROP(serialize(mat4))
+  public matrix: Matrix4 = new Matrix4();
+
+  @PROP(serialize(vec3))
+  public up: Vector3 = Object3D.DEFAULT_UP;
 
   @PROP(serialize(boolean))
   public visible: boolean = true;
@@ -149,7 +130,6 @@ export class SceneComponent extends ActorComponent {
    */
   public children: SceneComponent[] = [];
 
-  @FUNC(rpc())
   public setAsRoot(actor: Actor): boolean {
     if (actor.setRootComponent(this)) {
       this.isRootComponent = true;
@@ -158,7 +138,6 @@ export class SceneComponent extends ActorComponent {
     return false;
   }
 
-  @FUNC(rpc())
   public attachToComponent(parent: SceneComponent): boolean {
     if (this.parent === parent) {
       return false;
@@ -190,8 +169,8 @@ export class SceneComponent extends ActorComponent {
     this.parent = parent;
     this.childIndex = this.parent.children.push(this) - 1;
 
-    //? Update child transformations, when attached to parent?
-    //? Broadcast an event, something like "onChildAttached"?
+    // ? Update child transformations, when attached to parent?
+    // ? Broadcast an event, something like "onChildAttached"?
     return true;
   }
 
@@ -220,19 +199,29 @@ export class SceneComponent extends ActorComponent {
       child.childIndex = this.children.indexOf(child);
     }
 
-    this.componentTick.removeDependency(component.componentTick);
+    // this.componentTick.removeDependency(component.componentTick);
 
-    //? Broadcast an event, something like "onChildDetached"?
-    //todo: Update world transformations for the detached component
+    // ? Broadcast an event, something like "onChildDetached"?
+    // todo: Update world transformations for the detached component
     return true;
   }
 
-  public isAttachedTo(component: SceneComponent) {
+  public isAttachedTo(component: SceneComponent): boolean {
     for (let parent = this.parent; parent !== null; parent = parent.parent) {
       if (parent === component) {
         return true;
       }
     }
     return false;
+  }
+
+  public lookAt(x: number | Vector3, y: number, z: number): void {
+    if (x instanceof Vector3) {
+      _obj.lookAt(x);
+    } else {
+      _obj.lookAt(x, y, z);
+    }
+
+    this.matrix.copy(_obj.matrixWorld);
   }
 }

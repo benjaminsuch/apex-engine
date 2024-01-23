@@ -1,11 +1,11 @@
-import { IInstatiationService } from '../platform/di/common';
-import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderingPlatform } from '../platform/rendering/common';
-import { GameEngine } from './GameEngine';
-import { TickFunctionManager } from './TickFunctionManager';
+import { plugins } from 'build:info';
 
-const TICK_RATE = 60;
-const MS_PER_UPDATE = 1000 / TICK_RATE;
+import { IInstantiationService } from '../platform/di/common/InstantiationService';
+import { ApexEngine } from './ApexEngine';
+import { Flags } from './Flags';
+import { IPhysicsWorkerContext, PhysicsWorkerContext } from './physics/PhysicsWorkerContext';
+import { IRenderWorkerContext, RenderWorkerContext } from './renderer/RenderWorkerContext';
+import { TickManager } from './TickManager';
 
 export interface IEngineLoopTickContext {
   id: number;
@@ -13,74 +13,100 @@ export interface IEngineLoopTickContext {
   elapsed: number;
 }
 
+const TICK_RATE = 60;
+const MS_PER_UPDATE = 1000 / TICK_RATE;
+
 export class EngineLoop {
-  private isExitRequested: boolean = false;
+  private tickInterval: IntervalReturn;
 
-  private tickInterval: NodeJS.Timer | undefined;
+  private tickManager: TickManager;
 
-  private tickManager: TickFunctionManager;
+  private tickId: number = 0;
 
   public delta: number = 0;
 
   public elapsed: number = 0;
 
-  public ticks: number = 0;
-
   public fps: number = 0;
 
-  constructor(
-    @IInstatiationService private readonly instantiationService: IInstatiationService,
-    @IRenderingPlatform private readonly renderer: IRenderingPlatform,
-    @IConsoleLogger private readonly logger: IConsoleLogger
-  ) {
-    this.tickManager = this.instantiationService.createInstance(TickFunctionManager);
+  constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
+    this.tickManager = this.instantiationService.createInstance(TickManager);
   }
 
-  public async init() {
-    const promises: MaybePromise<void>[] = [];
+  public async init(): Promise<void> {
+    // Import and assign default classes
+    {
+      const defaultPawn = await import(DEFAULT_PAWN);
 
-    if (this.renderer) {
-      promises.push(this.renderer.init([GameEngine.GAME_FLAGS, GameEngine.RENDER_FLAGS]));
+      if (!defaultPawn.default) {
+        throw new Error(`Invalid default pawn: Your default pawn module (defined in your apex.config.ts) does not have a "default" export.`);
+      }
+
+      ApexEngine.DefaultPawnClass = defaultPawn.default;
+
+      const defaultGameMode = await import(DEFAULT_GAME_MODE);
+
+      if (!defaultGameMode.default) {
+        throw new Error(`Invalid default game mode class: Your default game mode module (defined in your apex.config.ts) does not have a "default" export.`);
+      }
+
+      ApexEngine.DefaultGameModeClass = defaultGameMode.default;
     }
 
-    const engine = this.instantiationService.createInstance(GameEngine, this);
-    promises.push(engine.init());
+    // Setup important workers
+    {
+      if (IS_BROWSER) {
+        const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
+        this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
 
-    await Promise.all(promises);
+        await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
+      }
 
-    engine.start();
+      const physicsContext = this.instantiationService.createInstance(PhysicsWorkerContext);
+      this.instantiationService.setServiceInstance(IPhysicsWorkerContext, physicsContext);
+
+      await physicsContext.init();
+    }
+
+    // Activate plugins
+    {
+      plugins.forEach(async (module) => {
+        await module.startup?.();
+      });
+    }
+
+    const engine = this.instantiationService.createInstance(ApexEngine);
+
+    engine.init();
+    await engine.start();
   }
 
-  public tick() {
+  public tick(): IntervalReturn {
     this.tickInterval = setInterval(() => {
-      this.ticks++;
-
-      // if (this.ticks < 61) {
-      //   console.log('game tick:', this.ticks);
-      // }
+      ++this.tickId;
 
       const then = performance.now();
 
       this.delta = then - this.elapsed / 1000;
       this.elapsed = then;
-      this.fps = (this.ticks * 1000) / then;
+      this.fps = (this.tickId * 1000) / then;
 
-      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.ticks };
+      const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.tickId };
 
       try {
-        GameEngine.getInstance().tick(currentTick);
+        ApexEngine.getInstance().tick(currentTick);
       } catch (error) {
-        clearInterval(this.tickInterval);
+        clearInterval(this.tickInterval as number);
         throw error;
       }
 
       if (performance.now() - then > MS_PER_UPDATE) {
-        clearInterval(this.tickInterval);
+        clearInterval(this.tickInterval as number);
 
         try {
-          GameEngine.getInstance().tick(currentTick);
+          ApexEngine.getInstance().tick(currentTick);
         } catch (error) {
-          clearInterval(this.tickInterval);
+          clearInterval(this.tickInterval as number);
           throw error;
         }
 
@@ -89,13 +115,5 @@ export class EngineLoop {
     }, MS_PER_UPDATE);
 
     return this.tickInterval;
-  }
-
-  public isEngineExitRequested() {
-    return this.isExitRequested;
-  }
-
-  public requestExit() {
-    this.isExitRequested = true;
   }
 }

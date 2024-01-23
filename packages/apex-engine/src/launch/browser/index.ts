@@ -1,10 +1,9 @@
 import '../bootstrap';
+import '../bootstrap-window';
 
-import { BrowserMain } from './BrowserMain';
+import { BrowserMain } from './BrowserMain'; ;
 
-function main() {
+((): void => {
   const browser = new BrowserMain();
   browser.init();
-}
-
-main();
+})();

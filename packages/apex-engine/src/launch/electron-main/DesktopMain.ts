@@ -1,8 +1,8 @@
 import { BrowserWindow } from 'electron';
-import { join } from 'node:path';
 
-import { InstantiationService, ServiceCollection } from '../../platform/di/common';
-import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common';
+import { InstantiationService } from '../../platform/di/common/InstantiationService';
+import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
+import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 
 export class DesktopMain {
   private readonly instantiationService: InstantiationService;
@@ -17,12 +17,12 @@ export class DesktopMain {
     this.instantiationService = new InstantiationService(services);
   }
 
-  public init() {
-    //? We have to keep in mind, that this window can be modified by the engine
-    //? during runtime (e.g. the user changes the game resolution).
+  public init(): void {
+    // ? We have to keep in mind, that this window can be modified by the engine
+    // ? during runtime (e.g. the user changes the game resolution).
     this.window = new BrowserWindow({
       autoHideMenuBar: true,
-      //frame: false,
+      // frame: false,
       height: 1080,
       width: 1920,
       show: false,
@@ -30,8 +30,8 @@ export class DesktopMain {
       webPreferences: {
         enableWebSQL: false,
         sandbox: true,
-        spellcheck: false
-      }
+        spellcheck: false,
+      },
     });
 
     this.window.webContents.session.webRequest.onHeadersReceived((details, callback) => {
@@ -44,6 +44,7 @@ export class DesktopMain {
         details.responseHeaders = {};
       }
 
+      // Required for SharedArrayBuffer
       details.responseHeaders['Cross-Origin-Opener-Policy'] = ['same-origin'];
       details.responseHeaders['Cross-Origin-Embedder-Policy'] = ['require-corp'];
 

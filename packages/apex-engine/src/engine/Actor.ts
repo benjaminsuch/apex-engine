@@ -1,24 +1,41 @@
-import { type GetLeadingNonServiceArgs, IInstatiationService } from '../platform/di/common';
-import { IConsoleLogger } from '../platform/logging/common';
-import { IRenderingPlatform } from '../platform/rendering/common';
-import { type ActorComponent, type SceneComponent } from './components';
+import { type GetLeadingNonServiceArgs, IInstantiationService } from '../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
+import { type ActorComponent } from './components/ActorComponent';
+import { type SceneComponent } from './components/SceneComponent';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Level } from './Level';
-import { TickFunction } from './TickFunctionManager';
+import { TickFunction } from './TickManager';
 import { type World } from './World';
 
 export type ActorComponentType = new (...args: any[]) => ActorComponent;
 
 export class Actor {
+  private level?: Level;
+
+  public getLevel(): Level {
+    if (!this.level) {
+      throw new Error(`This actor has not been added to a level.`);
+    }
+    return this.level;
+  }
+
+  private world?: World;
+
+  public getWorld(): World {
+    if (!this.world) {
+      throw new Error(`This actor is not part of a world.`);
+    }
+    return this.world;
+  }
+
   protected rootComponent?: SceneComponent;
 
-  public setRootComponent(component: SceneComponent) {
-    // todo: Dispose previous root component
-    // todo: Send message to render-thread
+  public setRootComponent(component: SceneComponent): boolean {
     if (component === this.rootComponent) {
       return false;
     }
 
+    // ? Can we just override?
     if (this.rootComponent) {
       this.logger.warn(`Cannot set root component: A root component is already defined.`);
       return false;
@@ -29,16 +46,16 @@ export class Actor {
     return true;
   }
 
-  public getRootComponent() {
+  public getRootComponent(): SceneComponent {
     if (!this.rootComponent) {
       throw new Error(`A root component has not been set yet.`);
     }
     return this.rootComponent;
   }
 
-  public readonly components: Set<ActorComponent> = new Set();
+  public readonly components: ActorComponent[] = [];
 
-  public getComponent<T extends ActorComponentType>(ComponentClass: T) {
+  public getComponent<T extends ActorComponentType>(ComponentClass: T): InstanceType<T> | void {
     for (const component of this.components) {
       if (component instanceof ComponentClass) {
         return component as InstanceType<T>;
@@ -46,8 +63,8 @@ export class Actor {
     }
   }
 
-  public hasComponent(component: ActorComponent) {
-    return this.components.has(component);
+  public hasComponent(component: ActorComponent): boolean {
+    return this.components.includes(component);
   }
 
   public addComponent<T extends ActorComponentType, R extends InstanceType<T>>(
@@ -59,42 +76,23 @@ export class Actor {
     const component = this.instantiationService.createInstance(ComponentClass, ...args) as R;
 
     component.registerWithActor(this);
-    this.components.add(component);
+    this.components.push(component);
 
     return component;
   }
 
-  private level?: Level;
-
-  public getLevel() {
-    if (!this.level) {
-      throw new Error(`This actor has not been assigned to a level.`);
-    }
-    return this.level;
-  }
-
-  private world?: World;
-
-  public getWorld() {
-    if (!this.world) {
-      throw new Error(`This actor is not part of a world.`);
-    }
-    return this.world;
-  }
-
-  public isInitialized: boolean = false;
-
   public actorTick: ActorTickFunction;
 
   constructor(
-    @IInstatiationService protected readonly instantiationService: IInstatiationService,
+    @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @IRenderingPlatform public readonly renderer: IRenderingPlatform
   ) {
     this.actorTick = this.instantiationService.createInstance(ActorTickFunction, this);
   }
 
-  public beginPlay() {
+  public tick(context: IEngineLoopTickContext): void {}
+
+  public beginPlay(): void {
     this.registerActorTickFunction();
 
     for (const component of this.components) {
@@ -103,27 +101,7 @@ export class Actor {
     }
   }
 
-  public tick(context: IEngineLoopTickContext) {}
-
-  public preInitComponents() {
-    this.logger.debug(this.constructor.name, 'preInitComponents');
-
-    for (const component of this.components) {
-      component.world = this.getWorld();
-    }
-  }
-
-  public initComponents() {
-    for (const component of this.components) {
-      component.init();
-    }
-  }
-
-  public postInitComponents() {
-    this.isInitialized = true;
-  }
-
-  public registerWithLevel(level: Level) {
+  public registerWithLevel(level: Level): void {
     if (level.hasActor(this)) {
       throw new Error(`This instance is already registered in this level.`);
     }
@@ -134,24 +112,13 @@ export class Actor {
     this.onRegister();
   }
 
-  public dispose() {
-    this.logger.debug(this.constructor.name, 'Dispose');
-
-    for (const component of this.components) {
-      component.dispose();
-    }
-  }
-
-  /**
-   * Registers it's own tick function and all of it's components.
-   */
-  public registerActorTickFunction() {
+  public registerActorTickFunction(): void {
     if (this.actorTick.canTick) {
       this.actorTick.register();
     }
   }
 
-  protected onRegister() {}
+  protected onRegister(): void {}
 }
 
 export class ActorTickFunction extends TickFunction<Actor> {

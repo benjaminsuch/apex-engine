@@ -1,62 +1,59 @@
-import { IInstatiationService } from '../platform/di/common';
-import { IConsoleLogger } from '../platform/logging/common';
-import { TripleBuffer } from '../platform/memory/common';
-import { IRenderingPlatform } from '../platform/rendering/common';
-import { type IProxyOrigin } from './class/specifiers/proxy';
-import { type EngineLoop, type IEngineLoopTickContext } from './EngineLoop';
+import { levels } from 'build:info';
+
+import { IInstantiationService } from '../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
+import { TripleBuffer } from './core/memory/TripleBuffer';
+import { GLTFLoader } from './core/three/GLTFLoader';
+import { type IEngineLoopTickContext } from './EngineLoop';
+import { Flags } from './Flags';
 import { GameInstance } from './GameInstance';
+import { type GameMode } from './GameMode';
 import { type Level } from './Level';
-import { GameProxyManager, type ProxyManager } from './ProxyManager';
+import { type Pawn } from './Pawn';
 
-export abstract class ApexEngine {
-  public static GAME_FLAGS: Uint8Array = new Uint8Array(
-    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
-  ).fill(0x6);
-
-  public static RENDER_FLAGS: Uint8Array = new Uint8Array(
-    new SharedArrayBuffer(Uint8Array.BYTES_PER_ELEMENT)
-  ).fill(0x6);
-
+export class ApexEngine {
   private static instance?: ApexEngine;
 
-  public static getInstance() {
+  public static getInstance(): ApexEngine {
     if (!this.instance) {
-      throw new Error(`No instance of GameEngine available.`);
+      throw new Error(`No instance of ApexEngine available.`);
     }
     return this.instance;
   }
 
+  /**
+   * Attention: This class is only available _after_ `EngineLoop.init` has been completed.
+   */
+  public static DefaultPawnClass: typeof Pawn;
+
+  /**
+   * Attention: This class is only available _after_ `EngineLoop.init` has been completed.
+   */
+  public static DefaultGameModeClass: typeof GameMode;
+
   private gameInstance?: GameInstance;
 
-  public getGameInstance() {
-    if (!this.isInitialized) {
+  public getGameInstance(): GameInstance {
+    if (!this.gameInstance) {
       throw new Error(`Cannot access GameInstance before the Engine has been initialized.`);
     }
-    return this.gameInstance as GameInstance;
+    return this.gameInstance;
   }
-
-  public readonly proxyManager: ProxyManager<IProxyOrigin>;
-
-  public isRunning: boolean = false;
 
   public isInitialized: boolean = false;
 
   constructor(
-    protected readonly engineLoop: EngineLoop,
-    @IInstatiationService protected readonly instantiationService: IInstatiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @IRenderingPlatform protected readonly renderer: IRenderingPlatform
+    @IInstantiationService protected readonly instantiationService: IInstantiationService,
   ) {
     if (ApexEngine.instance) {
-      throw new Error(`An instance of the GameEngine already exists.`);
+      throw new Error(`An instance of the ApexEngine already exists.`);
     }
-
-    this.proxyManager = this.instantiationService.createInstance(GameProxyManager);
 
     ApexEngine.instance = this;
   }
 
-  public init() {
+  public init(): void {
     this.gameInstance = this.instantiationService.createInstance(GameInstance, this);
     this.gameInstance.init();
 
@@ -67,64 +64,44 @@ export abstract class ApexEngine {
     this.isInitialized = true;
   }
 
-  public tick(tick: IEngineLoopTickContext) {
-    TripleBuffer.swapReadBufferFlags(ApexEngine.RENDER_FLAGS);
+  public tick(tick: IEngineLoopTickContext): void {
+    TripleBuffer.swapReadBufferFlags(Flags.RENDER_FLAGS);
 
     this.getGameInstance().getWorld().tick(tick);
 
-    TripleBuffer.swapWriteBufferFlags(ApexEngine.GAME_FLAGS);
+    TripleBuffer.swapWriteBufferFlags(Flags.GAME_FLAGS);
   }
 
-  public start() {
-    this.isRunning = true;
-    this.getGameInstance().start();
+  public async start(): Promise<void> {
+    await this.getGameInstance().start();
   }
-
-  public exit() {}
 
   /**
-   * Client <-> Server:
-   * 1. Client calls `loadLevel(<url>)`
-   * 2. Client must be already authenticated? Otherwise try to authenticate
-   * 3. Load level, call `postLoad`, `setCurrentLevel`, `init` and `initActorsForPlay`
-   * 4. Client replicates additional actors sent from the server
+   * Loads the level and creates the game mode from the given `url`. When successful
+   * the level and all actors will be initialized for play and a play actor will be
+   * spawned.
+   *
    * @param url
    */
-  public async loadLevel(url: string) {
-    // todo: Broadcast pre-load-level event
-    this.logger.info(`Attempt to load level: ${url}`);
-
+  public async loadMap(url: string): Promise<void> {
+    // todo: Dispose previous level
     try {
+      this.logger.info('Attempting to load map:', url);
+
       const gameInstance = this.getGameInstance();
       const world = gameInstance.getWorld();
 
-      if (world.currentLevel) {
-        this.logger.info(`Disposing current level`);
-
-        // Clean up
-        // - Shutdown net driver
-        // - Dispose current level
-        // - Detach player from its player controller and destroy the player controller actor
-        // - Destroy player pawn
-        // - Clean up the "World", which includes destroying all actors which are not supposed to be kept between levels.
-        //   (We call the clean up function after we clean up the player in case that it might execute code or spawn actors)
-
-        world.currentLevel.dispose();
-        // todo: Broadcast level-removed-from-world event
+      if (!world.isInitialized) {
+        throw new Error(`Cannot load map: World is not initialized.`);
       }
 
-      const { default: LoadedLevel }: { default: typeof Level } = await import(url);
-
-      this.logger.info(`Level loaded: ${url}`);
-
+      const loader = this.instantiationService.createInstance(GLTFLoader);
+      const content = await loader.load(`game/maps/${url}`);
+      const { default: LoadedLevel }: { default: typeof Level } = await levels[url]();
       const level = this.instantiationService.createInstance(LoadedLevel);
 
-      if (!world.isInitialized) {
-        throw new Error(`Cannot continue loading level: World is not initialized.`);
-      }
-
-      level.postLoad(world);
       world.setCurrentLevel(level);
+      level.load(content);
 
       await world.setGameMode(url);
 
@@ -135,9 +112,9 @@ export abstract class ApexEngine {
         gameInstance.getPlayer().spawnPlayActor(world);
       }
 
-      // todo: Broadcast load-level-completed event
+      this.logger.info('Map content loaded');
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
 }

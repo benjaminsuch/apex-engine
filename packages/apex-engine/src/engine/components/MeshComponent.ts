@@ -1,35 +1,90 @@
-import * as THREE from 'three';
+import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshPhongMaterial, Sphere, Vector3 } from 'three';
 
-import { IInstatiationService } from '../../platform/di/common';
-import { IConsoleLogger } from '../../platform/logging/common';
-import { IRenderingPlatform } from '../../platform/rendering/common';
-import { CLASS, PROP } from '../class';
-import { proxy } from '../class/specifiers/proxy';
-import { ref, serialize } from '../class/specifiers/serialize';
-import type { BufferGeometry, BufferGeometryProxy } from '../BufferGeometry';
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
+import { CLASS } from '../core/class/decorators';
+import { proxy } from '../core/class/specifiers/proxy';
+import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
 export class MeshComponentProxy extends SceneComponentProxy {
-  declare geometry: BufferGeometryProxy;
+  constructor(
+    [geometryData, materialData]: [IGeometryData | undefined, IMaterialJSON | undefined] = [undefined, undefined],
+    tb: TripleBuffer,
+    public override readonly id: number,
+    protected override readonly renderer: IInternalRenderWorkerContext
+  ) {
+    super([geometryData, materialData], tb, id, renderer);
 
-  declare material: THREE.Material;
+    const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
-  public override sceneObject: THREE.Mesh = new THREE.Mesh();
+    if (geometryData) {
+      const { attributes, boundingSphere, index } = geometryData;
+      const { normal, position, uv } = attributes;
+      const geometry = new BufferGeometry();
+
+      geometry.setAttribute('position', createBufferAttribute({ ...position, type: position.array.constructor.name }));
+      geometry.setAttribute('normal', createBufferAttribute({ ...normal, type: normal.array.constructor.name }));
+      geometry.setAttribute('uv', createBufferAttribute({ ...uv, type: uv.array.constructor.name }));
+      geometry.setIndex(createBufferAttribute({ ...index, normalized: false, itemSize: 1, type: 'Uint16Array' }));
+
+      if (boundingSphere) {
+        geometry.boundingSphere = new Sphere(new Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
+      }
+
+      args[0] = geometry;
+    }
+
+    // if (materialData) {
+    //   const { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...params } = materialData;
+
+    //   if (type === 'MeshStandardMaterial') {
+    //     const material = new MeshStandardMaterial({
+    //       ...params,
+    //       normalScale: new Vector2(...normalScale),
+    //     });
+    //     args[1] = material;
+    //   }
+    // }
+
+    if (IS_DEV) {
+      // random color: (10 ** (6 + Math.random())).toString(16).split('.').map(val => Number('0x' + val)).shift()
+      args[1] = new MeshPhongMaterial({ depthWrite: false });
+    }
+
+    this.sceneObject = new Mesh(...args);
+  }
 }
 
 @CLASS(proxy(MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
-  @PROP(serialize(ref))
-  public geometry: BufferGeometry;
-
   constructor(
-    geometry: BufferGeometry,
-    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IRenderingPlatform protected readonly renderer: IRenderingPlatform
+    public geometry: BufferGeometry | undefined = undefined,
+    public material: Material | undefined = undefined,
+    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger
   ) {
     super(instantiationService, logger);
-
-    this.geometry = geometry;
   }
+}
+
+const TYPED_ARRAYS = {
+  Uint16Array,
+  Int16Array,
+  Uint8Array,
+  Int8Array,
+  Int32Array,
+  Uint32Array,
+  Float32Array,
+} as const;
+
+function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
+  const ArrayConstructor = TYPED_ARRAYS[type as keyof typeof TYPED_ARRAYS];
+
+  if (ArrayConstructor) {
+    return new BufferAttribute(new ArrayConstructor(array), itemSize, normalized);
+  }
+
+  throw new Error(`Unknown array type.`);
 }

@@ -2,14 +2,17 @@
   "compilerOptions": {
     "declaration": false,
     "experimentalDecorators": true,
+    "isolatedModules": false,
     "module": "ESNext",
     "moduleResolution": "Node",
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noImplicitOverride": true,
+    "noImplicitReturns": true,
     "removeComments": false,
     "skipLibCheck": true,
     "strict": true,
-    "sourceMap": true,
-    "target": "ESNext"
+    "strictFunctionTypes": true,
+    "sourceMap": false,
+    "target": "ESNext",
   }
 }

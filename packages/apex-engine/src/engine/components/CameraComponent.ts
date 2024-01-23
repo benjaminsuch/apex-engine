@@ -1,78 +1,107 @@
-import { IInstatiationService } from '../../platform/di/common';
-import { IConsoleLogger } from '../../platform/logging/common';
-import { SceneComponent } from './SceneComponent';
+import { PerspectiveCamera } from 'three';
 
-export class CameraComponent extends SceneComponent {
-  readonly #buffer: ArrayBufferLike;
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
+import { CLASS, PROP } from '../core/class/decorators';
+import { proxy } from '../core/class/specifiers/proxy';
+import { serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
+import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
+import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
+import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
-  readonly #data: Float32Array;
+export class CameraComponentProxy extends SceneComponentProxy {
+  declare aspect: number;
 
-  /**
-   * Buffer offset: 0
-   */
-  #fov: number = 50;
+  declare far: number;
 
-  get fov() {
-    return this.#data[0];
-  }
+  declare filmGauge: number;
 
-  set fov(val) {
-    this.#data.set([val]);
-    this.#fov = this.#data[0];
-  }
+  declare filmOffset: number;
 
-  /**
-   * Buffer offset: 1
-   */
-  #aspect: number = 1;
+  declare focus: number;
 
-  get aspect() {
-    return this.#data[1];
-  }
+  declare fov: number;
 
-  set aspect(val) {
-    this.#data.set([val], 1);
-    this.#aspect = this.#data[1];
-  }
+  declare near: number;
 
-  /**
-   * Buffer offset: 2
-   */
-  #far: number = 2000;
+  declare zoom: number;
 
-  get far() {
-    return this.#data[2];
-  }
-
-  set far(val) {
-    this.#data.set([val], 2);
-    this.#far = this.#data[2];
-  }
-
-  /**
-   * Buffer offset: 3
-   */
-  #near: number = 0.1;
-
-  get near() {
-    return this.#data[3];
-  }
-
-  set near(val) {
-    this.#data.set([val], 3);
-    this.#near = this.#data[3];
-  }
+  public override sceneObject: PerspectiveCamera;
 
   constructor(
-    @IInstatiationService protected override readonly instantiationService: IInstatiationService,
+    [fov, aspect, near, far]: [number, number, number, number],
+    tb: TripleBuffer,
+    public override readonly id: number,
+    protected override readonly renderer: IInternalRenderWorkerContext
+  ) {
+    super([aspect, far, fov, near], tb, id, renderer);
+
+    const camera = this.renderer.camera as PerspectiveCamera;
+    this.sceneObject = new PerspectiveCamera(fov, camera.aspect, near, far);
+    this.renderer.camera = this.sceneObject;
+  }
+
+  public override tick(tick: IEngineLoopTickContext): void {
+    super.tick(tick);
+
+    this.sceneObject.aspect = this.aspect;
+    this.sceneObject.far = this.far;
+    this.sceneObject.filmGauge = this.filmGauge;
+    this.sceneObject.filmOffset = this.filmOffset;
+    this.sceneObject.focus = this.focus;
+    this.sceneObject.fov = this.fov;
+    this.sceneObject.near = this.near;
+    this.sceneObject.zoom = this.zoom;
+  }
+}
+
+@CLASS(proxy(CameraComponentProxy))
+export class CameraComponent extends SceneComponent {
+  @PROP(serialize(uint8))
+  public aspect: number = 1;
+
+  @PROP(serialize(uint16))
+  public far: number = 2000;
+
+  @PROP(serialize(uint16))
+  public filmGauge: number = 35;
+
+  @PROP(serialize(uint16))
+  public filmOffset: number = 0;
+
+  @PROP(serialize(uint16))
+  public focus: number = 10;
+
+  @PROP(serialize(uint16))
+  public fov: number = 50;
+
+  @PROP(serialize(uint16))
+  public near: number = 0.1;
+
+  @PROP(serialize(uint16))
+  public zoom: number = 1;
+
+  constructor(
+    fov: CameraComponent['fov'],
+    aspect: CameraComponent['aspect'],
+    near: CameraComponent['near'],
+    far: CameraComponent['far'],
+    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger
   ) {
     super(instantiationService, logger);
 
-    const Buffer = typeof SharedArrayBuffer !== 'undefined' ? SharedArrayBuffer : ArrayBuffer;
+    this.fov = fov;
+    this.aspect = aspect;
+    this.near = near;
+    this.far = far;
 
-    this.#buffer = new Buffer(4 * Float32Array.BYTES_PER_ELEMENT);
-    this.#data = new Float32Array(this.#buffer);
-    this.#data.set([50, 1, 2000, 0.1]);
+    this.componentTick.canTick = true;
+  }
+
+  public updateRotation(x: number, y: number): void {
+    this.rotation.x += -y * 0.0025;
+    this.rotation.y += -x * 0.0025;
   }
 }

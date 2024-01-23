@@ -1,57 +1,43 @@
-import { MathUtils } from 'three';
-
-import { IInstatiationService } from '../../platform/di/common';
-import { IConsoleLogger } from '../../platform/logging/common';
-import { Actor } from '../Actor';
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
+import { type Actor } from '../Actor';
 import { type IEngineLoopTickContext } from '../EngineLoop';
-import { ETickGroup, TickFunction } from '../TickFunctionManager';
-import { World } from '../World';
+import { ETickGroup, TickFunction } from '../TickManager';
 
 export class ActorComponent {
-  public readonly uuid: string = MathUtils.generateUUID();
-
-  public readonly componentTick: ComponentTickFunction;
-
   /**
    * The actor that owns this component.
    */
   private owner?: Actor;
 
-  public getOwner() {
+  public getOwner(): Actor {
     if (!this.owner) {
-      throw new Error(`No owner found.`);
+      throw new Error(`No owner assigned.`);
     }
     return this.owner;
   }
 
-  public world?: World;
-
-  public getWorld() {
-    if (!this.world) {
-      throw new Error(`This component is not part of a world.`);
-    }
-    return this.world;
-  }
+  public readonly componentTick: ComponentTickFunction;
 
   public isInitialized: boolean = false;
 
   constructor(
-    @IInstatiationService protected readonly instantiationService: IInstatiationService,
-    @IConsoleLogger protected readonly logger: IConsoleLogger
+    @IInstantiationService protected readonly instantiationService: IInstantiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
   ) {
     this.componentTick = this.instantiationService.createInstance(ComponentTickFunction, this);
     this.componentTick.tickGroup = ETickGroup.DuringPhysics;
   }
 
-  public init() {
+  public init(): void {
     this.isInitialized = true;
   }
 
-  public beginPlay() {}
+  public beginPlay(): void {}
 
-  public tick(context: IEngineLoopTickContext) {}
+  public tick(context: IEngineLoopTickContext): void {}
 
-  public registerWithActor(actor: Actor) {
+  public registerWithActor(actor: Actor): void {
     if (actor.hasComponent(this)) {
       throw new Error(`This instance is already registered for this actor.`);
     }
@@ -60,17 +46,13 @@ export class ActorComponent {
     this.onRegister();
   }
 
-  public dispose() {
-    this.logger.debug(this.constructor.name, 'Dispose');
-  }
-
-  public registerComponentTickFunction() {
+  public registerComponentTickFunction(): void {
     if (this.componentTick.canTick) {
       this.componentTick.register();
     }
   }
 
-  protected onRegister() {}
+  protected onRegister(): void {}
 }
 
 export class ComponentTickFunction extends TickFunction<ActorComponent> {

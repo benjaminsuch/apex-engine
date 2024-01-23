@@ -1,7 +1,7 @@
-import { app, Menu } from 'electron';
-
 import '../bootstrap';
-import '../bootstrap-node';
+import '../bootstrap-electron';
+
+import { app, Menu } from 'electron';
 
 import { DesktopMain } from './DesktopMain';
 
@@ -13,7 +13,7 @@ Menu.setApplicationMenu(null);
  *
  * @param args CLI arguments for the engine (not to be confused with arguments of our build-scripts).
  */
-export async function main(args: string[]) {
+export function main(args: string[]): void {
   app.whenReady().then(() => {
     const desktop = new DesktopMain(args);
     desktop.init();

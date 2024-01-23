@@ -1,2 +1,4 @@
+export * from './build-info';
 export * from './html';
-export * from './workers';
+export { replacePlugin as replace } from './replace';
+export * from './worker';

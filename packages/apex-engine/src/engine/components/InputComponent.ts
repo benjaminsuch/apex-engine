@@ -1,86 +1,73 @@
-import { Actor } from '../Actor';
-import { EKeyEvent } from '../PlayerInput';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
+import { type Actor } from '../Actor';
+import { type InputAction } from '../input/InputAction';
+import { type ETriggerEvent } from '../input/InputTriggers';
 import { ActorComponent } from './ActorComponent';
 
 export class InputComponent extends ActorComponent {
   public readonly actionBindings: InputActionBinding[] = [];
 
-  public readonly axisBindings: InputAxisBinding[] = [];
+  public bindAction<T extends Actor>(action: InputAction, event: ETriggerEvent, target: T, handler: Function): InputActionBinding {
+    const binding = this.instantiationService.createInstance(InputActionBinding, this, action, event);
 
-  public blockInput: boolean = false;
+    binding.bind(target, handler);
+    this.actionBindings.push(binding);
 
-  public buildKeyMap() {}
+    return binding;
+  }
 
-  public bindAxis<T extends Actor>(name: InputAxisBinding['name'], ref: T, fn: Function) {
-    const idx = this.axisBindings.findIndex(binding => binding.name === name);
+  public unbindAction(action: InputAction): void {
+    const idx = this.actionBindings.findIndex(binding => binding.action === action);
 
     if (idx > -1) {
-      this.logger.warn(
-        this.constructor.name,
-        `An axis binding for "${name}" already exists and will be unbound.`
-      );
-      this.unbindAxis(name);
+      this.actionBindings.splice(idx, 1, this.actionBindings[this.actionBindings.length - 1]).pop();
+    }
+  }
+}
+
+export class InputActionBinding {
+  private actionHandler: (() => void) | undefined;
+
+  constructor(
+    private readonly inputComponent: InputComponent,
+    public readonly action: InputAction,
+    public readonly triggerEvent: ETriggerEvent,
+    @IConsoleLogger protected readonly logger: IConsoleLogger
+  ) {}
+
+  public exec(): void {
+    if (!this.actionHandler) {
+      this.logger.warn(this.constructor.name, `Execution skipped: No action-handler was assigned.`);
+      return;
     }
 
-    this.axisBindings.push(new InputAxisBinding(name, fn.bind(ref)));
+    this.actionHandler();
   }
 
-  public unbindAxis(name: InputAxisBinding['name']) {
-    this.axisBindings.splice(
-      this.axisBindings.findIndex(binding => binding.name === name),
-      1
-    );
+  public bind<T extends Actor>(target: T, handler: Function, replace: boolean = false): void {
+    if (this.actionHandler) {
+      if (!replace) {
+        this.logger.warn(`Binding aborted: An action-handler is already bound to action "${this.action.constructor.name}". Set "replace" to "true" if this is intended.`);
+        return;
+      }
+
+      this.unbind();
+    }
+
+    this.actionHandler = (): void => handler.call(target, this.action.value);
   }
 
-  public bindAction<T extends Actor>(
-    name: InputActionBinding['name'],
-    ref: T,
-    fn: Function,
-    event: EKeyEvent
-  ) {
-    const idx = this.axisBindings.findIndex(binding => binding.name === name);
+  public unbind(): void {
+    this.actionHandler = undefined;
+  }
+
+  public destroy(): void {
+    const bindings = this.inputComponent.actionBindings;
+    const idx = bindings.findIndex(binding => binding === this);
 
     if (idx > -1) {
-      this.logger.warn(
-        this.constructor.name,
-        `An action binding for "${name}" already exists and will be unbound.`
-      );
-      this.unbindAction(name);
+      this.inputComponent.actionBindings.splice(idx, 1, bindings[bindings.length - 1]).pop();
+      this.unbind();
     }
-
-    this.actionBindings.push(new InputActionBinding(name, fn.bind(ref), event));
-  }
-
-  public unbindAction(name: InputActionBinding['name']) {
-    this.actionBindings.splice(
-      this.actionBindings.findIndex(binding => binding.name === name),
-      1
-    );
-  }
-}
-
-export class InputBinding {
-  public consumeInput: boolean = false;
-
-  public executeWhenPaused: boolean = false;
-}
-
-export class InputActionBinding extends InputBinding {
-  constructor(
-    public readonly name: string,
-    public readonly handle: Function,
-    public readonly event: EKeyEvent
-  ) {
-    super();
-  }
-}
-
-export class InputAxisBinding extends InputBinding {
-  constructor(
-    public readonly name: string,
-    public readonly handle: Function,
-    public value: number = 0
-  ) {
-    super();
   }
 }

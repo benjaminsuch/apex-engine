@@ -1,4 +1,5 @@
 type TKey =
+  | '*'
   | 'AltLeft'
   | 'AltRight'
   | 'ArrowDown'
@@ -48,7 +49,6 @@ type TKey =
   | 'Minus'
   | 'MouseLeftClick'
   | 'MouseRightClick'
-  | 'MouseX'
-  | 'MouseY'
+  | 'MouseXY'
   | 'Space'
   | 'Tab';

@@ -4,7 +4,8 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
-    "lib": ["DOM"],
-    "noEmit": true
+    "lib": ["DOM", "ESNext", "WebWorker"],
+    "noEmit": true,
+    "resolveJsonModule": true
   }
 }
