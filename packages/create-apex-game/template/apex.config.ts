@@ -3,12 +3,14 @@ export default {
     {
       target: 'game',
       platform: 'browser',
-      defaultLevel: './maps/EntryLevel.js'
+      defaultMap: 'Level_1/Level_1',
+      plugins: [],
     },
     {
       target: 'game',
       platform: 'electron',
-      defaultLevel: './maps/EntryLevel.js'
-    }
-  ]
+      defaultMap: 'Level_1/Level_1',
+      plugins: [],
+    },
+  ],
 };
