@@ -4,7 +4,7 @@ import { IInstantiationService } from '../../platform/di/common/InstantiationSer
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS, PROP } from '../core/class/decorators';
 import { proxy } from '../core/class/specifiers/proxy';
-import { serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
+import { float32, serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
@@ -53,12 +53,13 @@ export class CameraComponentProxy extends SceneComponentProxy {
     this.sceneObject.fov = this.fov;
     this.sceneObject.near = this.near;
     this.sceneObject.zoom = this.zoom;
+    // this.sceneObject.updateProjectionMatrix();
   }
 }
 
 @CLASS(proxy(CameraComponentProxy))
 export class CameraComponent extends SceneComponent {
-  @PROP(serialize(uint8))
+  @PROP(serialize(float32))
   public aspect: number = 1;
 
   @PROP(serialize(uint16))
@@ -76,7 +77,7 @@ export class CameraComponent extends SceneComponent {
   @PROP(serialize(uint16))
   public fov: number = 50;
 
-  @PROP(serialize(uint16))
+  @PROP(serialize(float32))
   public near: number = 0.1;
 
   @PROP(serialize(uint16))
@@ -98,10 +99,5 @@ export class CameraComponent extends SceneComponent {
     this.far = far;
 
     this.componentTick.canTick = true;
-  }
-
-  public updateRotation(x: number, y: number): void {
-    this.rotation.x += -y * 0.0025;
-    this.rotation.y += -x * 0.0025;
   }
 }

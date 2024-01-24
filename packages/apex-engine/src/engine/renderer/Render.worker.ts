@@ -76,6 +76,7 @@ const context: IInternalRenderWorkerContext = {
     if (this.camera instanceof PerspectiveCamera) {
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
+      console.log('update camera:', width, height, this.camera.aspect);
     }
   },
   tick(time): void {
