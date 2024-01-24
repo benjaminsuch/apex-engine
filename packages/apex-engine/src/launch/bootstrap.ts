@@ -9,7 +9,10 @@
  * This file contains code that is applied to all platforms. If you want to target a
  * specific platform, use `bootstrap-window`, `bootstrap-node` etc.
  *
- * Improtant: Code in this file will be executed before all other bootstrap files.
+ * Important: Code in this file will be executed before all other bootstrap files.
  */
 import 'reflect-metadata';
+/**
+ * Monkey-patches
+ */
 import '../engine/core/array';
