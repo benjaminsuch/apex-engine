@@ -1,4 +1,4 @@
-import { levels } from 'build:info';
+import { loadLevel } from 'build:info';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
@@ -85,7 +85,7 @@ export class ApexEngine {
 
       const loader = this.instantiationService.createInstance(GLTFLoader);
       const content = await loader.load(`game/maps/${url}`);
-      const { default: LoadedLevel }: { default: typeof Level } = await levels[url]();
+      const { default: LoadedLevel }: { default: typeof Level } = await loadLevel(url);
       const level = this.instantiationService.createInstance(LoadedLevel);
 
       world.setCurrentLevel(level);

@@ -15,9 +15,13 @@ export function buildInfo(target: TargetConfig, levels: [string, string][] = [])
       ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'));`),
       // #endregion
       // #region Levels
-      'export const levels = {',
+      'const levels = {',
       ...buildLevels(levels),
       '};',
+      '',
+      'export async function loadLevel(url) {',
+      '  return levels[url]()',
+      '}',
       // #endregion
     ].join('\n'),
   });
