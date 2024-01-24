@@ -15,5 +15,5 @@
     "target": "ESNext",
     "types": ["@types/node"],
   },
-  "include": ["packages/**/*.ts", "sandboxes/**/*.ts", "**/.eslintrc.cjs"]
+  "include": ["docs", "packages/**/*.ts", "sandboxes/**/*.ts", "**/.eslintrc.cjs"]
 }

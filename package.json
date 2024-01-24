@@ -2,8 +2,8 @@
   "name": "root",
   "private": true,
   "workspaces": [
+    "docs",
     "packages/*",
-    "sandbox",
     "sandboxes/*"
   ],
   "packageManager": "yarn@3.2.2",
