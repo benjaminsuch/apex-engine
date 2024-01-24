@@ -20,7 +20,7 @@ export class InputComponent extends ActorComponent {
     const idx = this.actionBindings.findIndex(binding => binding.action === action);
 
     if (idx > -1) {
-      this.actionBindings.splice(idx, 1, this.actionBindings[this.actionBindings.length - 1]).pop();
+      this.actionBindings.removeAtSwap(idx);
     }
   }
 }
@@ -66,7 +66,7 @@ export class InputActionBinding {
     const idx = bindings.findIndex(binding => binding === this);
 
     if (idx > -1) {
-      this.inputComponent.actionBindings.splice(idx, 1, bindings[bindings.length - 1]).pop();
+      this.inputComponent.actionBindings.removeAtSwap(idx);
       this.unbind();
     }
   }

@@ -96,7 +96,7 @@ export class PlayerInput {
     const idx = this.getMappingContextIndex(mappingContext);
 
     if (idx > -1) {
-      this.registeredInputContexts.splice(idx, 1, this.registeredInputContexts[this.registeredInputContexts.length]).pop();
+      this.registeredInputContexts.removeAtSwap(idx);
       this.buildKeyMappings();
     }
   }

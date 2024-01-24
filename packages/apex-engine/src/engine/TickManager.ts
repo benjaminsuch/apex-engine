@@ -94,7 +94,7 @@ export class TickManager {
 
     if (tickFunction.canTick && idx > -1) {
       tickFunction.canTick = false;
-      this.enabledTickFunctions.splice(idx, 1);
+      this.enabledTickFunctions.removeAtSwap(idx);
     }
 
     return false;
@@ -290,7 +290,7 @@ export class TickFunction<T> {
     const idx = this.dependencies.indexOf(tickFunction);
 
     if (idx > -1) {
-      this.dependencies.splice(idx, 1);
+      this.dependencies.removeAtSwap(idx);
       return true;
     }
 

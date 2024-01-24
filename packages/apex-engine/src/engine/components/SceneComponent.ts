@@ -184,7 +184,7 @@ export class SceneComponent extends ActorComponent {
       return false;
     }
 
-    this.children.splice(component.childIndex, 1);
+    this.children.removeAtSwap(component.childIndex);
 
     for (const child of this.children) {
       child.childIndex = this.children.indexOf(child);

@@ -26,7 +26,7 @@ export class Level {
       return;
     }
 
-    this.actors.splice(idx, 1);
+    this.actors.removeAtSwap(idx);
   }
 
   public hasActor(actor: Actor): boolean {
