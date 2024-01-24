@@ -16,11 +16,11 @@ import { buildInfo, htmlPlugin, replace, workerPlugin } from './plugins';
 import { closeServerOnTermination } from './server';
 
 let server: Server;
+const levels = Object.entries(getGameMaps());
 
 export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
   const buildDir = resolve(APEX_DIR, 'build/browser');
   const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
-  const levels = Object.entries(getGameMaps());
 
   wss.on('connection', (ws) => {
     ws.on('error', console.error);
@@ -156,15 +156,17 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
   const main = watch({
     input: {
       main: getLauncherPath('electron-main'),
+
     },
     output: {
       dir: buildDir,
       format: 'cjs',
       sourcemap: false,
+      chunkFileNames: '[name].js',
     },
     plugins: [
       replace(target),
-      buildInfo(target),
+      buildInfo(target, levels),
       workerPlugin({ target }),
       nodeResolve({ preferBuiltins: true }),
       typescript(),
@@ -182,28 +184,30 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
   });
 
   main.on('event', (event) => {
-    console.log('[electron-main:watcher]', event.code);
+    console.log(`[${new Date().toLocaleTimeString()}] [electron-main:watcher]`, event.code);
 
     if (event.code === 'ERROR') {
       console.log(event.error);
     }
   });
 
-  main.on('change', (file) => {
-    console.log('[electron-main:watcher]', 'File changed');
-  });
+  // Set platform to browser for electron-sandbox
+  target = { ...target, platform: 'browser' };
 
   const sandbox = watch({
     input: {
       sandbox: getLauncherPath('electron-sandbox'),
+      ...getEngineSourceFiles(),
+      ...getGameSourceFiles(),
     },
     output: {
       dir: buildDir,
+      chunkFileNames: '[name].js',
     },
     plugins: [
       replace(target),
-      buildInfo(target),
-      workerPlugin({ target: { ...target, platform: 'browser' } }),
+      buildInfo(target, levels),
+      workerPlugin({ target }),
       nodeResolve({ preferBuiltins: true }),
       typescript(),
       htmlPlugin(
@@ -230,7 +234,7 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
   let isRunning = false;
 
   sandbox.on('event', (event) => {
-    console.log('[electron-sandbox:watcher]', event.code);
+    console.log(`[${new Date().toLocaleTimeString()}] [electron-sandbox:watcher]`, event.code);
 
     if (event.code === 'BUNDLE_END') {
       // send message to electron-main to reload (via MessageChannel)
@@ -242,9 +246,5 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
     if (event.code === 'ERROR') {
       console.log(event.error);
     }
-  });
-
-  sandbox.on('change', (file) => {
-    console.log('[electron-sandbox:watcher]', 'File changed');
   });
 }

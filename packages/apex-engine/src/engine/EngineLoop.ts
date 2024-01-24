@@ -3,6 +3,7 @@ import { plugins } from 'build:info';
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { ApexEngine } from './ApexEngine';
 import { Flags } from './Flags';
+import GameMode from './GameMode';
 import { IPhysicsWorkerContext, PhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { IRenderWorkerContext, RenderWorkerContext } from './renderer/RenderWorkerContext';
 import { TickManager } from './TickManager';
@@ -42,7 +43,7 @@ export class EngineLoop {
         throw new Error(`Invalid default pawn: Your default pawn module (defined in your apex.config.ts) does not have a "default" export.`);
       }
 
-      ApexEngine.DefaultPawnClass = defaultPawn.default;
+      GameMode.DefaultPawnClass = defaultPawn.default;
 
       const defaultGameMode = await import(DEFAULT_GAME_MODE);
 
@@ -50,7 +51,7 @@ export class EngineLoop {
         throw new Error(`Invalid default game mode class: Your default game mode module (defined in your apex.config.ts) does not have a "default" export.`);
       }
 
-      ApexEngine.DefaultGameModeClass = defaultGameMode.default;
+      GameMode.DefaultGameModeClass = defaultGameMode.default;
     }
 
     // Setup important workers

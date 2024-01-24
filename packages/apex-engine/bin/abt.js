@@ -19,7 +19,7 @@ import { spawn } from 'node:child_process';
 
 var name = "apex-engine";
 var description = "A cross-platform game engine written in Typescript.";
-var version = "0.12.0-0";
+var version = "0.13.0-0";
 var author = "Benjamin Such";
 var license = "BSD-3-Clause";
 var type = "module";
@@ -534,10 +534,10 @@ function closeServerOnTermination(server) {
 }
 
 let server;
+const levels = Object.entries(getGameMaps());
 async function serveBrowserTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/browser');
     const wss = new WebSocketServer({ host: 'localhost', port: 24678 });
-    const levels = Object.entries(getGameMaps());
     wss.on('connection', (ws) => {
         ws.on('error', console.error);
     });
@@ -657,10 +657,11 @@ async function serveElectronTarget(target) {
             dir: buildDir,
             format: 'cjs',
             sourcemap: false,
+            chunkFileNames: '[name].js',
         },
         plugins: [
             replacePlugin(target),
-            buildInfo(target),
+            buildInfo(target, levels),
             workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
@@ -677,25 +678,27 @@ async function serveElectronTarget(target) {
         },
     });
     main.on('event', (event) => {
-        console.log('[electron-main:watcher]', event.code);
+        console.log(`[${new Date().toLocaleTimeString()}] [electron-main:watcher]`, event.code);
         if (event.code === 'ERROR') {
             console.log(event.error);
         }
     });
-    main.on('change', (file) => {
-        console.log('[electron-main:watcher]', 'File changed');
-    });
+    // Set platform to browser for electron-sandbox
+    target = { ...target, platform: 'browser' };
     const sandbox = watch({
         input: {
             sandbox: getLauncherPath('electron-sandbox'),
+            ...getEngineSourceFiles(),
+            ...getGameSourceFiles(),
         },
         output: {
             dir: buildDir,
+            chunkFileNames: '[name].js',
         },
         plugins: [
             replacePlugin(target),
-            buildInfo(target),
-            workerPlugin({ target: { ...target, platform: 'browser' } }),
+            buildInfo(target, levels),
+            workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
             htmlPlugin('./sandbox.js', {
@@ -717,7 +720,7 @@ async function serveElectronTarget(target) {
     });
     let isRunning = false;
     sandbox.on('event', (event) => {
-        console.log('[electron-sandbox:watcher]', event.code);
+        console.log(`[${new Date().toLocaleTimeString()}] [electron-sandbox:watcher]`, event.code);
         if (event.code === 'BUNDLE_END') ;
         if (event.code === 'END' && !isRunning) {
             startElectron(buildDir + '/main.js');
@@ -726,9 +729,6 @@ async function serveElectronTarget(target) {
         if (event.code === 'ERROR') {
             console.log(event.error);
         }
-    });
-    sandbox.on('change', (file) => {
-        console.log('[electron-sandbox:watcher]', 'File changed');
     });
 }
 
