@@ -567,9 +567,7 @@ async function serveBrowserTarget(target) {
             console.error('Error copying folder:', err);
         }
     });
-    Object.entries(getGameMaps()).forEach(([p1, p2]) => {
-        fs.copySync(p2, `${resolve(buildDir, p1)}${extname(p2)}`);
-    });
+    copyGameMaps(buildDir);
     const watcher = watch({
         input: {
             index: getLauncherPath('browser'),
@@ -646,9 +644,7 @@ async function serveElectronTarget(target) {
             console.error('Error copying folder:', err);
         }
     });
-    Object.entries(getGameMaps()).forEach(([p1, p2]) => {
-        fs.copySync(p2, `${resolve(buildDir, p1)}${extname(p2)}`);
-    });
+    copyGameMaps(buildDir);
     const main = watch({
         input: {
             main: getLauncherPath('electron-main'),
@@ -730,6 +726,56 @@ async function serveElectronTarget(target) {
             console.log(event.error);
         }
     });
+    main.close();
+    sandbox.close();
+}
+async function serveNodeTarget(target) {
+    const buildDir = resolve(APEX_DIR, 'build/node');
+    copyGameMaps(buildDir);
+    const watcher = watch({
+        input: {
+            index: getLauncherPath('node'),
+            ...getEngineSourceFiles(),
+            ...getGameSourceFiles(),
+        },
+        output: {
+            dir: buildDir,
+            entryFileNames: `[name].mjs`,
+            chunkFileNames: '[name].mjs',
+            externalLiveBindings: false,
+            format: 'esm',
+            freeze: false,
+            sourcemap: false,
+        },
+        plugins: [
+            replacePlugin(target),
+            buildInfo(target, levels),
+            workerPlugin({ target }),
+            nodeResolve({ preferBuiltins: true }),
+            typescript(),
+        ],
+        watch: {
+            buildDelay: 250,
+        },
+        onwarn(warning, warn) {
+            if (warning.message.includes('Circular dependency')) {
+                return;
+            }
+            warn(warning);
+        },
+    });
+    watcher.on('event', (event) => {
+        console.log(`[${new Date().toLocaleTimeString()}] [node:watcher]`, event.code);
+        if (event.code === 'ERROR') {
+            console.log(event.error);
+        }
+    });
+    watcher.close();
+}
+function copyGameMaps(buildDir) {
+    Object.entries(getGameMaps()).forEach(([p1, p2]) => {
+        fs.copySync(p2, `${resolve(buildDir, p1)}${extname(p2)}`);
+    });
 }
 
 const cli = cac('apex-build-tool').version(pkg.version).help();
@@ -757,6 +803,9 @@ cli
             }
             if (targetConfig.platform === 'electron') {
                 await serveElectronTarget(targetConfig);
+            }
+            if (targetConfig.platform === 'node') {
+                await serveNodeTarget(targetConfig);
             }
         }
     }

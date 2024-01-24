@@ -56,12 +56,10 @@ export class EngineLoop {
 
     // Setup important workers
     {
-      if (IS_BROWSER) {
-        const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
-        this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
+      const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
+      this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
 
-        await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
-      }
+      await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
 
       const physicsContext = this.instantiationService.createInstance(PhysicsWorkerContext);
       this.instantiationService.setServiceInstance(IPhysicsWorkerContext, physicsContext);
