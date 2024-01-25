@@ -10,7 +10,7 @@ import { type World } from './World';
 export type ActorComponentType = new (...args: any[]) => ActorComponent;
 
 export class Actor {
-  private level?: Level;
+  private level: Level | null = null;
 
   public getLevel(): Level {
     if (!this.level) {
@@ -19,7 +19,7 @@ export class Actor {
     return this.level;
   }
 
-  private world?: World;
+  private world: World | null = null;
 
   public getWorld(): World {
     if (!this.world) {
@@ -28,30 +28,7 @@ export class Actor {
     return this.world;
   }
 
-  protected rootComponent?: SceneComponent;
-
-  public setRootComponent(component: SceneComponent): boolean {
-    if (component === this.rootComponent) {
-      return false;
-    }
-
-    // ? Can we just override?
-    if (this.rootComponent) {
-      this.logger.warn(`Cannot set root component: A root component is already defined.`);
-      return false;
-    }
-
-    this.rootComponent = component;
-
-    return true;
-  }
-
-  public getRootComponent(): SceneComponent {
-    if (!this.rootComponent) {
-      throw new Error(`A root component has not been set yet.`);
-    }
-    return this.rootComponent;
-  }
+  public rootComponent: SceneComponent | null = null;
 
   public readonly components: ActorComponent[] = [];
 

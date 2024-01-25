@@ -1,7 +1,7 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { ApexEngine } from './ApexEngine';
-import { type GameMode } from './GameMode';
+import { type ApexEngine } from './ApexEngine';
+import { GameMode } from './GameMode';
 import { GameProxyManager } from './GameProxyManager';
 import { Player } from './Player';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
@@ -74,6 +74,6 @@ export class GameInstance {
   }
 
   public async createGameModeFromURL(url: URL): Promise<GameMode> {
-    return this.getWorld().spawnActor(ApexEngine.DefaultGameModeClass);
+    return this.getWorld().spawnActor(GameMode.DefaultGameModeClass);
   }
 }

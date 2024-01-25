@@ -17,7 +17,7 @@ export class InputMappingContext {
     const idx = this.mappings.findIndex(mapping => mapping.action === action && mapping.key === key);
 
     if (idx > -1) {
-      this.mappings.splice(idx, 1, this.mappings[this.mappings.length - 1]).pop();
+      this.mappings.removeAtSwap(idx);
     }
   }
 }

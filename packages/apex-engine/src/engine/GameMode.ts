@@ -5,6 +5,16 @@ import { type Player } from './Player';
 import { PlayerController } from './PlayerController';
 
 export class GameMode extends Actor {
+  /**
+   * Attention: This class is only available _after_ `EngineLoop.init` has been completed.
+   */
+  public static DefaultPawnClass: typeof Pawn;
+
+  /**
+   * Attention: This class is only available _after_ `EngineLoop.init` has been completed.
+   */
+  public static DefaultGameModeClass: typeof GameMode;
+
   public preLogin(): void {}
 
   public login(player: Player): PlayerController {
@@ -41,7 +51,7 @@ export class GameMode extends Actor {
   }
 
   public spawnDefaultPlayerPawn(): Pawn {
-    return this.getWorld().spawnActor(ApexEngine.DefaultPawnClass);
+    return this.getWorld().spawnActor(GameMode.DefaultPawnClass);
   }
 
   protected initStartSpot(playerStart: Actor, playerController: PlayerController): void {}

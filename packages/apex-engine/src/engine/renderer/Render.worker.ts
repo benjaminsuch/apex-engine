@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 
 import * as Comlink from 'comlink';
-import { type Camera, Color, DirectionalLight, Fog, HemisphereLight, LinearToneMapping, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, type Camera, Color, DirectionalLight, Fog, HemisphereLight, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
 import { InstantiationService } from '../../platform/di/common/InstantiationService';
 import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
@@ -116,29 +116,21 @@ function onInit(event: MessageEvent): void {
     Flags.RENDER_FLAGS = flags[1];
 
     context.webGLRenderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
-    context.webGLRenderer.toneMapping = LinearToneMapping;
+    context.webGLRenderer.toneMapping = ACESFilmicToneMapping;
+    context.webGLRenderer.shadowMap.enabled = true;
     context.webGLRenderer.shadowMap.type = PCFSoftShadowMap;
-
-    context.camera.position.set(1, 15, -25);
-    context.camera.lookAt(0, 0, 0);
 
     context.scene.background = new Color(0xa0a0a0);
     context.scene.fog = new Fog(0xa0a0a0, 65, 75);
 
-    const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 3);
+    const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 1);
     hemiLight.position.set(0, 20, 0);
 
     context.scene.add(hemiLight);
 
     const dirLight = new DirectionalLight(0xffffff, 3);
-    dirLight.castShadow = true;
-    dirLight.shadow.camera.top = 2;
-    dirLight.shadow.camera.bottom = -2;
-    dirLight.shadow.camera.left = -2;
-    dirLight.shadow.camera.right = 2;
-    dirLight.shadow.camera.near = 0.1;
-    dirLight.shadow.camera.far = 40;
-    dirLight.position.set(-1, 2, 4);
+    dirLight.castShadow = false;
+    dirLight.position.set(5, 10, 25);
 
     context.scene.add(dirLight);
     context.setSize(initialWidth, initialHeight);

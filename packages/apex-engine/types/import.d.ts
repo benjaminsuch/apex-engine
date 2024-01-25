@@ -11,4 +11,5 @@ declare module '*?worker' {
 declare module 'build:info' {
   export const plugins: Map<string, { startup?: Function, shutdown?: Function }>;
   export const levels: Record<string, () => Promise<{ default: TClass }>>;
+  export function loadLevel(url: string): Promise<{ default: TClass }>;
 }

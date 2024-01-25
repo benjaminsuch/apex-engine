@@ -26,14 +26,14 @@ export class Level {
       return;
     }
 
-    this.actors.splice(idx, 1);
+    this.actors.removeAtSwap(idx);
   }
 
   public hasActor(actor: Actor): boolean {
     return this.actors.includes(actor);
   }
 
-  public world?: World;
+  public world: World | null = null;
 
   public getWorld(): World {
     if (!this.world) {

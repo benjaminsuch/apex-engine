@@ -1,0 +1,6 @@
+{
+  "extends": "../tsconfig.eslint.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+  }
+}

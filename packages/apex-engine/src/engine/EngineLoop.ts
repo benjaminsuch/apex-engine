@@ -3,6 +3,7 @@ import { plugins } from 'build:info';
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { ApexEngine } from './ApexEngine';
 import { Flags } from './Flags';
+import GameMode from './GameMode';
 import { IPhysicsWorkerContext, PhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { IRenderWorkerContext, RenderWorkerContext } from './renderer/RenderWorkerContext';
 import { TickManager } from './TickManager';
@@ -42,7 +43,7 @@ export class EngineLoop {
         throw new Error(`Invalid default pawn: Your default pawn module (defined in your apex.config.ts) does not have a "default" export.`);
       }
 
-      ApexEngine.DefaultPawnClass = defaultPawn.default;
+      GameMode.DefaultPawnClass = defaultPawn.default;
 
       const defaultGameMode = await import(DEFAULT_GAME_MODE);
 
@@ -50,17 +51,15 @@ export class EngineLoop {
         throw new Error(`Invalid default game mode class: Your default game mode module (defined in your apex.config.ts) does not have a "default" export.`);
       }
 
-      ApexEngine.DefaultGameModeClass = defaultGameMode.default;
+      GameMode.DefaultGameModeClass = defaultGameMode.default;
     }
 
     // Setup important workers
     {
-      if (IS_BROWSER) {
-        const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
-        this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
+      const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
+      this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
 
-        await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
-      }
+      await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
 
       const physicsContext = this.instantiationService.createInstance(PhysicsWorkerContext);
       this.instantiationService.setServiceInstance(IPhysicsWorkerContext, physicsContext);
@@ -87,7 +86,7 @@ export class EngineLoop {
 
       const then = performance.now();
 
-      this.delta = then - this.elapsed / 1000;
+      this.delta = (then - this.elapsed) / 1000;
       this.elapsed = then;
       this.fps = (this.tickId * 1000) / then;
 

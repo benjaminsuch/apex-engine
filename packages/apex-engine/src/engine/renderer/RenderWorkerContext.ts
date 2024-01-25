@@ -41,7 +41,9 @@ export class RenderWorkerContext implements IRenderWorkerContext {
       return;
     }
 
-    this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
+    try {
+      this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
+    } catch {}
 
     if (this.canvas) {
       const offscreenCanvas = this.canvas.transferControlToOffscreen();

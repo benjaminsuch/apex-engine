@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshPhongMaterial, Sphere, Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshStandardMaterial, Sphere, Vector2, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -36,21 +36,17 @@ export class MeshComponentProxy extends SceneComponentProxy {
       args[0] = geometry;
     }
 
-    // if (materialData) {
-    //   const { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...params } = materialData;
+    if (materialData) {
+      const { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...params } = materialData;
 
-    //   if (type === 'MeshStandardMaterial') {
-    //     const material = new MeshStandardMaterial({
-    //       ...params,
-    //       normalScale: new Vector2(...normalScale),
-    //     });
-    //     args[1] = material;
-    //   }
-    // }
+      if (type === 'MeshStandardMaterial') {
+        const material = new MeshStandardMaterial({
+          ...params,
+          normalScale: new Vector2(normalScale.x, normalScale.y),
+        });
 
-    if (IS_DEV) {
-      // random color: (10 ** (6 + Math.random())).toString(16).split('.').map(val => Number('0x' + val)).shift()
-      args[1] = new MeshPhongMaterial({ depthWrite: false });
+        args[1] = material;
+      }
     }
 
     this.sceneObject = new Mesh(...args);

@@ -9,6 +9,7 @@ declare global {
   var IS_DEV: string;
   var IS_GAME: boolean;
   var IS_SERVER: boolean;
+  var IS_WORKER: boolean;
 
   type TClass<T = any> = { new (...args: any[]): T };
 
@@ -58,7 +59,7 @@ module 'three' {
     name: string;
     normalMap: string | null;
     normalMapType: NormalMapTypes;
-    normalScale: [number, number];
+    normalScale: { x: number, y: number };
     roughness: number;
     roughnessMap: string | null;
     side: Side;
