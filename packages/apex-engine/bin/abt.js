@@ -309,6 +309,7 @@ function replacePlugin(target) {
             IS_GAME: String(target.target === 'game'),
             IS_SERVER: String(target.target === 'server'),
             IS_BROWSER: String(target.platform === 'browser'),
+            IS_WORKER: 'typeof window === \'undefined\'',
         },
     });
 }

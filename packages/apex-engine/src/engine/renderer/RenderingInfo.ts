@@ -1,8 +1,6 @@
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 
-const IS_RENDER_THREAD = typeof window === 'undefined';
-
 /**
  * A separate class to store the info in a triple buffer to make it available
  * for the game-thread. The class is used on both threads, except that only the
@@ -39,14 +37,14 @@ export class RenderingInfo {
   }
 
   public tick({ id }: any): void {
-    if (IS_RENDER_THREAD) {
+    if (IS_WORKER) {
       this.dataView.setUint32(0, id, true);
       this.tripleBuffer.copyToWriteBuffer(this.byteView);
     }
   }
 
   public init(): void {
-    if (IS_RENDER_THREAD) {
+    if (IS_WORKER) {
       this.logger.debug(this.constructor.name, `Initialize`);
       self.postMessage({ type: 'init-response', data: this.tripleBuffer });
     }
