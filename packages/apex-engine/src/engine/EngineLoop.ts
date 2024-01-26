@@ -40,7 +40,7 @@ export class EngineLoop {
       const defaultPawn = await import(DEFAULT_PAWN);
 
       if (!defaultPawn.default) {
-        throw new Error(`Invalid default pawn: Your default pawn module (defined in your apex.config.ts) does not have a "default" export.`);
+        throw new Error(`Invalid default pawn class: Your default pawn module (defined in your apex.config.ts) does not have a "default" export.`);
       }
 
       GameMode.DefaultPawnClass = defaultPawn.default;

@@ -29,7 +29,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     return this.rendererInfo;
   }
 
-  private isInitialized = false;
+  public isInitialized = false;
 
   constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
     this.worker = new RenderWorker();
@@ -42,6 +42,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     }
 
     try {
+      // @todo: A temporary try/catch to prevent the engine from crashing in nodejs environment -> Remove
       this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
     } catch {}
 

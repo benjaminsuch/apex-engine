@@ -5,7 +5,15 @@ import { type World } from './World';
 
 export enum ETickGroup {
   PrePhysics,
+  /**
+   * For internal use only.
+   */
+  StartPhysics_Internal,
   DuringPhysics,
+  /**
+   * For internal use only.
+   */
+  EndPhysics_Internal,
   PostPhysics,
   MAX,
 }
@@ -121,7 +129,7 @@ export class TickManager {
       for (let j = 0; j < dependencies.length; ++j) {
         const dependency = this.registeredTickFunctions[dependencies[j].index];
 
-        if (dependency.tickGroup >= tickFunction.tickGroup) {
+        if (dependency.tickGroup <= tickFunction.tickGroup) {
           dependency.indegree++;
         }
       }

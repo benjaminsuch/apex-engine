@@ -89,7 +89,7 @@ export class Actor {
     this.onRegister();
   }
 
-  public registerActorTickFunction(): void {
+  protected registerActorTickFunction(): void {
     if (this.actorTick.canTick) {
       this.actorTick.register();
     }
