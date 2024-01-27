@@ -3,7 +3,7 @@ import { PerspectiveCamera } from 'three';
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS, PROP } from '../core/class/decorators';
-import { proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { float32, serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
@@ -57,7 +57,7 @@ export class CameraComponentProxy extends SceneComponentProxy {
   }
 }
 
-@CLASS(proxy(CameraComponentProxy))
+@CLASS(proxy(EProxyThread.Render, CameraComponentProxy))
 export class CameraComponent extends SceneComponent {
   @PROP(serialize(float32))
   public aspect: number = 1;

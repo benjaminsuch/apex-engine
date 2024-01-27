@@ -20,11 +20,16 @@ export interface IProxyOrigin {
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
 
+export enum EProxyThread {
+  Render,
+  Physics,
+}
+
 /**
  * @param proxyClass The class which is used to instantiate the proxy on the render-thread.
  * @returns An anonymous class that is derived from the original class.
  */
-export function proxy(proxyClass: TClass) {
+export function proxy(thread: EProxyThread, proxyClass: TClass) {
   return (constructor: TClass): TClass => {
     const schema = getClassSchema(constructor);
     const bufSize = Reflect.getMetadata('byteLength', constructor);
@@ -388,7 +393,7 @@ export function proxy(proxyClass: TClass) {
         // the Worker is loading the Proxy-Classes (e.g. SceneComponentProxy) and thus, will load
         // the `GameProxyManager`, which imports the `IRenderWorkerContext`, which imports from
         // `RenderWorker`. This will lead to a "BAD_IMPORT" error from rollup.
-        ProxyManager.getInstance().enqueueProxy(this, filterArgs(args));
+        ProxyManager.getInstance().enqueueProxy(thread, this, filterArgs(args));
       }
     };
   };

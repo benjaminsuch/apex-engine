@@ -3,7 +3,7 @@ import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeome
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS } from '../core/class/decorators';
-import { proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
@@ -53,7 +53,7 @@ export class MeshComponentProxy extends SceneComponentProxy {
   }
 }
 
-@CLASS(proxy(MeshComponentProxy))
+@CLASS(proxy(EProxyThread.Render, MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
   constructor(
     public geometry: BufferGeometry | undefined = undefined,

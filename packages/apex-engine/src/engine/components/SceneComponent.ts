@@ -4,7 +4,7 @@ import { IInstantiationService } from '../../platform/di/common/InstantiationSer
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type Actor } from '../Actor';
 import { CLASS, PROP } from '../core/class/decorators';
-import { proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
@@ -84,7 +84,7 @@ export class SceneComponentProxy extends RenderProxy {
   }
 }
 
-@CLASS(proxy(SceneComponentProxy))
+@CLASS(proxy(EProxyThread.Render, SceneComponentProxy))
 export class SceneComponent extends ActorComponent {
   declare byteView: Uint8Array;
 

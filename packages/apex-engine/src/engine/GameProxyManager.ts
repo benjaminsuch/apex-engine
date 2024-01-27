@@ -31,7 +31,7 @@ export class GameProxyManager extends ProxyManager<IProxyOrigin> {
       const proxy = this.proxies.getProxyByIndex(i);
 
       if (proxy) {
-        proxy.tripleBuffer.copyToWriteBuffer(proxy.byteView);
+        proxy.target.tripleBuffer.copyToWriteBuffer(proxy.target.byteView);
       }
     }
   }

@@ -16,8 +16,8 @@ export class RenderProxyManager extends ProxyManager<RenderProxy> {
 
   public getProxy(id: number): RenderProxy | void {
     for (const proxy of this.proxies) {
-      if (proxy.id === id) {
-        return proxy;
+      if (proxy.target.id === id) {
+        return proxy.target;
       }
     }
   }
@@ -29,7 +29,7 @@ export class RenderProxyManager extends ProxyManager<RenderProxy> {
       const proxy = this.proxies.getProxyByIndex(i);
 
       if (proxy) {
-        proxy.tick(tick);
+        proxy.target.tick(tick);
       }
     }
   }

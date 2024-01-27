@@ -1,7 +1,13 @@
+import { CLASS } from '../core/class/decorators';
+import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { PhysicsWorkerContext } from './PhysicsWorkerContext';
 
 export type RigidBodyType = 'fixed' | 'dynamic' | 'kinematic-position' | 'kinematic-velocity';
 
+export class RigidBodyProxy {
+}
+
+@CLASS(proxy(EProxyThread.Physics, RigidBodyProxy))
 export class RigidBody {
   private handle: number | null = null;
 

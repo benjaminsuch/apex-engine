@@ -1,5 +1,6 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
+import { type EProxyThread } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { ETickGroup, TickFunction } from './TickManager';
 
@@ -25,20 +26,20 @@ export class ProxyManager<T> {
 
   protected proxyQueue: IEnqueuedProxy<T>[] = [];
 
-  public enqueueProxy(proxy: T, args: unknown[]): boolean {
+  public enqueueProxy(thread: EProxyThread, proxy: T, args: unknown[]): boolean {
     const idx = this.proxyQueue.findIndex(({ target }) => target === proxy);
 
     if (idx === -1) {
       this.proxyQueue.push({ target: proxy, args });
-      return this.registerProxy(proxy);
+      return this.registerProxy(new RegisteredProxy(thread, proxy));
     }
 
     return false;
   }
 
-  protected readonly proxies: ProxyRegistry<T>;
+  protected readonly proxies: ProxyRegistry<RegisteredProxy<T>>;
 
-  public registerProxy(proxy: T): boolean {
+  public registerProxy(proxy: RegisteredProxy<T>): boolean {
     return this.proxies.register(proxy);
   }
 
@@ -110,4 +111,8 @@ class ProxyManagerTickFunction extends TickFunction<ProxyManager<any>> {
   public override run(tick: IEngineLoopTickContext): void {
     this.target.tick(tick);
   }
+}
+
+class RegisteredProxy<T> {
+  constructor(public readonly thread: EProxyThread, public readonly target: T) {}
 }
