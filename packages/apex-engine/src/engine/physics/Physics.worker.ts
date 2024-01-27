@@ -13,9 +13,13 @@ const context: IInternalPhysicsWorkerContext = {
   world: null!,
   initPhysicsStep(): void {
     // console.log('init physics step');
+    // context.world.step()
+    const data = context.world.takeSnapshot();
+    self.postMessage({ type: 'simulation-done', data }, [data]);
   },
   finishPhysicsStep(): void {
     // console.log('finish physics step');
+
   },
 };
 

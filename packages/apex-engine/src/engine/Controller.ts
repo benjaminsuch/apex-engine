@@ -2,8 +2,11 @@ import { IInstantiationService } from '../platform/di/common/InstantiationServic
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
 import { type Pawn } from './Pawn';
+import { PhysicsCharacterController } from './physics/PhysicsCharacterController';
 
 export class Controller extends Actor {
+  protected physicsCharacterController: PhysicsCharacterController;
+
   protected pawn: Pawn | null = null;
 
   public getPawn(): Pawn {
@@ -26,6 +29,7 @@ export class Controller extends Actor {
     super(instantiationService, logger);
     // todo: Temporary solution. Remove when we determine the starting spot from the level file.
     this.startSpot = this.instantiationService.createInstance(Actor);
+    this.physicsCharacterController = this.instantiationService.createInstance(PhysicsCharacterController);
   }
 
   public possess(pawn: Pawn): void {

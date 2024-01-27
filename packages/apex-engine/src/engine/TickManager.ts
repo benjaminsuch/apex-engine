@@ -177,7 +177,7 @@ export class TickManager {
   }
 
   // todo: Should we push rejected tasks into the next tick?
-  public runTickGroup(group: ETickGroup): void {
+  public async runTickGroup(group: ETickGroup): Promise<void> {
     for (let i = 0; i < this.tickGroups[group].length; ++i) {
       const tickFunction = this.tickGroups[group][i];
       // todo: Silently reject when the tick is about to end or the function is taking too long
@@ -238,7 +238,7 @@ export class TickFunction<T> {
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {}
 
-  public run(context: IEngineLoopTickContext): void {}
+  public run(context: IEngineLoopTickContext): void | Promise<void> {}
 
   /**
    * It will push the tick function onto the stack of enabled tick functions.

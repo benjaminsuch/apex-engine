@@ -67,7 +67,7 @@ export class World {
     }
   }
 
-  public tickGroup: ETickGroup = ETickGroup.PrePhysics;
+  public tickGroup: ETickGroup | null = null;
 
   public startPhysicsTickFunction: StartPhysicsTickFunction;
 
@@ -105,10 +105,27 @@ export class World {
   public tick(tick: IEngineLoopTickContext): void {
     TickManager.getInstance().startTick(tick, this);
 
+    this.tickGroup = ETickGroup.PrePhysics;
+
     this.runTickGroup(ETickGroup.PrePhysics);
     this.runTickGroup(ETickGroup.StartPhysics_Internal);
+    // this.isPhysicsSimulationRunning = true
+    // If the physics simulation is finished while the "DuringPhysics" tick group
+    // is still running, that's fine, because they dont need the result anyways.
     this.runTickGroup(ETickGroup.DuringPhysics);
-    this.runTickGroup(ETickGroup.EndPhysics_Internal);
+
+    // If the physics simulation is taking longer than the "DuringPhysics" tick group,
+    // then we have to stall the tick until the simulation is finished.
+    //
+    // We can't use a while loop, because the main-thread wouldn't execute the
+    // message-handlers that listen for worker messages. A `SharedArrayBuffer`
+    // together with a while loop wouldn't work either, because that would lead to
+    // a dead-lock.
+
+    // We cannot run tick functions in the "DuringPhysics" tick group,
+    // if the physics simulation takes too long (they depend on the simulation result).
+    // this.runTickGroup(ETickGroup.EndPhysics_Internal);
+    this.tickGroup = ETickGroup.PostPhysics;
     this.runTickGroup(ETickGroup.PostPhysics);
 
     TickManager.getInstance().endTick();
@@ -167,11 +184,11 @@ export class World {
     return playerController;
   }
 
-  public async initPhysicsStep(): Promise<void> {
+  public async startPhysicsSimulation(): Promise<void> {
     return this.physicsWorker.initPhysicsStep();
   }
 
-  public async finishPhysicsStep(): Promise<void> {
+  public async endPhysicsSimulation(): Promise<void> {
     return this.physicsWorker.finishPhysicsStep();
   }
 
@@ -186,19 +203,25 @@ export class World {
   }
 
   protected runTickGroup(group: ETickGroup): void {
-    this.tickGroup = group;
     TickManager.getInstance().runTickGroup(group);
+    this.tickGroup = ETickGroup[ETickGroup[group + 1] as keyof typeof ETickGroup];
   }
 }
 
 class StartPhysicsTickFunction extends TickFunction<World> {
   public override run(context: IEngineLoopTickContext): void {
-    this.target.initPhysicsStep();
+    this.target.startPhysicsSimulation();
+    // this.target.physicsWorker.onmessage = ({ data }) => this.target.physicsSnapshot = data
   }
 }
 
 class EndPhysicsTickFunction extends TickFunction<World> {
-  public override run(context: IEngineLoopTickContext): void {
-    this.target.finishPhysicsStep();
+  public override run(context: IEngineLoopTickContext): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.target.endPhysicsSimulation();
+
+      // Wait for message with the snapshot data and resolve the promise
+      // this.target.physicsWorker.onmessage = ({ data }) => resolve(data)
+    });
   }
 }

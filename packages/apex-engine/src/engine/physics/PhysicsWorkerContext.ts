@@ -4,6 +4,8 @@ import { type IInjectibleService, InstantiationService } from '../../platform/di
 import PhysicsWorker from './Physics.worker?worker';
 
 export class PhysicsWorkerContext implements IPhysicsWorkerContext {
+  public static readonly tasks: any[] = [];
+
   declare readonly _injectibleService: undefined;
 
   private readonly worker: Worker;
@@ -40,6 +42,9 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 
 export interface IPhysicsWorkerContext extends IInjectibleService {
   initPhysicsStep(): Promise<void>;
+  /**
+   * @returns A snapshot of the physics world as a `Uint8Array`
+   */
   finishPhysicsStep(): Promise<void>;
 }
 

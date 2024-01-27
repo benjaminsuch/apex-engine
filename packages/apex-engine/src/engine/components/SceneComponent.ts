@@ -1,11 +1,14 @@
 import { Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type Actor } from '../Actor';
 import { CLASS, PROP } from '../core/class/decorators';
 import { proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
+import { RigidBody } from '../physics/RigidBody';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { RenderProxy } from '../renderer/RenderProxy';
 import { ActorComponent } from './ActorComponent';
@@ -124,6 +127,21 @@ export class SceneComponent extends ActorComponent {
    * directly into this array and instead use `attachToComponent`.
    */
   public children: SceneComponent[] = [];
+
+  public readonly rigidBody: RigidBody;
+
+  constructor(
+    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+  ) {
+    super(instantiationService, logger);
+
+    this.rigidBody = this.instantiationService.createInstance(RigidBody);
+  }
+
+  public override beginPlay(): void {
+    this.rigidBody.register();
+  }
 
   public setAsRoot(actor: Actor): void {
     actor.rootComponent = this;
