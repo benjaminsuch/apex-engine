@@ -7,6 +7,9 @@ export type RigidBodyType = 'fixed' | 'dynamic' | 'kinematic-position' | 'kinema
 export class RigidBodyProxy {
 }
 
+/**
+ * asd
+ */
 @CLASS(proxy(EProxyThread.Physics, RigidBodyProxy))
 export class RigidBody {
   private handle: number | null = null;

@@ -11,7 +11,7 @@ function setPropType(
   constructor: TClass,
   prop: string | symbol,
   type: string,
-  arrayType: TypedArray,
+  arrayType: TypedArrayConstructor,
   isArray: boolean = false
 ): void {
   setPropOnSchema(constructor, prop, 'arrayType', arrayType);
@@ -22,7 +22,7 @@ function setPropType(
 
 function createSerializer(
   type: string,
-  arrayType: TypedArray,
+  arrayType: TypedArrayConstructor,
   size: number,
   isArray: boolean = false
 ): SerializerFunction {

@@ -23,6 +23,7 @@ export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: s
 export enum EProxyThread {
   Render,
   Physics,
+  MAX,
 }
 
 /**
@@ -425,23 +426,13 @@ function setString(val: string, dv: DataView, offset: number, size: number): voi
   }
 }
 
-const setters = new Map<TypedArray, string>([
-  [Float32Array, 'setFloat32'],
-  [Int8Array, 'setInt8'],
-  [Int16Array, 'setInt16'],
-  [Int32Array, 'setInt32'],
-  [Uint8Array, 'setUint8'],
-  [Uint16Array, 'setUint16'],
-  [Uint32Array, 'setUint32'],
-]);
-
 function setNumber(
-  type: TypedArray,
-  val: number | InstanceType<TypedArray>,
+  type: TypedArrayConstructor,
+  val: number | InstanceType<TypedArrayConstructor>,
   dv: DataView,
   offset: number
 ): void {
-  const setter = setters.get(type) as string;
+  const setter = DataView.getTypedArraySetter(type);
 
   if (Array.isArray(val)) {
     for (let i = 0; i < val.length; ++i) {

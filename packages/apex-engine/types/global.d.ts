@@ -13,7 +13,7 @@ declare global {
 
   type TClass<T = any> = { new (...args: any[]): T };
 
-  type TypedArray =
+  type TypedArrayConstructor =
     | typeof Float32Array
     | typeof Int8Array
     | typeof Int16Array

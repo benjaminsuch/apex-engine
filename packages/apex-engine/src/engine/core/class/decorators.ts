@@ -76,7 +76,7 @@ export function FUNC(...args: Function[]) {
 }
 
 export interface PropSchema {
-  arrayType: TypedArray;
+  arrayType: TypedArrayConstructor;
   isArray: boolean;
   offset: number;
   pos: number;

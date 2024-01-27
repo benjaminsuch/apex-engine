@@ -1,13 +1,8 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { type EProxyThread } from './core/class/specifiers/proxy';
+import { EProxyThread } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { ETickGroup, TickFunction } from './TickManager';
-
-export interface IEnqueuedProxy<T> {
-  target: T;
-  args: unknown[];
-}
 
 export class ProxyManager<T> {
   private static instance?: ProxyManager<any>;
@@ -24,14 +19,15 @@ export class ProxyManager<T> {
     return this.instance;
   }
 
-  protected proxyQueue: IEnqueuedProxy<T>[] = [];
+  protected proxyQueue: RegisteredProxy<T>[][] = [];
 
   public enqueueProxy(thread: EProxyThread, proxy: T, args: unknown[]): boolean {
-    const idx = this.proxyQueue.findIndex(({ target }) => target === proxy);
+    const idx = this.proxyQueue[thread].findIndex(({ target }) => target === proxy);
 
     if (idx === -1) {
-      this.proxyQueue.push({ target: proxy, args });
-      return this.registerProxy(new RegisteredProxy(thread, proxy));
+      const registeredProxy = new RegisteredProxy(thread, proxy, args);
+      this.proxyQueue[thread].push(registeredProxy);
+      return this.registerProxy(registeredProxy);
     }
 
     return false;
@@ -50,7 +46,11 @@ export class ProxyManager<T> {
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {
     if (ProxyManager.instance) {
-      throw new Error(`An instance of the ProxyManager already exists.1`);
+      throw new Error(`An instance of the ProxyManager already exists.`);
+    }
+
+    for (let i = 0; i < EProxyThread.MAX; ++i) {
+      this.proxyQueue[i] = [];
     }
 
     this.proxies = this.instantiationService.createInstance(ProxyRegistry);
@@ -63,7 +63,24 @@ export class ProxyManager<T> {
 
   public init(): void {}
 
-  public tick(tick: IEngineLoopTickContext): void {}
+  public tick(tick: IEngineLoopTickContext): void {
+    if (this.proxyQueue.length > 0) {
+      if (this.onProcessProxyQueue(tick)) {
+        this.proxyQueue = [];
+      }
+    }
+  }
+
+  /**
+   * This method will be called each tick and only if `proxyQueue` is not empty.
+   * Use it to modify how `proxyQueue` will be processed.
+   *
+   * @param tick
+   * @returns Returning `true` will reset `proxyQueue` to an empty array.
+   */
+  protected onProcessProxyQueue(tick: IEngineLoopTickContext): boolean {
+    return false;
+  }
 
   protected registerTickFunctions(): void {
     if (!this.managerTick.isRegistered) {
@@ -113,6 +130,6 @@ class ProxyManagerTickFunction extends TickFunction<ProxyManager<any>> {
   }
 }
 
-class RegisteredProxy<T> {
-  constructor(public readonly thread: EProxyThread, public readonly target: T) {}
+export class RegisteredProxy<T> {
+  constructor(public readonly thread: EProxyThread, public readonly target: T, public readonly args: unknown[]) {}
 }

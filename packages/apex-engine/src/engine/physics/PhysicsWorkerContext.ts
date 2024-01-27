@@ -1,6 +1,8 @@
 import * as Comlink from 'comlink';
 
 import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { type IProxyOrigin } from '../core/class/specifiers/proxy';
+import { type RegisteredProxy } from '../ProxyManager';
 import PhysicsWorker from './Physics.worker?worker';
 
 export class PhysicsWorkerContext implements IPhysicsWorkerContext {
@@ -38,6 +40,10 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
   public async finishPhysicsStep(): Promise<void> {
     return this.comlink.finishPhysicsStep();
   }
+
+  public async createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void> {
+
+  }
 }
 
 export interface IPhysicsWorkerContext extends IInjectibleService {
@@ -46,6 +52,7 @@ export interface IPhysicsWorkerContext extends IInjectibleService {
    * @returns A snapshot of the physics world as a `Uint8Array`
    */
   finishPhysicsStep(): Promise<void>;
+  createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
 }
 
 export const IPhysicsWorkerContext = InstantiationService.createDecorator<IPhysicsWorkerContext>('PhysicsWorkerContext');

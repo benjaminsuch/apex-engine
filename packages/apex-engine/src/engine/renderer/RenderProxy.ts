@@ -55,7 +55,7 @@ export abstract class RenderProxy {
           accessors = {
             get(this): number | number[] {
               const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
-              const getter = getters.get(arrayType) as any;
+              const getter = DataView.getTypedArrayGetter(arrayType);
 
               if (isArray) {
                 const arr: number[] = [];
@@ -83,13 +83,3 @@ export abstract class RenderProxy {
 
   public tick(tick: IEngineLoopTickContext): void {}
 }
-
-const getters = new Map<TypedArray, string>([
-  [Float32Array, 'getFloat32'],
-  [Int8Array, 'getInt8'],
-  [Int16Array, 'getInt16'],
-  [Int32Array, 'getInt32'],
-  [Uint8Array, 'getUint8'],
-  [Uint16Array, 'getUint16'],
-  [Uint32Array, 'getUint32'],
-]);
