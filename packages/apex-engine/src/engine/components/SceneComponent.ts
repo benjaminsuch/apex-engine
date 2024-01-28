@@ -1,3 +1,4 @@
+import { RigidBodyType } from '@dimforge/rapier3d-compat';
 import { Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
@@ -8,7 +9,8 @@ import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
-import { RigidBody } from '../physics/RigidBody';
+import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
+import { type RigidBodyProxy } from '../physics/RigidBody';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { RenderProxy } from '../renderer/RenderProxy';
 import { ActorComponent } from './ActorComponent';
@@ -86,9 +88,9 @@ export class SceneComponentProxy extends RenderProxy {
 
 @CLASS(proxy(EProxyThread.Render, SceneComponentProxy))
 export class SceneComponent extends ActorComponent {
-  declare byteView: Uint8Array;
+  declare readonly byteView: Uint8Array;
 
-  declare tripleBuffer: TripleBuffer;
+  declare readonly tripleBuffer: TripleBuffer;
 
   @PROP(serialize(vec3))
   public position: Vector3 = new Vector3();
@@ -128,19 +130,25 @@ export class SceneComponent extends ActorComponent {
    */
   public children: SceneComponent[] = [];
 
-  public readonly rigidBody: RigidBody;
+  public rigidBody: RigidBodyProxy | null = null;
 
   constructor(
+    public readonly bodyType: RigidBodyType | null = RigidBodyType.Fixed,
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     super(instantiationService, logger);
 
-    this.rigidBody = this.instantiationService.createInstance(RigidBody);
+    if (this.bodyType) {
+      // This is an async function, but we don't want to wait until it's resolved.
+      // When it's resolved, it will assign the `RigidBodyProxy` to `this.rigidBody`.
+      this.physicsContext.registerRigidBody(this);
+    }
   }
 
   public override beginPlay(): void {
-    this.rigidBody.register();
+    // ? Should we check, if `this.rigidBody` has been set? (`null` is allowed tho)
   }
 
   public setAsRoot(actor: Actor): void {

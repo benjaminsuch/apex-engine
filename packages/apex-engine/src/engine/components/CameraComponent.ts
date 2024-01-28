@@ -4,9 +4,10 @@ import { IInstantiationService } from '../../platform/di/common/InstantiationSer
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
-import { float32, serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
+import { float32, serialize, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
+import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
@@ -59,6 +60,10 @@ export class CameraComponentProxy extends SceneComponentProxy {
 
 @CLASS(proxy(EProxyThread.Render, CameraComponentProxy))
 export class CameraComponent extends SceneComponent {
+  declare readonly byteView: Uint8Array;
+
+  declare readonly tripleBuffer: TripleBuffer;
+
   @PROP(serialize(float32))
   public aspect: number = 1;
 
@@ -89,9 +94,10 @@ export class CameraComponent extends SceneComponent {
     near: CameraComponent['near'],
     far: CameraComponent['far'],
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger
+    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IPhysicsWorkerContext protected override readonly physicsContext: IPhysicsWorkerContext
   ) {
-    super(instantiationService, logger);
+    super(null, instantiationService, logger, physicsContext);
 
     this.fov = fov;
     this.aspect = aspect;
