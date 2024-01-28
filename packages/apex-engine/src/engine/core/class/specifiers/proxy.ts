@@ -10,7 +10,7 @@ export interface IProxyConstructionData {
   constructor: string;
   id: number;
   tb: any;
-  args: unknown;
+  args: unknown[];
 }
 
 export interface IProxyOrigin {
@@ -21,6 +21,7 @@ export interface IProxyOrigin {
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
 
 export enum EProxyThread {
+  Game,
   Render,
   Physics,
   MAX,

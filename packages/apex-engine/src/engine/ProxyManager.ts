@@ -39,6 +39,14 @@ export class ProxyManager<T> {
     return this.proxies.register(proxy);
   }
 
+  public getProxy(id: number): T | void {
+    for (const proxy of this.proxies) {
+      if ((proxy.target as any).id === id) {
+        return proxy.target;
+      }
+    }
+  }
+
   protected managerTick: TickFunction<any>;
 
   constructor(
