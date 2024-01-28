@@ -14,14 +14,6 @@ export class RenderProxyManager extends ProxyManager<RenderProxy> {
     return proxyConstructors[id as keyof typeof proxyConstructors];
   }
 
-  public getProxy(id: number): RenderProxy | void {
-    for (const proxy of this.proxies) {
-      if (proxy.target.id === id) {
-        return proxy.target;
-      }
-    }
-  }
-
   public override tick(tick: IEngineLoopTickContext): void {
     super.tick(tick);
 
