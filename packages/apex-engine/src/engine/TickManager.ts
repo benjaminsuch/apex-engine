@@ -182,7 +182,7 @@ export class TickManager {
       const tickFunction = this.tickGroups[group][i];
       // todo: Silently reject when the tick is about to end or the function is taking too long
       // todo: Trigger event "FunctionTaskCompletion"
-      tickFunction.run(this.currentTick);
+      await tickFunction.run(this.currentTick);
     }
   }
 }

@@ -80,8 +80,8 @@ export class EngineLoop {
     await engine.start();
   }
 
-  public tick(): IntervalReturn {
-    this.tickInterval = setInterval(() => {
+  public async tick(): Promise<IntervalReturn> {
+    this.tickInterval = setInterval(async () => {
       ++this.tickId;
 
       const then = performance.now();
@@ -93,23 +93,25 @@ export class EngineLoop {
       const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.tickId };
 
       try {
-        ApexEngine.getInstance().tick(currentTick);
+        await ApexEngine.getInstance().tick(currentTick);
       } catch (error) {
         clearInterval(this.tickInterval as number);
         throw error;
       }
 
-      if (performance.now() - then > MS_PER_UPDATE) {
+      const now = performance.now();
+
+      if (now - then > MS_PER_UPDATE) {
         clearInterval(this.tickInterval as number);
 
         try {
-          ApexEngine.getInstance().tick(currentTick);
+          await ApexEngine.getInstance().tick(currentTick);
         } catch (error) {
           clearInterval(this.tickInterval as number);
           throw error;
         }
 
-        this.tickInterval = this.tick();
+        this.tickInterval = await this.tick();
       }
     }, MS_PER_UPDATE);
 

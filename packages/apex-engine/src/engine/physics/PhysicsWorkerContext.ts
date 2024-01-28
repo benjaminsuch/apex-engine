@@ -6,6 +6,7 @@ import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
 import { type IInternalPhysicsWorkerContext, type IRegisterRigidBodyReturn } from './Physics.worker';
 import PhysicsWorker from './Physics.worker?worker';
+import { PhysicsInfo } from './PhysicsInfo';
 import { RigidBodyProxy } from './RigidBody';
 
 export class PhysicsWorkerContext implements IPhysicsWorkerContext {
@@ -14,6 +15,15 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
   private readonly worker: Worker;
 
   private readonly comlink: Comlink.Remote<IInternalPhysicsWorkerContext>;
+
+  private info: PhysicsInfo | null = null;
+
+  public get simulationState(): PhysicsInfo['simulationState'] {
+    if (!this.info) {
+      throw new Error(`Cannot read physics info: Physics-Worker hasn't finished initialization.`);
+    }
+    return this.info.simulationState;
+  }
 
   public isInitialized = false;
 
@@ -40,7 +50,10 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
         }
 
         if (event.data.type === 'init-response') {
+          const { byteLength, buffers } = event.data.tb;
+
           this.isInitialized = true;
+          this.info = this.instantiationService.createInstance(PhysicsInfo, Flags.PHYSICS_FLAGS, new TripleBuffer(Flags.PHYSICS_FLAGS, byteLength, buffers));
 
           clearTimeout(timeoutId);
           resolve();
@@ -67,22 +80,17 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     });
   }
 
-  public async initPhysicsStep(): Promise<void> {
-    TripleBuffer.swapWriteBufferFlags(Flags.PHYSICS_FLAGS);
-    return this.comlink.initPhysicsStep();
-  }
-
-  public async finishPhysicsStep(): Promise<void> {
-    return this.comlink.finishPhysicsStep();
+  public async step(): Promise<void> {
+    return this.comlink.step();
   }
 }
 
 export interface IPhysicsWorkerContext extends IInjectibleService {
-  initPhysicsStep(): Promise<void>;
+  simulationState: PhysicsInfo['simulationState'];
+  step(): Promise<void>;
   /**
    * @returns A snapshot of the physics world as a `Uint8Array`
    */
-  finishPhysicsStep(): Promise<void>;
   registerRigidBody(component: SceneComponent): void;
 }
 

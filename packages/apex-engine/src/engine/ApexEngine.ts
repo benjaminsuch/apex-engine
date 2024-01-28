@@ -35,7 +35,7 @@ export class ApexEngine {
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
   ) {
     if (ApexEngine.instance) {
-      throw new Error(`An instance of the ApexEngine already exists.`);
+      throw new Error(`An instance of the ApexEngine already exists1.`);
     }
 
     ApexEngine.instance = this;
@@ -52,11 +52,13 @@ export class ApexEngine {
     this.isInitialized = true;
   }
 
-  public tick(tick: IEngineLoopTickContext): void {
+  public async tick(tick: IEngineLoopTickContext): Promise<void> {
     TripleBuffer.swapReadBufferFlags(Flags.RENDER_FLAGS);
+    TripleBuffer.swapReadBufferFlags(Flags.PHYSICS_FLAGS);
 
-    this.getGameInstance().getWorld().tick(tick);
+    await this.getGameInstance().getWorld().tick(tick);
 
+    TripleBuffer.swapWriteBufferFlags(Flags.PHYSICS_FLAGS);
     TripleBuffer.swapWriteBufferFlags(Flags.GAME_FLAGS);
   }
 

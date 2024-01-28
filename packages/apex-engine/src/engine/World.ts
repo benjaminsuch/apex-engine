@@ -71,23 +71,17 @@ export class World {
 
   public startPhysicsTickFunction: StartPhysicsTickFunction;
 
-  public endPhysicsTickFunction: EndPhysicsTickFunction;
-
   public isInitialized: boolean = false;
 
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
     @IRenderWorkerContext protected readonly renderWorker: IRenderWorkerContext,
-    @IPhysicsWorkerContext protected readonly physicsWorker: IPhysicsWorkerContext
+    @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     this.startPhysicsTickFunction = this.instantiationService.createInstance(StartPhysicsTickFunction, this);
     this.startPhysicsTickFunction.canTick = true;
     this.startPhysicsTickFunction.tickGroup = ETickGroup.StartPhysics_Internal;
-
-    this.endPhysicsTickFunction = this.instantiationService.createInstance(EndPhysicsTickFunction, this);
-    this.endPhysicsTickFunction.canTick = true;
-    this.endPhysicsTickFunction.tickGroup = ETickGroup.EndPhysics_Internal;
   }
 
   public init(gameInstance: GameInstance): void {
@@ -102,31 +96,18 @@ export class World {
     this.isInitialized = true;
   }
 
-  public tick(tick: IEngineLoopTickContext): void {
+  public async tick(tick: IEngineLoopTickContext): Promise<void> {
     TickManager.getInstance().startTick(tick, this);
 
     this.tickGroup = ETickGroup.PrePhysics;
 
-    this.runTickGroup(ETickGroup.PrePhysics);
-    this.runTickGroup(ETickGroup.StartPhysics_Internal);
-    // this.isPhysicsSimulationRunning = true
-    // If the physics simulation is finished while the "DuringPhysics" tick group
-    // is still running, that's fine, because they dont need the result anyways.
-    this.runTickGroup(ETickGroup.DuringPhysics);
+    await this.runTickGroup(ETickGroup.PrePhysics);
+    await this.runTickGroup(ETickGroup.StartPhysics_Internal);
+    await this.runTickGroup(ETickGroup.DuringPhysics);
 
-    // If the physics simulation is taking longer than the "DuringPhysics" tick group,
-    // then we have to stall the tick until the simulation is finished.
-    //
-    // We can't use a while loop, because the main-thread wouldn't execute the
-    // message-handlers that listen for worker messages. A `SharedArrayBuffer`
-    // together with a while loop wouldn't work either, because that would lead to
-    // a dead-lock.
-
-    // We cannot run tick functions in the "DuringPhysics" tick group,
-    // if the physics simulation takes too long (they depend on the simulation result).
-    // this.runTickGroup(ETickGroup.EndPhysics_Internal);
     this.tickGroup = ETickGroup.PostPhysics;
-    this.runTickGroup(ETickGroup.PostPhysics);
+
+    await this.runTickGroup(ETickGroup.PostPhysics);
 
     TickManager.getInstance().endTick();
   }
@@ -184,44 +165,24 @@ export class World {
     return playerController;
   }
 
-  public async startPhysicsSimulation(): Promise<void> {
-    return this.physicsWorker.initPhysicsStep();
-  }
-
-  public async endPhysicsSimulation(): Promise<void> {
-    return this.physicsWorker.finishPhysicsStep();
+  public async runPhysicsStep(): Promise<void> {
+    return this.physicsContext.step();
   }
 
   protected registerPhysicsTickFunctions(): void {
     if (this.startPhysicsTickFunction.canTick) {
       this.startPhysicsTickFunction.register();
     }
-    if (this.endPhysicsTickFunction.canTick) {
-      this.endPhysicsTickFunction.addDependency(this.startPhysicsTickFunction);
-      this.endPhysicsTickFunction.register();
-    }
   }
 
-  protected runTickGroup(group: ETickGroup): void {
-    TickManager.getInstance().runTickGroup(group);
+  protected async runTickGroup(group: ETickGroup): Promise<void> {
+    await TickManager.getInstance().runTickGroup(group);
     this.tickGroup = ETickGroup[ETickGroup[group + 1] as keyof typeof ETickGroup];
   }
 }
 
 class StartPhysicsTickFunction extends TickFunction<World> {
-  public override run(context: IEngineLoopTickContext): void {
-    this.target.startPhysicsSimulation();
-    // this.target.physicsWorker.onmessage = ({ data }) => this.target.physicsSnapshot = data
-  }
-}
-
-class EndPhysicsTickFunction extends TickFunction<World> {
   public override run(context: IEngineLoopTickContext): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.target.endPhysicsSimulation();
-
-      // Wait for message with the snapshot data and resolve the promise
-      // this.target.physicsWorker.onmessage = ({ data }) => resolve(data)
-    });
+    return this.target.runPhysicsStep();
   }
 }

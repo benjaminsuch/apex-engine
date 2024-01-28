@@ -59,8 +59,7 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
 
   const engineFiles = getEngineSourceFiles();
   const gameFiles = getGameSourceFiles();
-  console.log('engineFiles', engineFiles);
-  console.log('gameFiles', gameFiles);
+
   const watcher = watch({
     input: {
       index: getLauncherPath('browser'),

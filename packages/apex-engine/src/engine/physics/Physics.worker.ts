@@ -8,10 +8,10 @@ import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { getTargetId } from '../core/class/decorators';
 import { type IProxyOrigin } from '../core/class/specifiers/proxy';
-import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
 import { ProxyManager } from '../ProxyManager';
 import { TickManager } from '../TickManager';
+import { PhysicsInfo } from './PhysicsInfo';
 import { RigidBody } from './RigidBody';
 
 export interface IRegisterRigidBodyReturn {
@@ -21,10 +21,10 @@ export interface IRegisterRigidBodyReturn {
 
 export interface IInternalPhysicsWorkerContext {
   world: RAPIER.World;
+  info: PhysicsInfo;
   proxyManager: ProxyManager<IProxyOrigin>;
   tickManager: TickManager;
-  initPhysicsStep(): void;
-  finishPhysicsStep(): void;
+  step(): void;
   registerRigidBody(type: RAPIER.RigidBodyType): IRegisterRigidBodyReturn;
 }
 
@@ -42,16 +42,15 @@ function onInit(event: MessageEvent): void {
     return;
   }
 
-  const { type } = event.data;
-
-  if (type === 'init') {
+  if (event.data.type === 'init') {
     self.removeEventListener('message', onInit);
 
-    Flags.PHYSICS_FLAGS = event.data.flag[0];
+    Flags.PHYSICS_FLAGS = event.data.flags[0];
 
     RAPIER.init().then(() => {
       const context: IInternalPhysicsWorkerContext = {
         world: new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 }),
+        info: instantiationService.createInstance(PhysicsInfo, Flags.PHYSICS_FLAGS, undefined),
         tickManager: instantiationService.createInstance(TickManager),
         proxyManager: instantiationService.createInstance(ProxyManager),
         registerRigidBody(type) {
@@ -63,17 +62,16 @@ function onInit(event: MessageEvent): void {
             tb: proxyOrigin.tripleBuffer,
           };
         },
-        initPhysicsStep(): void {
+        step(): void {
           this.world.step();
-          TripleBuffer.swapReadBufferFlags(Flags.PHYSICS_FLAGS);
+          // @todo: apply world updates to proxies
         },
-        finishPhysicsStep(): void {},
       };
 
       Comlink.expose(context);
 
       console.log('RAPIER ready', context);
-      self.postMessage({ type: 'init-response' });
+      self.postMessage({ type: 'init-response', tb: context.info.tripleBuffer });
     });
   }
 }
