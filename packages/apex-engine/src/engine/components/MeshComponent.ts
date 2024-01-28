@@ -1,4 +1,3 @@
-import { type RigidBodyType } from '@dimforge/rapier3d-compat';
 import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshStandardMaterial, Sphere, Vector2, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
@@ -58,14 +57,13 @@ export class MeshComponentProxy extends SceneComponentProxy {
 @CLASS(proxy(EProxyThread.Render, MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
   constructor(
-    bodyType: RigidBodyType,
     public geometry: BufferGeometry | undefined = undefined,
     public material: Material | undefined = undefined,
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
     @IPhysicsWorkerContext protected override readonly physicsContext: IPhysicsWorkerContext
   ) {
-    super(bodyType, instantiationService, logger, physicsContext);
+    super(instantiationService, logger, physicsContext);
   }
 }
 

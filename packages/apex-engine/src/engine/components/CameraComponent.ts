@@ -97,12 +97,13 @@ export class CameraComponent extends SceneComponent {
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
     @IPhysicsWorkerContext protected override readonly physicsContext: IPhysicsWorkerContext
   ) {
-    super(null, instantiationService, logger, physicsContext);
+    super(instantiationService, logger, physicsContext);
 
     this.fov = fov;
     this.aspect = aspect;
     this.near = near;
     this.far = far;
+    this.setBodyType(null);
 
     this.componentTick.canTick = true;
   }

@@ -2,7 +2,7 @@ import type RAPIER from '@dimforge/rapier3d-compat';
 
 import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
-import { float32, int8, serialize, uint8, uint16, uint32 } from '../core/class/specifiers/serialize';
+import { float32, float64, int8, serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { ProxyInstance } from '../ProxyInstance';
 
@@ -32,7 +32,7 @@ export class RigidBody {
 
   declare readonly byteView: Uint8Array;
 
-  @PROP(serialize(uint32))
+  @PROP(serialize(float64))
   public readonly handle: number;
 
   @PROP(serialize(uint8))

@@ -1,4 +1,4 @@
-type DataViewGetters = 'getFloat32' | 'getInt8' | 'getInt16' | 'getInt32' | 'getUint8' | 'getUint16' | 'getUint32';
+type DataViewGetters = 'getFloat32' | 'getFloat64' | 'getInt8' | 'getInt16' | 'getInt32' | 'getUint8' | 'getUint16' | 'getUint32';
 
 type GetDataViewGetter<T extends TypedArrayConstructor> = T extends typeof Float32Array
   ? 'getFloat32'
@@ -14,9 +14,11 @@ type GetDataViewGetter<T extends TypedArrayConstructor> = T extends typeof Float
             ? 'getUint16'
             : T extends typeof Uint32Array
               ? 'getUint32'
-              : never;
+              : T extends typeof Float64Array
+                ? 'getFloat64'
+                : never;
 
-type DataViewSetters = 'setFloat32' | 'setInt8' | 'setInt16' | 'setInt32' | 'setUint8' | 'setUint16' | 'setUint32';
+type DataViewSetters = 'setFloat32' | 'setFloat64' | 'setInt8' | 'setInt16' | 'setInt32' | 'setUint8' | 'setUint16' | 'setUint32';
 
 type GetDataViewSetter<T extends TypedArrayConstructor> = T extends typeof Float32Array
   ? 'setFloat32'
@@ -32,7 +34,9 @@ type GetDataViewSetter<T extends TypedArrayConstructor> = T extends typeof Float
             ? 'setUint16'
             : T extends typeof Uint32Array
               ? 'setUint32'
-              : never;
+              : T extends typeof Float64Array
+                ? 'setFloat64'
+                : never;
 
 declare interface DataViewConstructor {
   getTypedArrayGetter<T extends TypedArrayConstructor>(arr: T): GetDataViewGetter<T>;
@@ -42,6 +46,7 @@ declare interface DataViewConstructor {
 DataView.getTypedArrayGetter = function <T extends TypedArrayConstructor>(arr: T): GetDataViewGetter<T> {
   const getters = new Map<TypedArrayConstructor, DataViewGetters>([
     [Float32Array, 'getFloat32'],
+    [Float64Array, 'getFloat64'],
     [Int8Array, 'getInt8'],
     [Int16Array, 'getInt16'],
     [Int32Array, 'getInt32'],
@@ -56,6 +61,7 @@ DataView.getTypedArrayGetter = function <T extends TypedArrayConstructor>(arr: T
 DataView.getTypedArraySetter = function <T extends TypedArrayConstructor>(arr: T): GetDataViewSetter<T> {
   const setters = new Map<TypedArrayConstructor, DataViewSetters>([
     [Float32Array, 'setFloat32'],
+    [Float64Array, 'setFloat64'],
     [Int8Array, 'setInt8'],
     [Int16Array, 'setInt16'],
     [Int32Array, 'setInt32'],

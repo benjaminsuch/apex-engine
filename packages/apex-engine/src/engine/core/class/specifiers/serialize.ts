@@ -49,6 +49,15 @@ export function float32(size: number | [number]): SerializerFunction {
   );
 }
 
+export function float64(size: number | [number]): SerializerFunction {
+  return createSerializer(
+    'float64',
+    Float64Array,
+    getSize(size) * Float64Array.BYTES_PER_ELEMENT,
+    Array.isArray(size)
+  );
+}
+
 export function int8(size: number | [number]): SerializerFunction {
   return createSerializer('int8', Int8Array, getSize(size), Array.isArray(size));
 }

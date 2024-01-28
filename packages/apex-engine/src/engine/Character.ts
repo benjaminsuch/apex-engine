@@ -1,4 +1,3 @@
-import { RigidBodyType } from '@dimforge/rapier3d-compat';
 import { CapsuleGeometry } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
@@ -15,7 +14,7 @@ export class Character extends Pawn {
   ) {
     super(instantiationService, logger);
 
-    this.capsuleComponent = this.addComponent(MeshComponent, RigidBodyType.Fixed, new CapsuleGeometry(1, 3), undefined);
+    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(1, 3), undefined);
     this.capsuleComponent.setAsRoot(this);
   }
 }

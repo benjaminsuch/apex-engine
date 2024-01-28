@@ -1,4 +1,4 @@
-import 'reflect-metadata';
+import '../../launch/bootstrap';
 
 import * as Comlink from 'comlink';
 import { ACESFilmicToneMapping, type Camera, Color, DirectionalLight, Fog, HemisphereLight, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';

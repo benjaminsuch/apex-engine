@@ -3,7 +3,7 @@ import * as Comlink from 'comlink';
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { type SceneComponent } from '../components/SceneComponent';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
-import { type IInternalPhysicsWorkerContext } from './Physics.worker';
+import { type IInternalPhysicsWorkerContext, type IRegisterRigidBodyReturn } from './Physics.worker';
 import PhysicsWorker from './Physics.worker?worker';
 import { RigidBodyProxy } from './RigidBody';
 
@@ -29,24 +29,39 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     this.isInitialized = true;
 
     return new Promise<void>((resolve, reject) => {
-      resolve();
+      let timeoutId = setTimeout(() => {
+        reject(`Physics-Worker initialization failed.1`);
+      }, 30_000);
+
+      this.worker.onmessage = (event): void => {
+        if (typeof event.data !== 'object') {
+          return;
+        }
+
+        const { type, data } = event.data;
+
+        if (type === 'init-response') {
+          clearTimeout(timeoutId);
+          resolve();
+        }
+      };
     });
   }
 
   public registerRigidBody(component: SceneComponent): void {
-    if (!component.bodyType) {
+    const bodyType = component.getBodyType();
+
+    if (!bodyType) {
       return;
     }
 
     // ? Should we throw an error after x amount of time?
-    this.comlink.registerRigidBody(component.bodyType).then((data: any) => {
-      const { flags, byteLength, buffers } = data.tripleBuffer;
-
+    this.comlink.registerRigidBody(bodyType).then(({ id, tb }: IRegisterRigidBodyReturn) => {
       component.rigidBody = this.instantiationService.createInstance(
         RigidBodyProxy,
         [],
-        new TripleBuffer(flags, byteLength, buffers),
-        data.handle
+        new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+        id
       );
     });
   }

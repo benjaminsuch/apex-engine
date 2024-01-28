@@ -1,4 +1,4 @@
-import { RigidBodyType } from '@dimforge/rapier3d-compat';
+import RAPIER from '@dimforge/rapier3d-compat';
 import { Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
@@ -130,21 +130,25 @@ export class SceneComponent extends ActorComponent {
    */
   public children: SceneComponent[] = [];
 
+  private bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
+
+  public getBodyType(): SceneComponent['bodyType'] {
+    return this.bodyType;
+  }
+
+  public setBodyType(val: SceneComponent['bodyType']): void {
+    this.bodyType = val;
+    // this.rigidBody.setBodyType(val)
+  }
+
   public rigidBody: RigidBodyProxy | null = null;
 
   constructor(
-    public readonly bodyType: RigidBodyType | null = RigidBodyType.Fixed,
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     super(instantiationService, logger);
-
-    if (this.bodyType) {
-      // This is an async function, but we don't want to wait until it's resolved.
-      // When it's resolved, it will assign the `RigidBodyProxy` to `this.rigidBody`.
-      this.physicsContext.registerRigidBody(this);
-    }
   }
 
   public override beginPlay(): void {
@@ -240,5 +244,13 @@ export class SceneComponent extends ActorComponent {
     }
 
     this.matrix.copy(_obj.matrixWorld);
+  }
+
+  protected override onRegister(): void {
+    if (this.bodyType) {
+      // This is an async function, but we don't want to wait until it's resolved.
+      // When it's resolved, it will assign the `RigidBodyProxy` to `this.rigidBody`.
+      this.physicsContext.registerRigidBody(this);
+    }
   }
 }
