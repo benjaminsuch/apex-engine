@@ -1,24 +1,24 @@
 import * as Comlink from 'comlink';
 
-import { type IInjectibleService, InstantiationService } from '../../platform/di/common/InstantiationService';
-import { type IProxyOrigin } from '../core/class/specifiers/proxy';
-import { type RegisteredProxy } from '../ProxyManager';
+import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { type SceneComponent } from '../components/SceneComponent';
+import { TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IInternalPhysicsWorkerContext } from './Physics.worker';
 import PhysicsWorker from './Physics.worker?worker';
+import { RigidBodyProxy } from './RigidBody';
 
 export class PhysicsWorkerContext implements IPhysicsWorkerContext {
-  public static readonly tasks: any[] = [];
-
   declare readonly _injectibleService: undefined;
 
   private readonly worker: Worker;
 
-  private readonly comlink: Comlink.Remote<IPhysicsWorkerContext>;
+  private readonly comlink: Comlink.Remote<IInternalPhysicsWorkerContext>;
 
   public isInitialized = false;
 
-  constructor() {
+  constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
     this.worker = new PhysicsWorker();
-    this.comlink = Comlink.wrap<IPhysicsWorkerContext>(this.worker);
+    this.comlink = Comlink.wrap<IInternalPhysicsWorkerContext>(this.worker);
   }
 
   public async init(): Promise<void> {
@@ -33,16 +33,30 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     });
   }
 
+  public registerRigidBody(component: SceneComponent): void {
+    if (!component.bodyType) {
+      return;
+    }
+
+    // ? Should we throw an error after x amount of time?
+    this.comlink.registerRigidBody(component.bodyType).then((data: any) => {
+      const { flags, byteLength, buffers } = data.tripleBuffer;
+
+      component.rigidBody = this.instantiationService.createInstance(
+        RigidBodyProxy,
+        [],
+        new TripleBuffer(flags, byteLength, buffers),
+        data.handle
+      );
+    });
+  }
+
   public async initPhysicsStep(): Promise<void> {
     return this.comlink.initPhysicsStep();
   }
 
   public async finishPhysicsStep(): Promise<void> {
     return this.comlink.finishPhysicsStep();
-  }
-
-  public async createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void> {
-
   }
 }
 
@@ -52,7 +66,7 @@ export interface IPhysicsWorkerContext extends IInjectibleService {
    * @returns A snapshot of the physics world as a `Uint8Array`
    */
   finishPhysicsStep(): Promise<void>;
-  createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
+  registerRigidBody(component: SceneComponent): void;
 }
 
 export const IPhysicsWorkerContext = InstantiationService.createDecorator<IPhysicsWorkerContext>('PhysicsWorkerContext');

@@ -1,54 +1,92 @@
-import { CLASS } from '../core/class/decorators';
+import type RAPIER from '@dimforge/rapier3d-compat';
+
+import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
-import { PhysicsWorkerContext } from './PhysicsWorkerContext';
+import { float32, int8, serialize, uint8, uint16, uint32 } from '../core/class/specifiers/serialize';
+import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { ProxyInstance } from '../ProxyInstance';
 
-export type RigidBodyType = 'fixed' | 'dynamic' | 'kinematic-position' | 'kinematic-velocity';
+export class RigidBodyProxy extends ProxyInstance {
+  declare readonly handle: number;
 
-export class RigidBodyProxy {
+  declare readonly bodyType: number;
+
+  declare readonly angularDamping: number;
+
+  declare readonly dominanceGroup: number;
+
+  declare readonly angvel: [number, number, number];
+
+  declare readonly position: [number, number, number];
+
+  declare readonly rotation: [number, number, number, number];
 }
 
 /**
- * asd
+ * This class is instantiated on the physics thread and creates a proxy on the
+ * game thread.
  */
-@CLASS(proxy(EProxyThread.Physics, RigidBodyProxy))
+@CLASS(proxy(EProxyThread.Game, RigidBodyProxy))
 export class RigidBody {
-  private handle: number | null = null;
+  declare readonly tripleBuffer: TripleBuffer;
 
-  private isRegistered: boolean = false;
+  declare readonly byteView: Uint8Array;
 
-  private type: RigidBodyType = 'fixed';
+  @PROP(serialize(uint32))
+  public readonly handle: number;
 
-  /**
-   * Sets the type of the rigid-body.
-   *
-   * Important: The type can be set as long as it hasn't been registered via
-   * `register` and will otherwise throw an error.
-   *
-   * @param type
-   */
-  public setType(type: RigidBodyType): void {
-    if (this.isRegistered) {
-      throw new Error(`Cannot change body type after it has been registered.`);
-    }
-    this.type = type;
+  @PROP(serialize(uint8))
+  public bodyType: RAPIER.RigidBodyType;
+
+  @PROP(serialize(uint16))
+  public angularDamping!: number;
+
+  @PROP(serialize(int8))
+  public dominanceGroup!: number;
+
+  @PROP(serialize(float32, [3]))
+  public readonly angvel: [number, number, number] = [0, 0, 0];
+
+  @PROP(serialize(float32, [3]))
+  public readonly position: [number, number, number] = [0, 0, 0];
+
+  @PROP(serialize(float32, [4]))
+  public readonly rotation: [number, number, number, number] = [0, 0, 0, 0];
+
+  constructor(public readonly worldBody: RAPIER.RigidBody) {
+    this.handle = this.worldBody.handle;
+    this.bodyType = this.worldBody.bodyType();
+
+    this.applyWorldBodyTransformations();
   }
 
-  public getType(): RigidBodyType {
-    return this.type;
-  }
+  protected applyWorldBodyTransformations(): void {
+    this.angularDamping = this.worldBody.angularDamping();
+    this.dominanceGroup = this.worldBody.dominanceGroup();
 
-  public register(): void {
-    if (this.isRegistered) {
-      return;
+    {
+      const { x, y, z } = this.worldBody.translation();
+
+      this.position[0] = x;
+      this.position[1] = y;
+      this.position[2] = z;
     }
 
-    PhysicsWorkerContext.tasks.push({
-      message: { type: 'create-rigidbody', data: { type: this.type } },
-      onResponse: (handle: number): void => {
-        this.handle = handle;
-      },
-    });
+    {
+      const { x, y, z, w } = this.worldBody.rotation();
 
-    this.isRegistered = true;
+      this.rotation[0] = x;
+      this.rotation[1] = y;
+      this.rotation[2] = z;
+      this.rotation[3] = w;
+    }
+
+    {
+      const { x, y, z } = this.worldBody.angvel();
+
+      this.angvel[0] = x;
+      this.angvel[1] = y;
+      this.angvel[2] = z;
+    }
   }
 }
