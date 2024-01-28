@@ -9,7 +9,7 @@ declare interface Array<T> {
   removeAtSwap(idx: number): void;
 }
 
-Array.prototype.removeAtSwap = function (this, idx): void {
+Array.prototype.removeAtSwap = function (this: Array<unknown>, idx): void {
   this.splice(idx, 1, this[this.length - 1]);
   this.pop();
 };
