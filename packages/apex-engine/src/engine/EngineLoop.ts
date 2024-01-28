@@ -64,7 +64,7 @@ export class EngineLoop {
       const physicsContext = this.instantiationService.createInstance(PhysicsWorkerContext);
       this.instantiationService.setServiceInstance(IPhysicsWorkerContext, physicsContext);
 
-      await physicsContext.init();
+      await physicsContext.init([Flags.PHYSICS_FLAGS]);
     }
 
     // Activate plugins

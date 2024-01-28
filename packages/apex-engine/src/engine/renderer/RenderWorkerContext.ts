@@ -63,8 +63,6 @@ export class RenderWorkerContext implements IRenderWorkerContext {
       window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
     }
 
-    this.isInitialized = true;
-
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
         reject(`Render-Worker initialization failed.`);
@@ -80,6 +78,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
         if (type === 'init-response') {
           const { flags, byteLength, buffers, byteViews } = data;
 
+          this.isInitialized = true;
           this.rendererInfo = this.instantiationService.createInstance(
             RenderingInfo,
             flags,

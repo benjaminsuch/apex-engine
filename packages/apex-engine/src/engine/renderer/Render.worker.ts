@@ -106,9 +106,7 @@ function onInit(event: MessageEvent): void {
     return;
   }
 
-  const { type } = event.data;
-
-  if (type === 'init') {
+  if (event.data.type === 'init') {
     self.removeEventListener('message', onInit);
 
     const { canvas, flags, initialHeight, initialWidth } = event.data;

@@ -3,6 +3,7 @@ import * as Comlink from 'comlink';
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { type SceneComponent } from '../components/SceneComponent';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
+import { Flags } from '../Flags';
 import { type IInternalPhysicsWorkerContext, type IRegisterRigidBodyReturn } from './Physics.worker';
 import PhysicsWorker from './Physics.worker?worker';
 import { RigidBodyProxy } from './RigidBody';
@@ -21,12 +22,12 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     this.comlink = Comlink.wrap<IInternalPhysicsWorkerContext>(this.worker);
   }
 
-  public async init(): Promise<void> {
+  public async init(flags: Uint8Array[]): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
-    this.isInitialized = true;
+    this.worker.postMessage({ type: 'init', flags });
 
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
@@ -38,9 +39,9 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
           return;
         }
 
-        const { type, data } = event.data;
+        if (event.data.type === 'init-response') {
+          this.isInitialized = true;
 
-        if (type === 'init-response') {
           clearTimeout(timeoutId);
           resolve();
         }
@@ -67,6 +68,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
   }
 
   public async initPhysicsStep(): Promise<void> {
+    TripleBuffer.swapWriteBufferFlags(Flags.PHYSICS_FLAGS);
     return this.comlink.initPhysicsStep();
   }
 
