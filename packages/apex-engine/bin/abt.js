@@ -363,6 +363,7 @@ function workerPlugin({ inline, isBuild = false, target, }) {
                 bundle = await rollup({
                     input: id,
                     plugins: [
+                        workerPlugin({ target }),
                         replacePlugin(target),
                         nodeResolve({ preferBuiltins: true }),
                         typescript(),

@@ -85,6 +85,7 @@ export function workerPlugin({
         bundle = await rollup({
           input: id,
           plugins: [
+            workerPlugin({ target }),
             replace(target),
             nodeResolve({ preferBuiltins: true }),
             typescript(),

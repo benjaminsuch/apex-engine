@@ -15,5 +15,5 @@ import 'reflect-metadata';
 /**
  * Monkey-patches
  */
-import '../engine/core/Array';
+import '../engine/core/Array1';
 import '../engine/core/DataView';
