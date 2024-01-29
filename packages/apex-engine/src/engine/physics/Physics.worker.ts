@@ -1,3 +1,4 @@
+// @todo:
 import '../../launch/bootstrap';
 
 import * as RAPIER from '@dimforge/rapier3d-compat';
@@ -27,6 +28,11 @@ export interface IInternalPhysicsWorkerContext {
   info: PhysicsInfo;
   proxyManager: ProxyManager<IProxyOrigin>;
   tickManager: TickManager;
+  /**
+   * Creates proxies sent from the game-thread.
+   *
+   * @param proxies
+   */
   createProxies(proxies: IProxyConstructionData[]): void;
   step(tick: IEngineLoopTickContext, tasks: any[]): void;
   registerRigidBody(type: RAPIER.RigidBodyType): IRegisterRigidBodyReturn;
@@ -42,8 +48,6 @@ const instantiationService = new InstantiationService(services);
 
 self.addEventListener('message', onInit);
 
-// characterController.enableAutostep(0.7, 0.3, true);
-// characterController.enableSnapToGround(0.7);
 const defaultTasks = [
   {
     proxy: 1,
