@@ -10,7 +10,6 @@ import { type SceneComponentProxy } from '../components/SceneComponent';
 import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
-import { RegisteredProxy } from '../ProxyManager';
 import { ETickGroup, TickManager } from '../TickManager';
 import { RenderingInfo } from './RenderingInfo';
 import { RenderProxyManager } from './RenderProxyManager';

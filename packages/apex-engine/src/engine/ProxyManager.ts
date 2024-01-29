@@ -37,7 +37,8 @@ export class ProxyManager<T> {
   public readonly proxies: ProxyRegistry<RegisteredProxy<T>>;
 
   public registerProxy(thread: EProxyThread, proxy: T): void {
-    this.proxies.register(new RegisteredProxy(thread, proxy));
+    const registeredProxy = new RegisteredProxy(thread, proxy);
+    registeredProxy.index = this.proxies.register(registeredProxy);
   }
 
   public getProxy(id: number): T | void {
