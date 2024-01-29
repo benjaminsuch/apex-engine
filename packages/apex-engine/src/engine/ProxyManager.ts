@@ -25,18 +25,19 @@ export class ProxyManager<T> {
     const idx = this.proxyQueue[thread].findIndex(({ target }) => target === proxy);
 
     if (idx === -1) {
-      const registeredProxy = new RegisteredProxy(thread, proxy, args);
-      this.proxyQueue[thread].push(registeredProxy);
-      return this.registerProxy(registeredProxy);
+      const enqueuedProxy = new EnqueuedProxy(thread, proxy, args);
+      enqueuedProxy.index = this.proxyQueue[thread].push(enqueuedProxy) - 1;
+      this.registerProxy(thread, proxy);
+      return true;
     }
 
     return false;
   }
 
-  protected readonly proxies: ProxyRegistry<RegisteredProxy<T>>;
+  public readonly proxies: ProxyRegistry<RegisteredProxy<T>>;
 
-  public registerProxy(proxy: RegisteredProxy<T>): boolean {
-    return this.proxies.register(proxy);
+  public registerProxy(thread: EProxyThread, proxy: T): void {
+    this.proxies.register(new RegisteredProxy(thread, proxy));
   }
 
   public getProxy(id: number): T | void {
@@ -50,6 +51,7 @@ export class ProxyManager<T> {
   protected managerTick: TickFunction<any>;
 
   constructor(
+    private readonly proxyConstructors: Record<string, TClass> = {},
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {
@@ -79,6 +81,10 @@ export class ProxyManager<T> {
     }
   }
 
+  public getProxyConstructor(id: string): TClass {
+    return this.proxyConstructors[id];
+  }
+
   /**
    * This method will be called each tick and only if `proxyQueue` is not empty.
    * Use it to modify how `proxyQueue` will be processed.
@@ -106,17 +112,13 @@ class ProxyRegistry<T> {
     return this.list[idx];
   }
 
-  public register(proxy: T): boolean {
-    const idx = this.list.indexOf(proxy);
-
-    if (idx > -1) {
-      this.logger.warn(`Proxy is already registered. Aborting.`);
-      return false;
-    }
-
-    this.entries = this.list.push(proxy);
-
-    return true;
+  /**
+   * @param registeredProxy
+   * @returns Index of where the proxy is in our list of registered proxies.
+   */
+  public register(registeredProxy: T): number {
+    this.entries = this.list.push(registeredProxy);
+    return this.entries - 1;
   }
 
   public entries: number = 0;
@@ -139,5 +141,13 @@ class ProxyManagerTickFunction extends TickFunction<ProxyManager<any>> {
 }
 
 export class RegisteredProxy<T> {
-  constructor(public readonly thread: EProxyThread, public readonly target: T, public readonly args: unknown[]) {}
+  public index: number = -1;
+
+  constructor(public readonly thread: EProxyThread, public readonly target: T) {}
+}
+
+export class EnqueuedProxy<T> extends RegisteredProxy<T> {
+  constructor(public override readonly thread: EProxyThread, public override readonly target: T, public readonly args: unknown[]) {
+    super(thread, target);
+  }
 }

@@ -1,11 +1,6 @@
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 
-/**
- * A separate class to store the info in a triple buffer to make it available
- * for the game-thread. The class is used on both threads, except that only the
- * render-thread writes into the buffer.
- */
 export class PhysicsInfo {
   private static readonly BUFFER_SIZE: number = Uint32Array.BYTES_PER_ELEMENT;
 
@@ -16,18 +11,6 @@ export class PhysicsInfo {
   private readonly dataView: DataView;
 
   private readonly views: [DataView, DataView, DataView];
-
-  get simulationState(): number {
-    const idx = IS_WORKER ? this.tripleBuffer.getWriteBufferIndex() : this.tripleBuffer.getReadBufferIndex();
-    return this.views[idx].getUint8(0);
-  }
-
-  set simulationState(val: number) {
-    if (IS_WORKER) {
-      this.dataView.setUint8(0, val);
-      this.tripleBuffer.copyToWriteBuffer(this.byteView);
-    }
-  }
 
   constructor(
     flags: Uint8Array,

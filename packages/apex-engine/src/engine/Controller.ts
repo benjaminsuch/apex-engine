@@ -1,6 +1,7 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Pawn } from './Pawn';
 import { PhysicsCharacterController } from './physics/PhysicsCharacterController';
 
@@ -30,6 +31,13 @@ export class Controller extends Actor {
     // todo: Temporary solution. Remove when we determine the starting spot from the level file.
     this.startSpot = this.instantiationService.createInstance(Actor);
     this.physicsCharacterController = this.instantiationService.createInstance(PhysicsCharacterController);
+    this.actorTick.canTick = true;
+  }
+
+  public override tick(context: IEngineLoopTickContext): void {
+    this.physicsCharacterController.movement.x = Math.random() * 100;
+    this.physicsCharacterController.movement.y = Math.random() * 100;
+    this.physicsCharacterController.movement.z = Math.random() * 100;
   }
 
   public possess(pawn: Pawn): void {

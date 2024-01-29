@@ -2,14 +2,27 @@ import * as Comlink from 'comlink';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { type SceneComponent } from '../components/SceneComponent';
+import { getTargetId } from '../core/class/decorators';
+import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
+import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { type IInternalPhysicsWorkerContext, type IRegisterRigidBodyReturn } from './Physics.worker';
 import PhysicsWorker from './Physics.worker?worker';
 import { PhysicsInfo } from './PhysicsInfo';
 import { RigidBodyProxy } from './RigidBody';
 
 export class PhysicsWorkerContext implements IPhysicsWorkerContext {
+  private static readonly tasks: any[] = [];
+
+  public static addTask(task: any): number {
+    return this.tasks.push(task) - 1;
+  }
+
+  public static removeTask(idx: number): void {
+    return this.tasks.removeAtSwap(idx);
+  }
+
   declare readonly _injectibleService: undefined;
 
   private readonly worker: Worker;
@@ -17,13 +30,6 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
   private readonly comlink: Comlink.Remote<IInternalPhysicsWorkerContext>;
 
   private info: PhysicsInfo | null = null;
-
-  public get simulationState(): PhysicsInfo['simulationState'] {
-    if (!this.info) {
-      throw new Error(`Cannot read physics info: Physics-Worker hasn't finished initialization.`);
-    }
-    return this.info.simulationState;
-  }
 
   public isInitialized = false;
 
@@ -81,12 +87,29 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
   }
 
   public async step(): Promise<void> {
-    return this.comlink.step();
+    return this.comlink.step([]);
+  }
+
+  public createProxies(proxies: EnqueuedProxy<IProxyOrigin>[]): Promise<void> {
+    const data: IProxyConstructionData[] = [];
+
+    for (let i = 0; i < proxies.length; ++i) {
+      const { target, args } = proxies[i];
+
+      data[i] = {
+        constructor: (target.constructor as TProxyOriginConstructor).proxyClassName,
+        id: getTargetId(target) as number,
+        tb: target.tripleBuffer,
+        args,
+      };
+    }
+
+    return this.comlink.createProxies(data);
   }
 }
 
 export interface IPhysicsWorkerContext extends IInjectibleService {
-  simulationState: PhysicsInfo['simulationState'];
+  createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
   step(): Promise<void>;
   /**
    * @returns A snapshot of the physics world as a `Uint8Array`

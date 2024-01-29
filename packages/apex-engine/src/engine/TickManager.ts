@@ -5,15 +5,7 @@ import { type World } from './World';
 
 export enum ETickGroup {
   PrePhysics,
-  /**
-   * For internal use only.
-   */
-  StartPhysics_Internal,
   DuringPhysics,
-  /**
-   * For internal use only.
-   */
-  EndPhysics_Internal,
   PostPhysics,
   MAX,
 }

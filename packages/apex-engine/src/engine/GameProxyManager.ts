@@ -17,7 +17,7 @@ export class GameProxyManager extends ProxyManager<IProxyOrigin> {
     @IRenderWorkerContext protected readonly renderContext: IRenderWorkerContext,
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
-    super(instantiationService, logger);
+    super({}, instantiationService, logger);
     this.logger.debug(this.constructor.name, this);
   }
 
@@ -36,6 +36,7 @@ export class GameProxyManager extends ProxyManager<IProxyOrigin> {
   protected override onProcessProxyQueue(tick: IEngineLoopTickContext): boolean {
     // No need to use `await` here, we just send the proxies and are done.
     this.renderContext.createProxies(this.proxyQueue[EProxyThread.Render]);
+    this.physicsContext.createProxies(this.proxyQueue[EProxyThread.Physics]);
     return true;
   }
 }

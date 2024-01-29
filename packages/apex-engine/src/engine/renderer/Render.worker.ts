@@ -64,7 +64,7 @@ const context: IInternalRenderWorkerContext = {
         this
       ) as SceneComponentProxy;
 
-      this.proxyManager.registerProxy(new RegisteredProxy(EProxyThread.Render, proxy, args));
+      this.proxyManager.registerProxy(EProxyThread.Render, proxy);
       this.scene.add(proxy.sceneObject);
     }
   },

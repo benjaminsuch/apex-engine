@@ -9,7 +9,7 @@ import { IPhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { type Player } from './Player';
 import { type PlayerController } from './PlayerController';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
-import { ETickGroup, TickFunction, TickManager } from './TickManager';
+import { ETickGroup, TickManager } from './TickManager';
 
 export class World {
   private gameMode?: GameMode;
@@ -69,20 +69,14 @@ export class World {
 
   public tickGroup: ETickGroup | null = null;
 
-  public startPhysicsTickFunction: StartPhysicsTickFunction;
-
   public isInitialized: boolean = false;
 
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,
-    @IRenderWorkerContext protected readonly renderWorker: IRenderWorkerContext,
+    @IRenderWorkerContext protected readonly renderContext: IRenderWorkerContext,
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
-  ) {
-    this.startPhysicsTickFunction = this.instantiationService.createInstance(StartPhysicsTickFunction, this);
-    this.startPhysicsTickFunction.canTick = true;
-    this.startPhysicsTickFunction.tickGroup = ETickGroup.StartPhysics_Internal;
-  }
+  ) {}
 
   public init(gameInstance: GameInstance): void {
     if (this.isInitialized) {
@@ -102,11 +96,8 @@ export class World {
     this.tickGroup = ETickGroup.PrePhysics;
 
     await this.runTickGroup(ETickGroup.PrePhysics);
-    await this.runTickGroup(ETickGroup.StartPhysics_Internal);
+    await this.startPhysicsStep();
     await this.runTickGroup(ETickGroup.DuringPhysics);
-
-    this.tickGroup = ETickGroup.PostPhysics;
-
     await this.runTickGroup(ETickGroup.PostPhysics);
 
     TickManager.getInstance().endTick();
@@ -136,7 +127,6 @@ export class World {
       actor.beginPlay();
     }
 
-    this.registerPhysicsTickFunctions();
     // todo: StartPlay via GameMode
     // todo: Broadcast begin-play event
   }
@@ -165,24 +155,12 @@ export class World {
     return playerController;
   }
 
-  public async runPhysicsStep(): Promise<void> {
+  public async startPhysicsStep(): Promise<void> {
     return this.physicsContext.step();
-  }
-
-  protected registerPhysicsTickFunctions(): void {
-    if (this.startPhysicsTickFunction.canTick) {
-      this.startPhysicsTickFunction.register();
-    }
   }
 
   protected async runTickGroup(group: ETickGroup): Promise<void> {
     await TickManager.getInstance().runTickGroup(group);
     this.tickGroup = ETickGroup[ETickGroup[group + 1] as keyof typeof ETickGroup];
-  }
-}
-
-class StartPhysicsTickFunction extends TickFunction<World> {
-  public override run(context: IEngineLoopTickContext): Promise<void> {
-    return this.target.runPhysicsStep();
   }
 }

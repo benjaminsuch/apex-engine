@@ -4,7 +4,7 @@ import { type IInjectibleService, IInstantiationService, InstantiationService } 
 import { getTargetId } from '../core/class/decorators';
 import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
-import { type RegisteredProxy } from '../ProxyManager';
+import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { type IInternalRenderWorkerContext } from './Render.worker';
 import RenderWorker from './Render.worker?worker';
 import { RenderingInfo } from './RenderingInfo';
@@ -92,7 +92,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     });
   }
 
-  public createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void> {
+  public createProxies(proxies: EnqueuedProxy<IProxyOrigin>[]): Promise<void> {
     const data: IProxyConstructionData[] = [];
 
     for (let i = 0; i < proxies.length; ++i) {
