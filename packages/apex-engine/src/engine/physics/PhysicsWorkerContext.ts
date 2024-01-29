@@ -12,7 +12,7 @@ import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { ColliderProxy } from './Collider';
-import { type ICreatedProxyData, type IInternalPhysicsWorkerContext, type RegisterColliderArgs } from './Physics.worker';
+import { type ICreatedProxyData, type IInternalPhysicsWorkerContext } from './Physics.worker';
 import PhysicsWorker from './Physics.worker?worker';
 import { PhysicsInfo } from './PhysicsInfo';
 import { RigidBodyProxy } from './RigidBody';
@@ -84,7 +84,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     if (component.geometry instanceof CapsuleGeometry) {
       const { radius, length } = component.geometry.parameters;
 
-      this.comlink.registerCollider(RAPIER.ShapeType.Capsule, { rigidBodyId, halfHeight: length * 0.5, radius }).then(({ id, tb }: ICreatedProxyData) => {
+      return this.comlink.registerCollider(RAPIER.ShapeType.Capsule, { rigidBodyId, halfHeight: length * 0.5, radius }).then(({ id, tb }: ICreatedProxyData) => {
         component.collider = this.instantiationService.createInstance(
           ColliderProxy,
           [],
