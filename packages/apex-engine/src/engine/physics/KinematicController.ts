@@ -2,10 +2,11 @@ import { Vector3 } from 'three';
 
 import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
-import { serialize, vec3 } from '../core/class/specifiers/serialize';
+import { ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
+import { type Collider } from './Collider';
 
 export class KinematicControllerProxy extends ProxyInstance {
   declare readonly offset: number;
@@ -25,6 +26,9 @@ export class KinematicControllerProxy extends ProxyInstance {
 
 @CLASS(proxy(EProxyThread.Physics, KinematicControllerProxy))
 export class KinematicController {
+  @PROP(serialize(ref))
+  public collider: Collider | null = null;
+
   @PROP(serialize(vec3))
   public movement: Vector3 = new Vector3();
 

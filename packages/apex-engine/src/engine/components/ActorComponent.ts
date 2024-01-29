@@ -52,7 +52,7 @@ export class ActorComponent {
     }
   }
 
-  protected onRegister(): void {}
+  protected async onRegister(): Promise<void> {}
 }
 
 export class ComponentTickFunction extends TickFunction<ActorComponent> {

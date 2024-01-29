@@ -65,6 +65,11 @@ export class MeshComponent extends SceneComponent {
   ) {
     super(instantiationService, logger, physicsContext);
   }
+
+  protected override async onRegister(): Promise<void> {
+    // When resolved, the rigid-body is available and we can register the collider
+    await super.onRegister();
+  }
 }
 
 const TYPED_ARRAYS = {

@@ -1,6 +1,9 @@
+import RAPIER from '@dimforge/rapier3d-compat';
 import * as Comlink from 'comlink';
+import { CapsuleGeometry } from 'three';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { type MeshComponent } from '../components/MeshComponent';
 import { type SceneComponent } from '../components/SceneComponent';
 import { getTargetId } from '../core/class/decorators';
 import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
@@ -8,7 +11,8 @@ import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
-import { type IInternalPhysicsWorkerContext, type IRegisterRigidBodyReturn } from './Physics.worker';
+import { ColliderProxy } from './Collider';
+import { type ICreatedProxyData, type IInternalPhysicsWorkerContext, type RegisterColliderArgs } from './Physics.worker';
 import PhysicsWorker from './Physics.worker?worker';
 import { PhysicsInfo } from './PhysicsInfo';
 import { RigidBodyProxy } from './RigidBody';
@@ -69,7 +73,29 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     });
   }
 
-  public registerRigidBody(component: SceneComponent): void {
+  public async registerCollider(component: MeshComponent): Promise<void> {
+    // It's possible to not have a component a rigid body (exclude it from physics).
+    if (!component.rigidBody) {
+      return;
+    }
+
+    const rigidBodyId = component.rigidBody.id;
+
+    if (component.geometry instanceof CapsuleGeometry) {
+      const { radius, length } = component.geometry.parameters;
+
+      this.comlink.registerCollider(RAPIER.ShapeType.Capsule, { rigidBodyId, halfHeight: length * 0.5, radius }).then(({ id, tb }: ICreatedProxyData) => {
+        component.collider = this.instantiationService.createInstance(
+          ColliderProxy,
+          [],
+          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+          id
+        );
+      });
+    }
+  }
+
+  public async registerRigidBody(component: SceneComponent): Promise<void> {
     const bodyType = component.getBodyType();
 
     if (!bodyType) {
@@ -77,7 +103,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     }
 
     // ? Should we throw an error after x amount of time?
-    this.comlink.registerRigidBody(bodyType).then(({ id, tb }: IRegisterRigidBodyReturn) => {
+    return this.comlink.registerRigidBody(bodyType).then(({ id, tb }: ICreatedProxyData) => {
       component.rigidBody = this.instantiationService.createInstance(
         RigidBodyProxy,
         [],
@@ -112,10 +138,11 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 export interface IPhysicsWorkerContext extends IInjectibleService {
   createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
   step(tick: IEngineLoopTickContext): Promise<void>;
+  registerCollider(component: SceneComponent): Promise<void>;
   /**
    * @returns A snapshot of the physics world as a `Uint8Array`
    */
-  registerRigidBody(component: SceneComponent): void;
+  registerRigidBody(component: SceneComponent): Promise<void>;
 }
 
 export const IPhysicsWorkerContext = InstantiationService.createDecorator<IPhysicsWorkerContext>('PhysicsWorkerContext');

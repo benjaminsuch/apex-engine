@@ -9,6 +9,7 @@ import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
+import { type ColliderProxy } from '../physics/Collider';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RigidBodyProxy } from '../physics/RigidBody';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
@@ -92,6 +93,8 @@ export class SceneComponent extends ActorComponent {
 
   declare readonly tripleBuffer: TripleBuffer;
 
+  private bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
+
   @PROP(serialize(vec3))
   public position: Vector3 = new Vector3();
 
@@ -130,8 +133,6 @@ export class SceneComponent extends ActorComponent {
    */
   public children: SceneComponent[] = [];
 
-  private bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
-
   public getBodyType(): SceneComponent['bodyType'] {
     return this.bodyType;
   }
@@ -142,6 +143,8 @@ export class SceneComponent extends ActorComponent {
   }
 
   public rigidBody: RigidBodyProxy | null = null;
+
+  public collider: ColliderProxy | null = null;
 
   constructor(
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
@@ -246,11 +249,9 @@ export class SceneComponent extends ActorComponent {
     this.matrix.copy(_obj.matrixWorld);
   }
 
-  protected override onRegister(): void {
+  protected override async onRegister(): Promise<void> {
     if (this.bodyType) {
-      // This is an async function, but we don't want to wait until it's resolved.
-      // When it's resolved, it will assign the `RigidBodyProxy` to `this.rigidBody`.
-      this.physicsContext.registerRigidBody(this);
+      await this.physicsContext.registerRigidBody(this);
     }
   }
 }
