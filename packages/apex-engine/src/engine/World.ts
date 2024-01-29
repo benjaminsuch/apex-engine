@@ -80,7 +80,7 @@ export class World {
 
   public init(gameInstance: GameInstance): void {
     if (this.isInitialized) {
-      this.logger.warn(this.constructor.name, 'Already initialized.');
+      this.logger.warn(this.constructor.name, 'Already initialized1.');
       return;
     }
 
@@ -96,7 +96,7 @@ export class World {
     this.tickGroup = ETickGroup.PrePhysics;
 
     await this.runTickGroup(ETickGroup.PrePhysics);
-    await this.startPhysicsStep();
+    await this.physicsContext.step(tick);
     await this.runTickGroup(ETickGroup.DuringPhysics);
     await this.runTickGroup(ETickGroup.PostPhysics);
 
@@ -153,10 +153,6 @@ export class World {
     this.getGameMode().postLogin(playerController);
 
     return playerController;
-  }
-
-  public async startPhysicsStep(): Promise<void> {
-    return this.physicsContext.step();
   }
 
   protected async runTickGroup(group: ETickGroup): Promise<void> {

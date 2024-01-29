@@ -5,6 +5,7 @@ import { type SceneComponent } from '../components/SceneComponent';
 import { getTargetId } from '../core/class/decorators';
 import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { type IInternalPhysicsWorkerContext, type IRegisterRigidBodyReturn } from './Physics.worker';
@@ -86,8 +87,8 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     });
   }
 
-  public async step(): Promise<void> {
-    return this.comlink.step([]);
+  public async step(tick: IEngineLoopTickContext): Promise<void> {
+    return this.comlink.step(tick, []);
   }
 
   public createProxies(proxies: EnqueuedProxy<IProxyOrigin>[]): Promise<void> {
@@ -110,7 +111,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 
 export interface IPhysicsWorkerContext extends IInjectibleService {
   createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
-  step(): Promise<void>;
+  step(tick: IEngineLoopTickContext): Promise<void>;
   /**
    * @returns A snapshot of the physics world as a `Uint8Array`
    */

@@ -9,10 +9,11 @@ import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/Con
 import { getTargetId } from '../core/class/decorators';
 import { EProxyThread, type IProxyConstructionData, type IProxyOrigin } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
-import { ProxyManager, RegisteredProxy } from '../ProxyManager';
+import { ProxyManager } from '../ProxyManager';
 import { TickManager } from '../TickManager';
-import { PhysicsCharacterControllerProxy } from './PhysicsCharacterController';
+import { KinematicControllerProxy } from './KinematicController';
 import { PhysicsInfo } from './PhysicsInfo';
 import { RigidBody } from './RigidBody';
 
@@ -27,11 +28,11 @@ export interface IInternalPhysicsWorkerContext {
   proxyManager: ProxyManager<IProxyOrigin>;
   tickManager: TickManager;
   createProxies(proxies: IProxyConstructionData[]): void;
-  step(tasks: any[]): void;
+  step(tick: IEngineLoopTickContext, tasks: any[]): void;
   registerRigidBody(type: RAPIER.RigidBodyType): IRegisterRigidBodyReturn;
 }
 
-const proxyConstructors = { PhysicsCharacterControllerProxy };
+const proxyConstructors = { KinematicControllerProxy };
 const services = new ServiceCollection();
 const logger = new ConsoleLogger();
 
@@ -109,7 +110,8 @@ function onInit(event: MessageEvent): void {
             tb: proxyOrigin.tripleBuffer,
           };
         },
-        step(tasks): void {
+        step(tick: IEngineLoopTickContext, tasks): void {
+          this.world.timestep = tick.delta;
           this.world.step();
           // for (let i = 0; i < this.proxyManager.proxies.entries; ++i) {
           //   const proxy = this.proxyManager.getProxy(i) as any;
@@ -118,10 +120,6 @@ function onInit(event: MessageEvent): void {
           //     proxy.tick({ delta: 0.016, elapsed: performance.now(), id: 1 });
           //   }
           // }
-
-          for (const task of defaultTasks) {
-
-          }
           // @todo: apply world updates to proxies
         },
       };

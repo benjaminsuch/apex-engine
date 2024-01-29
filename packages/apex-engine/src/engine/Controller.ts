@@ -3,10 +3,10 @@ import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Pawn } from './Pawn';
-import { PhysicsCharacterController } from './physics/PhysicsCharacterController';
+import { KinematicController } from './physics/KinematicController';
 
 export class Controller extends Actor {
-  protected physicsCharacterController: PhysicsCharacterController;
+  protected kinematicController: KinematicController;
 
   protected pawn: Pawn | null = null;
 
@@ -30,14 +30,14 @@ export class Controller extends Actor {
     super(instantiationService, logger);
     // todo: Temporary solution. Remove when we determine the starting spot from the level file.
     this.startSpot = this.instantiationService.createInstance(Actor);
-    this.physicsCharacterController = this.instantiationService.createInstance(PhysicsCharacterController);
+    this.kinematicController = this.instantiationService.createInstance(KinematicController, 0.1);
     this.actorTick.canTick = true;
   }
 
   public override tick(context: IEngineLoopTickContext): void {
-    this.physicsCharacterController.movement.x = Math.random() * 100;
-    this.physicsCharacterController.movement.y = Math.random() * 100;
-    this.physicsCharacterController.movement.z = Math.random() * 100;
+    this.kinematicController.movement.x = Math.random() * 100;
+    this.kinematicController.movement.y = Math.random() * 100;
+    this.kinematicController.movement.z = Math.random() * 100;
   }
 
   public possess(pawn: Pawn): void {
