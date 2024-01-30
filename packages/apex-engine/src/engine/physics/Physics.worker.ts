@@ -208,6 +208,7 @@ export type RegisterColliderArgs<T> = { rigidBodyId: ProxyInstance['id'] } & Get
 export interface IInternalPhysicsWorkerContext {
   world: RAPIER.World;
   info: PhysicsInfo;
+  renderPort: MessagePort;
   proxyManager: ProxyManager<IProxyOrigin>;
   tickManager: TickManager;
   /**
@@ -257,12 +258,15 @@ function onInit(event: MessageEvent): void {
   if (event.data.type === 'init') {
     self.removeEventListener('message', onInit);
 
-    Flags.PHYSICS_FLAGS = event.data.flags[0];
+    const { flags, renderPort } = event.data;
+
+    Flags.PHYSICS_FLAGS = flags[0];
 
     RAPIER.init().then(() => {
       const context: IInternalPhysicsWorkerContext = {
         world: new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 }),
         info: instantiationService.createInstance(PhysicsInfo, Flags.PHYSICS_FLAGS, undefined),
+        renderPort,
         tickManager: instantiationService.createInstance(TickManager),
         proxyManager: instantiationService.createInstance(ProxyManager, proxyConstructors),
         createProxies(proxies) {
@@ -298,7 +302,6 @@ function onInit(event: MessageEvent): void {
           };
         },
         registerCollider(type, params) {
-          console.log('registerCollider', type, params);
           const { rigidBodyId, ...args } = params;
           // @ts-ignore
           const desc = getColliderDescConstructor(type)(...Object.values(args));
@@ -312,6 +315,7 @@ function onInit(event: MessageEvent): void {
         step(tick: IEngineLoopTickContext, tasks): void {
           this.world.timestep = tick.delta;
           this.world.step();
+
           // for (let i = 0; i < this.proxyManager.proxies.entries; ++i) {
           //   const proxy = this.proxyManager.getProxy(i) as any;
 
@@ -319,6 +323,8 @@ function onInit(event: MessageEvent): void {
           //     proxy.tick({ delta: 0.016, elapsed: performance.now(), id: 1 });
           //   }
           // }
+
+          this.renderPort.postMessage({ type: 'physics-debug-buffers', ...this.world.debugRender() });
           // @todo: apply world updates to proxies
         },
       };

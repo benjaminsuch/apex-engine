@@ -43,16 +43,16 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     this.comlink = Comlink.wrap<IInternalPhysicsWorkerContext>(this.worker);
   }
 
-  public async init(flags: Uint8Array[]): Promise<void> {
+  public async init(flags: Uint8Array[], renderPort: MessagePort): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
-    this.worker.postMessage({ type: 'init', flags });
+    this.worker.postMessage({ type: 'init', flags, renderPort }, [renderPort]);
 
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
-        reject(`Physics-Worker initialization failed.`);
+        reject(`Physics-Worker initialization failed1.`);
       }, 30_000);
 
       this.worker.onmessage = (event): void => {

@@ -56,15 +56,17 @@ export class EngineLoop {
 
     // Setup important workers
     {
+      const { port1, port2 } = new MessageChannel();
+
       const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
       this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
 
-      await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
+      await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS], port1);
 
       const physicsContext = this.instantiationService.createInstance(PhysicsWorkerContext);
       this.instantiationService.setServiceInstance(IPhysicsWorkerContext, physicsContext);
 
-      await physicsContext.init([Flags.PHYSICS_FLAGS]);
+      await physicsContext.init([Flags.PHYSICS_FLAGS], port2);
     }
 
     // Activate plugins

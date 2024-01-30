@@ -1,7 +1,7 @@
 import '../../launch/bootstrap';
 
 import * as Comlink from 'comlink';
-import { ACESFilmicToneMapping, type Camera, Color, DirectionalLight, Fog, HemisphereLight, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight, LineBasicMaterial, LineSegments, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
 import { InstantiationService } from '../../platform/di/common/InstantiationService';
 import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
@@ -17,6 +17,7 @@ import { RenderProxyManager } from './RenderProxyManager';
 export interface IInternalRenderWorkerContext {
   camera: Camera;
   frameId: number;
+  physicsPort: MessagePort;
   proxyManager: RenderProxyManager;
   renderingInfo: RenderingInfo;
   scene: Scene;
@@ -38,6 +39,7 @@ const instantiationService = new InstantiationService(services);
 const context: IInternalRenderWorkerContext = {
   camera: new PerspectiveCamera(),
   frameId: 0,
+  physicsPort: null!,
   proxyManager: null!,
   renderingInfo: null!,
   scene: new Scene(),
@@ -108,7 +110,7 @@ function onInit(event: MessageEvent): void {
   if (event.data.type === 'init') {
     self.removeEventListener('message', onInit);
 
-    const { canvas, flags, initialHeight, initialWidth } = event.data;
+    const { canvas, flags, initialHeight, initialWidth, physicsPort } = event.data;
 
     Flags.GAME_FLAGS = flags[0];
     Flags.RENDER_FLAGS = flags[1];
@@ -133,12 +135,28 @@ function onInit(event: MessageEvent): void {
     context.scene.add(dirLight);
     context.setSize(initialWidth, initialHeight);
 
+    context.physicsPort = physicsPort;
     context.tickManager = instantiationService.createInstance(TickManager);
     context.proxyManager = instantiationService.createInstance(RenderProxyManager);
     context.renderingInfo = instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
     context.renderingInfo.init();
 
     console.log('Render worker:', context);
+
+    const lines = new LineSegments(
+      new BufferGeometry(),
+      new LineBasicMaterial({ color: 0xffffff, vertexColors: true })
+    );
+
+    context.scene.add(lines);
+
+    context.physicsPort.addEventListener('message', (event) => {
+      // console.log('message from physics:', event.data);
+      lines.visible = true;
+      lines.geometry.setAttribute('position', new BufferAttribute(event.data.vertices, 3));
+      lines.geometry.setAttribute('color', new BufferAttribute(event.data.colors, 4));
+    });
+    context.physicsPort.start();
   }
 }
 

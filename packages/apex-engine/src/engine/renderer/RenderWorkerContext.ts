@@ -36,7 +36,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     this.comlink = Comlink.wrap<IInternalRenderWorkerContext>(this.worker);
   }
 
-  public async init(flags: Uint8Array[]): Promise<void> {
+  public async init(flags: Uint8Array[], physicsPort: MessagePort): Promise<void> {
     if (this.isInitialized) {
       return;
     }
@@ -56,8 +56,9 @@ export class RenderWorkerContext implements IRenderWorkerContext {
           initialHeight: this.canvas.clientHeight,
           initialWidth: this.canvas.clientWidth,
           flags,
+          physicsPort,
         },
-        [offscreenCanvas]
+        [offscreenCanvas, physicsPort]
       );
 
       window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
