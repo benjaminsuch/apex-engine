@@ -144,6 +144,8 @@ export class SceneComponent extends ActorComponent {
 
   public rigidBody: RigidBodyProxy | null = null;
 
+  public colliderShape: RAPIER.ShapeType | null = null;
+
   public collider: ColliderProxy | null = null;
 
   constructor(

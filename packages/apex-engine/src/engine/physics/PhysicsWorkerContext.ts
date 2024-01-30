@@ -1,6 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import * as Comlink from 'comlink';
-import { CapsuleGeometry } from 'three';
+import { BoxGeometry, BufferGeometry, CapsuleGeometry, PlaneGeometry } from 'three';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { type MeshComponent } from '../components/MeshComponent';
@@ -80,19 +80,42 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     }
 
     const rigidBodyId = component.rigidBody.id;
+    let args: any;
 
     if (component.geometry instanceof CapsuleGeometry) {
       const { radius, length } = component.geometry.parameters;
-
-      return this.comlink.registerCollider(RAPIER.ShapeType.Capsule, { rigidBodyId, halfHeight: length * 0.5, radius }).then(({ id, tb }: ICreatedProxyData) => {
-        component.collider = this.instantiationService.createInstance(
-          ColliderProxy,
-          [],
-          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
-          id
-        );
-      });
+      args = { radius, length: length * 0.5 };
     }
+
+    if (component.geometry instanceof PlaneGeometry) {
+      const { height, width } = component.geometry.parameters;
+      args = { height, width };
+    }
+
+    if (component.geometry instanceof BoxGeometry) {
+      const { height, width, depth } = component.geometry.parameters;
+      args = { height, width, depth };
+    }
+
+    if (component.geometry instanceof BufferGeometry) {
+      const position = component.geometry.getAttribute('position').array;
+      const indices = component.geometry.getIndex()!.array;
+
+      args = { position, indices };
+    }
+
+    if (!args || !component.colliderShape) {
+      return;
+    }
+
+    return this.comlink.registerCollider(component.colliderShape, { rigidBodyId, ...args }).then(({ id, tb }: ICreatedProxyData) => {
+      component.collider = this.instantiationService.createInstance(
+        ColliderProxy,
+        [],
+        new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+        id
+      );
+    });
   }
 
   public async registerRigidBody(component: SceneComponent): Promise<void> {

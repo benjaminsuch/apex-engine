@@ -1,3 +1,4 @@
+import type RAPIER from '@dimforge/rapier3d-compat';
 import { Vector3 } from 'three';
 
 import { CLASS, PROP } from '../core/class/decorators';
@@ -6,17 +7,31 @@ import { ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
-import { type Collider } from './Collider';
+import { type Collider, type ColliderProxy } from './Collider';
+import { type IInternalPhysicsWorkerContext } from './Physics.worker';
 
 export class KinematicControllerProxy extends ProxyInstance {
   declare readonly offset: number;
 
   declare movement: [number, number, number];
 
-  constructor(args: [number] = [0], tb: TripleBuffer, public override readonly id: number) {
+  declare readonly collider?: ColliderProxy;
+
+  public worldController: RAPIER.KinematicCharacterController;
+
+  constructor(
+    args: [number] = [0],
+    tb: TripleBuffer,
+    public override readonly id: number,
+    protected readonly physicsContext: IInternalPhysicsWorkerContext
+  ) {
     super(args, tb, id);
 
     this.offset = args[0];
+    this.worldController = this.physicsContext.world.createCharacterController(this.offset);
+    this.worldController.setApplyImpulsesToDynamicBodies(true);
+    this.worldController.enableAutostep(0.7, 0.3, true);
+    this.worldController.enableSnapToGround(0.7);
   }
 
   public override tick(tick: IEngineLoopTickContext): void {
