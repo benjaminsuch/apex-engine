@@ -156,8 +156,11 @@ export class SceneComponent extends ActorComponent {
     super(instantiationService, logger);
   }
 
-  public override beginPlay(): void {
+  public override async beginPlay(): Promise<void> {
     // ? Should we check, if `this.rigidBody` has been set? (`null` is allowed tho)
+    if (this.bodyType) {
+      await this.physicsContext.registerRigidBody(this);
+    }
   }
 
   public setAsRoot(actor: Actor): void {
@@ -249,11 +252,5 @@ export class SceneComponent extends ActorComponent {
     }
 
     this.matrix.copy(_obj.matrixWorld);
-  }
-
-  protected override async onRegister(): Promise<void> {
-    if (this.bodyType) {
-      await this.physicsContext.registerRigidBody(this);
-    }
   }
 }

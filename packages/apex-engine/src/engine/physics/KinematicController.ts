@@ -35,7 +35,9 @@ export class KinematicControllerProxy extends ProxyInstance {
   }
 
   public override tick(tick: IEngineLoopTickContext): void {
-    console.log('movement', ...this.movement);
+    const [x, y, z] = this.movement;
+
+    // this.worldController.computeColliderMovement(characterCollider, { x, y, z });
   }
 }
 

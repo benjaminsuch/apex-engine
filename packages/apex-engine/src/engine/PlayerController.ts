@@ -34,7 +34,7 @@ export class PlayerController extends Controller {
     this.actorTick.tickGroup = ETickGroup.PostPhysics;
   }
 
-  public override tick(tick: IEngineLoopTickContext): void {
+  public override async tick(tick: IEngineLoopTickContext): Promise<void> {
     const inputComponent = this.getPawn().inputComponent;
 
     if (inputComponent) {

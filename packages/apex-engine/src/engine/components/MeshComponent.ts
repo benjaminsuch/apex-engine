@@ -69,9 +69,9 @@ export class MeshComponent extends SceneComponent {
     this.colliderShape = RAPIER.ShapeType.TriMesh;
   }
 
-  protected override async onRegister(): Promise<void> {
+  public override async beginPlay(): Promise<void> {
     // When resolved, the rigid-body is available and we can register the collider
-    await super.onRegister();
+    await super.beginPlay();
     await this.physicsContext.registerCollider(this);
   }
 }

@@ -206,11 +206,11 @@ type ColliderDescConstructor = typeof RAPIER.ColliderDesc.ball
 export type RegisterColliderArgs<T> = { rigidBodyId: ProxyInstance['id'] } & GetColliderArgsByShape<T>;
 
 export interface IInternalPhysicsWorkerContext {
-  world: RAPIER.World;
-  info: PhysicsInfo;
-  renderPort: MessagePort;
-  proxyManager: ProxyManager<IProxyOrigin>;
-  tickManager: TickManager;
+  readonly world: RAPIER.World;
+  readonly info: PhysicsInfo;
+  readonly renderPort: MessagePort;
+  readonly proxyManager: ProxyManager<IProxyOrigin>;
+  readonly tickManager: TickManager;
   /**
    * Creates proxies sent from the game-thread.
    *
@@ -301,8 +301,7 @@ function onInit(event: MessageEvent): void {
             tb: proxyOrigin.tripleBuffer,
           };
         },
-        registerCollider(type, params) {
-          const { rigidBodyId, ...args } = params;
+        registerCollider(type, { rigidBodyId, ...args }) {
           // @ts-ignore
           const desc = getColliderDescConstructor(type)(...Object.values(args));
           const proxyOrigin = instantiationService.createInstance(Collider, this.world.createCollider(desc)) as Collider & IProxyOrigin;
@@ -312,20 +311,19 @@ function onInit(event: MessageEvent): void {
             tb: proxyOrigin.tripleBuffer,
           };
         },
-        step(tick: IEngineLoopTickContext, tasks): void {
+        async step(tick: IEngineLoopTickContext, tasks): Promise<void> {
           this.world.timestep = tick.delta;
           this.world.step();
 
-          // for (let i = 0; i < this.proxyManager.proxies.entries; ++i) {
-          //   const proxy = this.proxyManager.getProxy(i) as any;
+          for (let i = 0; i < this.proxyManager.proxies.entries; ++i) {
+            const proxy = this.proxyManager.getProxy(i) as any;
 
-          //   if (proxy) {
-          //     proxy.tick({ delta: 0.016, elapsed: performance.now(), id: 1 });
-          //   }
-          // }
+            if (proxy) {
+              proxy.tick(tick);
+            }
+          }
 
           this.renderPort.postMessage({ type: 'physics-debug-buffers', ...this.world.debugRender() });
-          // @todo: apply world updates to proxies
         },
       };
 

@@ -1,4 +1,3 @@
-import RAPIER from '@dimforge/rapier3d-compat';
 import * as Comlink from 'comlink';
 import { BoxGeometry, BufferGeometry, CapsuleGeometry, PlaneGeometry } from 'three';
 
@@ -52,7 +51,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
-        reject(`Physics-Worker initialization failed1.`);
+        reject(`Physics-Worker initialization failed.`);
       }, 30_000);
 
       this.worker.onmessage = (event): void => {
@@ -84,6 +83,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 
     if (component.geometry instanceof CapsuleGeometry) {
       const { radius, length } = component.geometry.parameters;
+      // Rapier takes half-length1
       args = { radius, length: length * 0.5 };
     }
 

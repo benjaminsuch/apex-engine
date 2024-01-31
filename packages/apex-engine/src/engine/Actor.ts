@@ -67,14 +67,14 @@ export class Actor {
     this.actorTick = this.instantiationService.createInstance(ActorTickFunction, this);
   }
 
-  public tick(context: IEngineLoopTickContext): void {}
+  public async tick(context: IEngineLoopTickContext): Promise<void> {}
 
-  public beginPlay(): void {
+  public async beginPlay(): Promise<void> {
     this.registerActorTickFunction();
 
     for (const component of this.components) {
       component.registerComponentTickFunction();
-      component.beginPlay();
+      await component.beginPlay();
     }
   }
 

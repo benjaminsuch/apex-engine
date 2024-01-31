@@ -80,7 +80,7 @@ export class World {
 
   public init(gameInstance: GameInstance): void {
     if (this.isInitialized) {
-      this.logger.warn(this.constructor.name, 'Already initialized1.');
+      this.logger.warn(this.constructor.name, 'Already initialized.');
       return;
     }
 
@@ -96,8 +96,7 @@ export class World {
     this.tickGroup = ETickGroup.PrePhysics;
 
     await this.runTickGroup(ETickGroup.PrePhysics);
-    await this.physicsContext.step(tick);
-    await this.runTickGroup(ETickGroup.DuringPhysics);
+    await Promise.all([this.physicsContext.step(tick), this.runTickGroup(ETickGroup.DuringPhysics)]);
     await this.runTickGroup(ETickGroup.PostPhysics);
 
     TickManager.getInstance().endTick();
@@ -119,12 +118,12 @@ export class World {
     }
   }
 
-  public beginPlay(): void {
+  public async beginPlay(): Promise<void> {
     this.logger.debug(this.constructor.name, 'Begin Play');
-    this.getCurrentLevel().beginPlay();
+    await this.getCurrentLevel().beginPlay();
 
     for (const actor of this.actors) {
-      actor.beginPlay();
+      await actor.beginPlay();
     }
 
     // todo: StartPlay via GameMode

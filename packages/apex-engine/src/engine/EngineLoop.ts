@@ -14,11 +14,8 @@ export interface IEngineLoopTickContext {
   elapsed: number;
 }
 
-const TICK_RATE = 60;
-const MS_PER_UPDATE = 1000 / TICK_RATE;
-
 export class EngineLoop {
-  private tickInterval: IntervalReturn;
+  private tickTimeout: TimeoutReturn;
 
   private tickManager: TickManager;
 
@@ -82,8 +79,8 @@ export class EngineLoop {
     await engine.start();
   }
 
-  public async tick(): Promise<IntervalReturn> {
-    this.tickInterval = setInterval(async () => {
+  public async tick(): Promise<TimeoutReturn> {
+    this.tickTimeout = setTimeout(async () => {
       ++this.tickId;
 
       const then = performance.now();
@@ -97,26 +94,13 @@ export class EngineLoop {
       try {
         await ApexEngine.getInstance().tick(currentTick);
       } catch (error) {
-        clearInterval(this.tickInterval as number);
+        clearInterval(this.tickTimeout as number);
         throw error;
       }
 
-      const now = performance.now();
+      this.tickTimeout = await this.tick();
+    });
 
-      if (now - then > MS_PER_UPDATE) {
-        clearInterval(this.tickInterval as number);
-
-        try {
-          await ApexEngine.getInstance().tick(currentTick);
-        } catch (error) {
-          clearInterval(this.tickInterval as number);
-          throw error;
-        }
-
-        this.tickInterval = await this.tick();
-      }
-    }, MS_PER_UPDATE);
-
-    return this.tickInterval;
+    return this.tickTimeout;
   }
 }

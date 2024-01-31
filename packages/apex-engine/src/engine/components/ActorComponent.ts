@@ -33,7 +33,7 @@ export class ActorComponent {
     this.isInitialized = true;
   }
 
-  public beginPlay(): void {}
+  public async beginPlay(): Promise<void> {}
 
   public tick(context: IEngineLoopTickContext): void {}
 

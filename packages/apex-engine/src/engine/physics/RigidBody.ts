@@ -48,7 +48,6 @@ export class RigidBody {
   public readonly angvel: [number, number, number] = [0, 0, 0];
 
   @PROP(serialize(float32, [3]))
-  // @todo: Change back to `0, 0, 0` after successful tests
   public readonly position: [number, number, number] = [0, 4, 0];
 
   @PROP(serialize(float32, [4]))

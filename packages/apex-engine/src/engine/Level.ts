@@ -62,7 +62,7 @@ export class Level {
 
   public initActors(): void {}
 
-  public beginPlay(): void {
+  public async beginPlay(): Promise<void> {
     this.logger.debug(this.constructor.name, 'Begin play');
   }
 
