@@ -1,4 +1,5 @@
 import { getClassSchema, isPropSchema } from './core/class/decorators';
+import { type EProxyThread } from './core/class/specifiers/proxy';
 import { TripleBuffer } from './core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { ProxyManager } from './ProxyManager';
@@ -8,7 +9,12 @@ export abstract class ProxyInstance {
 
   public readonly isProxy: boolean = true;
 
-  constructor(args: unknown[] = [], tb: TripleBuffer, public readonly id: number) {
+  constructor(
+    args: unknown[] = [],
+    tb: TripleBuffer,
+    public readonly id: number,
+    public readonly thread: EProxyThread
+  ) {
     const originClass = Reflect.getMetadata('proxy:origin', this.constructor);
     const schema = getClassSchema(originClass);
 
@@ -32,7 +38,7 @@ export abstract class ProxyInstance {
           accessors = {
             get(this): ProxyInstance | void {
               const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
-              return ProxyManager.getInstance().getProxy(views[idx].getUint32(offset, true));
+              return ProxyManager.getInstance().getProxy(views[idx].getUint32(offset, true), this.thread);
             },
           };
         } else if (type === 'boolean') {
@@ -72,5 +78,5 @@ export abstract class ProxyInstance {
     }
   }
 
-  public tick(tick: IEngineLoopTickContext): void {}
+  public tick(tick: IEngineLoopTickContext): Promise<void> | void {}
 }

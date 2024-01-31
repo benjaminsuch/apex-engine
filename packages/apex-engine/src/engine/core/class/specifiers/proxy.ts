@@ -12,6 +12,7 @@ export interface IProxyConstructionData {
   id: number;
   tb: any;
   args: unknown[];
+  thread: EProxyThread;
 }
 
 export interface IProxyOrigin {

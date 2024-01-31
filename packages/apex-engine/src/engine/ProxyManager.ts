@@ -1,5 +1,6 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
+import { getTargetId } from './core/class/decorators';
 import { EProxyThread, type IProxyOrigin } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { ProxyInstance } from './ProxyInstance';
@@ -44,8 +45,16 @@ export class ProxyManager<T> {
 
   public getProxy(id: number, thread: EProxyThread = this.thread): T | void {
     for (const proxy of this.proxies) {
-      if (proxy.thread === thread && proxy.target instanceof ProxyInstance && proxy.target.id === id) {
-        return proxy.target;
+      if (proxy.thread === thread) {
+        const proxyId = proxy.target instanceof ProxyInstance ? proxy.target.id : getTargetId(proxy.target);
+
+        if (thread === 1) {
+          console.log('proxy target id', getTargetId(proxy.target), proxy.target);
+        }
+
+        if (proxyId === id) {
+          return proxy.target;
+        }
       }
     }
   }

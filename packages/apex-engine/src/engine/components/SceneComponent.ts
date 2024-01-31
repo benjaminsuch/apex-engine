@@ -65,10 +65,11 @@ export class SceneComponentProxy extends RenderProxy {
   constructor(
     args: unknown[] = [],
     tb: TripleBuffer,
-    public override readonly id: number,
-    protected override readonly renderer: IInternalRenderWorkerContext
+    id: number,
+    thread: EProxyThread,
+    renderer: IInternalRenderWorkerContext
   ) {
-    super(args, tb, id, renderer);
+    super(args, tb, id, thread, renderer);
 
     this.sceneObject = new Object3D();
   }

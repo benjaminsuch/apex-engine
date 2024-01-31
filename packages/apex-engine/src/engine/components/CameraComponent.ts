@@ -33,10 +33,11 @@ export class CameraComponentProxy extends SceneComponentProxy {
   constructor(
     [fov, aspect, near, far]: [number, number, number, number],
     tb: TripleBuffer,
-    public override readonly id: number,
-    protected override readonly renderer: IInternalRenderWorkerContext
+    id: number,
+    thread: EProxyThread,
+    renderer: IInternalRenderWorkerContext
   ) {
-    super([aspect, far, fov, near], tb, id, renderer);
+    super([aspect, far, fov, near], tb, id, thread, renderer);
 
     const camera = this.renderer.camera as PerspectiveCamera;
     this.sceneObject = new PerspectiveCamera(fov, camera.aspect, near, far);

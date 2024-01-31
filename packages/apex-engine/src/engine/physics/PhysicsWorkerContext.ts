@@ -5,7 +5,7 @@ import { type IInjectibleService, IInstantiationService, InstantiationService } 
 import { type MeshComponent } from '../components/MeshComponent';
 import { type SceneComponent } from '../components/SceneComponent';
 import { getTargetId } from '../core/class/decorators';
-import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
@@ -83,7 +83,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 
     if (component.geometry instanceof CapsuleGeometry) {
       const { radius, length } = component.geometry.parameters;
-      // Rapier takes half-length1
+      // Rapier takes half-length
       args = { radius, length: length * 0.5 };
     }
 
@@ -113,7 +113,8 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
         ColliderProxy,
         [],
         new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
-        id
+        id,
+        EProxyThread.Game
       );
     });
   }
@@ -131,7 +132,8 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
         RigidBodyProxy,
         [],
         new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
-        id
+        id,
+        EProxyThread.Game
       );
     });
   }
@@ -151,6 +153,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
         id: getTargetId(target) as number,
         tb: target.tripleBuffer,
         args,
+        thread: EProxyThread.Game,
       };
     }
 

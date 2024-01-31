@@ -2,7 +2,7 @@ import * as Comlink from 'comlink';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { getTargetId } from '../core/class/decorators';
-import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { type IInternalRenderWorkerContext } from './Render.worker';
@@ -104,6 +104,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
         id: getTargetId(target) as number,
         tb: target.tripleBuffer,
         args,
+        thread: EProxyThread.Game,
       };
     }
 

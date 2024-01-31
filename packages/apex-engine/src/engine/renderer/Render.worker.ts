@@ -7,7 +7,7 @@ import { InstantiationService } from '../../platform/di/common/InstantiationServ
 import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type SceneComponentProxy } from '../components/SceneComponent';
-import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
+import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
 import { ETickGroup, TickManager } from '../TickManager';
@@ -49,7 +49,7 @@ const context: IInternalRenderWorkerContext = {
     logger.debug('Creating proxies:', proxies);
 
     for (let i = 0; i < proxies.length; ++i) {
-      const { constructor, id, tb, args } = proxies[i];
+      const { constructor, id, tb, args, thread } = proxies[i];
       const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
 
       if (!ProxyConstructor) {
@@ -62,6 +62,7 @@ const context: IInternalRenderWorkerContext = {
         args,
         new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
         id,
+        thread,
         this
       ) as SceneComponentProxy;
 

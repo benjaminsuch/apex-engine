@@ -14,10 +14,11 @@ export class MeshComponentProxy extends SceneComponentProxy {
   constructor(
     [geometryData, materialData]: [IGeometryData | undefined, IMaterialJSON | undefined] = [undefined, undefined],
     tb: TripleBuffer,
-    public override readonly id: number,
-    protected override readonly renderer: IInternalRenderWorkerContext
+    id: number,
+    thread: EProxyThread,
+    renderer: IInternalRenderWorkerContext
   ) {
-    super([geometryData, materialData], tb, id, renderer);
+    super([geometryData, materialData], tb, id, thread, renderer);
 
     const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 

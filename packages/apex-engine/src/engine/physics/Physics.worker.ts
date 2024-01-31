@@ -13,7 +13,7 @@ import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
 import { type ProxyInstance } from '../ProxyInstance';
 import { ProxyManager } from '../ProxyManager';
-import { TickManager } from '../TickManager';
+import { ETickGroup, TickManager } from '../TickManager';
 import { Collider } from './Collider';
 import { KinematicControllerProxy } from './KinematicController';
 import { PhysicsInfo } from './PhysicsInfo';
@@ -273,7 +273,7 @@ function onInit(event: MessageEvent): void {
           logger.debug('Creating proxies:', proxies);
 
           for (let i = 0; i < proxies.length; ++i) {
-            const { constructor, id, tb, args } = proxies[i];
+            const { constructor, id, tb, args, thread } = proxies[i];
             const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
 
             if (!ProxyConstructor) {
@@ -286,9 +286,10 @@ function onInit(event: MessageEvent): void {
               args,
               new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
               id,
-              this
+              thread,
+              this,
             );
-
+            console.log('proxy', proxy);
             this.proxyManager.registerProxy(proxy);
           }
         },
@@ -312,10 +313,15 @@ function onInit(event: MessageEvent): void {
           };
         },
         async step(tick: IEngineLoopTickContext, tasks): Promise<void> {
+          this.tickManager.startTick(tick);
+          await this.tickManager.runTickGroup(ETickGroup.PrePhysics);
+          await this.tickManager.runTickGroup(ETickGroup.DuringPhysics);
+
           this.world.timestep = tick.delta;
           this.world.step();
 
-          this.proxyManager.tick(tick);
+          await this.tickManager.runTickGroup(ETickGroup.PostPhysics);
+          this.tickManager.endTick();
 
           this.renderPort.postMessage({ type: 'physics-debug-buffers', ...this.world.debugRender() });
         },
