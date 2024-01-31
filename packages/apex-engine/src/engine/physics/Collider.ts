@@ -10,11 +10,10 @@ import { ProxyInstance } from '../ProxyInstance';
 export class ColliderProxy extends ProxyInstance {
   declare readonly handle: number;
 
-  public override tick(tick: IEngineLoopTickContext): void {
-  }
+  public override tick(tick: IEngineLoopTickContext): void {}
 }
 
-@CLASS(proxy(EProxyThread.Game, ColliderProxy, EProxyThread.Physics))
+@CLASS(proxy(EProxyThread.Game, ColliderProxy))
 export class Collider {
   declare readonly tripleBuffer: TripleBuffer;
 

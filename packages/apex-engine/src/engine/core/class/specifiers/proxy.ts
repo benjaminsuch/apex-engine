@@ -31,7 +31,7 @@ export enum EProxyThread {
  * @param proxyClass The class which is used to instantiate the proxy on the render-thread.
  * @returns An anonymous class that is derived from the original class.
  */
-export function proxy(thread: EProxyThread, proxyClass: TClass, foo?: EProxyThread) {
+export function proxy(thread: EProxyThread, proxyClass: TClass) {
   return (constructor: TClass): TClass => {
     const schema = getClassSchema(constructor);
     const bufSize = Reflect.getMetadata('byteLength', constructor);
@@ -84,9 +84,10 @@ export function proxy(thread: EProxyThread, proxyClass: TClass, foo?: EProxyThre
 
         const buf = new ArrayBuffer(bufSize);
         const dv = new DataView(buf);
+        const originThread = ProxyManager.getInstance().thread;
 
         this.byteView = new Uint8Array(buf);
-        this.tripleBuffer = new TripleBuffer(foo ? Flags.getFlagsByThread(foo) : Flags.GAME_FLAGS, bufSize);
+        this.tripleBuffer = new TripleBuffer(Flags.getFlagsByThread(originThread), bufSize);
 
         for (const key in schema) {
           const propSchema = schema[key];

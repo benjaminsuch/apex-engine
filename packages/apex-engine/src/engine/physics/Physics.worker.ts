@@ -261,7 +261,7 @@ function onInit(event: MessageEvent): void {
     const { flags, renderPort } = event.data;
 
     Flags.PHYSICS_FLAGS = flags[0];
-    console.log('Flags.PHYSICS_FLAGS', Flags.PHYSICS_FLAGS);
+
     RAPIER.init().then(() => {
       const context: IInternalPhysicsWorkerContext = {
         world: new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 }),

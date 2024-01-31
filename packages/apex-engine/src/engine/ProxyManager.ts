@@ -2,7 +2,6 @@ import { IInstantiationService } from '../platform/di/common/InstantiationServic
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { EProxyThread } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
-import { Flags } from './Flags';
 import { ETickGroup, TickFunction } from './TickManager';
 
 export class ProxyManager<T> {
@@ -162,7 +161,7 @@ export class RegisteredProxy<T> {
 }
 
 export class EnqueuedProxy<T> extends RegisteredProxy<T> {
-  constructor(public override readonly thread: EProxyThread, public override readonly target: T, public readonly args: unknown[]) {
+  constructor(thread: EProxyThread, target: T, public readonly args: unknown[]) {
     super(thread, target);
   }
 }

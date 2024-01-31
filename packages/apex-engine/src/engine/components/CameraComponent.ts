@@ -54,7 +54,6 @@ export class CameraComponentProxy extends SceneComponentProxy {
     this.sceneObject.fov = this.fov;
     this.sceneObject.near = this.near;
     this.sceneObject.zoom = this.zoom;
-    // this.sceneObject.updateProjectionMatrix();
   }
 }
 

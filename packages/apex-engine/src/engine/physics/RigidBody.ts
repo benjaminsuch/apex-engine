@@ -26,7 +26,7 @@ export class RigidBodyProxy extends ProxyInstance {
  * This class is instantiated on the physics thread and creates a proxy on the
  * game thread.
  */
-@CLASS(proxy(EProxyThread.Game, RigidBodyProxy, EProxyThread.Physics))
+@CLASS(proxy(EProxyThread.Game, RigidBodyProxy))
 export class RigidBody {
   declare readonly tripleBuffer: TripleBuffer;
 

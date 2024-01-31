@@ -7,7 +7,7 @@ import { InstantiationService } from '../../platform/di/common/InstantiationServ
 import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type SceneComponentProxy } from '../components/SceneComponent';
-import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
 import { ETickGroup, TickManager } from '../TickManager';
