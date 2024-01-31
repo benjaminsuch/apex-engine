@@ -261,14 +261,14 @@ function onInit(event: MessageEvent): void {
     const { flags, renderPort } = event.data;
 
     Flags.PHYSICS_FLAGS = flags[0];
-
+    console.log('Flags.PHYSICS_FLAGS', Flags.PHYSICS_FLAGS);
     RAPIER.init().then(() => {
       const context: IInternalPhysicsWorkerContext = {
         world: new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 }),
         info: instantiationService.createInstance(PhysicsInfo, Flags.PHYSICS_FLAGS, undefined),
         renderPort,
         tickManager: instantiationService.createInstance(TickManager),
-        proxyManager: instantiationService.createInstance(ProxyManager, proxyConstructors),
+        proxyManager: instantiationService.createInstance(ProxyManager, EProxyThread.Physics, proxyConstructors),
         createProxies(proxies) {
           logger.debug('Creating proxies:', proxies);
 
@@ -289,7 +289,7 @@ function onInit(event: MessageEvent): void {
               this
             );
 
-            this.proxyManager.registerProxy(EProxyThread.Render, proxy);
+            this.proxyManager.registerProxy(proxy);
           }
         },
         registerRigidBody(type) {
@@ -315,13 +315,7 @@ function onInit(event: MessageEvent): void {
           this.world.timestep = tick.delta;
           this.world.step();
 
-          for (let i = 0; i < this.proxyManager.proxies.entries; ++i) {
-            const proxy = this.proxyManager.getProxy(i) as any;
-
-            if (proxy) {
-              proxy.tick(tick);
-            }
-          }
+          this.proxyManager.tick(tick);
 
           this.renderPort.postMessage({ type: 'physics-debug-buffers', ...this.world.debugRender() });
         },

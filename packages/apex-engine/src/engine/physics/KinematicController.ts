@@ -15,7 +15,7 @@ export class KinematicControllerProxy extends ProxyInstance {
 
   declare movement: [number, number, number];
 
-  declare readonly collider?: ColliderProxy;
+  declare readonly collider?: Collider;
 
   public worldController: RAPIER.KinematicCharacterController;
 
@@ -44,10 +44,12 @@ export class KinematicControllerProxy extends ProxyInstance {
 @CLASS(proxy(EProxyThread.Physics, KinematicControllerProxy))
 export class KinematicController {
   @PROP(serialize(ref))
-  public collider: Collider | null = null;
+  public collider: ColliderProxy | null = null;
 
   @PROP(serialize(vec3))
   public movement: Vector3 = new Vector3();
 
   constructor(public readonly offset: number) {}
+
+  public tick(): void {}
 }

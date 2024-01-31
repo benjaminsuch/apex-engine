@@ -17,26 +17,15 @@ export class GameProxyManager extends ProxyManager<IProxyOrigin> {
     @IRenderWorkerContext protected readonly renderContext: IRenderWorkerContext,
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
-    super({}, instantiationService, logger);
+    super(EProxyThread.Game, {}, instantiationService, logger);
     this.logger.debug(this.constructor.name, this);
-  }
-
-  public override tick(tick: IEngineLoopTickContext): void {
-    super.tick(tick);
-
-    for (let i = 0; i < this.proxies.entries; ++i) {
-      const proxy = this.proxies.getProxyByIndex(i);
-
-      if (proxy) {
-        proxy.target.tripleBuffer.copyToWriteBuffer(proxy.target.byteView);
-      }
-    }
   }
 
   protected override onProcessProxyQueue(tick: IEngineLoopTickContext): boolean {
     // No need to use `await` here, we just send the proxies and are done.
     this.renderContext.createProxies(this.proxyQueue[EProxyThread.Render]);
     this.physicsContext.createProxies(this.proxyQueue[EProxyThread.Physics]);
+
     return true;
   }
 }

@@ -17,11 +17,7 @@ export abstract class ProxyInstance {
       return;
     }
 
-    const views = [
-      new DataView(tb.buffers[0]),
-      new DataView(tb.buffers[1]),
-      new DataView(tb.buffers[2]),
-    ];
+    const views = [new DataView(tb.buffers[0]), new DataView(tb.buffers[1]), new DataView(tb.buffers[2])];
 
     for (const key in schema) {
       const propSchema = schema[key];

@@ -22,8 +22,8 @@ export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: s
 
 export enum EProxyThread {
   Game,
-  Render,
   Physics,
+  Render,
   MAX,
 }
 
@@ -31,7 +31,7 @@ export enum EProxyThread {
  * @param proxyClass The class which is used to instantiate the proxy on the render-thread.
  * @returns An anonymous class that is derived from the original class.
  */
-export function proxy(thread: EProxyThread, proxyClass: TClass) {
+export function proxy(thread: EProxyThread, proxyClass: TClass, foo?: EProxyThread) {
   return (constructor: TClass): TClass => {
     const schema = getClassSchema(constructor);
     const bufSize = Reflect.getMetadata('byteLength', constructor);
@@ -86,7 +86,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
         const dv = new DataView(buf);
 
         this.byteView = new Uint8Array(buf);
-        this.tripleBuffer = new TripleBuffer(Flags.GAME_FLAGS, bufSize);
+        this.tripleBuffer = new TripleBuffer(foo ? Flags.getFlagsByThread(foo) : Flags.GAME_FLAGS, bufSize);
 
         for (const key in schema) {
           const propSchema = schema[key];
@@ -132,6 +132,30 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
                   },
                   set(val: number | Float32Array): void {
                     setNumber(Float32Array, val, dv, offset);
+                  },
+                };
+                break;
+              case 'float64':
+                setNumber(Float64Array, initialVal, dv, offset);
+
+                if (isArray) {
+                  Reflect.defineMetadata(
+                    'value',
+                    new Float64Array(buf, offset, size / Float64Array.BYTES_PER_ELEMENT),
+                    this,
+                    key
+                  );
+                }
+
+                accessors = {
+                  get(): number | Float64Array {
+                    console.log('float64 get:', dv.getFloat64(offset, true));
+                    return isArray
+                      ? Reflect.getOwnMetadata('value', this, key)
+                      : dv.getFloat64(offset, true);
+                  },
+                  set(val: number | Float64Array): void {
+                    setNumber(Float64Array, val, dv, offset);
                   },
                 };
                 break;
@@ -233,7 +257,6 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
 
                 accessors = {
                   get(this): Quaternion {
-                    // console.log('quat', dv.getFloat32(offset, true), dv.getFloat32(offset + 4, true), dv.getFloat32(offset + 8, true), dv.getFloat32(offset + 12, true));
                     return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: Quaternion): void {
@@ -255,7 +278,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
                     return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: InstanceType<TClass>): void {
-                    const refId = getTargetId(val) ?? id(val);
+                    const refId = val.isProxy ? val.id : getTargetId(val) ?? id(val);
                     dv.setUint32(offset, refId, true);
 
                     Reflect.defineMetadata('value', val, this, key);

@@ -7,7 +7,7 @@ import { InstantiationService } from '../../platform/di/common/InstantiationServ
 import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
 import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type SceneComponentProxy } from '../components/SceneComponent';
-import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
+import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
 import { ETickGroup, TickManager } from '../TickManager';
@@ -65,7 +65,7 @@ const context: IInternalRenderWorkerContext = {
         this
       ) as SceneComponentProxy;
 
-      this.proxyManager.registerProxy(EProxyThread.Render, proxy);
+      this.proxyManager.registerProxy(proxy);
       this.scene.add(proxy.sceneObject);
     }
   },

@@ -4,11 +4,17 @@ import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { float64, serialize } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
 
-export class ColliderProxy extends ProxyInstance {}
+export class ColliderProxy extends ProxyInstance {
+  declare readonly handle: number;
 
-@CLASS(proxy(EProxyThread.Game, ColliderProxy))
+  public override tick(tick: IEngineLoopTickContext): void {
+  }
+}
+
+@CLASS(proxy(EProxyThread.Game, ColliderProxy, EProxyThread.Physics))
 export class Collider {
   declare readonly tripleBuffer: TripleBuffer;
 
@@ -20,4 +26,6 @@ export class Collider {
   constructor(public readonly worldCollider: RAPIER.Collider) {
     this.handle = this.worldCollider.handle;
   }
+
+  public tick(): void {}
 }

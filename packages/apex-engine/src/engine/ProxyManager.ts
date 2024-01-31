@@ -2,6 +2,7 @@ import { IInstantiationService } from '../platform/di/common/InstantiationServic
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { EProxyThread } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
+import { Flags } from './Flags';
 import { ETickGroup, TickFunction } from './TickManager';
 
 export class ProxyManager<T> {
@@ -27,7 +28,7 @@ export class ProxyManager<T> {
     if (idx === -1) {
       const enqueuedProxy = new EnqueuedProxy(thread, proxy, args);
       enqueuedProxy.index = this.proxyQueue[thread].push(enqueuedProxy) - 1;
-      this.registerProxy(thread, proxy);
+      this.registerProxy(proxy, thread);
       return true;
     }
 
@@ -36,14 +37,14 @@ export class ProxyManager<T> {
 
   public readonly proxies: ProxyRegistry<RegisteredProxy<T>>;
 
-  public registerProxy(thread: EProxyThread, proxy: T): void {
+  public registerProxy(proxy: T, thread: EProxyThread = this.thread): void {
     const registeredProxy = new RegisteredProxy(thread, proxy);
     registeredProxy.index = this.proxies.register(registeredProxy);
   }
 
-  public getProxy(id: number): T | void {
+  public getProxy(id: number, thread: EProxyThread = this.thread): T | void {
     for (const proxy of this.proxies) {
-      if ((proxy.target as any).id === id) {
+      if (proxy.thread === thread && (proxy.target as any).id === id) {
         return proxy.target;
       }
     }
@@ -52,6 +53,7 @@ export class ProxyManager<T> {
   protected managerTick: TickFunction<any>;
 
   constructor(
+    public readonly thread: EProxyThread,
     private readonly proxyConstructors: Record<string, TClass> = {},
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger
@@ -78,6 +80,18 @@ export class ProxyManager<T> {
     if (this.proxyQueue.length > 0) {
       if (this.onProcessProxyQueue(tick)) {
         this.proxyQueue = [];
+      }
+    }
+
+    for (let i = 0; i < this.proxies.entries; ++i) {
+      const proxy = this.proxies.getProxyByIndex(i);
+
+      if (proxy) {
+        const { thread, target } = proxy;
+
+        if (thread !== this.thread) {
+          (target as any).tripleBuffer.copyToWriteBuffer((target as any).byteView);
+        }
       }
     }
   }
