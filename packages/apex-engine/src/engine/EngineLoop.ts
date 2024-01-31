@@ -99,7 +99,7 @@ export class EngineLoop {
       }
 
       this.tickTimeout = await this.tick();
-    });
+    }, 1);
 
     return this.tickTimeout;
   }
