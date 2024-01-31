@@ -1,10 +1,13 @@
 import type RAPIER from '@dimforge/rapier3d-compat';
 
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { CLASS, PROP } from '../core/class/decorators';
-import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
 import { float32, float64, int8, serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
+import { TickFunction } from '../TickManager';
 
 export class RigidBodyProxy extends ProxyInstance {
   declare readonly handle: number;
@@ -27,7 +30,7 @@ export class RigidBodyProxy extends ProxyInstance {
  * game thread.
  */
 @CLASS(proxy(EProxyThread.Game, RigidBodyProxy))
-export class RigidBody {
+export class RigidBody implements IProxyOrigin {
   declare readonly tripleBuffer: TripleBuffer;
 
   declare readonly byteView: Uint8Array;
@@ -53,14 +56,28 @@ export class RigidBody {
   @PROP(serialize(float32, [4]))
   public readonly rotation: [number, number, number, number] = [0, 0, 0, 0];
 
-  constructor(public readonly worldBody: RAPIER.RigidBody) {
+  public readonly bodyTick: RigidBodyTickFunction;
+
+  constructor(
+    public readonly worldBody: RAPIER.RigidBody,
+    @IInstantiationService protected readonly instantiationService: IInstantiationService
+  ) {
     this.handle = this.worldBody.handle;
     this.bodyType = this.worldBody.bodyType();
+    this.bodyTick = this.instantiationService.createInstance(RigidBodyTickFunction, this);
 
+    this.registerTickFunction();
     this.applyWorldBodyTransformations();
   }
 
-  public tick(): void {}
+  public async tick(context: IEngineLoopTickContext): Promise<void> {
+    this.applyWorldBodyTransformations();
+  }
+
+  protected registerTickFunction(): void {
+    this.bodyTick.canTick = true;
+    this.bodyTick.register();
+  }
 
   protected applyWorldBodyTransformations(): void {
     this.angularDamping = this.worldBody.angularDamping();
@@ -90,5 +107,11 @@ export class RigidBody {
       this.angvel[1] = y;
       this.angvel[2] = z;
     }
+  }
+}
+
+class RigidBodyTickFunction extends TickFunction<RigidBody> {
+  public override run(context: IEngineLoopTickContext): void {
+    this.target.tick(context);
   }
 }

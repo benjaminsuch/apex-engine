@@ -35,7 +35,7 @@ export class ActorComponent {
 
   public async beginPlay(): Promise<void> {}
 
-  public tick(context: IEngineLoopTickContext): void {}
+  public async tick(context: IEngineLoopTickContext): Promise<void> {}
 
   public registerWithActor(actor: Actor): void {
     if (actor.hasComponent(this)) {

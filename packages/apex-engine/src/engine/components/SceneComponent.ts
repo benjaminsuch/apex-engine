@@ -5,7 +5,7 @@ import { IInstantiationService } from '../../platform/di/common/InstantiationSer
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type Actor } from '../Actor';
 import { CLASS, PROP } from '../core/class/decorators';
-import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
@@ -88,7 +88,7 @@ export class SceneComponentProxy extends RenderProxy {
 }
 
 @CLASS(proxy(EProxyThread.Render, SceneComponentProxy))
-export class SceneComponent extends ActorComponent {
+export class SceneComponent extends ActorComponent implements IProxyOrigin {
   declare readonly byteView: Uint8Array;
 
   declare readonly tripleBuffer: TripleBuffer;
@@ -161,6 +161,10 @@ export class SceneComponent extends ActorComponent {
     if (this.bodyType) {
       await this.physicsContext.registerRigidBody(this);
     }
+  }
+
+  public override async tick(context: IEngineLoopTickContext): Promise<void> {
+    await super.tick(context);
   }
 
   public setAsRoot(actor: Actor): void {

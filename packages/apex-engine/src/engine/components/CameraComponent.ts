@@ -59,10 +59,6 @@ export class CameraComponentProxy extends SceneComponentProxy {
 
 @CLASS(proxy(EProxyThread.Render, CameraComponentProxy))
 export class CameraComponent extends SceneComponent {
-  declare readonly byteView: Uint8Array;
-
-  declare readonly tripleBuffer: TripleBuffer;
-
   @PROP(serialize(float32))
   public aspect: number = 1;
 

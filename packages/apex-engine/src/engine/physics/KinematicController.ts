@@ -2,7 +2,7 @@ import type RAPIER from '@dimforge/rapier3d-compat';
 import { Vector3 } from 'three';
 
 import { CLASS, PROP } from '../core/class/decorators';
-import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
 import { ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
@@ -42,7 +42,11 @@ export class KinematicControllerProxy extends ProxyInstance {
 }
 
 @CLASS(proxy(EProxyThread.Physics, KinematicControllerProxy))
-export class KinematicController {
+export class KinematicController implements IProxyOrigin {
+  declare readonly tripleBuffer: TripleBuffer;
+
+  declare readonly byteView: Uint8Array;
+
   @PROP(serialize(ref))
   public collider: ColliderProxy | null = null;
 
@@ -51,5 +55,5 @@ export class KinematicController {
 
   constructor(public readonly offset: number) {}
 
-  public tick(): void {}
+  public async tick(context: IEngineLoopTickContext): Promise<void> {}
 }

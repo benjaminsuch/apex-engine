@@ -44,7 +44,7 @@ export class ProxyManager<T> {
 
   public getProxy(id: number, thread: EProxyThread = this.thread): T | void {
     for (const proxy of this.proxies) {
-      if (proxy.thread === thread && (proxy.target as any).id === id) {
+      if (proxy.thread === thread && proxy.target instanceof ProxyInstance && proxy.target.id === id) {
         return proxy.target;
       }
     }

@@ -1,5 +1,6 @@
 import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
+import { type IEngineLoopTickContext } from '../../../EngineLoop';
 import { Flags } from '../../../Flags';
 import { ProxyManager } from '../../../ProxyManager';
 import { TripleBuffer } from '../../memory/TripleBuffer';
@@ -16,6 +17,7 @@ export interface IProxyConstructionData {
 export interface IProxyOrigin {
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
+  tick(tick: IEngineLoopTickContext): Promise<void>;
 }
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
@@ -40,7 +42,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
     // `RenderProxy`, when we construct the proxy on the render-thread.
     Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
 
-    return class extends constructor implements IProxyOrigin {
+    return class extends constructor {
       // @ts-ignore
       public static override readonly name: string = constructor.name;
 
