@@ -1,7 +1,8 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { EProxyThread } from './core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
+import { ProxyInstance } from './ProxyInstance';
 import { ETickGroup, TickFunction } from './TickManager';
 
 export class ProxyManager<T> {
@@ -86,10 +87,10 @@ export class ProxyManager<T> {
       const proxy = this.proxies.getProxyByIndex(i);
 
       if (proxy) {
-        const { thread, target } = proxy;
+        const target = proxy.target as IProxyOrigin;
 
-        if (thread !== this.thread) {
-          (target as any).tripleBuffer.copyToWriteBuffer((target as any).byteView);
+        if (!(target instanceof ProxyInstance)) {
+          target.tripleBuffer.copyToWriteBuffer(target.byteView);
         }
       }
     }

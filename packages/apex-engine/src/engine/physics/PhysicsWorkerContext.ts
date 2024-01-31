@@ -9,7 +9,7 @@ import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstr
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
-import { type EnqueuedProxy, ProxyManager, type RegisteredProxy } from '../ProxyManager';
+import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { ColliderProxy } from './Collider';
 import { type ICreatedProxyData, type IInternalPhysicsWorkerContext } from './Physics.worker';
 import PhysicsWorker from './Physics.worker?worker';
@@ -115,8 +115,6 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
         new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
         id
       );
-
-      ProxyManager.getInstance().registerProxy(component.collider as any);
     });
   }
 
