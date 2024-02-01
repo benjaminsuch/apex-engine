@@ -1,10 +1,5 @@
-import { type Vector3 } from 'three';
-
 import { filterArgs } from '../core/class/specifiers/proxy';
 import { type ProxyInstance } from '../ProxyInstance';
-import { type ColliderProxy } from './Collider';
-import { type KinematicControllerProxy } from './KinematicController';
-import { type RigidBodyProxy } from './RigidBody';
 
 export type AnyPhysicsWorkerTask = PhysicsWorkerTask<ProxyInstance, string, any[]>;
 
@@ -43,24 +38,6 @@ export abstract class PhysicsWorkerTask<T extends ProxyInstance, N extends strin
       proxy: this.target.id,
       name: this.name,
       params: filterArgs(this.params),
-    };
-  }
-}
-
-export type KinematicTranslateTaskParams = [KinematicControllerProxy['id'], ColliderProxy['id'], Vector3];
-
-export class KinematicTranslateTask extends PhysicsWorkerTask<RigidBodyProxy, 'kinematicTranslate', KinematicTranslateTaskParams> {
-  constructor(target: RigidBodyProxy, params: KinematicTranslateTaskParams) {
-    super(target, 'kinematicTranslate', params);
-  }
-
-  public override toJSON(): PhysicsWorkerTaskJSON {
-    const [controllerId, colliderId, { x, y, z }] = this.params;
-
-    return {
-      proxy: this.target.id,
-      name: this.name,
-      params: [controllerId, colliderId, { x, y, z }],
     };
   }
 }

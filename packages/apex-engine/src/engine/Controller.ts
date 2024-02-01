@@ -37,6 +37,9 @@ export class Controller extends Actor {
     await super.beginPlay();
 
     this.kinematicController = await this.physicsContext.registerKinematicController({ offset: 0.1 });
+    this.kinematicController.setApplyImpulsesToDynamicBodies(true);
+    this.kinematicController.enableAutostep(0.7, 0.3, true);
+    this.kinematicController.enableSnapToGround(0.7);
   }
 
   public possess(pawn: Pawn): void {

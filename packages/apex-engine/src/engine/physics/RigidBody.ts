@@ -12,7 +12,7 @@ import { TickFunction } from '../TickManager';
 import { type Collider, type ColliderProxy } from './Collider';
 import { type KinematicController, type KinematicControllerProxy } from './KinematicController';
 import { type IInternalPhysicsWorkerContext } from './Physics.worker';
-import { KinematicTranslateTask, PhysicsTaskManager } from './PhysicsTaskManager';
+import { PhysicsTaskManager, PhysicsWorkerTask, type PhysicsWorkerTaskJSON } from './PhysicsTaskManager';
 
 export class RigidBodyProxy extends ProxyInstance {
   declare readonly handle: number;
@@ -31,6 +31,18 @@ export class RigidBodyProxy extends ProxyInstance {
 
   public kinematicTranslate(controller: KinematicControllerProxy, collider: ColliderProxy, movement: Vector3): void {
     PhysicsTaskManager.addTask(new KinematicTranslateTask(this, [controller.id, collider.id, movement]));
+  }
+
+  public setAdditionalMass(mass: number): void {
+    PhysicsTaskManager.addTask(new SetAdditionalMassTask(this, mass));
+  }
+
+  public setLinearDamping(damping: number): void {
+    PhysicsTaskManager.addTask(new SetLinearDampingTask(this, damping));
+  }
+
+  public setTranslation(vec: Vector3): void {
+    PhysicsTaskManager.addTask(new SetTranslationTask(this, [vec.x, vec.y, vec.z]));
   }
 }
 
@@ -137,5 +149,43 @@ export class RigidBody implements IProxyOrigin {
 class RigidBodyTickFunction extends TickFunction<RigidBody> {
   public override run(context: IEngineLoopTickContext): void {
     this.target.tick(context);
+  }
+}
+
+type KinematicTranslateTaskParams = [KinematicControllerProxy['id'], ColliderProxy['id'], Vector3];
+
+class KinematicTranslateTask extends PhysicsWorkerTask<RigidBodyProxy, 'kinematicTranslate', KinematicTranslateTaskParams> {
+  constructor(target: RigidBodyProxy, params: KinematicTranslateTaskParams) {
+    super(target, 'kinematicTranslate', params);
+  }
+
+  public override toJSON(): PhysicsWorkerTaskJSON {
+    const [controllerId, colliderId, { x, y, z }] = this.params;
+
+    return {
+      proxy: this.target.id,
+      name: this.name,
+      params: [controllerId, colliderId, { x, y, z }],
+    };
+  }
+}
+
+class SetAdditionalMassTask extends PhysicsWorkerTask<RigidBodyProxy, 'setAdditionalMass', [number]> {
+  constructor(target: RigidBodyProxy, mass: number) {
+    super(target, 'setAdditionalMass', [mass]);
+  }
+}
+
+class SetLinearDampingTask extends PhysicsWorkerTask<RigidBodyProxy, 'setLinearDamping', [number]> {
+  constructor(target: RigidBodyProxy, mass: number) {
+    super(target, 'setLinearDamping', [mass]);
+  }
+}
+
+type SetTranslationTaskParams = [number, number, number];
+
+class SetTranslationTask extends PhysicsWorkerTask<RigidBodyProxy, 'setTranslation', SetTranslationTaskParams> {
+  constructor(target: RigidBodyProxy, params: SetTranslationTaskParams) {
+    super(target, 'setTranslation', params);
   }
 }
