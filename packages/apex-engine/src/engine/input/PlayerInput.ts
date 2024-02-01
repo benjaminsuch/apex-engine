@@ -38,6 +38,7 @@ export class PlayerInput {
 
   public processInput(inputComponent: InputComponent, delta: number): void {
     let bindingsToExecute: InputActionBinding[] = [];
+
     for (const key of this.keysToConsume) {
       const actionMappings = this.keyMappings[key] ?? [];
 

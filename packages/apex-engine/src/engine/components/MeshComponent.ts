@@ -71,7 +71,7 @@ export class MeshComponent extends SceneComponent {
   }
 
   public override async beginPlay(): Promise<void> {
-    // When resolved, the rigid-body is available and we can register the collider
+    // 1When resolved, the rigid-body is available and we can register the collider
     await super.beginPlay();
     await this.physicsContext.registerCollider(this);
   }

@@ -56,7 +56,7 @@ export class KinematicTranslateTask extends PhysicsWorkerTask<RigidBodyProxy, 'k
 
   public override toJSON(): PhysicsWorkerTaskJSON {
     const [controllerId, colliderId, { x, y, z }] = this.params;
-    // console.log('movement', x, y, z);
+
     return {
       proxy: this.target.id,
       name: this.name,

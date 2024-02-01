@@ -74,10 +74,10 @@ export class RigidBody implements IProxyOrigin {
   ) {
     this.handle = this.worldBody.handle;
     this.bodyType = this.worldBody.bodyType();
-    console.log('rigid body', this);
+
     this.bodyTick = this.instantiationService.createInstance(RigidBodyTickFunction, this);
-    // this.bodyTick.canTick = true;
-    // this.bodyTick.register();
+    this.bodyTick.canTick = true;
+    this.bodyTick.register();
 
     this.applyWorldBodyTransformations();
   }

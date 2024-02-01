@@ -298,8 +298,6 @@ function onInit(event: MessageEvent): void {
         },
         registerCollider(type, { rigidBodyId, ...args }) {
           // @ts-ignore
-          // console.log('collider', ...Object.values(args));
-          // @ts-ignore
           const desc = getColliderDescConstructor(type)(...Object.values(args));
           const proxyOrigin = instantiationService.createInstance(Collider, desc, rigidBodyId, this);
 
@@ -320,7 +318,6 @@ function onInit(event: MessageEvent): void {
           let task: PhysicsWorkerTaskJSON | undefined;
 
           while (task = tasks.shift()) {
-            logOnce('task', task);
             const proxy = this.proxyManager.getProxy(task.proxy, EProxyThread.Game);
 
             if (proxy) {
@@ -392,13 +389,4 @@ function createRigidBodyDesc(type: RAPIER.RigidBodyType): RAPIER.RigidBodyDesc {
   }
 
   throw new Error(`Unknown rigid body type.`);
-}
-
-let logged = false;
-
-function logOnce(...args: any[]): void {
-  if (!logged) {
-    console.log(...args);
-    logged = true;
-  }
 }
