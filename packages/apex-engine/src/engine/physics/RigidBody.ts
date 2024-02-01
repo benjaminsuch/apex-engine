@@ -51,7 +51,7 @@ export class RigidBody implements IProxyOrigin {
   public readonly angvel: [number, number, number] = [0, 0, 0];
 
   @PROP(serialize(float32, [3]))
-  public readonly position: [number, number, number] = [0, 4, 0];
+  public readonly position: [number, number, number] = [0, 2, 0];
 
   @PROP(serialize(float32, [4]))
   public readonly rotation: [number, number, number, number] = [0, 0, 0, 0];
@@ -64,19 +64,16 @@ export class RigidBody implements IProxyOrigin {
   ) {
     this.handle = this.worldBody.handle;
     this.bodyType = this.worldBody.bodyType();
+
     this.bodyTick = this.instantiationService.createInstance(RigidBodyTickFunction, this);
-
-    this.registerTickFunction();
-    this.applyWorldBodyTransformations();
-  }
-
-  public async tick(context: IEngineLoopTickContext): Promise<void> {
-    this.applyWorldBodyTransformations();
-  }
-
-  protected registerTickFunction(): void {
     this.bodyTick.canTick = true;
     this.bodyTick.register();
+
+    this.applyWorldBodyTransformations();
+  }
+
+  public tick(context: IEngineLoopTickContext): void {
+    this.applyWorldBodyTransformations();
   }
 
   protected applyWorldBodyTransformations(): void {

@@ -17,3 +17,4 @@ import 'reflect-metadata';
  */
 import '../engine/core/Array';
 import '../engine/core/DataView';
+import '../engine/core/Object';

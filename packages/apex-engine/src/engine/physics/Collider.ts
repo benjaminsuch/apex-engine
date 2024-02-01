@@ -29,15 +29,13 @@ export class Collider implements IProxyOrigin {
     @IInstantiationService protected readonly instantiationService: IInstantiationService
   ) {
     this.handle = this.worldCollider.handle;
+
     this.colliderTick = this.instantiationService.createInstance(ColliderTickFunction, this);
-  }
-
-  public async tick(context: IEngineLoopTickContext): Promise<void> {}
-
-  protected registerTickFunction(): void {
     this.colliderTick.canTick = true;
     this.colliderTick.register();
   }
+
+  public tick(context: IEngineLoopTickContext): void {}
 }
 
 class ColliderTickFunction extends TickFunction<Collider> {

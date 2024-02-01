@@ -3,14 +3,14 @@ import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 import { type IEngineLoopTickContext } from '../../../EngineLoop';
 import { Flags } from '../../../Flags';
 import { ProxyManager } from '../../../ProxyManager';
-import { TripleBuffer } from '../../memory/TripleBuffer';
+import { TripleBuffer, type TripleBufferJSON } from '../../memory/TripleBuffer';
 import { getClassSchema, getTargetId, isPropSchema } from '../decorators';
 import { id } from './id';
 
 export interface IProxyConstructionData {
   constructor: string;
   id: number;
-  tb: any;
+  tb: TripleBufferJSON;
   args: unknown[];
   thread: EProxyThread;
 }
@@ -18,7 +18,7 @@ export interface IProxyConstructionData {
 export interface IProxyOrigin {
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
-  tick(tick: IEngineLoopTickContext): Promise<void>;
+  tick(tick: IEngineLoopTickContext): Promise<void> | void;
 }
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
@@ -31,7 +31,8 @@ export enum EProxyThread {
 }
 
 /**
- * @param proxyClass The class which is used to instantiate the proxy on the render-thread.
+ * @param thread The thread the proxy is being instantiated on.
+ * @param proxyClass The class which is used to instantiate the proxy.
  * @returns An anonymous class that is derived from the original class.
  */
 export function proxy(thread: EProxyThread, proxyClass: TClass) {
@@ -435,15 +436,11 @@ function filterArgs(args: unknown[]): any[] {
         ? filterArgs(val)
         : val && typeof (val as any)['toJSON'] === 'function'
           ? (val as any).toJSON()
-          : isObjectConstructor(val)
+          : Object.hasObjectConstructor(val)
             ? filterArgs(Object.values(val)).length
             : false
       : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
   );
-}
-
-function isObjectConstructor(obj: any): obj is object {
-  return obj && Object.getPrototypeOf(obj).constructor === Object;
 }
 
 function setString(val: string, dv: DataView, offset: number, size: number): void {
@@ -464,11 +461,9 @@ function setNumber(
 
   if (Array.isArray(val)) {
     for (let i = 0; i < val.length; ++i) {
-      // @ts-ignore
       dv[setter](offset + i * type.BYTES_PER_ELEMENT, val[i], true);
     }
   } else {
-    // @ts-ignore
     dv[setter](offset, (val ?? 0) as number, true);
   }
 }
