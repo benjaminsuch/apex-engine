@@ -1,4 +1,5 @@
 import type RAPIER from '@dimforge/rapier3d-compat';
+import { type Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { CLASS, PROP } from '../core/class/decorators';
@@ -8,6 +9,10 @@ import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
 import { TickFunction } from '../TickManager';
+import { type Collider, type ColliderProxy } from './Collider';
+import { type KinematicController, type KinematicControllerProxy } from './KinematicController';
+import { type IInternalPhysicsWorkerContext } from './Physics.worker';
+import { KinematicTranslateTask, PhysicsTaskManager } from './PhysicsTaskManager';
 
 export class RigidBodyProxy extends ProxyInstance {
   declare readonly handle: number;
@@ -23,6 +28,10 @@ export class RigidBodyProxy extends ProxyInstance {
   declare readonly position: [number, number, number];
 
   declare readonly rotation: [number, number, number, number];
+
+  public kinematicTranslate(controller: KinematicControllerProxy, collider: ColliderProxy, movement: Vector3): void {
+    PhysicsTaskManager.addTask(new KinematicTranslateTask(this, [controller.id, collider.id, movement]));
+  }
 }
 
 /**
@@ -51,7 +60,7 @@ export class RigidBody implements IProxyOrigin {
   public readonly angvel: [number, number, number] = [0, 0, 0];
 
   @PROP(serialize(float32, [3]))
-  public readonly position: [number, number, number] = [0, 2, 0];
+  public readonly position: [number, number, number] = [0, 0, 0];
 
   @PROP(serialize(float32, [4]))
   public readonly rotation: [number, number, number, number] = [0, 0, 0, 0];
@@ -60,19 +69,37 @@ export class RigidBody implements IProxyOrigin {
 
   constructor(
     public readonly worldBody: RAPIER.RigidBody,
+    protected readonly physicsContext: IInternalPhysicsWorkerContext,
     @IInstantiationService protected readonly instantiationService: IInstantiationService
   ) {
     this.handle = this.worldBody.handle;
     this.bodyType = this.worldBody.bodyType();
-
+    console.log('rigid body', this);
     this.bodyTick = this.instantiationService.createInstance(RigidBodyTickFunction, this);
-    this.bodyTick.canTick = true;
-    this.bodyTick.register();
+    // this.bodyTick.canTick = true;
+    // this.bodyTick.register();
 
     this.applyWorldBodyTransformations();
   }
 
   public tick(context: IEngineLoopTickContext): void {
+    this.applyWorldBodyTransformations();
+  }
+
+  public kinematicTranslate(controllerId: number, colliderId: number, movement: RAPIER.Vector): void {
+    const controller = this.physicsContext.proxyManager.getProxy(controllerId, EProxyThread.Game) as KinematicController;
+    const collider = this.physicsContext.proxyManager.getProxy(colliderId, EProxyThread.Game) as Collider;
+
+    controller.worldController.computeColliderMovement(collider.worldCollider, movement);
+
+    const { x, y, z } = controller.worldController.computedMovement();
+    const bodyPos = this.worldBody.translation();
+
+    bodyPos.x += x;
+    bodyPos.y += y;
+    bodyPos.z += z;
+
+    this.worldBody.setNextKinematicTranslation(bodyPos);
     this.applyWorldBodyTransformations();
   }
 

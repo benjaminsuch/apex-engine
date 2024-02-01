@@ -48,10 +48,6 @@ export class ProxyManager<T> {
       if (proxy.thread === thread) {
         const proxyId = proxy.target instanceof ProxyInstance ? proxy.target.id : getTargetId(proxy.target);
 
-        if (thread === 1) {
-          console.log('proxy target id', getTargetId(proxy.target), proxy.target);
-        }
-
         if (proxyId === id) {
           return proxy.target;
         }

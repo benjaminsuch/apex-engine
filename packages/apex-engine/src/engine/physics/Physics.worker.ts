@@ -15,8 +15,9 @@ import { type ProxyInstance } from '../ProxyInstance';
 import { ProxyManager } from '../ProxyManager';
 import { ETickGroup, TickManager } from '../TickManager';
 import { Collider } from './Collider';
-import { KinematicControllerProxy } from './KinematicController';
+import { KinematicController, KinematicControllerProxy } from './KinematicController';
 import { PhysicsInfo } from './PhysicsInfo';
+import { type PhysicsWorkerTaskJSON } from './PhysicsTaskManager';
 import { RigidBody } from './RigidBody';
 
 export interface ICreatedProxyData {
@@ -217,9 +218,10 @@ export interface IInternalPhysicsWorkerContext {
    * @param proxies
    */
   createProxies(proxies: IProxyConstructionData[]): void;
-  step(tick: IEngineLoopTickContext, tasks: any[]): void;
+  step(tick: IEngineLoopTickContext, tasks: PhysicsWorkerTaskJSON[]): void;
   registerCollider<T extends RAPIER.ShapeType>(type: T, args: RegisterColliderArgs<T>): ICreatedProxyData;
-  registerRigidBody(type: RAPIER.RigidBodyType): ICreatedProxyData;
+  registerRigidBody(type: RAPIER.RigidBodyType, options?: { position?: [number, number, number] }): ICreatedProxyData;
+  registerKinematicController(options: { offset: number }): ICreatedProxyData;
 }
 
 const proxyConstructors = { KinematicControllerProxy };
@@ -231,24 +233,6 @@ services.set(IConsoleLogger, logger);
 const instantiationService = new InstantiationService(services);
 
 self.addEventListener('message', onInit);
-
-const defaultTasks = [
-  {
-    proxy: 1,
-    method: 'setApplyImpulsesToDynamicBodies',
-    params: [true],
-  },
-  {
-    proxy: 1,
-    method: 'enableAutostep',
-    params: [0.7, 0.3, true],
-  },
-  {
-    proxy: 1,
-    method: 'enableSnapToGround',
-    params: [0.7],
-  },
-];
 
 function onInit(event: MessageEvent): void {
   if (typeof event.data !== 'object') {
@@ -289,13 +273,23 @@ function onInit(event: MessageEvent): void {
               thread,
               this,
             );
-            console.log('proxy', proxy);
+
             this.proxyManager.registerProxy(proxy);
           }
         },
-        registerRigidBody(type) {
-          const desc = createRigidBodyDesc(type).setTranslation(0, 0, 0);
-          const proxyOrigin = instantiationService.createInstance(RigidBody, this.world.createRigidBody(desc)) as RigidBody & IProxyOrigin;
+        registerRigidBody(type, options: { position?: [number, number, number] } = {}) {
+          const desc = createRigidBodyDesc(type);
+
+          if (options) {
+            const { position } = options;
+
+            if (position) {
+              const [x, y, z] = position;
+              desc.setTranslation(x, y, z);
+            }
+          }
+
+          const proxyOrigin = instantiationService.createInstance(RigidBody, this.world.createRigidBody(desc), this);
 
           return {
             id: getTargetId(proxyOrigin) as number,
@@ -304,23 +298,45 @@ function onInit(event: MessageEvent): void {
         },
         registerCollider(type, { rigidBodyId, ...args }) {
           // @ts-ignore
+          // console.log('collider', ...Object.values(args));
+          // @ts-ignore
           const desc = getColliderDescConstructor(type)(...Object.values(args));
-          const proxyOrigin = instantiationService.createInstance(Collider, this.world.createCollider(desc)) as Collider & IProxyOrigin;
+          const proxyOrigin = instantiationService.createInstance(Collider, desc, rigidBodyId, this);
 
           return {
             id: getTargetId(proxyOrigin) as number,
             tb: proxyOrigin.tripleBuffer,
           };
         },
-        async step(tick: IEngineLoopTickContext, tasks): Promise<void> {
+        registerKinematicController(options) {
+          const controller = instantiationService.createInstance(KinematicController, options, this);
+
+          return {
+            id: getTargetId(controller) as number,
+            tb: controller.tripleBuffer,
+          };
+        },
+        async step(tick, tasks): Promise<void> {
+          let task: PhysicsWorkerTaskJSON | undefined;
+
+          while (task = tasks.shift()) {
+            logOnce('task', task);
+            const proxy = this.proxyManager.getProxy(task.proxy, EProxyThread.Game);
+
+            if (proxy) {
+              (proxy as InstanceType<TClass>)[task.name].apply(proxy, task.params);
+            }
+          }
+
           this.tickManager.startTick(tick);
+
           await this.tickManager.runTickGroup(ETickGroup.PrePhysics);
-          await this.tickManager.runTickGroup(ETickGroup.DuringPhysics);
 
           this.world.timestep = tick.delta;
           this.world.step();
 
           await this.tickManager.runTickGroup(ETickGroup.PostPhysics);
+
           this.tickManager.endTick();
 
           this.renderPort.postMessage({ type: 'physics-debug-buffers', ...this.world.debugRender() });
@@ -376,4 +392,13 @@ function createRigidBodyDesc(type: RAPIER.RigidBodyType): RAPIER.RigidBodyDesc {
   }
 
   throw new Error(`Unknown rigid body type.`);
+}
+
+let logged = false;
+
+function logOnce(...args: any[]): void {
+  if (!logged) {
+    console.log(...args);
+    logged = true;
+  }
 }

@@ -1,32 +1,24 @@
 import * as Comlink from 'comlink';
-import { BoxGeometry, BufferGeometry, CapsuleGeometry, PlaneGeometry } from 'three';
+import { BoxGeometry, BufferGeometry, CapsuleGeometry, PlaneGeometry, type Vector3 } from 'three';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { type MeshComponent } from '../components/MeshComponent';
 import { type SceneComponent } from '../components/SceneComponent';
 import { getTargetId } from '../core/class/decorators';
-import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
+import { EProxyThread, filterArgs, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { ColliderProxy } from './Collider';
+import { KinematicControllerProxy } from './KinematicController';
 import { type ICreatedProxyData, type IInternalPhysicsWorkerContext } from './Physics.worker';
 import PhysicsWorker from './Physics.worker?worker';
 import { PhysicsInfo } from './PhysicsInfo';
+import { PhysicsTaskManager } from './PhysicsTaskManager';
 import { RigidBodyProxy } from './RigidBody';
 
 export class PhysicsWorkerContext implements IPhysicsWorkerContext {
-  private static readonly tasks: any[] = [];
-
-  public static addTask(task: any): number {
-    return this.tasks.push(task) - 1;
-  }
-
-  public static removeTask(idx: number): void {
-    return this.tasks.removeAtSwap(idx);
-  }
-
   declare readonly _injectibleService: undefined;
 
   private readonly worker: Worker;
@@ -119,15 +111,15 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     });
   }
 
-  public async registerRigidBody(component: SceneComponent): Promise<void> {
+  public async registerRigidBody(component: SceneComponent, options?: { position?: Vector3 }): Promise<void> {
     const bodyType = component.getBodyType();
 
-    if (!bodyType) {
+    if (bodyType === null) {
       return;
     }
 
     // ? Should we throw an error after x amount of time?
-    return this.comlink.registerRigidBody(bodyType).then(({ id, tb }: ICreatedProxyData) => {
+    return this.comlink.registerRigidBody(bodyType, { position: options?.position?.toArray() }).then(({ id, tb }: ICreatedProxyData) => {
       component.rigidBody = this.instantiationService.createInstance(
         RigidBodyProxy,
         [],
@@ -138,8 +130,21 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     });
   }
 
+  public async registerKinematicController(options: { offset: number }): Promise<KinematicControllerProxy> {
+    const { id, tb } = await this.comlink.registerKinematicController(options);
+
+    return this.instantiationService.createInstance(
+      KinematicControllerProxy,
+      [],
+      new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+      id,
+      EProxyThread.Game
+    );
+  }
+
   public async step(tick: IEngineLoopTickContext): Promise<void> {
-    return this.comlink.step(tick, []);
+    await this.comlink.step(tick, PhysicsTaskManager.getTasks().map(task => task.toJSON()));
+    PhysicsTaskManager.clear();
   }
 
   public createProxies(proxies: EnqueuedProxy<IProxyOrigin>[]): Promise<void> {
@@ -168,7 +173,8 @@ export interface IPhysicsWorkerContext extends IInjectibleService {
   /**
    * @returns A snapshot of the physics world as a `Uint8Array`
    */
-  registerRigidBody(component: SceneComponent): Promise<void>;
+  registerRigidBody(component: SceneComponent, options?: { position?: Vector3 }): Promise<void>;
+  registerKinematicController(options: { offset: number }): Promise<KinematicControllerProxy>;
 }
 
 export const IPhysicsWorkerContext = InstantiationService.createDecorator<IPhysicsWorkerContext>('PhysicsWorkerContext');

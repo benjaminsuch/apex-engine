@@ -4,6 +4,7 @@ import { Controller } from './Controller';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { PlayerInput } from './input/PlayerInput';
 import { type Pawn } from './Pawn';
+import { IPhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { type Player } from './Player';
 import { ETickGroup } from './TickManager';
 
@@ -26,12 +27,12 @@ export class PlayerController extends Controller {
   constructor(
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IPhysicsWorkerContext protected override readonly physicsContext: IPhysicsWorkerContext
   ) {
-    super(instantiationService, logger);
+    super(instantiationService, logger, physicsContext);
 
     this.playerInput = this.instantiationService.createInstance(PlayerInput);
     this.actorTick.canTick = true;
-    this.actorTick.tickGroup = ETickGroup.PostPhysics;
   }
 
   public override async tick(tick: IEngineLoopTickContext): Promise<void> {

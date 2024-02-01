@@ -84,7 +84,7 @@ export class World {
       return;
     }
 
-    this.logger.debug(this.constructor.name, 'Initialize');
+    this.logger.debug(this.constructor.name, 'Initialize', this);
 
     this.gameInstance = gameInstance;
     this.isInitialized = true;
@@ -130,7 +130,7 @@ export class World {
     // todo: Broadcast begin-play event
   }
 
-  public spawnActor<T extends typeof Actor>(ActorClass: T, level: Level | undefined = this.currentLevel): InstanceType<T> {
+  public spawnActor<T extends TClass>(ActorClass: T, level: Level | undefined = this.currentLevel): InstanceType<T> {
     this.logger.debug(this.constructor.name, 'Spawn actor:', ActorClass.name);
 
     if (!level) {

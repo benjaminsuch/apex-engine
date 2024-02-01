@@ -8,6 +8,8 @@ import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
 import { TickFunction } from '../TickManager';
+import { type IInternalPhysicsWorkerContext } from './Physics.worker';
+import { type RigidBody } from './RigidBody';
 
 export class ColliderProxy extends ProxyInstance {
   declare readonly handle: number;
@@ -24,10 +26,19 @@ export class Collider implements IProxyOrigin {
 
   public readonly colliderTick: ColliderTickFunction;
 
+  public readonly worldCollider: RAPIER.Collider;
+
+  public readonly rigidBody: RigidBody;
+
   constructor(
-    public readonly worldCollider: RAPIER.Collider,
+    colliderDesc: RAPIER.ColliderDesc,
+    rigidBodyId: number,
+    protected readonly physicsContext: IInternalPhysicsWorkerContext,
     @IInstantiationService protected readonly instantiationService: IInstantiationService
   ) {
+    this.rigidBody = this.physicsContext.proxyManager.getProxy(rigidBodyId, EProxyThread.Game) as RigidBody;
+    this.worldCollider = this.physicsContext.world.createCollider(colliderDesc, this.rigidBody.worldBody);
+
     this.handle = this.worldCollider.handle;
 
     this.colliderTick = this.instantiationService.createInstance(ColliderTickFunction, this);

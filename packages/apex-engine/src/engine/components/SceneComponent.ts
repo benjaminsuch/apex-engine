@@ -96,6 +96,15 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
 
   private bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
 
+  public getBodyType(): SceneComponent['bodyType'] {
+    return this.bodyType;
+  }
+
+  public setBodyType(val: SceneComponent['bodyType']): void {
+    this.bodyType = val;
+    // this.rigidBody.setBodyType(val)
+  }
+
   @PROP(serialize(vec3))
   public position: Vector3 = new Vector3();
 
@@ -134,15 +143,6 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
    */
   public children: SceneComponent[] = [];
 
-  public getBodyType(): SceneComponent['bodyType'] {
-    return this.bodyType;
-  }
-
-  public setBodyType(val: SceneComponent['bodyType']): void {
-    this.bodyType = val;
-    // this.rigidBody.setBodyType(val)
-  }
-
   public rigidBody: RigidBodyProxy | null = null;
 
   public colliderShape: RAPIER.ShapeType | null = null;
@@ -159,8 +159,8 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
 
   public override async beginPlay(): Promise<void> {
     // ? Should we check, if `this.rigidBody` has been set? (`null` is allowed tho)
-    if (this.bodyType) {
-      await this.physicsContext.registerRigidBody(this);
+    if (this.bodyType !== null) {
+      await this.physicsContext.registerRigidBody(this, { position: this.position });
     }
   }
 

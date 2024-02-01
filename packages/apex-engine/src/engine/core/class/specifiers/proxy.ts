@@ -429,7 +429,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
   };
 }
 
-function filterArgs(args: unknown[]): any[] {
+export function filterArgs(args: unknown[]): any[] {
   return args.filter(
     val => typeof val === 'object'
       ? Array.isArray(val)
