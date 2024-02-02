@@ -43,13 +43,15 @@ export class ProxyManager<T> {
     registeredProxy.index = this.proxies.register(registeredProxy);
   }
 
-  public getProxy(id: number, thread: EProxyThread = this.thread): T | void {
+  public getProxy<R extends InstanceType<TClass> = IProxyOrigin>(id: number, thread: EProxyThread = this.thread): R | void {
     for (const proxy of this.proxies) {
       if (proxy.thread === thread) {
         const proxyId = proxy.target instanceof ProxyInstance ? proxy.target.id : getTargetId(proxy.target);
 
         if (proxyId === id) {
-          return proxy.target;
+          // Later in development it turned out, that we would have both, proxy instances and origins in our proxy registry.
+          // @todo: Improve/simplify
+          return proxy.target as unknown as R;
         }
       }
     }

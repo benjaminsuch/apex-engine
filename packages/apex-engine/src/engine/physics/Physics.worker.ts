@@ -315,13 +315,17 @@ function onInit(event: MessageEvent): void {
           };
         },
         async step(tick, tasks): Promise<void> {
+          // I thought about converting them into tick functions, but I don't think it would
+          // add any value, except consistency. While I do prefer consistency, the performance
+          // loss makes it not worth it (creating tick function instances and then sort them
+          // at every `step` call (the tasks already come in correct order)).
           let task: PhysicsWorkerTaskJSON | undefined;
 
           while (task = tasks.shift()) {
-            const proxy = this.proxyManager.getProxy(task.proxy, EProxyThread.Game);
+            const proxy = this.proxyManager.getProxy<InstanceType<TClass>>(task.proxy, EProxyThread.Game);
 
             if (proxy) {
-              (proxy as InstanceType<TClass>)[task.name].apply(proxy, task.params);
+              proxy[task.name].apply(proxy, task.params);
             }
           }
 

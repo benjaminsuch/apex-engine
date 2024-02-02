@@ -34,12 +34,21 @@ export class KinematicController implements IProxyOrigin {
 
   constructor({ offset }: { offset: number }, protected readonly physicsContext: IInternalPhysicsWorkerContext) {
     this.worldController = this.physicsContext.world.createCharacterController(offset);
-    this.worldController.setApplyImpulsesToDynamicBodies(true);
-    this.worldController.enableAutostep(0.7, 0.3, true);
-    this.worldController.enableSnapToGround(0.7);
   }
 
   public tick(context: IEngineLoopTickContext): void {}
+
+  public setApplyImpulsesToDynamicBodies(isEnabled: boolean): void {
+    this.worldController.setApplyImpulsesToDynamicBodies(isEnabled);
+  }
+
+  public enableAutostep(maxHeight: number, minWidth: number, includeDynamicBodies: boolean): void {
+    this.worldController.enableAutostep(maxHeight, minWidth, includeDynamicBodies);
+  }
+
+  public enableSnapToGround(distance: number): void {
+    this.worldController.enableSnapToGround(distance);
+  }
 }
 
 class SetApplyImpulsesToDynamicBodiesTask extends PhysicsWorkerTask<KinematicControllerProxy, 'setApplyImpulsesToDynamicBodies', [boolean]> {
