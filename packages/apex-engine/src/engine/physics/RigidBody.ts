@@ -1,5 +1,5 @@
 import type RAPIER from '@dimforge/rapier3d-compat';
-import { type Vector3 } from 'three';
+import { type Quaternion, type Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { CLASS, PROP } from '../core/class/decorators';
@@ -29,20 +29,75 @@ export class RigidBodyProxy extends ProxyInstance {
 
   declare readonly rotation: [number, number, number, number];
 
+  /**
+   * Computes the movement based on the given parameters and will set the next
+   * kinematic translation on this rigid-body.
+   *
+   * @param controller A `KinematicController` that will compute the movement.
+   * @param collider The collider that is affected by the movement.
+   * @param movement A `Vector3` where the values will determine by how much the rigid-body will move.
+   */
   public kinematicTranslate(controller: KinematicControllerProxy, collider: ColliderProxy, movement: Vector3): void {
     PhysicsTaskManager.addTask(new KinematicTranslateTask(this, [controller.id, collider.id, movement]));
   }
 
-  public setAdditionalMass(mass: number): void {
-    PhysicsTaskManager.addTask(new SetAdditionalMassTask(this, mass));
+  /**
+   * Sets the rigid-body's additional mass.
+   *
+   * The total angular inertia of the rigid-body will be scaled automatically based on this additional mass. If this
+   * scaling effect isn’t desired, use Self::additional_mass_properties instead of this method.
+   *
+   * This is only the "additional" mass because the total mass of the rigid-body is equal to the sum of this
+   * additional mass and the mass computed from the colliders (with non-zero densities) attached to this rigid-body.
+   *
+   * That total mass (which includes the attached colliders’ contributions) will be updated at the name physics step,
+   * or can be updated manually with `this.recomputeMassPropertiesFromColliders`.
+   *
+   * This will override any previous additional mass-properties set by `this.setAdditionalMass`,
+   * `this.setAdditionalMassProperties`, `RigidBodyDesc::setAdditionalMass`, or
+   * `RigidBodyDesc.setAdditionalMassfProperties` for this rigid-body.
+   *
+   * @param mass    The additional mass to set.
+   * @param wakeUp  If `true` then the rigid-body will be woken up if it was put to sleep because it did not move for a while.
+   */
+  public setAdditionalMass(mass: number, wakeUp: boolean = false): void {
+    PhysicsTaskManager.addTask(new SetAdditionalMassTask(this, [mass, wakeUp]));
   }
 
-  public setLinearDamping(damping: number): void {
-    PhysicsTaskManager.addTask(new SetLinearDampingTask(this, damping));
+  /**
+   * Sets the linear damping factor applied to this rigid-body.
+   *
+   * @param factor The damping factor to set.
+   */
+  public setLinearDamping(factor: number): void {
+    PhysicsTaskManager.addTask(new SetLinearDampingTask(this, factor));
   }
 
-  public setTranslation(vec: Vector3): void {
-    PhysicsTaskManager.addTask(new SetTranslationTask(this, [vec.x, vec.y, vec.z]));
+  /**
+   * Sets the position of this rigid-body.
+   *
+   * Note: This method does the same as `setTranslation` of `Rapier.RigidBody`. We just renamed it
+   * for consistency reasons.
+   *
+   * @param vec     The world-space position.
+   * @param wakeUp  Forces the rigid-body to wake-up so it is properly affected by forces if
+   *                it wasn't moving before modifying its position.
+   */
+  public setPosition(vec: Vector3, wakeUp: boolean = false): void {
+    PhysicsTaskManager.addTask(new SetTranslationTask(this, [vec.x, vec.y, vec.z, wakeUp]));
+  }
+
+  /**
+   * Sets the rotation quaternion of this rigid-body.
+   *
+   * This does nothing if a zero quaternion is provided.
+   *
+   * @param rotation  The rotation to set.
+   * @param wakeUp    Forces the rigid-body to wake-up so it is properly affected by forces if
+   *                  it wasn't moving before modifying its position.
+   */
+  public setRotation(quat: Quaternion, wakeUp: boolean = false): void {
+    PhysicsTaskManager.addTask(new SetRotationTask(this, [quat.x, quat.y, quat.z, quat.w, wakeUp]));
   }
 }
 
@@ -170,9 +225,11 @@ class KinematicTranslateTask extends PhysicsWorkerTask<RigidBodyProxy, 'kinemati
   }
 }
 
-class SetAdditionalMassTask extends PhysicsWorkerTask<RigidBodyProxy, 'setAdditionalMass', [number]> {
-  constructor(target: RigidBodyProxy, mass: number) {
-    super(target, 'setAdditionalMass', [mass]);
+type SetAdditionalMassTaskParams = [number, boolean];
+
+class SetAdditionalMassTask extends PhysicsWorkerTask<RigidBodyProxy, 'setAdditionalMass', SetAdditionalMassTaskParams> {
+  constructor(target: RigidBodyProxy, params: SetAdditionalMassTaskParams) {
+    super(target, 'setAdditionalMass', params);
   }
 }
 
@@ -182,10 +239,18 @@ class SetLinearDampingTask extends PhysicsWorkerTask<RigidBodyProxy, 'setLinearD
   }
 }
 
-type SetTranslationTaskParams = [number, number, number];
+type SetTranslationTaskParams = [Vector3['x'], Vector3['y'], Vector3['z'], boolean];
 
 class SetTranslationTask extends PhysicsWorkerTask<RigidBodyProxy, 'setTranslation', SetTranslationTaskParams> {
   constructor(target: RigidBodyProxy, params: SetTranslationTaskParams) {
     super(target, 'setTranslation', params);
+  }
+}
+
+type SetRotationTaskParams = [Quaternion['x'], Quaternion['y'], Quaternion['z'], Quaternion['w'], boolean];
+
+class SetRotationTask extends PhysicsWorkerTask<RigidBodyProxy, 'setRotation', SetRotationTaskParams> {
+  constructor(target: RigidBodyProxy, params: SetRotationTaskParams) {
+    super(target, 'setRotation', params);
   }
 }
