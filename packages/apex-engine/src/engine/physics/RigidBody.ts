@@ -99,6 +99,15 @@ export class RigidBodyProxy extends ProxyInstance {
   public setRotation(quat: Quaternion, wakeUp: boolean = false): void {
     PhysicsTaskManager.addTask(new SetRotationTask(this, [quat.x, quat.y, quat.z, quat.w, wakeUp]));
   }
+
+  /**
+   * Set a new status for this rigid-body: static, dynamic, or kinematic.
+   *
+   * @param bodyType The new body type.
+   */
+  public setBodyType(bodyType: RAPIER.RigidBodyType): void {
+    PhysicsTaskManager.addTask(new SetBodyTypeTask(this, bodyType));
+  }
 }
 
 /**
@@ -252,5 +261,11 @@ type SetRotationTaskParams = [Quaternion['x'], Quaternion['y'], Quaternion['z'],
 class SetRotationTask extends PhysicsWorkerTask<RigidBodyProxy, 'setRotation', SetRotationTaskParams> {
   constructor(target: RigidBodyProxy, params: SetRotationTaskParams) {
     super(target, 'setRotation', params);
+  }
+}
+
+class SetBodyTypeTask extends PhysicsWorkerTask<RigidBodyProxy, 'setBodyType', [RAPIER.RigidBodyType]> {
+  constructor(target: RigidBodyProxy, bodyType: number) {
+    super(target, 'setBodyType', [bodyType]);
   }
 }

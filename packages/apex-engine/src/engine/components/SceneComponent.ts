@@ -94,6 +94,13 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
 
   declare readonly tripleBuffer: TripleBuffer;
 
+  /**
+   * This property is used for registering the rigid-body. It supports `null`,
+   * in case you don't want this component to have a rigid-body.
+   *
+   * Important: When the rigid-body has been registered, changing this property
+   * directly will have no effect. Instead, use `setBodyType`.
+   */
   private bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
 
   public getBodyType(): SceneComponent['bodyType'] {
@@ -101,8 +108,18 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   }
 
   public setBodyType(val: SceneComponent['bodyType']): void {
+    if (this.rigidBody) {
+      if (val === null) {
+        this.logger.warn(`You can't set the rigid-body type to "null" after a rigid-body has been created.`);
+        return;
+      } else {
+        this.rigidBody.setBodyType(val);
+      }
+    } else {
+      // @todo: Should we support creation of a rigid-body during play?
+    }
+
     this.bodyType = val;
-    // this.rigidBody.setBodyType(val)
   }
 
   @PROP(serialize(vec3))
@@ -158,7 +175,6 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   }
 
   public override async beginPlay(): Promise<void> {
-    // ? Should we check, if `this.rigidBody` has been set? (`null` is allowed tho)
     if (this.bodyType !== null) {
       await this.physicsContext.registerRigidBody(this, { position: this.position });
     }
