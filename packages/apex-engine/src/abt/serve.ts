@@ -57,17 +57,35 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
 
   copyGameMaps(buildDir);
 
+  const engineFiles = getEngineSourceFiles();
+  const gameFiles = getGameSourceFiles();
+
   const watcher = watch({
     input: {
       index: getLauncherPath('browser'),
-      ...getEngineSourceFiles(),
-      ...getGameSourceFiles(),
+      ...engineFiles,
+      ...gameFiles,
     },
     output: {
       dir: buildDir,
       exports: 'named',
       format: 'esm',
       chunkFileNames: '[name].js',
+      manualChunks(id) {
+        if (id.includes('node_modules')) {
+          if (id.includes('three')) {
+            return 'vendors/three';
+          }
+          if (id.includes('rapier3d-compat')) {
+            return 'vendors/rapier';
+          }
+          return 'vendors/index';
+        }
+        if (Object.keys(gameFiles).includes(id)) {
+          return id;
+        }
+        return undefined;
+      },
     },
     plugins: [
       replace(target),

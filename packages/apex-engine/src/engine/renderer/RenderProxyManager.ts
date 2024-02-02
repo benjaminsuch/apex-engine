@@ -1,25 +1,21 @@
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { proxyComponents } from '../components';
+import { EProxyThread } from '../core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyManager } from '../ProxyManager';
 import { type RenderProxy } from './RenderProxy';
-
-const proxyConstructors = { ...proxyComponents };
 
 export class RenderProxyManager extends ProxyManager<RenderProxy> {
   public static override getInstance(): RenderProxyManager {
     return this.getInstance() as RenderProxyManager;
   }
 
-  public getProxyConstructor(id: string): TClass {
-    return proxyConstructors[id as keyof typeof proxyConstructors];
-  }
-
-  public getProxy(id: number): RenderProxy | void {
-    for (const proxy of this.proxies) {
-      if (proxy.id === id) {
-        return proxy;
-      }
-    }
+  constructor(
+    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger
+  ) {
+    super(EProxyThread.Render, { ...proxyComponents }, instantiationService, logger);
   }
 
   public override tick(tick: IEngineLoopTickContext): void {
@@ -29,7 +25,7 @@ export class RenderProxyManager extends ProxyManager<RenderProxy> {
       const proxy = this.proxies.getProxyByIndex(i);
 
       if (proxy) {
-        proxy.tick(tick);
+        proxy.target.tick(tick);
       }
     }
   }

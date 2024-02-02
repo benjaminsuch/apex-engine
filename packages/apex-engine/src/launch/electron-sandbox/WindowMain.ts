@@ -17,8 +17,6 @@ export class WindowMain {
   public init(): void {
     const engineLoop = this.instantiationService.createInstance(EngineLoop);
 
-    engineLoop.init().then(() => {
-      engineLoop.tick();
-    });
+    engineLoop.init().then(() => engineLoop.tick());
   }
 }

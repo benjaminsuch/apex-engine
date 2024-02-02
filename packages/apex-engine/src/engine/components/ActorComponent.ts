@@ -33,9 +33,9 @@ export class ActorComponent {
     this.isInitialized = true;
   }
 
-  public beginPlay(): void {}
+  public async beginPlay(): Promise<void> {}
 
-  public tick(context: IEngineLoopTickContext): void {}
+  public async tick(context: IEngineLoopTickContext): Promise<void> {}
 
   public registerWithActor(actor: Actor): void {
     if (actor.hasComponent(this)) {
@@ -52,7 +52,7 @@ export class ActorComponent {
     }
   }
 
-  protected onRegister(): void {}
+  protected async onRegister(): Promise<void> {}
 }
 
 export class ComponentTickFunction extends TickFunction<ActorComponent> {

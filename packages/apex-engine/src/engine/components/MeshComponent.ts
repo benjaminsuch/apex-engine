@@ -1,10 +1,12 @@
+import RAPIER from '@dimforge/rapier3d-compat';
 import { BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshStandardMaterial, Sphere, Vector2, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS } from '../core/class/decorators';
-import { proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
@@ -12,10 +14,11 @@ export class MeshComponentProxy extends SceneComponentProxy {
   constructor(
     [geometryData, materialData]: [IGeometryData | undefined, IMaterialJSON | undefined] = [undefined, undefined],
     tb: TripleBuffer,
-    public override readonly id: number,
-    protected override readonly renderer: IInternalRenderWorkerContext
+    id: number,
+    thread: EProxyThread,
+    renderer: IInternalRenderWorkerContext
   ) {
-    super([geometryData, materialData], tb, id, renderer);
+    super([geometryData, materialData], tb, id, thread, renderer);
 
     const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
@@ -53,15 +56,24 @@ export class MeshComponentProxy extends SceneComponentProxy {
   }
 }
 
-@CLASS(proxy(MeshComponentProxy))
+@CLASS(proxy(EProxyThread.Render, MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
   constructor(
     public geometry: BufferGeometry | undefined = undefined,
     public material: Material | undefined = undefined,
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger
+    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IPhysicsWorkerContext protected override readonly physicsContext: IPhysicsWorkerContext
   ) {
-    super(instantiationService, logger);
+    super(instantiationService, logger, physicsContext);
+
+    this.colliderShape = RAPIER.ShapeType.TriMesh;
+  }
+
+  public override async beginPlay(): Promise<void> {
+    // 1When resolved, the rigid-body is available and we can register the collider
+    await super.beginPlay();
+    await this.physicsContext.registerCollider(this);
   }
 }
 

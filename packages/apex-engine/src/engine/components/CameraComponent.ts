@@ -3,10 +3,11 @@ import { PerspectiveCamera } from 'three';
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS, PROP } from '../core/class/decorators';
-import { proxy } from '../core/class/specifiers/proxy';
-import { float32, serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
+import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
+import { float32, serialize, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
+import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
@@ -32,10 +33,11 @@ export class CameraComponentProxy extends SceneComponentProxy {
   constructor(
     [fov, aspect, near, far]: [number, number, number, number],
     tb: TripleBuffer,
-    public override readonly id: number,
-    protected override readonly renderer: IInternalRenderWorkerContext
+    id: number,
+    thread: EProxyThread,
+    renderer: IInternalRenderWorkerContext
   ) {
-    super([aspect, far, fov, near], tb, id, renderer);
+    super([aspect, far, fov, near], tb, id, thread, renderer);
 
     const camera = this.renderer.camera as PerspectiveCamera;
     this.sceneObject = new PerspectiveCamera(fov, camera.aspect, near, far);
@@ -53,11 +55,10 @@ export class CameraComponentProxy extends SceneComponentProxy {
     this.sceneObject.fov = this.fov;
     this.sceneObject.near = this.near;
     this.sceneObject.zoom = this.zoom;
-    // this.sceneObject.updateProjectionMatrix();
   }
 }
 
-@CLASS(proxy(CameraComponentProxy))
+@CLASS(proxy(EProxyThread.Render, CameraComponentProxy))
 export class CameraComponent extends SceneComponent {
   @PROP(serialize(float32))
   public aspect: number = 1;
@@ -89,14 +90,16 @@ export class CameraComponent extends SceneComponent {
     near: CameraComponent['near'],
     far: CameraComponent['far'],
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger
+    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IPhysicsWorkerContext protected override readonly physicsContext: IPhysicsWorkerContext
   ) {
-    super(instantiationService, logger);
+    super(instantiationService, logger, physicsContext);
 
     this.fov = fov;
     this.aspect = aspect;
     this.near = near;
     this.far = far;
+    this.setBodyType(null);
 
     this.componentTick.canTick = true;
   }

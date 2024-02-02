@@ -3,7 +3,8 @@ import { basename, dirname, extname, isAbsolute, join, posix, sep } from 'node:p
 
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
-import { type InputPluginOption, type OutputChunk, rollup, type RollupBuild } from 'rollup';
+import fs from 'fs-extra';
+import { type EmittedAsset, type InputPluginOption, type OutputChunk, rollup, type RollupBuild } from 'rollup';
 
 import { APEX_DIR, type TargetConfig } from '../config';
 import { replace } from '.';
@@ -29,6 +30,7 @@ export function workerPlugin({
   target,
 }: WorkersPluginOptions): InputPluginOption {
   const cache = new Map<string, WorkerCacheEntry>();
+  const assets = new Map<string, EmittedAsset>();
 
   return {
     name: 'workers',
@@ -85,6 +87,7 @@ export function workerPlugin({
         bundle = await rollup({
           input: id,
           plugins: [
+            workerPlugin({ target }),
             replace(target),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
@@ -92,18 +95,30 @@ export function workerPlugin({
           onwarn() {},
         });
 
-        const { output } = await bundle.generate({ sourcemap: false });
+        const { output } = await bundle.generate({
+          format: 'esm',
+          sourcemap: false,
+          chunkFileNames: '[name].js',
+        });
 
-        if (cacheEntry) {
-          const [chunk] = output.filter((chunk): chunk is OutputChunk => chunk.type === 'chunk');
-          // TODO: To support HMR we can add all the files in `chunk.modules` to a watch-list.
-          chunk.fileName = posix.join('worker', cacheEntry.id);
-          cacheEntry.chunk = chunk;
+        const [chunk, ...chunks] = output.filter((chunk): chunk is OutputChunk => chunk.type === 'chunk');
 
-          return {
-            code: chunk.code,
-          };
-        }
+        chunks.forEach((chunk) => {
+          assets.set(chunk.fileName, {
+            fileName: chunk.fileName,
+            source: chunk.code,
+            type: 'asset',
+          });
+        });
+
+        // TODO: To support HMR we can add all the files in `chunk.modules` to a watch-list.
+        chunk.fileName = posix.join('worker', cacheEntry.id);
+        cacheEntry.chunk = chunk;
+
+        return {
+          code: chunk.code,
+          map: { mappings: '' },
+        };
       } catch (error) {
         console.error(error);
       }
@@ -171,6 +186,12 @@ export function workerPlugin({
     },
     renderChunk(code, chunk, options, meta) {},
     generateBundle(options, bundle) {
+      // console.log('assets', assets);
+      // assets.forEach((asset) => {
+      //   this.emitFile(asset);
+      //   assets.delete(asset.fileName!);
+      // });
+
       for (const [id, worker] of cache) {
         if (worker.chunk) {
           bundle[worker.id] = worker.chunk;

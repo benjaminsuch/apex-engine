@@ -11,7 +11,7 @@ function setPropType(
   constructor: TClass,
   prop: string | symbol,
   type: string,
-  arrayType: TypedArray,
+  arrayType: TypedArrayConstructor,
   isArray: boolean = false
 ): void {
   setPropOnSchema(constructor, prop, 'arrayType', arrayType);
@@ -22,7 +22,7 @@ function setPropType(
 
 function createSerializer(
   type: string,
-  arrayType: TypedArray,
+  arrayType: TypedArrayConstructor,
   size: number,
   isArray: boolean = false
 ): SerializerFunction {
@@ -45,6 +45,15 @@ export function float32(size: number | [number]): SerializerFunction {
     'float32',
     Float32Array,
     getSize(size) * Float32Array.BYTES_PER_ELEMENT,
+    Array.isArray(size)
+  );
+}
+
+export function float64(size: number | [number]): SerializerFunction {
+  return createSerializer(
+    'float64',
+    Float64Array,
+    getSize(size) * Float64Array.BYTES_PER_ELEMENT,
     Array.isArray(size)
   );
 }

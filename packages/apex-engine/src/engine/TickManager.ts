@@ -121,7 +121,7 @@ export class TickManager {
       for (let j = 0; j < dependencies.length; ++j) {
         const dependency = this.registeredTickFunctions[dependencies[j].index];
 
-        if (dependency.tickGroup >= tickFunction.tickGroup) {
+        if (dependency.tickGroup <= tickFunction.tickGroup) {
           dependency.indegree++;
         }
       }
@@ -169,12 +169,12 @@ export class TickManager {
   }
 
   // todo: Should we push rejected tasks into the next tick?
-  public runTickGroup(group: ETickGroup): void {
+  public async runTickGroup(group: ETickGroup): Promise<void> {
     for (let i = 0; i < this.tickGroups[group].length; ++i) {
       const tickFunction = this.tickGroups[group][i];
       // todo: Silently reject when the tick is about to end or the function is taking too long
       // todo: Trigger event "FunctionTaskCompletion"
-      tickFunction.run(this.currentTick);
+      await tickFunction.run(this.currentTick);
     }
   }
 }
@@ -230,7 +230,7 @@ export class TickFunction<T> {
     @IConsoleLogger protected readonly logger: IConsoleLogger
   ) {}
 
-  public run(context: IEngineLoopTickContext): void {}
+  public run(context: IEngineLoopTickContext): void | Promise<void> {}
 
   /**
    * It will push the tick function onto the stack of enabled tick functions.

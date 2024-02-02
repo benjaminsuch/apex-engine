@@ -14,11 +14,8 @@ export interface IEngineLoopTickContext {
   elapsed: number;
 }
 
-const TICK_RATE = 60;
-const MS_PER_UPDATE = 1000 / TICK_RATE;
-
 export class EngineLoop {
-  private tickInterval: IntervalReturn;
+  private tickTimeout: TimeoutReturn;
 
   private tickManager: TickManager;
 
@@ -40,7 +37,7 @@ export class EngineLoop {
       const defaultPawn = await import(DEFAULT_PAWN);
 
       if (!defaultPawn.default) {
-        throw new Error(`Invalid default pawn: Your default pawn module (defined in your apex.config.ts) does not have a "default" export.`);
+        throw new Error(`Invalid default pawn class: Your default pawn module (defined in your apex.config.ts) does not have a "default" export.`);
       }
 
       GameMode.DefaultPawnClass = defaultPawn.default;
@@ -56,15 +53,17 @@ export class EngineLoop {
 
     // Setup important workers
     {
+      const { port1, port2 } = new MessageChannel();
+
       const renderContext = this.instantiationService.createInstance(RenderWorkerContext);
       this.instantiationService.setServiceInstance(IRenderWorkerContext, renderContext);
 
-      await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS]);
+      await renderContext.init([Flags.GAME_FLAGS, Flags.RENDER_FLAGS], port1);
 
       const physicsContext = this.instantiationService.createInstance(PhysicsWorkerContext);
       this.instantiationService.setServiceInstance(IPhysicsWorkerContext, physicsContext);
 
-      await physicsContext.init();
+      await physicsContext.init([Flags.PHYSICS_FLAGS], port2);
     }
 
     // Activate plugins
@@ -80,8 +79,8 @@ export class EngineLoop {
     await engine.start();
   }
 
-  public tick(): IntervalReturn {
-    this.tickInterval = setInterval(() => {
+  public async tick(): Promise<TimeoutReturn> {
+    this.tickTimeout = setTimeout(async () => {
       ++this.tickId;
 
       const then = performance.now();
@@ -93,26 +92,15 @@ export class EngineLoop {
       const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.tickId };
 
       try {
-        ApexEngine.getInstance().tick(currentTick);
+        await ApexEngine.getInstance().tick(currentTick);
       } catch (error) {
-        clearInterval(this.tickInterval as number);
+        clearInterval(this.tickTimeout as number);
         throw error;
       }
 
-      if (performance.now() - then > MS_PER_UPDATE) {
-        clearInterval(this.tickInterval as number);
+      this.tickTimeout = await this.tick();
+    }, 1);
 
-        try {
-          ApexEngine.getInstance().tick(currentTick);
-        } catch (error) {
-          clearInterval(this.tickInterval as number);
-          throw error;
-        }
-
-        this.tickInterval = this.tick();
-      }
-    }, MS_PER_UPDATE);
-
-    return this.tickInterval;
+    return this.tickTimeout;
   }
 }

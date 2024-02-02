@@ -317,6 +317,7 @@ function replacePlugin(target) {
 const _require$1 = createRequire(import.meta.url);
 function workerPlugin({ inline, isBuild = false, target, }) {
     const cache = new Map();
+    const assets = new Map();
     return {
         name: 'workers',
         resolveId(id, importer) {
@@ -363,22 +364,33 @@ function workerPlugin({ inline, isBuild = false, target, }) {
                 bundle = await rollup({
                     input: id,
                     plugins: [
+                        workerPlugin({ target }),
                         replacePlugin(target),
                         nodeResolve({ preferBuiltins: true }),
                         typescript(),
                     ],
                     onwarn() { },
                 });
-                const { output } = await bundle.generate({ sourcemap: false });
-                if (cacheEntry) {
-                    const [chunk] = output.filter((chunk) => chunk.type === 'chunk');
-                    // TODO: To support HMR we can add all the files in `chunk.modules` to a watch-list.
-                    chunk.fileName = posix.join('worker', cacheEntry.id);
-                    cacheEntry.chunk = chunk;
-                    return {
-                        code: chunk.code,
-                    };
-                }
+                const { output } = await bundle.generate({
+                    format: 'esm',
+                    sourcemap: false,
+                    chunkFileNames: '[name].js',
+                });
+                const [chunk, ...chunks] = output.filter((chunk) => chunk.type === 'chunk');
+                chunks.forEach((chunk) => {
+                    assets.set(chunk.fileName, {
+                        fileName: chunk.fileName,
+                        source: chunk.code,
+                        type: 'asset',
+                    });
+                });
+                // TODO: To support HMR we can add all the files in `chunk.modules` to a watch-list.
+                chunk.fileName = posix.join('worker', cacheEntry.id);
+                cacheEntry.chunk = chunk;
+                return {
+                    code: chunk.code,
+                    map: { mappings: '' },
+                };
             }
             catch (error) {
                 console.error(error);
@@ -441,6 +453,11 @@ function workerPlugin({ inline, isBuild = false, target, }) {
         },
         renderChunk(code, chunk, options, meta) { },
         generateBundle(options, bundle) {
+            // console.log('assets', assets);
+            // assets.forEach((asset) => {
+            //   this.emitFile(asset);
+            //   assets.delete(asset.fileName!);
+            // });
             for (const [id, worker] of cache) {
                 if (worker.chunk) {
                     bundle[worker.id] = worker.chunk;
@@ -573,17 +590,34 @@ async function serveBrowserTarget(target) {
         }
     });
     copyGameMaps(buildDir);
+    const engineFiles = getEngineSourceFiles();
+    const gameFiles = getGameSourceFiles();
     const watcher = watch({
         input: {
             index: getLauncherPath('browser'),
-            ...getEngineSourceFiles(),
-            ...getGameSourceFiles(),
+            ...engineFiles,
+            ...gameFiles,
         },
         output: {
             dir: buildDir,
             exports: 'named',
             format: 'esm',
             chunkFileNames: '[name].js',
+            manualChunks(id) {
+                if (id.includes('node_modules')) {
+                    if (id.includes('three')) {
+                        return 'vendors/three';
+                    }
+                    if (id.includes('rapier3d-compat')) {
+                        return 'vendors/rapier';
+                    }
+                    return 'vendors/index';
+                }
+                if (Object.keys(gameFiles).includes(id)) {
+                    return id;
+                }
+                return undefined;
+            },
         },
         plugins: [
             replacePlugin(target),

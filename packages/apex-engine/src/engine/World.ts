@@ -1,9 +1,11 @@
+import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type Actor } from './Actor';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type GameInstance } from './GameInstance';
 import { type GameMode } from './GameMode';
 import { type Level } from './Level';
+import { IPhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { type Player } from './Player';
 import { type PlayerController } from './PlayerController';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
@@ -65,11 +67,16 @@ export class World {
     }
   }
 
-  public tickGroup: ETickGroup = ETickGroup.PrePhysics;
+  public tickGroup: ETickGroup | null = null;
 
   public isInitialized: boolean = false;
 
-  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger, @IRenderWorkerContext protected readonly renderWorker: IRenderWorkerContext) {}
+  constructor(
+    @IInstantiationService protected readonly instantiationService: IInstantiationService,
+    @IConsoleLogger protected readonly logger: IConsoleLogger,
+    @IRenderWorkerContext protected readonly renderContext: IRenderWorkerContext,
+    @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
+  ) {}
 
   public init(gameInstance: GameInstance): void {
     if (this.isInitialized) {
@@ -77,18 +84,20 @@ export class World {
       return;
     }
 
-    this.logger.debug(this.constructor.name, 'Initialize');
+    this.logger.debug(this.constructor.name, 'Initialize', this);
 
     this.gameInstance = gameInstance;
     this.isInitialized = true;
   }
 
-  public tick(tick: IEngineLoopTickContext): void {
+  public async tick(tick: IEngineLoopTickContext): Promise<void> {
     TickManager.getInstance().startTick(tick, this);
 
-    this.runTickGroup(ETickGroup.PrePhysics);
-    this.runTickGroup(ETickGroup.DuringPhysics);
-    this.runTickGroup(ETickGroup.PostPhysics);
+    this.tickGroup = ETickGroup.PrePhysics;
+
+    await this.runTickGroup(ETickGroup.PrePhysics);
+    await Promise.all([this.physicsContext.step(tick), this.runTickGroup(ETickGroup.DuringPhysics)]);
+    await this.runTickGroup(ETickGroup.PostPhysics);
 
     TickManager.getInstance().endTick();
   }
@@ -109,18 +118,19 @@ export class World {
     }
   }
 
-  public beginPlay(): void {
+  public async beginPlay(): Promise<void> {
     this.logger.debug(this.constructor.name, 'Begin Play');
-    this.getCurrentLevel().beginPlay();
+    await this.getCurrentLevel().beginPlay();
 
     for (const actor of this.actors) {
-      actor.beginPlay();
+      await actor.beginPlay();
     }
+
     // todo: StartPlay via GameMode
     // todo: Broadcast begin-play event
   }
 
-  public spawnActor<T extends typeof Actor>(ActorClass: T, level: Level | undefined = this.currentLevel): InstanceType<T> {
+  public spawnActor<T extends TClass>(ActorClass: T, level: Level | undefined = this.currentLevel): InstanceType<T> {
     this.logger.debug(this.constructor.name, 'Spawn actor:', ActorClass.name);
 
     if (!level) {
@@ -144,8 +154,8 @@ export class World {
     return playerController;
   }
 
-  protected runTickGroup(group: ETickGroup): void {
-    this.tickGroup = group;
-    TickManager.getInstance().runTickGroup(group);
+  protected async runTickGroup(group: ETickGroup): Promise<void> {
+    await TickManager.getInstance().runTickGroup(group);
+    this.tickGroup = ETickGroup[ETickGroup[group + 1] as keyof typeof ETickGroup];
   }
 }

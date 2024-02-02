@@ -2,9 +2,9 @@ import * as Comlink from 'comlink';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { getTargetId } from '../core/class/decorators';
-import { type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
-import { type IEnqueuedProxy } from '../ProxyManager';
+import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { type IInternalRenderWorkerContext } from './Render.worker';
 import RenderWorker from './Render.worker?worker';
 import { RenderingInfo } from './RenderingInfo';
@@ -29,19 +29,20 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     return this.rendererInfo;
   }
 
-  private isInitialized = false;
+  public isInitialized = false;
 
   constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
     this.worker = new RenderWorker();
     this.comlink = Comlink.wrap<IInternalRenderWorkerContext>(this.worker);
   }
 
-  public async init(flags: Uint8Array[]): Promise<void> {
+  public async init(flags: Uint8Array[], physicsPort: MessagePort): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
     try {
+      // @todo: A temporary try/catch to prevent the engine from crashing in nodejs environment -> Remove
       this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
     } catch {}
 
@@ -55,14 +56,13 @@ export class RenderWorkerContext implements IRenderWorkerContext {
           initialHeight: this.canvas.clientHeight,
           initialWidth: this.canvas.clientWidth,
           flags,
+          physicsPort,
         },
-        [offscreenCanvas]
+        [offscreenCanvas, physicsPort]
       );
 
       window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
     }
-
-    this.isInitialized = true;
 
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
@@ -79,6 +79,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
         if (type === 'init-response') {
           const { flags, byteLength, buffers, byteViews } = data;
 
+          this.isInitialized = true;
           this.rendererInfo = this.instantiationService.createInstance(
             RenderingInfo,
             flags,
@@ -92,7 +93,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     });
   }
 
-  public createProxies(proxies: IEnqueuedProxy<IProxyOrigin>[]): Promise<void> {
+  public createProxies(proxies: EnqueuedProxy<IProxyOrigin>[]): Promise<void> {
     const data: IProxyConstructionData[] = [];
 
     for (let i = 0; i < proxies.length; ++i) {
@@ -103,6 +104,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
         id: getTargetId(target) as number,
         tb: target.tripleBuffer,
         args,
+        thread: EProxyThread.Game,
       };
     }
 
@@ -119,7 +121,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 }
 
 export interface IRenderWorkerContext extends IInjectibleService {
-  createProxies(proxies: IEnqueuedProxy<IProxyOrigin>[]): Promise<void>;
+  createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
   getRenderingInfo(): RenderingInfo;
   setSize(height: number, width: number): Promise<void>;
   start(): Promise<void>;

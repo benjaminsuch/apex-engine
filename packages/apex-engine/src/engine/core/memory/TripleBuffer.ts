@@ -1,3 +1,10 @@
+export interface TripleBufferJSON {
+  flags: Uint8Array;
+  buffers: SharedArrayBuffer[];
+  byteLength: number;
+  byteViews: Uint8Array[];
+}
+
 /**
  * The triple buffer implementation is from thirdroom (https://github.com/matrix-org/thirdroom/tree/main) and was
  * published under the Apache 2.0 license.

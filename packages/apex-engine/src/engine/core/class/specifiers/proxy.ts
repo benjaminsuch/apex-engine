@@ -1,30 +1,41 @@
 import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
+import { type IEngineLoopTickContext } from '../../../EngineLoop';
 import { Flags } from '../../../Flags';
 import { ProxyManager } from '../../../ProxyManager';
-import { TripleBuffer } from '../../memory/TripleBuffer';
+import { TripleBuffer, type TripleBufferJSON } from '../../memory/TripleBuffer';
 import { getClassSchema, getTargetId, isPropSchema } from '../decorators';
 import { id } from './id';
 
 export interface IProxyConstructionData {
   constructor: string;
   id: number;
-  tb: any;
-  args: unknown;
+  tb: TripleBufferJSON;
+  args: unknown[];
+  thread: EProxyThread;
 }
 
 export interface IProxyOrigin {
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
+  tick(tick: IEngineLoopTickContext): Promise<void> | void;
 }
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
 
+export enum EProxyThread {
+  Game,
+  Physics,
+  Render,
+  MAX,
+}
+
 /**
- * @param proxyClass The class which is used to instantiate the proxy on the render-thread.
+ * @param thread The thread the proxy is being instantiated on.
+ * @param proxyClass The class which is used to instantiate the proxy.
  * @returns An anonymous class that is derived from the original class.
  */
-export function proxy(proxyClass: TClass) {
+export function proxy(thread: EProxyThread, proxyClass: TClass) {
   return (constructor: TClass): TClass => {
     const schema = getClassSchema(constructor);
     const bufSize = Reflect.getMetadata('byteLength', constructor);
@@ -33,7 +44,7 @@ export function proxy(proxyClass: TClass) {
     // `RenderProxy`, when we construct the proxy on the render-thread.
     Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
 
-    return class extends constructor implements IProxyOrigin {
+    return class extends constructor {
       // @ts-ignore
       public static override readonly name: string = constructor.name;
 
@@ -77,9 +88,10 @@ export function proxy(proxyClass: TClass) {
 
         const buf = new ArrayBuffer(bufSize);
         const dv = new DataView(buf);
+        const originThread = ProxyManager.getInstance().thread;
 
         this.byteView = new Uint8Array(buf);
-        this.tripleBuffer = new TripleBuffer(Flags.GAME_FLAGS, bufSize);
+        this.tripleBuffer = new TripleBuffer(Flags.getFlagsByThread(originThread), bufSize);
 
         for (const key in schema) {
           const propSchema = schema[key];
@@ -125,6 +137,30 @@ export function proxy(proxyClass: TClass) {
                   },
                   set(val: number | Float32Array): void {
                     setNumber(Float32Array, val, dv, offset);
+                  },
+                };
+                break;
+              case 'float64':
+                setNumber(Float64Array, initialVal, dv, offset);
+
+                if (isArray) {
+                  Reflect.defineMetadata(
+                    'value',
+                    new Float64Array(buf, offset, size / Float64Array.BYTES_PER_ELEMENT),
+                    this,
+                    key
+                  );
+                }
+
+                accessors = {
+                  get(): number | Float64Array {
+                    console.log('float64 get:', dv.getFloat64(offset, true));
+                    return isArray
+                      ? Reflect.getOwnMetadata('value', this, key)
+                      : dv.getFloat64(offset, true);
+                  },
+                  set(val: number | Float64Array): void {
+                    setNumber(Float64Array, val, dv, offset);
                   },
                 };
                 break;
@@ -226,7 +262,6 @@ export function proxy(proxyClass: TClass) {
 
                 accessors = {
                   get(this): Quaternion {
-                    // console.log('quat', dv.getFloat32(offset, true), dv.getFloat32(offset + 4, true), dv.getFloat32(offset + 8, true), dv.getFloat32(offset + 12, true));
                     return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: Quaternion): void {
@@ -248,7 +283,7 @@ export function proxy(proxyClass: TClass) {
                     return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: InstanceType<TClass>): void {
-                    const refId = getTargetId(val) ?? id(val);
+                    const refId = val.isProxy ? val.id : getTargetId(val) ?? id(val);
                     dv.setUint32(offset, refId, true);
 
                     Reflect.defineMetadata('value', val, this, key);
@@ -388,28 +423,24 @@ export function proxy(proxyClass: TClass) {
         // the Worker is loading the Proxy-Classes (e.g. SceneComponentProxy) and thus, will load
         // the `GameProxyManager`, which imports the `IRenderWorkerContext`, which imports from
         // `RenderWorker`. This will lead to a "BAD_IMPORT" error from rollup.
-        ProxyManager.getInstance().enqueueProxy(this, filterArgs(args));
+        ProxyManager.getInstance().enqueueProxy(thread, this, filterArgs(args));
       }
     };
   };
 }
 
-function filterArgs(args: unknown[]): any[] {
+export function filterArgs(args: unknown[]): any[] {
   return args.filter(
     val => typeof val === 'object'
       ? Array.isArray(val)
         ? filterArgs(val)
         : val && typeof (val as any)['toJSON'] === 'function'
           ? (val as any).toJSON()
-          : isObjectConstructor(val)
+          : Object.hasObjectConstructor(val)
             ? filterArgs(Object.values(val)).length
             : false
       : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
   );
-}
-
-function isObjectConstructor(obj: any): obj is object {
-  return obj && Object.getPrototypeOf(obj).constructor === Object;
 }
 
 function setString(val: string, dv: DataView, offset: number, size: number): void {
@@ -420,31 +451,19 @@ function setString(val: string, dv: DataView, offset: number, size: number): voi
   }
 }
 
-const setters = new Map<TypedArray, string>([
-  [Float32Array, 'setFloat32'],
-  [Int8Array, 'setInt8'],
-  [Int16Array, 'setInt16'],
-  [Int32Array, 'setInt32'],
-  [Uint8Array, 'setUint8'],
-  [Uint16Array, 'setUint16'],
-  [Uint32Array, 'setUint32'],
-]);
-
 function setNumber(
-  type: TypedArray,
-  val: number | InstanceType<TypedArray>,
+  type: TypedArrayConstructor,
+  val: number | InstanceType<TypedArrayConstructor>,
   dv: DataView,
   offset: number
 ): void {
-  const setter = setters.get(type) as string;
+  const setter = DataView.getTypedArraySetter(type);
 
   if (Array.isArray(val)) {
     for (let i = 0; i < val.length; ++i) {
-      // @ts-ignore
       dv[setter](offset + i * type.BYTES_PER_ELEMENT, val[i], true);
     }
   } else {
-    // @ts-ignore
     dv[setter](offset, (val ?? 0) as number, true);
   }
 }

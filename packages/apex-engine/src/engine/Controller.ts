@@ -2,6 +2,8 @@ import { IInstantiationService } from '../platform/di/common/InstantiationServic
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
 import { type Pawn } from './Pawn';
+import { type KinematicControllerProxy } from './physics/KinematicController';
+import { IPhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 
 export class Controller extends Actor {
   protected pawn: Pawn | null = null;
@@ -17,15 +19,27 @@ export class Controller extends Actor {
     this.pawn = pawn;
   }
 
+  public kinematicController: KinematicControllerProxy | null = null;
+
   public startSpot?: Actor;
 
   constructor(
     @IInstantiationService protected override readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     super(instantiationService, logger);
     // todo: Temporary solution. Remove when we determine the starting spot from the level file.
     this.startSpot = this.instantiationService.createInstance(Actor);
+  }
+
+  public override async beginPlay(): Promise<void> {
+    await super.beginPlay();
+
+    this.kinematicController = await this.physicsContext.registerKinematicController({ offset: 0.1 });
+    this.kinematicController.setApplyImpulsesToDynamicBodies(true);
+    this.kinematicController.enableAutostep(0.7, 0.3, true);
+    this.kinematicController.enableSnapToGround(0.7);
   }
 
   public possess(pawn: Pawn): void {

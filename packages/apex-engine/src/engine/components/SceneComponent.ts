@@ -1,11 +1,17 @@
+import RAPIER from '@dimforge/rapier3d-compat';
 import { Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type Actor } from '../Actor';
 import { CLASS, PROP } from '../core/class/decorators';
-import { proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
+import { type ColliderProxy } from '../physics/Collider';
+import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
+import { type RigidBodyProxy } from '../physics/RigidBody';
 import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { RenderProxy } from '../renderer/RenderProxy';
 import { ActorComponent } from './ActorComponent';
@@ -59,10 +65,11 @@ export class SceneComponentProxy extends RenderProxy {
   constructor(
     args: unknown[] = [],
     tb: TripleBuffer,
-    public override readonly id: number,
-    protected override readonly renderer: IInternalRenderWorkerContext
+    id: number,
+    thread: EProxyThread,
+    renderer: IInternalRenderWorkerContext
   ) {
-    super(args, tb, id, renderer);
+    super(args, tb, id, thread, renderer);
 
     this.sceneObject = new Object3D();
   }
@@ -81,11 +88,39 @@ export class SceneComponentProxy extends RenderProxy {
   }
 }
 
-@CLASS(proxy(SceneComponentProxy))
-export class SceneComponent extends ActorComponent {
-  declare byteView: Uint8Array;
+@CLASS(proxy(EProxyThread.Render, SceneComponentProxy))
+export class SceneComponent extends ActorComponent implements IProxyOrigin {
+  declare readonly byteView: Uint8Array;
 
-  declare tripleBuffer: TripleBuffer;
+  declare readonly tripleBuffer: TripleBuffer;
+
+  /**
+   * This property is used for registering the rigid-body. It supports `null`,
+   * in case you don't want this component to have a rigid-body.
+   *
+   * Important: When the rigid-body has been registered, changing this property
+   * directly will have no effect. Instead, use `setBodyType`.
+   */
+  private bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
+
+  public getBodyType(): SceneComponent['bodyType'] {
+    return this.bodyType;
+  }
+
+  public setBodyType(val: SceneComponent['bodyType']): void {
+    if (this.rigidBody) {
+      if (val === null) {
+        this.logger.warn(`You can't set the rigid-body type to "null" after a rigid-body has been created.`);
+        return;
+      } else {
+        this.rigidBody.setBodyType(val);
+      }
+    } else {
+      // @todo: Should we support creation of a rigid-body during play?
+    }
+
+    this.bodyType = val;
+  }
 
   @PROP(serialize(vec3))
   public position: Vector3 = new Vector3();
@@ -124,6 +159,30 @@ export class SceneComponent extends ActorComponent {
    * directly into this array and instead use `attachToComponent`.
    */
   public children: SceneComponent[] = [];
+
+  public rigidBody: RigidBodyProxy | null = null;
+
+  public colliderShape: RAPIER.ShapeType | null = null;
+
+  public collider: ColliderProxy | null = null;
+
+  constructor(
+    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
+    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
+  ) {
+    super(instantiationService, logger);
+  }
+
+  public override async beginPlay(): Promise<void> {
+    if (this.bodyType !== null) {
+      await this.physicsContext.registerRigidBody(this, { position: this.position });
+    }
+  }
+
+  public override async tick(context: IEngineLoopTickContext): Promise<void> {
+    await super.tick(context);
+  }
 
   public setAsRoot(actor: Actor): void {
     actor.rootComponent = this;
