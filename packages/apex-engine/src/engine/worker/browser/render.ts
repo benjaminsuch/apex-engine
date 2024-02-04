@@ -13,7 +13,7 @@ import { RenderingInfo } from '../../renderer/RenderingInfo';
 import { RenderProxyManager } from '../../renderer/RenderProxyManager';
 import { ETickGroup, TickManager } from '../../TickManager';
 
-new WorkerMain();
+// new WorkerMain();
 export interface IInternalRenderWorkerContext {
   camera: Camera;
   frameId: number;

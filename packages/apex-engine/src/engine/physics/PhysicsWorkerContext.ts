@@ -13,9 +13,9 @@ import { Flags } from '../Flags';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { ColliderProxy } from './Collider';
 import { KinematicControllerProxy } from './KinematicController';
-import { type ICreatedProxyData, type IInternalPhysicsWorkerContext } from './Physics.worker';
 import { PhysicsInfo } from './PhysicsInfo';
 import { PhysicsTaskManager } from './PhysicsTaskManager';
+import { type ICreatedProxyData, type PhysicsWorker } from './PhysicsWorker';
 import { RigidBodyProxy } from './RigidBody';
 
 export class PhysicsWorkerContext implements IPhysicsWorkerContext {
@@ -23,15 +23,18 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 
   private readonly worker: Worker;
 
-  private readonly comlink: Comlink.Remote<IInternalPhysicsWorkerContext>;
+  private readonly comlink: Comlink.Remote<PhysicsWorker>;
 
   private info: PhysicsInfo | null = null;
 
   public isInitialized = false;
 
-  constructor(@IInstantiationService private readonly instantiationService: IInstantiationService, @IWorkerManager private readonly workerManager: IWorkerManager) {
+  constructor(
+    @IInstantiationService private readonly instantiationService: IInstantiationService,
+    @IWorkerManager private readonly workerManager: IWorkerManager
+  ) {
     this.worker = this.workerManager.physicsWorker;
-    this.comlink = Comlink.wrap<IInternalPhysicsWorkerContext>(this.worker);
+    this.comlink = Comlink.wrap<PhysicsWorker>(this.worker);
   }
 
   public async init(flags: Uint8Array[], renderPort: MessagePort): Promise<void> {

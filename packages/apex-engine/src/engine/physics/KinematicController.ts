@@ -5,8 +5,12 @@ import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
-import { type IInternalPhysicsWorkerContext } from './Physics.worker';
 import { PhysicsTaskManager, PhysicsWorkerTask } from './PhysicsTaskManager';
+import { type PhysicsWorker } from './PhysicsWorker';
+
+export interface KinematicControllerConstructorArgs {
+  offset: number;
+}
 
 export class KinematicControllerProxy extends ProxyInstance {
   declare readonly offset: number;
@@ -32,7 +36,7 @@ export class KinematicController implements IProxyOrigin {
 
   public readonly worldController: RAPIER.KinematicCharacterController;
 
-  constructor({ offset }: { offset: number }, protected readonly physicsContext: IInternalPhysicsWorkerContext) {
+  constructor({ offset }: KinematicControllerConstructorArgs, protected readonly physicsContext: PhysicsWorker) {
     this.worldController = this.physicsContext.world.createCharacterController(offset);
   }
 
