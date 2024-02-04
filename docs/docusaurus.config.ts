@@ -54,16 +54,6 @@ const config: Config = {
           label: 'Docs',
         },
         {
-          to: '/api',
-          label: 'API',
-          position: 'left',
-        },
-        {
-          to: '/blog',
-          label: 'Blog',
-          position: 'right',
-        },
-        {
           href: 'https://github.com/benjaminsuch/apexengine',
           label: 'GitHub',
           position: 'right',
@@ -79,10 +69,6 @@ const config: Config = {
             {
               label: 'Docs',
               to: '/docs/intro',
-            },
-            {
-              label: 'API',
-              to: '/api',
             },
           ],
         },
@@ -102,10 +88,6 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            {
-              label: 'Blog',
-              to: '/blog',
-            },
             {
               label: 'GitHub',
               href: 'https://github.com/facebook/docusaurus',
