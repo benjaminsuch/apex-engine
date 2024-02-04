@@ -1,8 +1,8 @@
 export interface TripleBufferJSON {
-  flags: Uint8Array;
-  buffers: SharedArrayBuffer[];
-  byteLength: number;
-  byteViews: Uint8Array[];
+  readonly flags: Uint8Array;
+  readonly buffers: SharedArrayBuffer[];
+  readonly byteLength: number;
+  readonly byteViews: Uint8Array[];
 }
 
 /**

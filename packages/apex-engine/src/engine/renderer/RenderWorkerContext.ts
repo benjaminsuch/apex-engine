@@ -1,12 +1,12 @@
 import * as Comlink from 'comlink';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
 import { getTargetId } from '../core/class/decorators';
 import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { type IInternalRenderWorkerContext } from './Render.worker';
-import RenderWorker from './Render.worker?worker';
 import { RenderingInfo } from './RenderingInfo';
 
 export class RenderWorkerContext implements IRenderWorkerContext {
@@ -31,8 +31,11 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
   public isInitialized = false;
 
-  constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
-    this.worker = new RenderWorker();
+  constructor(
+    @IInstantiationService private readonly instantiationService: IInstantiationService,
+    @IWorkerManager private readonly workerManager: IWorkerManager
+  ) {
+    this.worker = this.workerManager.renderWorker;
     this.comlink = Comlink.wrap<IInternalRenderWorkerContext>(this.worker);
   }
 

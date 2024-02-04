@@ -1,25 +1,24 @@
-import '../../launch/bootstrap';
-
 import * as RAPIER from '@dimforge/rapier3d-compat';
 import * as Comlink from 'comlink';
 
-import { InstantiationService } from '../../platform/di/common/InstantiationService';
-import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
-import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { getTargetId } from '../core/class/decorators';
-import { EProxyThread, type IProxyConstructionData, type IProxyOrigin } from '../core/class/specifiers/proxy';
-import { TripleBuffer, type TripleBufferJSON } from '../core/memory/TripleBuffer';
-import { type IEngineLoopTickContext } from '../EngineLoop';
-import { Flags } from '../Flags';
-import { type ProxyInstance } from '../ProxyInstance';
-import { ProxyManager } from '../ProxyManager';
-import { ETickGroup, TickManager } from '../TickManager';
-import { Collider } from './Collider';
-import { KinematicController, KinematicControllerProxy } from './KinematicController';
-import { PhysicsInfo } from './PhysicsInfo';
-import { type PhysicsWorkerTaskJSON } from './PhysicsTaskManager';
-import { RigidBody } from './RigidBody';
-
+import { WorkerMain } from '../../../launch/browser/WorkerMain';
+import { InstantiationService } from '../../../platform/di/common/InstantiationService';
+import { ServiceCollection } from '../../../platform/di/common/ServiceCollection';
+import { ConsoleLogger, IConsoleLogger } from '../../../platform/logging/common/ConsoleLogger';
+import { getTargetId } from '../../core/class/decorators';
+import { EProxyThread, type IProxyConstructionData, type IProxyOrigin } from '../../core/class/specifiers/proxy';
+import { TripleBuffer, type TripleBufferJSON } from '../../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../../EngineLoop';
+import { Flags } from '../../Flags';
+import { Collider } from '../../physics/Collider';
+import { KinematicController, KinematicControllerProxy } from '../../physics/KinematicController';
+import { PhysicsInfo } from '../../physics/PhysicsInfo';
+import { type PhysicsWorkerTaskJSON } from '../../physics/PhysicsTaskManager';
+import { RigidBody } from '../../physics/RigidBody';
+import { type ProxyInstance } from '../../ProxyInstance';
+import { ProxyManager } from '../../ProxyManager';
+import { ETickGroup, TickManager } from '../../TickManager';
+new WorkerMain();
 export interface ICreatedProxyData {
   id: number;
   tb: TripleBufferJSON;
