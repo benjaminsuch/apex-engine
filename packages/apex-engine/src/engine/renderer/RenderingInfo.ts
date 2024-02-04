@@ -4,7 +4,7 @@ import { TripleBuffer } from '../core/memory/TripleBuffer';
 /**
  * A separate class to store the info in a triple buffer to make it available
  * for the game-thread. The class is used on both threads, except that only the
- * render-thread writes into the buffer.
+ * render-thread writes into the buffer.1
  */
 export class RenderingInfo {
   private static readonly BUFFER_SIZE: number = Uint32Array.BYTES_PER_ELEMENT;
@@ -37,14 +37,14 @@ export class RenderingInfo {
   }
 
   public tick({ id }: any): void {
-    if (IS_WORKER) {
+    if (IS_WORKER && !IS_NODE) {
       this.dataView.setUint32(0, id, true);
       this.tripleBuffer.copyToWriteBuffer(this.byteView);
     }
   }
 
   public init(): void {
-    if (IS_WORKER) {
+    if (IS_WORKER && !IS_NODE) {
       this.logger.debug(this.constructor.name, `Initialize`);
       self.postMessage({ type: 'init-response', data: this.tripleBuffer });
     }

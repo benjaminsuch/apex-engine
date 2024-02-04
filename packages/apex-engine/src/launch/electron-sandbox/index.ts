@@ -1,5 +1,5 @@
 import '../bootstrap';
-import '../bootstrap-window';
+import '../bootstrap-browser';
 
 import { WindowMain } from './WindowMain';
 

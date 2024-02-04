@@ -1,3 +1,4 @@
+import { Scene } from 'three';
 import { DRACOLoader, type GLTF, GLTFLoader as BaseGLTFLoader } from 'three-stdlib';
 
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -20,6 +21,24 @@ export class GLTFLoader {
 
   public async load(url: string, onProgress?: OnProgress): Promise<GLTF> {
     let content: undefined | GLTF;
+
+    // @todo: Load files for nodejs.
+    if (IS_NODE) {
+      const scene = new Scene().toJSON();
+
+      return {
+        asset: {},
+        animations: [],
+        cameras: [],
+        scene: {
+          children: [],
+          ...scene,
+        },
+        scenes: [],
+        parser: {} as any,
+        userData: {},
+      };
+    }
 
     try {
       content = await this.loader.loadAsync(`${url}.glb`, onProgress);

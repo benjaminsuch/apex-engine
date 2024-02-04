@@ -22,6 +22,7 @@ export function replacePlugin(target: TargetConfig): Plugin<any> {
       IS_GAME: String(target.target === 'game'),
       IS_SERVER: String(target.target === 'server'),
       IS_BROWSER: String(target.platform === 'browser'),
+      IS_NODE: String(target.platform === 'node'),
       IS_WORKER: 'typeof window === \'undefined\'',
     },
   });

@@ -8,7 +8,7 @@ import { float32, serialize, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
-import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
+import { type RenderWorker } from '../renderer/RenderWorker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
 export class CameraComponentProxy extends SceneComponentProxy {
@@ -35,7 +35,7 @@ export class CameraComponentProxy extends SceneComponentProxy {
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
-    renderer: IInternalRenderWorkerContext
+    renderer: RenderWorker
   ) {
     super([aspect, far, fov, near], tb, id, thread, renderer);
 

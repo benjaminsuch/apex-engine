@@ -15,6 +15,7 @@ export interface WorkersPluginOptions {
   inline?: boolean;
   isBuild?: boolean;
   target: TargetConfig;
+  format?: 'cjs' | 'esm';
 }
 
 export interface WorkerCacheEntry {
@@ -28,6 +29,7 @@ export function workerPlugin({
   inline,
   isBuild = false,
   target,
+  format = 'esm',
 }: WorkersPluginOptions): InputPluginOption {
   const cache = new Map<string, WorkerCacheEntry>();
   const assets = new Map<string, EmittedAsset>();
@@ -96,9 +98,9 @@ export function workerPlugin({
         });
 
         const { output } = await bundle.generate({
-          format: 'esm',
+          format,
           sourcemap: false,
-          chunkFileNames: '[name].js',
+          chunkFileNames: '[name].[format]',
         });
 
         const [chunk, ...chunks] = output.filter((chunk): chunk is OutputChunk => chunk.type === 'chunk');
@@ -159,13 +161,11 @@ export function workerPlugin({
                   }
                 }
               `,
-              map: `{ "version":3, "file": "${basename(id)}", "sources":[], "sourcesContent":[], "names":[], "mappings": "" }`,
+              map: `{ "version": 3, "file": "${basename(id)}", "sources": [], "sourcesContent": [], "names": [], "mappings": "" }`,
             };
           }
         } else {
-          const path = isBuild
-            ? `build/${target.platform}`
-            : `${APEX_DIR}/build/${target.platform}`;
+          const path = isBuild ? `build/${target.platform}` : `${APEX_DIR}/build/${target.platform}`;
           const fileName = posix.join(path, entry.chunk.fileName).split(sep).join(posix.sep);
 
           code = [
@@ -186,12 +186,6 @@ export function workerPlugin({
     },
     renderChunk(code, chunk, options, meta) {},
     generateBundle(options, bundle) {
-      // console.log('assets', assets);
-      // assets.forEach((asset) => {
-      //   this.emitFile(asset);
-      //   assets.delete(asset.fileName!);
-      // });
-
       for (const [id, worker] of cache) {
         if (worker.chunk) {
           bundle[worker.id] = worker.chunk;

@@ -19,7 +19,7 @@ import { spawn } from 'node:child_process';
 
 var name = "apex-engine";
 var description = "A cross-platform game engine written in Typescript.";
-var version = "0.13.0-0";
+var version = "0.14.0-0";
 var author = "Benjamin Such";
 var license = "BSD-3-Clause";
 var type = "module";
@@ -309,13 +309,14 @@ function replacePlugin(target) {
             IS_GAME: String(target.target === 'game'),
             IS_SERVER: String(target.target === 'server'),
             IS_BROWSER: String(target.platform === 'browser'),
+            IS_NODE: String(target.platform === 'node'),
             IS_WORKER: 'typeof window === \'undefined\'',
         },
     });
 }
 
 const _require$1 = createRequire(import.meta.url);
-function workerPlugin({ inline, isBuild = false, target, }) {
+function workerPlugin({ inline, isBuild = false, target, format = 'esm', }) {
     const cache = new Map();
     const assets = new Map();
     return {
@@ -372,9 +373,9 @@ function workerPlugin({ inline, isBuild = false, target, }) {
                     onwarn() { },
                 });
                 const { output } = await bundle.generate({
-                    format: 'esm',
+                    format,
                     sourcemap: false,
-                    chunkFileNames: '[name].js',
+                    chunkFileNames: '[name].[format]',
                 });
                 const [chunk, ...chunks] = output.filter((chunk) => chunk.type === 'chunk');
                 chunks.forEach((chunk) => {
@@ -428,14 +429,12 @@ function workerPlugin({ inline, isBuild = false, target, }) {
                   }
                 }
               `,
-                            map: `{ "version":3, "file": "${basename(id)}", "sources":[], "sourcesContent":[], "names":[], "mappings": "" }`,
+                            map: `{ "version": 3, "file": "${basename(id)}", "sources": [], "sourcesContent": [], "names": [], "mappings": "" }`,
                         };
                     }
                 }
                 else {
-                    const path = isBuild
-                        ? `build/${target.platform}`
-                        : `${APEX_DIR}/build/${target.platform}`;
+                    const path = isBuild ? `build/${target.platform}` : `${APEX_DIR}/build/${target.platform}`;
                     const fileName = posix.join(path, entry.chunk.fileName).split(sep).join(posix.sep);
                     code = [
                         `import { Worker } from "node:worker_threads"`,
@@ -453,11 +452,6 @@ function workerPlugin({ inline, isBuild = false, target, }) {
         },
         renderChunk(code, chunk, options, meta) { },
         generateBundle(options, bundle) {
-            // console.log('assets', assets);
-            // assets.forEach((asset) => {
-            //   this.emitFile(asset);
-            //   assets.delete(asset.fileName!);
-            // });
             for (const [id, worker] of cache) {
                 if (worker.chunk) {
                     bundle[worker.id] = worker.chunk;
@@ -677,6 +671,8 @@ async function serveBrowserTarget(target) {
 }
 async function serveElectronTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/electron');
+    const engineFiles = getEngineSourceFiles();
+    const gameFiles = getGameSourceFiles();
     process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
     fs.copy('src/assets', resolve(buildDir, 'assets'), (err) => {
         if (err) {
@@ -723,12 +719,29 @@ async function serveElectronTarget(target) {
     const sandbox = watch({
         input: {
             sandbox: getLauncherPath('electron-sandbox'),
-            ...getEngineSourceFiles(),
-            ...getGameSourceFiles(),
+            ...engineFiles,
+            ...gameFiles,
         },
         output: {
             dir: buildDir,
+            exports: 'named',
+            format: 'esm',
             chunkFileNames: '[name].js',
+            manualChunks(id) {
+                if (id.includes('node_modules')) {
+                    if (id.includes('three')) {
+                        return 'vendors/three';
+                    }
+                    if (id.includes('rapier3d-compat')) {
+                        return 'vendors/rapier';
+                    }
+                    return 'vendors/index';
+                }
+                if (Object.keys(gameFiles).includes(id)) {
+                    return id;
+                }
+                return undefined;
+            },
         },
         plugins: [
             replacePlugin(target),
@@ -770,26 +783,40 @@ async function serveElectronTarget(target) {
 }
 async function serveNodeTarget(target) {
     const buildDir = resolve(APEX_DIR, 'build/node');
+    const engineFiles = getEngineSourceFiles();
+    const gameFiles = getGameSourceFiles();
     copyGameMaps(buildDir);
     const watcher = watch({
         input: {
             index: getLauncherPath('node'),
-            ...getEngineSourceFiles(),
-            ...getGameSourceFiles(),
+            ...engineFiles,
+            ...gameFiles,
         },
         output: {
             dir: buildDir,
-            entryFileNames: `[name].mjs`,
+            entryFileNames: '[name].mjs',
             chunkFileNames: '[name].mjs',
-            externalLiveBindings: false,
             format: 'esm',
-            freeze: false,
-            sourcemap: false,
+            manualChunks(id) {
+                if (id.includes('node_modules')) {
+                    if (id.includes('three')) {
+                        return 'vendors/three';
+                    }
+                    if (id.includes('rapier3d-compat')) {
+                        return 'vendors/rapier';
+                    }
+                    return 'vendors/index';
+                }
+                if (Object.keys(gameFiles).includes(id)) {
+                    return id;
+                }
+                return undefined;
+            },
         },
         plugins: [
             replacePlugin(target),
             buildInfo(target, levels),
-            workerPlugin({ target }),
+            workerPlugin({ target, format: 'cjs' }),
             nodeResolve({ preferBuiltins: true }),
             typescript(),
         ],

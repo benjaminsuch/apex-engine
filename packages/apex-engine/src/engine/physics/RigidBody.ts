@@ -1,4 +1,4 @@
-import type RAPIER from '@dimforge/rapier3d-compat';
+import RAPIER from '@dimforge/rapier3d-compat';
 import { type Quaternion, type Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
@@ -11,8 +11,8 @@ import { ProxyInstance } from '../ProxyInstance';
 import { TickFunction } from '../TickManager';
 import { type Collider, type ColliderProxy } from './Collider';
 import { type KinematicController, type KinematicControllerProxy } from './KinematicController';
-import { type IInternalPhysicsWorkerContext } from './Physics.worker';
 import { PhysicsTaskManager, PhysicsWorkerTask, type PhysicsWorkerTaskJSON } from './PhysicsTaskManager';
+import { type PhysicsWorker } from './PhysicsWorker';
 
 export class RigidBodyProxy extends ProxyInstance {
   declare readonly handle: number;
@@ -145,7 +145,7 @@ export class RigidBody implements IProxyOrigin {
 
   constructor(
     public readonly worldBody: RAPIER.RigidBody,
-    protected readonly physicsContext: IInternalPhysicsWorkerContext,
+    protected readonly physicsContext: PhysicsWorker,
     @IInstantiationService protected readonly instantiationService: IInstantiationService
   ) {
     this.handle = this.worldBody.handle;
@@ -268,4 +268,21 @@ class SetBodyTypeTask extends PhysicsWorkerTask<RigidBodyProxy, 'setBodyType', [
   constructor(target: RigidBodyProxy, bodyType: number) {
     super(target, 'setBodyType', [bodyType]);
   }
+}
+
+export function createRigidBodyDesc(type: RAPIER.RigidBodyType): RAPIER.RigidBodyDesc {
+  if (type === RAPIER.RigidBodyType.Dynamic) {
+    return RAPIER.RigidBodyDesc.dynamic();
+  }
+  if (type === RAPIER.RigidBodyType.Fixed) {
+    return RAPIER.RigidBodyDesc.fixed();
+  }
+  if (type === RAPIER.RigidBodyType.KinematicPositionBased) {
+    return RAPIER.RigidBodyDesc.kinematicPositionBased();
+  }
+  if (type === RAPIER.RigidBodyType.KinematicVelocityBased) {
+    return RAPIER.RigidBodyDesc.kinematicVelocityBased();
+  }
+
+  throw new Error(`Unknown rigid body type.`);
 }

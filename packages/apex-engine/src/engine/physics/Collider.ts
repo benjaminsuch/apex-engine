@@ -1,4 +1,4 @@
-import type RAPIER from '@dimforge/rapier3d-compat';
+import RAPIER from '@dimforge/rapier3d-compat';
 import { type Quaternion, type Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
@@ -9,9 +9,158 @@ import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
 import { TickFunction } from '../TickManager';
-import { type IInternalPhysicsWorkerContext } from './Physics.worker';
 import { PhysicsTaskManager, PhysicsWorkerTask } from './PhysicsTaskManager';
+import { type PhysicsWorker } from './PhysicsWorker';
 import { type RigidBody } from './RigidBody';
+
+export interface IColliderBallConstructorArgs {
+  radius: number;
+}
+
+export interface IColliderHalfSpaceConstructorArgs {
+  normal: RAPIER.Vector;
+}
+
+export interface IColliderCuboidConstructorArgs {
+  hx: number;
+  hy: number;
+  hz: number;
+}
+
+export interface IColliderRoundCuboidConstructorArgs {
+  hx: number;
+  hy: number;
+  hz: number;
+  borderRadius: number;
+}
+
+export interface IColliderCapsuleConstructorArgs {
+  halfHeight: number;
+  radius: number;
+}
+
+export interface IColliderSegmentConstructorArgs {
+  a: RAPIER.Vector;
+  b: RAPIER.Vector;
+}
+
+export interface IColliderTriangleConstructorArgs {
+  a: RAPIER.Vector;
+  b: RAPIER.Vector;
+  c: RAPIER.Vector;
+}
+
+export interface IColliderRoundTriangleConstructorArgs {
+  a: RAPIER.Vector;
+  b: RAPIER.Vector;
+  c: RAPIER.Vector;
+  borderRadius: number;
+}
+
+export interface IColliderPolylineConstructorArgs {
+  vertices: Float32Array;
+  indices?: Uint32Array;
+}
+
+export interface IColliderTriMeshConstructorArgs {
+  vertices: Float32Array;
+  indices: Uint32Array;
+}
+
+export interface IColliderConvexPolyhedronConstructorArgs {
+  vertices: Float32Array;
+  indices?: Uint32Array;
+}
+
+export interface IColliderRoundConvexPolyhedronConstructorArgs {
+  vertices: Float32Array;
+  indices?: Uint32Array;
+  borderRadius: number;
+}
+
+export interface IColliderHeightFieldConstructorArgs {
+  nrows: number;
+  ncols: number;
+  heights: Float32Array;
+  scale: RAPIER.Vector;
+}
+
+export interface IColliderCylinderConstructorArgs {
+  halfHeight: number;
+  radius: number;
+}
+
+export interface IColliderRoundCylinderConstructorArgs {
+  halfHeight: number;
+  radius: number;
+  borderRadius: number;
+}
+
+export interface IColliderConeConstructorArgs {
+  halfHeight: number;
+  radius: number;
+}
+
+export interface IColliderRoundConeConstructorArgs {
+  halfHeight: number;
+  radius: number;
+  borderRadius: number;
+}
+
+export type ColliderDescConstructor = typeof RAPIER.ColliderDesc.ball
+  | typeof RAPIER.ColliderDesc.capsule
+  | typeof RAPIER.ColliderDesc.cone
+  | typeof RAPIER.ColliderDesc.convexHull
+  | typeof RAPIER.ColliderDesc.cuboid
+  | typeof RAPIER.ColliderDesc.cylinder
+  | typeof RAPIER.ColliderDesc.heightfield
+  | typeof RAPIER.ColliderDesc.polyline
+  | typeof RAPIER.ColliderDesc.roundCone
+  | typeof RAPIER.ColliderDesc.roundConvexHull
+  | typeof RAPIER.ColliderDesc.roundCuboid
+  | typeof RAPIER.ColliderDesc.roundCylinder
+  | typeof RAPIER.ColliderDesc.roundTriangle
+  | typeof RAPIER.ColliderDesc.segment
+  | typeof RAPIER.ColliderDesc.trimesh
+  | typeof RAPIER.ColliderDesc.triangle;
+
+export type AnyColliderDescConstructor = (...args: [ProxyInstance['id'], ...unknown[]]) => RAPIER.ColliderDesc;
+
+export type GetColliderArgsByShape<T> = T extends RAPIER.ShapeType.Ball
+  ? IColliderBallConstructorArgs
+  : T extends RAPIER.ShapeType.Capsule
+    ? IColliderCapsuleConstructorArgs
+    : T extends RAPIER.ShapeType.Cone
+      ? IColliderConeConstructorArgs
+      : T extends RAPIER.ShapeType.ConvexPolyhedron
+        ? IColliderConvexPolyhedronConstructorArgs
+        : T extends RAPIER.ShapeType.Cuboid
+          ? IColliderCuboidConstructorArgs
+          : T extends RAPIER.ShapeType.Cylinder
+            ? IColliderCylinderConstructorArgs
+            : T extends RAPIER.ShapeType.HeightField
+              ? IColliderHeightFieldConstructorArgs
+              : T extends RAPIER.ShapeType.Polyline
+                ? IColliderPolylineConstructorArgs
+                : T extends RAPIER.ShapeType.RoundCone
+                  ? IColliderRoundConeConstructorArgs
+                  : T extends RAPIER.ShapeType.RoundConvexPolyhedron
+                    ? IColliderRoundConvexPolyhedronConstructorArgs
+                    : T extends RAPIER.ShapeType.RoundCuboid
+                      ? IColliderRoundCuboidConstructorArgs
+                      : T extends RAPIER.ShapeType.RoundCylinder
+                        ? IColliderRoundCylinderConstructorArgs
+                        : T extends RAPIER.ShapeType.RoundTriangle
+                          ? IColliderRoundTriangleConstructorArgs
+                          : T extends RAPIER.ShapeType.Segment
+                            ? IColliderSegmentConstructorArgs
+                            : T extends RAPIER.ShapeType.TriMesh
+                              ? IColliderTriMeshConstructorArgs
+                              : T extends RAPIER.ShapeType.Triangle
+                                ? IColliderTriangleConstructorArgs
+                                : never;
+
+export type ColliderRegisterArgs<T> = { rigidBodyId: ProxyInstance['id'] } & GetColliderArgsByShape<T>;
 
 export class ColliderProxy extends ProxyInstance {
   declare readonly handle: number;
@@ -81,7 +230,7 @@ export class Collider implements IProxyOrigin {
   constructor(
     colliderDesc: RAPIER.ColliderDesc,
     rigidBodyId: number,
-    protected readonly physicsContext: IInternalPhysicsWorkerContext,
+    protected readonly physicsContext: PhysicsWorker,
     @IInstantiationService protected readonly instantiationService: IInstantiationService
   ) {
     this.rigidBody = this.physicsContext.proxyManager.getProxy(rigidBodyId, EProxyThread.Game) as RigidBody;
@@ -129,4 +278,28 @@ class SetMassTask extends PhysicsWorkerTask<ColliderProxy, 'setMass', [number]> 
   constructor(target: ColliderProxy, mass: number) {
     super(target, 'setMass', [mass]);
   }
+}
+
+export function getColliderDescConstructor<T extends RAPIER.ShapeType>(type: T): AnyColliderDescConstructor {
+  const constructors: Record<RAPIER.ShapeType, ColliderDescConstructor> = {
+    [RAPIER.ShapeType.Ball]: RAPIER.ColliderDesc.ball,
+    [RAPIER.ShapeType.Capsule]: RAPIER.ColliderDesc.capsule,
+    [RAPIER.ShapeType.Cone]: RAPIER.ColliderDesc.cone,
+    [RAPIER.ShapeType.ConvexPolyhedron]: RAPIER.ColliderDesc.convexHull,
+    [RAPIER.ShapeType.Cuboid]: RAPIER.ColliderDesc.cuboid,
+    [RAPIER.ShapeType.Cylinder]: RAPIER.ColliderDesc.cylinder,
+    [RAPIER.ShapeType.HalfSpace]: RAPIER.ColliderDesc.heightfield,
+    [RAPIER.ShapeType.HeightField]: RAPIER.ColliderDesc.heightfield,
+    [RAPIER.ShapeType.Polyline]: RAPIER.ColliderDesc.polyline,
+    [RAPIER.ShapeType.RoundCone]: RAPIER.ColliderDesc.roundCone,
+    [RAPIER.ShapeType.RoundConvexPolyhedron]: RAPIER.ColliderDesc.roundConvexHull,
+    [RAPIER.ShapeType.RoundCuboid]: RAPIER.ColliderDesc.roundCuboid,
+    [RAPIER.ShapeType.RoundCylinder]: RAPIER.ColliderDesc.roundCylinder,
+    [RAPIER.ShapeType.RoundTriangle]: RAPIER.ColliderDesc.roundTriangle,
+    [RAPIER.ShapeType.Segment]: RAPIER.ColliderDesc.segment,
+    [RAPIER.ShapeType.TriMesh]: RAPIER.ColliderDesc.trimesh,
+    [RAPIER.ShapeType.Triangle]: RAPIER.ColliderDesc.triangle,
+  };
+
+  return constructors[type] as AnyColliderDescConstructor;
 }

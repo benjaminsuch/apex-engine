@@ -7,7 +7,7 @@ import { CLASS } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
-import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
+import { type RenderWorker } from '../renderer/RenderWorker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
 export class MeshComponentProxy extends SceneComponentProxy {
@@ -16,7 +16,7 @@ export class MeshComponentProxy extends SceneComponentProxy {
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
-    renderer: IInternalRenderWorkerContext
+    renderer: RenderWorker
   ) {
     super([geometryData, materialData], tb, id, thread, renderer);
 

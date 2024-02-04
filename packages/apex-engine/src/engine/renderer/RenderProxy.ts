@@ -1,7 +1,7 @@
 import { type EProxyThread } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { ProxyInstance } from '../ProxyInstance';
-import { type IInternalRenderWorkerContext } from './Render.worker';
+import { type RenderWorker } from './RenderWorker';
 
 export abstract class RenderProxy extends ProxyInstance {
   constructor(
@@ -9,7 +9,7 @@ export abstract class RenderProxy extends ProxyInstance {
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
-    protected readonly renderer: IInternalRenderWorkerContext
+    protected readonly renderer: RenderWorker
   ) {
     super(args, tb, id, thread);
   }

@@ -2,20 +2,20 @@ import * as Comlink from 'comlink';
 import { BoxGeometry, BufferGeometry, CapsuleGeometry, PlaneGeometry, type Vector3 } from 'three';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
 import { type MeshComponent } from '../components/MeshComponent';
 import { type SceneComponent } from '../components/SceneComponent';
 import { getTargetId } from '../core/class/decorators';
-import { EProxyThread, filterArgs, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { ColliderProxy } from './Collider';
 import { KinematicControllerProxy } from './KinematicController';
-import { type ICreatedProxyData, type IInternalPhysicsWorkerContext } from './Physics.worker';
-import PhysicsWorker from './Physics.worker?worker';
 import { PhysicsInfo } from './PhysicsInfo';
 import { PhysicsTaskManager } from './PhysicsTaskManager';
+import { type ICreatedProxyData, type PhysicsWorker } from './PhysicsWorker';
 import { RigidBodyProxy } from './RigidBody';
 
 export class PhysicsWorkerContext implements IPhysicsWorkerContext {
@@ -23,15 +23,18 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 
   private readonly worker: Worker;
 
-  private readonly comlink: Comlink.Remote<IInternalPhysicsWorkerContext>;
+  private readonly comlink: Comlink.Remote<PhysicsWorker>;
 
   private info: PhysicsInfo | null = null;
 
   public isInitialized = false;
 
-  constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
-    this.worker = new PhysicsWorker();
-    this.comlink = Comlink.wrap<IInternalPhysicsWorkerContext>(this.worker);
+  constructor(
+    @IInstantiationService private readonly instantiationService: IInstantiationService,
+    @IWorkerManager private readonly workerManager: IWorkerManager
+  ) {
+    this.worker = this.workerManager.physicsWorker;
+    this.comlink = Comlink.wrap<PhysicsWorker>(this.worker);
   }
 
   public async init(flags: Uint8Array[], renderPort: MessagePort): Promise<void> {
@@ -44,9 +47,9 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
         reject(`Physics-Worker initialization failed.`);
-      }, 30_000);
+      }, 5_000);
 
-      this.worker.onmessage = (event): void => {
+      this.worker.addEventListener('message', (event): void => {
         if (typeof event.data !== 'object') {
           return;
         }
@@ -60,7 +63,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
           clearTimeout(timeoutId);
           resolve();
         }
-      };
+      });
     });
   }
 

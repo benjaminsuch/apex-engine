@@ -1,21 +1,9 @@
 import { BrowserWindow } from 'electron';
 
-import { InstantiationService } from '../../platform/di/common/InstantiationService';
-import { ServiceCollection } from '../../platform/di/common/ServiceCollection';
-import { ConsoleLogger, IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-
 export class DesktopMain {
-  private readonly instantiationService: InstantiationService;
-
   private window?: BrowserWindow;
 
-  constructor(args: string[]) {
-    const services = new ServiceCollection();
-
-    services.set(IConsoleLogger, new ConsoleLogger());
-
-    this.instantiationService = new InstantiationService(services);
-  }
+  constructor(args: string[]) {}
 
   public init(): void {
     // ? We have to keep in mind, that this window can be modified by the engine
