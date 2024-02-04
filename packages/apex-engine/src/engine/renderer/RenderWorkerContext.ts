@@ -6,15 +6,15 @@ import { getTargetId } from '../core/class/decorators';
 import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
-import { type IInternalRenderWorkerContext } from './Render.worker';
 import { RenderingInfo } from './RenderingInfo';
+import { type RenderWorker } from './RenderWorker';
 
 export class RenderWorkerContext implements IRenderWorkerContext {
   declare readonly _injectibleService: undefined;
 
   private readonly worker: Worker;
 
-  private readonly comlink: Comlink.Remote<IInternalRenderWorkerContext>;
+  private readonly comlink: Comlink.Remote<RenderWorker>;
 
   private canvas?: HTMLCanvasElement;
 
@@ -36,7 +36,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     @IWorkerManager private readonly workerManager: IWorkerManager
   ) {
     this.worker = this.workerManager.renderWorker;
-    this.comlink = Comlink.wrap<IInternalRenderWorkerContext>(this.worker);
+    this.comlink = Comlink.wrap<RenderWorker>(this.worker);
   }
 
   public async init(flags: Uint8Array[], physicsPort: MessagePort): Promise<void> {
@@ -118,15 +118,15 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     return this.comlink.start();
   }
 
-  public setSize(height: number, width: number): Promise<void> {
-    return this.comlink.setSize(height, width);
+  public setSize(width: number, height: number): Promise<void> {
+    return this.comlink.setSize(width, height);
   }
 }
 
 export interface IRenderWorkerContext extends IInjectibleService {
   createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
   getRenderingInfo(): RenderingInfo;
-  setSize(height: number, width: number): Promise<void>;
+  setSize(width: number, height: number): Promise<void>;
   start(): Promise<void>;
 }
 

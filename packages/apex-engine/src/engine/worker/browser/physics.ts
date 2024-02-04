@@ -5,13 +5,14 @@ const main = new WorkerMain<PhysicsWorker>(PhysicsWorker);
 
 self.addEventListener('message', onInit);
 
-function onInit(event: MessageEvent): void {
+async function onInit(event: MessageEvent): Promise<void> {
   if (typeof event.data !== 'object') {
     return;
   }
 
   if (event.data.type === 'init') {
     self.removeEventListener('message', onInit);
-    main.worker.init(event.data);
+    await main.worker.init(event.data);
+    self.postMessage({ type: 'init-response', tb: main.worker.info.tripleBuffer });
   }
 }

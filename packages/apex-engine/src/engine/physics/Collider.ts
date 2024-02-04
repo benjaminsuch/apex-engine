@@ -280,7 +280,7 @@ class SetMassTask extends PhysicsWorkerTask<ColliderProxy, 'setMass', [number]> 
   }
 }
 
-function getColliderDescConstructor<T extends RAPIER.ShapeType>(type: T): AnyColliderDescConstructor {
+export function getColliderDescConstructor<T extends RAPIER.ShapeType>(type: T): AnyColliderDescConstructor {
   const constructors: Record<RAPIER.ShapeType, ColliderDescConstructor> = {
     [RAPIER.ShapeType.Ball]: RAPIER.ColliderDesc.ball,
     [RAPIER.ShapeType.Capsule]: RAPIER.ColliderDesc.capsule,

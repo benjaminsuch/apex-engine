@@ -12,8 +12,8 @@ import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type ColliderProxy } from '../physics/Collider';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RigidBodyProxy } from '../physics/RigidBody';
-import { type IInternalRenderWorkerContext } from '../renderer/Render.worker';
 import { RenderProxy } from '../renderer/RenderProxy';
+import { type RenderWorker } from '../renderer/RenderWorker';
 import { ActorComponent } from './ActorComponent';
 
 const _m1 = /* @__PURE__ */ new Matrix4();
@@ -67,7 +67,7 @@ export class SceneComponentProxy extends RenderProxy {
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
-    renderer: IInternalRenderWorkerContext
+    renderer: RenderWorker
   ) {
     super(args, tb, id, thread, renderer);
 

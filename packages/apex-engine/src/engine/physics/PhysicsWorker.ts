@@ -7,7 +7,7 @@ import { EProxyThread, type IProxyConstructionData, type IProxyOrigin } from '..
 import { TripleBuffer, type TripleBufferJSON } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
-import { Collider, type ColliderRegisterArgs } from '../physics/Collider';
+import { Collider, type ColliderRegisterArgs, getColliderDescConstructor } from '../physics/Collider';
 import { KinematicController, type KinematicControllerConstructorArgs, KinematicControllerProxy } from '../physics/KinematicController';
 import { PhysicsInfo } from '../physics/PhysicsInfo';
 import { type PhysicsWorkerTaskJSON } from '../physics/PhysicsTaskManager';
@@ -23,13 +23,13 @@ export interface ICreatedProxyData {
 const proxyConstructors = { KinematicControllerProxy };
 
 export class PhysicsWorker {
-  private info!: PhysicsInfo;
-
   private renderPort!: MessagePort;
 
   private readonly tickManager: TickManager;
 
-  private isInitialized: boolean = false;
+  public isInitialized: boolean = false;
+
+  public info!: PhysicsInfo;
 
   public world!: RAPIER.World;
 
@@ -43,7 +43,7 @@ export class PhysicsWorker {
     this.proxyManager = this.instantiationService.createInstance(ProxyManager, EProxyThread.Physics, proxyConstructors);
   }
 
-  public init({ flags, renderPort }: any): void {
+  public async init({ flags, renderPort }: any): Promise<void> {
     if (this.isInitialized) {
       this.logger.error(this.constructor.name, `Already initialized`);
       return;
@@ -52,21 +52,21 @@ export class PhysicsWorker {
     this.renderPort = renderPort;
     Flags.PHYSICS_FLAGS = flags[0];
 
-    RAPIER.init().then(() => {
-      this.world = new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 });
-      this.info = this.instantiationService.createInstance(PhysicsInfo, Flags.PHYSICS_FLAGS, undefined);
-    });
+    await RAPIER.init();
+
+    this.world = new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 });
+    this.info = this.instantiationService.createInstance(PhysicsInfo, Flags.PHYSICS_FLAGS, undefined);
   }
 
   public createProxies(proxies: IProxyConstructionData[]): void {
-    this.logger.debug(this.constructor.name, 'Creating proxies:', proxies);
+    this.logger.debug('Creating proxies:', proxies);
 
     for (let i = 0; i < proxies.length; ++i) {
       const { constructor, id, tb, args, thread } = proxies[i];
       const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
 
       if (!ProxyConstructor) {
-        this.logger.warn(this.constructor.name, `Constructor (${constructor}) not found for proxy "${id}".`);
+        this.logger.warn(`Constructor (${constructor}) not found for proxy "${id}".`);
         return;
       }
 
