@@ -1,4 +1,4 @@
-# README
+# Apex Engine
 
 > [!IMPORTANT]  
 > The engine is very much in alpha stage and is actively being worked on. Features and API's can change drastically or even be removed. In it's current stage I would not recommend using it in production.
