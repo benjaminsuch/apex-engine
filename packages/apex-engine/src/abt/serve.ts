@@ -156,6 +156,8 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
 
 export async function serveElectronTarget(target: TargetConfig): Promise<void> {
   const buildDir = resolve(APEX_DIR, 'build/electron');
+  const engineFiles = getEngineSourceFiles();
+  const gameFiles = getGameSourceFiles();
 
   process.env['ELECTRON_RENDERER_URL'] = join(process.cwd(), '.apex/build/electron/index.html');
 
@@ -210,12 +212,29 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
   const sandbox = watch({
     input: {
       sandbox: getLauncherPath('electron-sandbox'),
-      ...getEngineSourceFiles(),
-      ...getGameSourceFiles(),
+      ...engineFiles,
+      ...gameFiles,
     },
     output: {
       dir: buildDir,
+      exports: 'named',
+      format: 'esm',
       chunkFileNames: '[name].js',
+      manualChunks(id) {
+        if (id.includes('node_modules')) {
+          if (id.includes('three')) {
+            return 'vendors/three';
+          }
+          if (id.includes('rapier3d-compat')) {
+            return 'vendors/rapier';
+          }
+          return 'vendors/index';
+        }
+        if (Object.keys(gameFiles).includes(id)) {
+          return id;
+        }
+        return undefined;
+      },
     },
     plugins: [
       replace(target),
@@ -267,28 +286,42 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
 
 export async function serveNodeTarget(target: TargetConfig): Promise<void> {
   const buildDir = resolve(APEX_DIR, 'build/node');
+  const engineFiles = getEngineSourceFiles();
+  const gameFiles = getGameSourceFiles();
 
   copyGameMaps(buildDir);
 
   const watcher = watch({
     input: {
       index: getLauncherPath('node'),
-      ...getEngineSourceFiles(),
-      ...getGameSourceFiles(),
+      ...engineFiles,
+      ...gameFiles,
     },
     output: {
       dir: buildDir,
-      entryFileNames: `[name].mjs`,
+      entryFileNames: '[name].mjs',
       chunkFileNames: '[name].mjs',
-      externalLiveBindings: false,
       format: 'esm',
-      freeze: false,
-      sourcemap: false,
+      manualChunks(id) {
+        if (id.includes('node_modules')) {
+          if (id.includes('three')) {
+            return 'vendors/three';
+          }
+          if (id.includes('rapier3d-compat')) {
+            return 'vendors/rapier';
+          }
+          return 'vendors/index';
+        }
+        if (Object.keys(gameFiles).includes(id)) {
+          return id;
+        }
+        return undefined;
+      },
     },
     plugins: [
       replace(target),
       buildInfo(target, levels),
-      workerPlugin({ target }),
+      workerPlugin({ target, format: 'cjs' }),
       nodeResolve({ preferBuiltins: true }),
       typescript(),
     ],

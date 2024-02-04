@@ -47,7 +47,11 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     try {
       // @todo: A temporary try/catch to prevent the engine from crashing in nodejs environment -> Remove
       this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
-    } catch {}
+    } catch {
+      if (IS_NODE) {
+        return Promise.resolve();
+      }
+    }
 
     if (this.canvas) {
       const offscreenCanvas = this.canvas.transferControlToOffscreen();
@@ -70,13 +74,12 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
         reject(`Render-Worker initialization failed.`);
-      }, 30_000);
+      }, 5_000);
 
       this.worker.onmessage = (event): void => {
         if (typeof event.data !== 'object') {
           return;
         }
-
         const { type, data } = event.data;
 
         if (type === 'init-response') {

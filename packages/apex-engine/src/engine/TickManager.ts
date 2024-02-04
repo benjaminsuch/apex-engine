@@ -63,7 +63,7 @@ export class TickManager {
     for (let i = 0; i < ETickGroup.MAX; ++i) {
       this.tickGroups.push([]);
     }
-    console.log('TickManager', this);
+    // console.log('TickManager', this);
     TickManager.instance = this;
   }
 

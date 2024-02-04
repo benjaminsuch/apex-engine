@@ -47,9 +47,9 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
         reject(`Physics-Worker initialization failed.`);
-      }, 30_000);
+      }, 5_000);
 
-      this.worker.onmessage = (event): void => {
+      this.worker.addEventListener('message', (event): void => {
         if (typeof event.data !== 'object') {
           return;
         }
@@ -63,7 +63,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
           clearTimeout(timeoutId);
           resolve();
         }
-      };
+      });
     });
   }
 

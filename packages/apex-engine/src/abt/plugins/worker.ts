@@ -15,6 +15,7 @@ export interface WorkersPluginOptions {
   inline?: boolean;
   isBuild?: boolean;
   target: TargetConfig;
+  format?: 'cjs' | 'esm';
 }
 
 export interface WorkerCacheEntry {
@@ -28,6 +29,7 @@ export function workerPlugin({
   inline,
   isBuild = false,
   target,
+  format = 'esm',
 }: WorkersPluginOptions): InputPluginOption {
   const cache = new Map<string, WorkerCacheEntry>();
   const assets = new Map<string, EmittedAsset>();
@@ -96,9 +98,9 @@ export function workerPlugin({
         });
 
         const { output } = await bundle.generate({
-          format: 'esm',
+          format,
           sourcemap: false,
-          chunkFileNames: '[name].js',
+          chunkFileNames: '[name].[format]',
         });
 
         const [chunk, ...chunks] = output.filter((chunk): chunk is OutputChunk => chunk.type === 'chunk');
