@@ -25,9 +25,9 @@ export class PlayerController extends Controller {
   public readonly playerInput: PlayerInput;
 
   constructor(
-    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IPhysicsWorkerContext protected override readonly physicsContext: IPhysicsWorkerContext
+    @IInstantiationService instantiationService: IInstantiationService,
+    @IConsoleLogger logger: IConsoleLogger,
+    @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext
   ) {
     super(instantiationService, logger, physicsContext);
 

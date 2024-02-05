@@ -91,7 +91,7 @@ export class World {
   }
 
   public async tick(tick: IEngineLoopTickContext): Promise<void> {
-    TickManager.getInstance().startTick(tick, this);
+    TickManager.getInstance().startTick(tick);
 
     this.tickGroup = ETickGroup.PrePhysics;
 

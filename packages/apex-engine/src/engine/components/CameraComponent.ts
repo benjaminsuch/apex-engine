@@ -40,6 +40,7 @@ export class CameraComponentProxy extends SceneComponentProxy {
     super([aspect, far, fov, near], tb, id, thread, renderer);
 
     const camera = this.renderer.camera as PerspectiveCamera;
+    console.log('Camera far', far);
     this.sceneObject = new PerspectiveCamera(fov, camera.aspect, near, far);
     this.renderer.camera = this.sceneObject;
   }
@@ -89,9 +90,9 @@ export class CameraComponent extends SceneComponent {
     aspect: CameraComponent['aspect'],
     near: CameraComponent['near'],
     far: CameraComponent['far'],
-    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger,
-    @IPhysicsWorkerContext protected override readonly physicsContext: IPhysicsWorkerContext
+    @IInstantiationService instantiationService: IInstantiationService,
+    @IConsoleLogger logger: IConsoleLogger,
+    @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext
   ) {
     super(instantiationService, logger, physicsContext);
 

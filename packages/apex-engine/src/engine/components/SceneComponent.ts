@@ -167,8 +167,8 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   public collider: ColliderProxy | null = null;
 
   constructor(
-    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IInstantiationService instantiationService: IInstantiationService,
+    @IConsoleLogger logger: IConsoleLogger,
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     super(instantiationService, logger);
@@ -226,9 +226,7 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
 
   public detachFromParent(): boolean {
     if (!this.parent) {
-      this.logger.warn(
-        `"${this.constructor.name}" has no parent.`
-      );
+      this.logger.warn(`"${this.constructor.name}" has no parent.`);
       return false;
     }
 

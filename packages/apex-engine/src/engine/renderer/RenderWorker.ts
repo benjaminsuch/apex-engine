@@ -1,4 +1,4 @@
-import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, type Camera, Color, DirectionalLight, Fog, HemisphereLight, LineBasicMaterial, LineSegments, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, Color, DirectionalLight, Fog, HemisphereLight, LineBasicMaterial, LineSegments, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -80,7 +80,7 @@ export class RenderWorker {
       new LineBasicMaterial({ color: 0xffffff, vertexColors: true })
     );
 
-    this.scene.add(lines);
+    // this.scene.add(lines);
 
     this.physicsPort.addEventListener('message', (event) => {
       lines.visible = true;
@@ -90,6 +90,7 @@ export class RenderWorker {
     this.physicsPort.start();
 
     this.isInitialized = true;
+    console.log('RenderWorker', this);
   }
 
   public createProxies(proxies: IProxyConstructionData[]): void {
@@ -148,5 +149,9 @@ export class RenderWorker {
     this.renderer.render(this.scene, this.camera);
 
     TripleBuffer.swapWriteBufferFlags(Flags.RENDER_FLAGS);
+  }
+
+  public addSceneObject(child: Object3D): void {
+    this.scene.add(child);
   }
 }

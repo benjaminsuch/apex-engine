@@ -48,22 +48,24 @@ module 'three' {
     uuid: string;
   }
 
+  interface Color { isColor: boolean, r: number, g: number, b: number }
+
   export interface IMaterialJSON {
-    aoMap: string | null;
+    aoMap: Record<string, any> | null;
     aoMapIntensity: number;
-    blendColor: number;
-    color: number;
-    emissive: number;
+    blendColor: Color;
+    color: Color;
+    emissive: Color;
     envMapIntensity: number;
-    map: string;
+    map: Record<string, any>;
     metalness: number;
-    metalnessMap: string | null;
+    metalnessMap: Record<string, any> | null;
     name: string;
-    normalMap: string | null;
+    normalMap: Record<string, any> | null;
     normalMapType: NormalMapTypes;
     normalScale: { x: number, y: number };
     roughness: number;
-    roughnessMap: string | null;
+    roughnessMap: Record<string, any> | null;
     side: Side;
     type: string;
     uuid: string;
@@ -123,6 +125,7 @@ module 'three' {
       type: string;
     };
     type: string;
+    uuid: string;
   }
 
   export interface IGeometryJSON {

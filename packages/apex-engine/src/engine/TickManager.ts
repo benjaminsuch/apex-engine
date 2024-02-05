@@ -1,7 +1,6 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type IEngineLoopTickContext } from './EngineLoop';
-import { type World } from './World';
 
 export enum ETickGroup {
   PrePhysics,
@@ -36,18 +35,6 @@ export class TickManager {
   private readonly tickGroups: TickFunction<any>[][] = [];
 
   /**
-   * Will be set at the start of `startTick`.
-   */
-  private world?: World;
-
-  public getWorld(): World {
-    if (!this.world) {
-      throw new Error(`Trying to access world before it has been assigned.`);
-    }
-    return this.world;
-  }
-
-  /**
    * Will be set at the start of `startTick` and will be passed to `TickFunction.run`.
    */
   private currentTick: IEngineLoopTickContext = { id: 0, delta: 0, elapsed: 0 };
@@ -63,7 +50,7 @@ export class TickManager {
     for (let i = 0; i < ETickGroup.MAX; ++i) {
       this.tickGroups.push([]);
     }
-    // console.log('TickManager', this);
+
     TickManager.instance = this;
   }
 
@@ -104,13 +91,8 @@ export class TickManager {
    * Creates a topological order of `enabledTickFunctions` and stores it in `tickGroups`.
    *
    * @param context
-   * @param world
    */
-  public startTick(context: IEngineLoopTickContext, world?: World): void {
-    if (world && !this.world) {
-      this.world = world;
-    }
-
+  public startTick(context: IEngineLoopTickContext): void {
     this.currentTick = context;
 
     // We do topological sorting using Kahn's algorithm (https://en.wikipedia.org/wiki/Topological_sorting)

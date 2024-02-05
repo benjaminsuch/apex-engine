@@ -10,8 +10,8 @@ export class Character extends Pawn {
   protected readonly capsuleComponent: MeshComponent;
 
   constructor(
-    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger
+    @IInstantiationService instantiationService: IInstantiationService,
+    @IConsoleLogger logger: IConsoleLogger
   ) {
     super(instantiationService, logger);
 
