@@ -1,5 +1,5 @@
 import RAPIER from '@dimforge/rapier3d-compat';
-import { Box3, Box3Helper, BufferAttribute, BufferGeometry, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshStandardMaterial, ObjectLoader, Sphere, Vector2, Vector3 } from 'three';
+import { Box3, Box3Helper, BufferAttribute, BufferGeometry, CanvasTexture, type DataTexture, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshStandardMaterial, ObjectLoader, Sphere, Texture, UnsignedByteType, Vector2, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -56,47 +56,38 @@ export class MeshComponentProxy extends SceneComponentProxy {
       let { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...params } = materialData;
 
       if (type === 'MeshStandardMaterial') {
-        let material: any;
-        const loader = new ObjectLoader();
-        const t = [
-          aoMap ? { ...aoMap, image: aoMap.source.uuid } : undefined,
-          map ? { ...map, image: map.source.uuid } : undefined,
-          metalnessMap ? { ...metalnessMap, image: metalnessMap.source.uuid } : undefined,
-          normalMap ? { ...normalMap, image: normalMap.source.uuid } : undefined,
-          roughnessMap ? { ...roughnessMap, image: roughnessMap.source.uuid } : undefined,
-        ].filter(Boolean);
-        const sourceMaps = {
-          ...(aoMap ? { [aoMap.source.uuid]: aoMap.source } : undefined),
-          ...(map ? { [map.source.uuid]: map.source } : undefined),
-          ...(metalnessMap ? { [metalnessMap.source.uuid]: metalnessMap.source } : undefined),
-          ...(normalMap ? { [normalMap.source.uuid]: normalMap.source } : undefined),
-          ...(roughnessMap ? { [roughnessMap.source.uuid]: roughnessMap.source } : undefined),
-        };
-        console.log(t, sourceMaps);
-        const textures = loader.parseTextures(
-          t,
-          sourceMaps
-        );
-        console.log(textures);
-        if (Object.keys(textures).length > 0) {
-          const materials = loader.parseMaterials([{
-            ...materialData,
-            aoMap: aoMap?.uuid ?? undefined,
-            map: map?.uuid ?? undefined,
-            metalnessMap: metalnessMap?.uuid ?? undefined,
-            normalMap: normalMap?.uuid ?? undefined,
-            roughnessMap: roughnessMap?.uuid ?? undefined,
-          }], textures);
-          console.log(materials);
-          material = materials[materialData.uuid];
-        } else {
-          material = new MeshStandardMaterial({
-            ...params,
-            normalScale: new Vector2(normalScale.x, normalScale.y),
-          });
+        if (aoMap) {
+          if (aoMap.type === UnsignedByteType) {
+            const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = aoMap;
+            aoMap = new Texture(aoMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
+          }
+        }
+        if (map) {
+          const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy } = map;
+          map = new CanvasTexture(map.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
+        }
+        if (metalnessMap) {
+          const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = metalnessMap;
+          metalnessMap = new Texture(metalnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
+        }
+        if (normalMap) {
+          const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy } = normalMap;
+          normalMap = new CanvasTexture(normalMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
+        }
+        if (roughnessMap) {
+          const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = roughnessMap;
+          roughnessMap = new Texture(roughnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
         }
 
-        args[1] = material;
+        args[1] = new MeshStandardMaterial({
+          ...params,
+          aoMap: aoMap ? aoMap as Texture : null,
+          map: map ? map as Texture : null,
+          metalnessMap: metalnessMap ? metalnessMap as Texture : null,
+          normalMap: normalMap ? normalMap as Texture : null,
+          roughnessMap: roughnessMap ? roughnessMap as Texture : null,
+          normalScale: new Vector2(normalScale.x, normalScale.y),
+        });
       }
     }
 

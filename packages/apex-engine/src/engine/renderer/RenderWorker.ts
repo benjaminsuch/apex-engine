@@ -1,4 +1,4 @@
-import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, Color, DirectionalLight, Fog, HemisphereLight, LineBasicMaterial, LineSegments, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, Color, DirectionalLight, Fog, HemisphereLight, LineBasicMaterial, LineSegments, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, SRGBColorSpace, WebGLRenderer } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -80,7 +80,7 @@ export class RenderWorker {
       new LineBasicMaterial({ color: 0xffffff, vertexColors: true })
     );
 
-    // this.scene.add(lines);
+    this.scene.add(lines);
 
     this.physicsPort.addEventListener('message', (event) => {
       lines.visible = true;
