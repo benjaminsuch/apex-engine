@@ -206,23 +206,25 @@ function getGameSourceFiles() {
 }
 
 function buildInfo(target, levels = []) {
+    const info = [
+        // #region Plugins
+        'export const plugins = new Map();',
+        '',
+        ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'));`),
+        // #endregion
+        // #region Levels
+        'const levels = {',
+        ...buildLevels(levels),
+        '};',
+        '',
+        'export async function loadLevel(url) {',
+        '  return levels[url]()',
+        '}',
+        // #endregion
+    ]
+console.log('build info', info)
     return virtual({
-        'build:info': [
-            // #region Plugins
-            'export const plugins = new Map();',
-            '',
-            ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'));`),
-            // #endregion
-            // #region Levels
-            'const levels = {',
-            ...buildLevels(levels),
-            '};',
-            '',
-            'export async function loadLevel(url) {',
-            '  return levels[url]()',
-            '}',
-            // #endregion
-        ].join('\n'),
+        'build:info': info.join('\n'),
     });
 }
 /**
@@ -239,7 +241,7 @@ function buildLevels(levels) {
         return [p1, `${p2.slice(0, p2.length - extname(p2).length)}.ts`];
     }
     function normalizedRelative(p1, p2) {
-        return relative(p1, p2).replaceAll('\\', '/');
+        return relative(p1, p2).replaceAll('\\', '/').split("src").reduce((_, path) => `./src${path}`)
     }
     function createImport([p1, p2]) {
         return `  '${normalizedRelative('game/maps', p1)}': async () => import('${normalizedRelative(ENGINE_PATH, p2)}'),`;
