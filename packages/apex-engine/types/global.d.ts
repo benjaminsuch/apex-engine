@@ -14,15 +14,7 @@ declare global {
 
   type TClass<T = any> = { new (...args: any[]): T };
 
-  type TypedArrayConstructor =
-    | typeof Float32Array
-    | typeof Float64Array
-    | typeof Int8Array
-    | typeof Int16Array
-    | typeof Int32Array
-    | typeof Uint8Array
-    | typeof Uint16Array
-    | typeof Uint32Array;
+  type TypedArrayConstructor = ArrayConstructor['TYPED_ARRAY_CONSTRUCTORS'][keyof ArrayConstructor['TYPED_ARRAY_CONSTRUCTORS']];
 
   type MaybePromise<T> = Promise<T> | T;
 
@@ -48,12 +40,19 @@ module 'three' {
     uuid: string;
   }
 
+  export interface ColorJSON {
+    isColor: boolean;
+    r: number;
+    g: number;
+    b: number;
+  }
+
   export interface IMaterialJSON {
     aoMap: string | null;
     aoMapIntensity: number;
-    blendColor: number;
-    color: number;
-    emissive: number;
+    blendColor: ColorJSON;
+    color: ColorJSON;
+    emissive: ColorJSON;
     envMapIntensity: number;
     map: string;
     metalness: number;
@@ -105,7 +104,7 @@ module 'three' {
     array: number[];
     itemSize: number;
     normalized: boolean;
-    type: string;
+    type: keyof ArrayConstructor['TYPED_ARRAY_CONSTRUCTORS'];
   }
 
   export interface IGeometryData {
@@ -123,6 +122,7 @@ module 'three' {
       type: string;
     };
     type: string;
+    uuid: string;
   }
 
   export interface IGeometryJSON {

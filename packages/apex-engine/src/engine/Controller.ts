@@ -24,8 +24,8 @@ export class Controller extends Actor {
   public startSpot?: Actor;
 
   constructor(
-    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IInstantiationService instantiationService: IInstantiationService,
+    @IConsoleLogger logger: IConsoleLogger,
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     super(instantiationService, logger);

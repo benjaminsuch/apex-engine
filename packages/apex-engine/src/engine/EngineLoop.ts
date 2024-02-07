@@ -94,7 +94,7 @@ export class EngineLoop {
       try {
         await ApexEngine.getInstance().tick(currentTick);
       } catch (error) {
-        clearInterval(this.tickTimeout as number);
+        clearTimeout(this.tickTimeout as number);
         throw error;
       }
 

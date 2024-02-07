@@ -12,8 +12,8 @@ export class GameProxyManager extends ProxyManager<IProxyOrigin> {
   }
 
   constructor(
-    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger,
+    @IInstantiationService instantiationService: IInstantiationService,
+    @IConsoleLogger logger: IConsoleLogger,
     @IRenderWorkerContext protected readonly renderContext: IRenderWorkerContext,
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {

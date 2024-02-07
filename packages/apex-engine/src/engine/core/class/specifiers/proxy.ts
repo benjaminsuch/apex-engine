@@ -485,13 +485,7 @@ function setMat4(target: any, prop: string | symbol, val: Matrix4, dv: DataView,
   );
 }
 
-function setQuat(
-  target: any,
-  prop: string | symbol,
-  val: Quaternion,
-  dv: DataView,
-  offset: number
-): void {
+function setQuat(target: any, prop: string | symbol, val: Quaternion, dv: DataView, offset: number): void {
   Reflect.defineMetadata(
     'value',
     new Proxy(val, {
