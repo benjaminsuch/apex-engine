@@ -18,9 +18,23 @@ import { WebSocketServer } from 'ws';
 import { spawn } from 'node:child_process';
 
 var name = "apex-engine";
+var version = "0.16.0-0";
 var description = "A cross-platform game engine written in Typescript.";
-var version = "0.14.0-0";
 var author = "Benjamin Such";
+var keywords = [
+	"apex",
+	"apex-engine",
+	"3d",
+	"three",
+	"rapier",
+	"electron",
+	"game-engine",
+	"cross-platform",
+	"typescript",
+	"multiplayer",
+	"physics",
+	"multithreading"
+];
 var license = "BSD-3-Clause";
 var type = "module";
 var engines = {
@@ -74,14 +88,15 @@ var dependencies = {
 	"reflect-metadata": "^0.2.1",
 	rollup: "^4.9.1",
 	three: "^0.160.0",
-	"three-stdlib": "^2.28.9",
+	"three-stdlib": "^2.29.4",
 	ws: "^8.15.1"
 };
 var pkg = {
 	name: name,
-	description: description,
 	version: version,
+	description: description,
 	author: author,
+	keywords: keywords,
 	license: license,
 	type: type,
 	engines: engines,

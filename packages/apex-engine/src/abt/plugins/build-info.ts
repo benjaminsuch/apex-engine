@@ -42,7 +42,14 @@ function buildLevels(levels: [string, string][]): string[] {
   }
 
   function normalizedRelative(p1: string, p2: string): string {
-    return relative(p1, p2).replaceAll('\\', '/').split('src').reduce((_, path) => `./src${path}`);
+    return relative(p1, p2)
+      .replaceAll('\\', '/')
+      // This part is silly but necessary, until its fixed properly.
+      // The reason this exist is, that our "abt" cli will throw an error, when bundling,
+      // in a project that has been created via `create-apex-game` (but it works fine in our sandbox).
+      // It transforms paths like "../../src/game/maps/your/Level.ts" into "./src/game/maps/your/Level.ts"
+      .split('src')
+      .reduce((_, path) => `./src${path}`);
   }
 
   function createImport([p1, p2]: [string, string]): string {
