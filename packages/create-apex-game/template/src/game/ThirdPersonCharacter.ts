@@ -3,38 +3,51 @@ import { CameraComponent } from 'apex-engine/src/engine/components/CameraCompone
 import { type IEngineLoopTickContext } from 'apex-engine/src/engine/EngineLoop';
 import { InputAction } from 'apex-engine/src/engine/input/InputAction';
 import { InputMappingContext } from 'apex-engine/src/engine/input/InputMappingContext';
-import { EInputAxisSwizzleOrder, InputModifierNegate, InputModifierScalar, InputModifierScalarByDelta, InputModifierSwizzleAxis } from 'apex-engine/src/engine/input/InputModifiers';
+import { EInputAxisSwizzleOrder,
+  InputModifierNegate,
+  InputModifierScalar,
+  InputModifierScalarByDelta,
+  InputModifierSwizzleAxis } from 'apex-engine/src/engine/input/InputModifiers';
 import { ETriggerEvent } from 'apex-engine/src/engine/input/InputTriggers';
 import { PlayerController } from 'apex-engine/src/engine/PlayerController';
 import { Vector3 } from 'apex-engine/src/engine/three';
+import { ETickGroup, TickFunction } from 'apex-engine/src/engine/TickManager';
 import { IInstantiationService } from 'apex-engine/src/platform/di/common/InstantiationService';
 import { IConsoleLogger } from 'apex-engine/src/platform/logging/common/ConsoleLogger';
 
 const CAMERA_POS_X = 0;
 const CAMERA_POS_Y = 15;
 const CAMERA_POS_Z = 25;
-const pos = new Vector3();
 
 export default class ThirdPersonCharacter extends Character {
   private readonly camera: CameraComponent;
 
   private readonly moveAction: MoveAction;
 
+  public readonly movement: Vector3 = new Vector3(0, -0.2, 0);
+
   public defaultMappingContext: InputMappingContext;
 
+  public readonly postPhysicsTick: PostPhysicsTickFunction;
+
   constructor(
-    @IInstantiationService protected override readonly instantiationService: IInstantiationService,
-    @IConsoleLogger protected override readonly logger: IConsoleLogger
+    @IInstantiationService instantiationService: IInstantiationService,
+    @IConsoleLogger logger: IConsoleLogger
   ) {
     super(instantiationService, logger);
 
-    this.camera = this.addComponent(CameraComponent, 50, 1, 0.1, 2000);
+    this.camera = this.addComponent(
+      CameraComponent,
+      50,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      2000
+    );
 
     const rootComponent = this.rootComponent;
 
     if (rootComponent) {
       this.camera.attachToComponent(rootComponent);
-
       this.camera.position.set(CAMERA_POS_X, CAMERA_POS_Y, CAMERA_POS_Z);
       this.camera.matrix.lookAt(this.camera.position, rootComponent.position, this.camera.up);
       this.camera.rotation.setFromRotationMatrix(this.camera.matrix);
@@ -46,7 +59,10 @@ export default class ThirdPersonCharacter extends Character {
     const scalarModifier = this.instantiationService.createInstance(InputModifierScalar, 12);
     const deltaModifier = this.instantiationService.createInstance(InputModifierScalarByDelta);
     const negateModifier = this.instantiationService.createInstance(InputModifierNegate);
-    const swapAxisModifier = this.instantiationService.createInstance(InputModifierSwizzleAxis, EInputAxisSwizzleOrder.ZYX);
+    const swapAxisModifier = this.instantiationService.createInstance(
+      InputModifierSwizzleAxis,
+      EInputAxisSwizzleOrder.ZYX
+    );
 
     const moveMappingKeyW = this.defaultMappingContext.mapKey(this.moveAction, 'KeyW');
     const moveMappingKeyS = this.defaultMappingContext.mapKey(this.moveAction, 'KeyS');
@@ -59,10 +75,15 @@ export default class ThirdPersonCharacter extends Character {
     moveMappingKeyD.modifiers.push(scalarModifier, deltaModifier);
 
     this.actorTick.canTick = true;
+
+    this.postPhysicsTick = this.instantiationService.createInstance(PostPhysicsTickFunction, this);
+    this.postPhysicsTick.canTick = true;
+    this.postPhysicsTick.tickGroup = ETickGroup.PostPhysics;
+    this.postPhysicsTick.register();
   }
 
-  public override beginPlay(): void {
-    super.beginPlay();
+  public override async beginPlay(): Promise<void> {
+    await super.beginPlay();
 
     if (!(this.controller instanceof PlayerController)) {
       this.logger.warn(
@@ -76,17 +97,20 @@ export default class ThirdPersonCharacter extends Character {
   }
 
   public override tick(context: IEngineLoopTickContext): void {
-    super.tick(context);
+    const collider = this.rootComponent?.collider;
+    const kinematicController = this.controller?.kinematicController;
 
-    const rootComponent = this.rootComponent;
-
-    if (rootComponent) {
-      this.camera.position.lerp(pos.set(CAMERA_POS_X + rootComponent.position.x, CAMERA_POS_Y, CAMERA_POS_Z + rootComponent.position.z), 1);
+    if (kinematicController && collider) {
+      this.rootComponent?.rigidBody?.kinematicTranslate(
+        kinematicController,
+        collider,
+        this.movement
+      );
     }
   }
 
   public move(value: Vector3): void {
-    this.rootComponent?.position.addScaledVector(value, 1);
+    this.movement.copy(value.setY(-0.2));
   }
 
   protected override setupInputComponent(): void {
@@ -105,3 +129,15 @@ export default class ThirdPersonCharacter extends Character {
 }
 
 class MoveAction extends InputAction {}
+
+class PostPhysicsTickFunction extends TickFunction<ThirdPersonCharacter> {
+  public override run(context: IEngineLoopTickContext): void | Promise<void> {
+    this.target.movement.set(0, -0.2, 0);
+
+    const rigidBody = this.target.rootComponent?.rigidBody;
+
+    if (rigidBody) {
+      this.target.rootComponent?.position.fromArray(rigidBody.position);
+    }
+  }
+}

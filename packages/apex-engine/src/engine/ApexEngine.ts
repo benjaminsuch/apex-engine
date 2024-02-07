@@ -35,7 +35,7 @@ export class ApexEngine {
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
   ) {
     if (ApexEngine.instance) {
-      throw new Error(`An instance of the ApexEngine already exists1.`);
+      throw new Error(`An instance of the ApexEngine already exists.`);
     }
 
     ApexEngine.instance = this;

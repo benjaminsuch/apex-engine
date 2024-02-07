@@ -24,7 +24,7 @@ export default defineConfig([
       typescript({ tsconfig: 'tsconfig.cli.json', exclude: ['node_modules', 'rollup.config.ts'] }),
       json(),
     ],
-    onwarn(warning, warn): void {
+    onwarn(warning, warn) {
       if (warning.message.includes('Circular dependency')) {
         return;
       }
