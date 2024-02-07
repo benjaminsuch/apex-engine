@@ -1,25 +1,20 @@
 import RAPIER from '@dimforge/rapier3d-compat';
-import { Box3, Box3Helper, BufferAttribute, BufferGeometry, CanvasTexture, type DataTexture, type IBufferAttributeJSON, type IGeometryData, type IMaterialJSON, type Material, Mesh, MeshStandardMaterial, ObjectLoader, Sphere, Texture, UnsignedByteType, Vector2, Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, CanvasTexture, type IBufferAttributeJSON, LineBasicMaterial, LineDashedMaterial, type Material, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshDistanceMaterial, MeshLambertMaterial, MeshMatcapMaterial, MeshNormalMaterial, MeshPhongMaterial, MeshPhysicalMaterial, MeshStandardMaterial, MeshToonMaterial, PointsMaterial, RawShaderMaterial, ShaderMaterial, ShadowMaterial, Sphere, SpriteMaterial, Texture, Vector2, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
-import { type IEngineLoopTickContext } from '../EngineLoop';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RenderWorker } from '../renderer/RenderWorker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
-//
+
 export class MeshComponentProxy extends SceneComponentProxy {
-  private readonly box3Helper: Box3Helper;
-
-  public readonly box3: Box3;
-
   public override sceneObject: Mesh;
 
   constructor(
-    [geometryData, materialData]: [IGeometryData | undefined, IMaterialJSON | undefined] = [undefined, undefined],
+    [geometryData, materialData]: [Record<string, any> | undefined, Record<string, any> | undefined] = [undefined, undefined],
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
@@ -27,21 +22,19 @@ export class MeshComponentProxy extends SceneComponentProxy {
   ) {
     super([geometryData, materialData], tb, id, thread, renderer);
 
-    this.box3 = new Box3();
-    this.box3Helper = new Box3Helper(this.box3, 0xffff00);
-    renderer.addSceneObject(this.box3Helper);
-
     const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
     if (geometryData) {
       const { attributes, boundingSphere, index, uuid } = geometryData;
       const { normal, position, uv } = attributes;
       const geometry = new BufferGeometry();
-      geometry.uuid = uuid;
 
+      geometry.uuid = uuid;
       geometry.setAttribute('position', createBufferAttribute({ ...position, type: position.array.constructor.name }));
-      geometry.setAttribute('normal', createBufferAttribute({ ...normal, type: normal.array.constructor.name }));
-      geometry.setAttribute('uv', createBufferAttribute({ ...uv, type: uv.array.constructor.name }));
+
+      if (normal) geometry.setAttribute('normal', createBufferAttribute({ ...normal, type: normal.array.constructor.name }));
+      if (uv) geometry.setAttribute('uv', createBufferAttribute({ ...uv, type: uv.array.constructor.name }));
+
       geometry.setIndex(createBufferAttribute({ ...index, normalized: false, itemSize: 1, type: 'Uint16Array' }));
 
       if (boundingSphere) {
@@ -49,54 +42,61 @@ export class MeshComponentProxy extends SceneComponentProxy {
       }
 
       args[0] = geometry;
-      geometry.computeBoundingBox();
     }
 
     if (materialData) {
-      let { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...params } = materialData;
+      const materialConstructors = {
+        LineBasicMaterial,
+        LineDashedMaterial,
+        MeshBasicMaterial,
+        MeshDepthMaterial,
+        MeshDistanceMaterial,
+        MeshLambertMaterial,
+        MeshMatcapMaterial,
+        MeshNormalMaterial,
+        MeshPhongMaterial,
+        MeshPhysicalMaterial,
+        MeshStandardMaterial,
+        MeshToonMaterial,
+        PointsMaterial,
+        RawShaderMaterial,
+        ShaderMaterial,
+        ShadowMaterial,
+        SpriteMaterial,
+      } as const;
 
-      if (type === 'MeshStandardMaterial') {
-        if (aoMap) {
-          if (aoMap.type === UnsignedByteType) {
-            const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = aoMap;
-            aoMap = new Texture(aoMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
-          }
-        }
-        if (map) {
-          const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy } = map;
-          map = new CanvasTexture(map.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
-        }
-        if (metalnessMap) {
-          const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = metalnessMap;
-          metalnessMap = new Texture(metalnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
-        }
-        if (normalMap) {
-          const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy } = normalMap;
-          normalMap = new CanvasTexture(normalMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
-        }
-        if (roughnessMap) {
-          const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = roughnessMap;
-          roughnessMap = new Texture(roughnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
-        }
+      let { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...rest } = materialData;
+      const params: Record<string, any> = rest;
 
-        args[1] = new MeshStandardMaterial({
-          ...params,
-          aoMap: aoMap ? aoMap as Texture : null,
-          map: map ? map as Texture : null,
-          metalnessMap: metalnessMap ? metalnessMap as Texture : null,
-          normalMap: normalMap ? normalMap as Texture : null,
-          roughnessMap: roughnessMap ? roughnessMap as Texture : null,
-          normalScale: new Vector2(normalScale.x, normalScale.y),
-        });
+      if (aoMap) {
+        const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = aoMap;
+        params.aoMap = new Texture(aoMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
       }
+
+      if (map) {
+        const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy } = map;
+        params.map = new CanvasTexture(map.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
+      }
+
+      if (metalnessMap) {
+        const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = metalnessMap;
+        params.metalnessMap = new Texture(metalnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
+      }
+
+      if (normalMap) {
+        const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy } = normalMap;
+        params.normalMap = new CanvasTexture(normalMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
+      }
+
+      if (roughnessMap) {
+        const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = roughnessMap;
+        params.roughnessMap = new Texture(roughnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
+      }
+
+      args[1] = new materialConstructors[type as keyof typeof materialConstructors](params);
     }
 
     this.sceneObject = new Mesh(...args);
-  }
-
-  public override tick(tick: IEngineLoopTickContext): void {
-    super.tick(tick);
-    this.box3.copy(this.sceneObject.geometry.boundingBox!).applyMatrix4(this.sceneObject.matrixWorld);
   }
 }
 
@@ -121,22 +121,12 @@ export class MeshComponent extends SceneComponent {
   }
 }
 
-const TYPED_ARRAYS = {
-  Uint16Array,
-  Int16Array,
-  Uint8Array,
-  Int8Array,
-  Int32Array,
-  Uint32Array,
-  Float32Array,
-} as const;
-
 function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
-  const ArrayConstructor = TYPED_ARRAYS[type as keyof typeof TYPED_ARRAYS];
+  const ArrayConstructor = Array.TYPED_ARRAY_CONSTRUCTORS[type];
 
-  if (ArrayConstructor) {
-    return new BufferAttribute(new ArrayConstructor(array), itemSize, normalized);
+  if (Array.isBigInt64Array(ArrayConstructor) || Array.isBigUint64Array(ArrayConstructor)) {
+    throw new Error(`Cannot use BigInt arrays.`);
   }
 
-  throw new Error(`Unknown array type.`);
+  return new BufferAttribute(new ArrayConstructor(array), itemSize, normalized);
 }
