@@ -73,13 +73,15 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
+        this.worker.removeEventListener('message', handleInitResponse);
         reject(`Render-Worker initialization failed.`);
       }, 5_000);
 
-      this.worker.onmessage = (event): void => {
+      const handleInitResponse = (event: MessageEvent): void => {
         if (typeof event.data !== 'object') {
           return;
         }
+
         const { type, data } = event.data;
 
         if (type === 'init-response') {
@@ -93,9 +95,12 @@ export class RenderWorkerContext implements IRenderWorkerContext {
           );
 
           clearTimeout(timeoutId);
+          this.worker.removeEventListener('message', handleInitResponse);
           resolve();
         }
       };
+
+      this.worker.addEventListener('message', handleInitResponse);
     });
   }
 

@@ -72,13 +72,13 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
       format: 'esm',
       chunkFileNames: '[name].js',
       manualChunks(id) {
+        if (id.includes('node_modules/three')) {
+          return 'vendors/three';
+        }
+        if (id.includes('node_modules/@dimforge/rapier3d-compat')) {
+          return 'vendors/rapier';
+        }
         if (id.includes('node_modules')) {
-          if (id.includes('three')) {
-            return 'vendors/three';
-          }
-          if (id.includes('rapier3d-compat')) {
-            return 'vendors/rapier';
-          }
           return 'vendors/index';
         }
         if (Object.keys(gameFiles).includes(id)) {
@@ -221,13 +221,13 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
       format: 'esm',
       chunkFileNames: '[name].js',
       manualChunks(id) {
+        if (id.includes('node_modules/three')) {
+          return 'vendors/three';
+        }
+        if (id.includes('node_modules/@dimforge/rapier3d-compat')) {
+          return 'vendors/rapier';
+        }
         if (id.includes('node_modules')) {
-          if (id.includes('three')) {
-            return 'vendors/three';
-          }
-          if (id.includes('rapier3d-compat')) {
-            return 'vendors/rapier';
-          }
           return 'vendors/index';
         }
         if (Object.keys(gameFiles).includes(id)) {
@@ -303,13 +303,13 @@ export async function serveNodeTarget(target: TargetConfig): Promise<void> {
       chunkFileNames: '[name].mjs',
       format: 'esm',
       manualChunks(id) {
+        if (id.includes('node_modules/three')) {
+          return 'vendors/three';
+        }
+        if (id.includes('node_modules/@dimforge/rapier3d-compat')) {
+          return 'vendors/rapier';
+        }
         if (id.includes('node_modules')) {
-          if (id.includes('three')) {
-            return 'vendors/three';
-          }
-          if (id.includes('rapier3d-compat')) {
-            return 'vendors/rapier';
-          }
           return 'vendors/index';
         }
         if (Object.keys(gameFiles).includes(id)) {

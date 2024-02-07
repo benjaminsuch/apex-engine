@@ -46,10 +46,11 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
+        this.worker.removeEventListener('message', handleInitResponse);
         reject(`Physics-Worker initialization failed.`);
       }, 5_000);
 
-      this.worker.addEventListener('message', (event): void => {
+      const handleInitResponse = (event: MessageEvent): void => {
         if (typeof event.data !== 'object') {
           return;
         }
@@ -61,9 +62,12 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
           this.info = this.instantiationService.createInstance(PhysicsInfo, Flags.PHYSICS_FLAGS, new TripleBuffer(Flags.PHYSICS_FLAGS, byteLength, buffers));
 
           clearTimeout(timeoutId);
+          this.worker.removeEventListener('message', handleInitResponse);
           resolve();
         }
-      });
+      };
+
+      this.worker.addEventListener('message', handleInitResponse);
     });
   }
 

@@ -42,7 +42,7 @@ function buildLevels(levels: [string, string][]): string[] {
   }
 
   function normalizedRelative(p1: string, p2: string): string {
-    return relative(p1, p2).replaceAll('\\', '/');
+    return relative(p1, p2).replaceAll('\\', '/').split('src').reduce((_, path) => `./src${path}`);
   }
 
   function createImport([p1, p2]: [string, string]): string {
