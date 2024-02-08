@@ -18,7 +18,7 @@ import { WebSocketServer } from 'ws';
 import { spawn } from 'node:child_process';
 
 var name = "apex-engine";
-var version = "0.16.0-0";
+var version = "0.16.1-0";
 var description = "A cross-platform game engine written in Typescript.";
 var author = "Benjamin Such";
 var keywords = [
@@ -221,25 +221,23 @@ function getGameSourceFiles() {
 }
 
 function buildInfo(target, levels = []) {
-    const info = [
-        // #region Plugins
-        'export const plugins = new Map();',
-        '',
-        ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'));`),
-        // #endregion
-        // #region Levels
-        'const levels = {',
-        ...buildLevels(levels),
-        '};',
-        '',
-        'export async function loadLevel(url) {',
-        '  return levels[url]()',
-        '}',
-        // #endregion
-    ]
-console.log('build info', info)
     return virtual({
-        'build:info': info.join('\n'),
+        'build:info': [
+            // #region Plugins
+            'export const plugins = new Map();',
+            '',
+            ...target.plugins.map(id => `plugins.set('${id}', await import('${id}'));`),
+            // #endregion
+            // #region Levels
+            'const levels = {',
+            ...buildLevels(levels),
+            '};',
+            '',
+            'export async function loadLevel(url) {',
+            '  return levels[url]()',
+            '}',
+            // #endregion
+        ].join('\n'),
     });
 }
 /**
@@ -256,7 +254,14 @@ function buildLevels(levels) {
         return [p1, `${p2.slice(0, p2.length - extname(p2).length)}.ts`];
     }
     function normalizedRelative(p1, p2) {
-        return relative(p1, p2).replaceAll('\\', '/').split("src").reduce((_, path) => `./src${path}`)
+        return relative(p1, p2)
+            .replaceAll('\\', '/')
+            // This part is silly but necessary, until its fixed properly.
+            // The reason this exist is, that our "abt" cli will throw an error, when bundling,
+            // in a project that has been created via `create-apex-game` (but it works fine in our sandbox).
+            // It transforms paths like "../../src/game/maps/your/Level.ts" into "./src/game/maps/your/Level.ts"
+            .split('src')
+            .reduce((_, path) => `./src${path}`);
     }
     function createImport([p1, p2]) {
         return `  '${normalizedRelative('game/maps', p1)}': async () => import('${normalizedRelative(ENGINE_PATH, p2)}'),`;
@@ -615,13 +620,13 @@ async function serveBrowserTarget(target) {
             format: 'esm',
             chunkFileNames: '[name].js',
             manualChunks(id) {
+                if (id.includes('node_modules/three')) {
+                    return 'vendors/three';
+                }
+                if (id.includes('node_modules/@dimforge/rapier3d-compat')) {
+                    return 'vendors/rapier';
+                }
                 if (id.includes('node_modules')) {
-                    if (id.includes('three')) {
-                        return 'vendors/three';
-                    }
-                    if (id.includes('rapier3d-compat')) {
-                        return 'vendors/rapier';
-                    }
                     return 'vendors/index';
                 }
                 if (Object.keys(gameFiles).includes(id)) {
@@ -745,13 +750,13 @@ async function serveElectronTarget(target) {
             format: 'esm',
             chunkFileNames: '[name].js',
             manualChunks(id) {
+                if (id.includes('node_modules/three')) {
+                    return 'vendors/three';
+                }
+                if (id.includes('node_modules/@dimforge/rapier3d-compat')) {
+                    return 'vendors/rapier';
+                }
                 if (id.includes('node_modules')) {
-                    if (id.includes('three')) {
-                        return 'vendors/three';
-                    }
-                    if (id.includes('rapier3d-compat')) {
-                        return 'vendors/rapier';
-                    }
                     return 'vendors/index';
                 }
                 if (Object.keys(gameFiles).includes(id)) {
@@ -815,13 +820,13 @@ async function serveNodeTarget(target) {
             chunkFileNames: '[name].mjs',
             format: 'esm',
             manualChunks(id) {
+                if (id.includes('node_modules/three')) {
+                    return 'vendors/three';
+                }
+                if (id.includes('node_modules/@dimforge/rapier3d-compat')) {
+                    return 'vendors/rapier';
+                }
                 if (id.includes('node_modules')) {
-                    if (id.includes('three')) {
-                        return 'vendors/three';
-                    }
-                    if (id.includes('rapier3d-compat')) {
-                        return 'vendors/rapier';
-                    }
                     return 'vendors/index';
                 }
                 if (Object.keys(gameFiles).includes(id)) {

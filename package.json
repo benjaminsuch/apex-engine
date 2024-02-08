@@ -15,5 +15,8 @@
     "eslint": "^8.56.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "typescript": "^5.3.3"
+  },
+  "resolutions": {
+    "three-stdlib@2.29.4": "patch:three-stdlib@npm:2.29.4#.yarn/patches/three-stdlib-npm-2.29.4-2a90043943.patch"
   }
 }
