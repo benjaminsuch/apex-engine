@@ -20,29 +20,31 @@ const _m1 = /* @__PURE__ */ new Matrix4();
 const _pos = /* @__PURE__ */ new Vector3();
 const _obj = /* @__PURE__ */ new Object3D();
 
+export type Matrix4AsArray = [
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+];
+
 export class SceneComponentProxy extends RenderProxy {
   declare position: [number, number, number];
 
   declare scale: [number, number, number];
 
-  declare matrixWorld: [
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-  ];
+  declare matrixWorld: Matrix4AsArray;
 
   declare rotation: [number, number, number, number];
 

@@ -473,15 +473,14 @@ function setMat4(target: any, prop: string | symbol, val: Matrix4, dv: DataView,
     'value',
     new Proxy(val, {
       get(target: Matrix4, prop): any {
+        // Since values in a matrix are stored in `elements`, our proxy won't trigger `set`.
+        // Instead, when `get` (which is always the case, when it internally receives updates) is triggered,
+        // we update the dataview (`dv`).
         for (let i = 0; i < target.elements.length; ++i) {
           dv.setFloat32(offset + i * Float32Array.BYTES_PER_ELEMENT, target.elements[i], true);
         }
 
         return Reflect.get(target, prop);
-      },
-      set(target, prop, val): boolean {
-        console.log('setMat4', prop, val);
-        return Reflect.set(target, prop, val);
       },
     }),
     target,

@@ -29,7 +29,7 @@ export class MeshComponentProxy extends SceneComponentProxy {
     this.sceneObject = new Mesh(...this.getMeshArgs(geometryData, materialData));
   }
 
-  protected getMeshArgs(geometryData: GeometryData, materialData: MaterialData): any[] {
+  protected getMeshArgs(geometryData: GeometryData, materialData: MaterialData): [BufferGeometry | undefined, Material | undefined] {
     const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
     if (geometryData) {
@@ -129,7 +129,7 @@ export class MeshComponent extends SceneComponent {
   }
 }
 
-function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
+export function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
   const ArrayConstructor = Array.TYPED_ARRAY_CONSTRUCTORS[type];
 
   if (Array.isBigInt64Array(ArrayConstructor) || Array.isBigUint64Array(ArrayConstructor)) {

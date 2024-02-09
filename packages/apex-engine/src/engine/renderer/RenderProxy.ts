@@ -8,9 +8,9 @@ export abstract class RenderProxy extends ProxyInstance {
     args: unknown[] = [],
     tb: TripleBuffer,
     id: number,
-    thread: EProxyThread,
+    originThread: EProxyThread,
     protected readonly renderer: RenderWorker
   ) {
-    super(args, tb, id, thread);
+    super(args, tb, id, originThread);
   }
 }
