@@ -10,11 +10,15 @@ import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RenderWorker } from './RenderWorker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
+type GeometryData = Record<string, any> | undefined;
+
+type MaterialData = Record<string, any> | undefined;
+
 export class MeshComponentProxy extends SceneComponentProxy {
   public override sceneObject: Mesh;
 
   constructor(
-    [geometryData, materialData]: [Record<string, any> | undefined, Record<string, any> | undefined] = [undefined, undefined],
+    [geometryData, materialData]: [GeometryData, MaterialData] = [undefined, undefined],
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
@@ -22,6 +26,10 @@ export class MeshComponentProxy extends SceneComponentProxy {
   ) {
     super([geometryData, materialData], tb, id, thread, renderer);
 
+    this.sceneObject = new Mesh(...this.getMeshArgs(geometryData, materialData));
+  }
+
+  protected getMeshArgs(geometryData: GeometryData, materialData: MaterialData): any[] {
     const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
     if (geometryData) {
@@ -96,7 +104,7 @@ export class MeshComponentProxy extends SceneComponentProxy {
       args[1] = new materialConstructors[type as keyof typeof materialConstructors](params);
     }
 
-    this.sceneObject = new Mesh(...args);
+    return args;
   }
 }
 
@@ -104,7 +112,7 @@ export class MeshComponentProxy extends SceneComponentProxy {
 export class MeshComponent extends SceneComponent {
   constructor(
     public geometry: BufferGeometry | undefined = undefined,
-    public material: Material | undefined = undefined,
+    public material: Material | Material[] | undefined = undefined,
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger,
     @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext

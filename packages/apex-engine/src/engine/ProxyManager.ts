@@ -21,7 +21,7 @@ export class ProxyManager<T> {
     return this.instance;
   }
 
-  protected proxyQueue: RegisteredProxy<T>[][] = [];
+  protected proxyQueue: EnqueuedProxy<T>[][] = [];
 
   public enqueueProxy(thread: EProxyThread, proxy: T, args: unknown[]): boolean {
     const idx = this.proxyQueue[thread].findIndex(({ target }) => target === proxy);
@@ -84,9 +84,15 @@ export class ProxyManager<T> {
   public init(): void {}
 
   public tick(tick: IEngineLoopTickContext): void {
-    if (this.proxyQueue.length > 0) {
+    let queueSize = 0;
+
+    for (let i = 0; i < EProxyThread.MAX; ++i) {
+      queueSize += this.proxyQueue[i].length;
+    }
+
+    if (queueSize > 0) {
       if (this.onProcessProxyQueue(tick)) {
-        this.proxyQueue = [];
+        this.resetProxyQueue();
       }
     }
 
@@ -123,6 +129,12 @@ export class ProxyManager<T> {
       this.managerTick.canTick = true;
       this.managerTick.tickGroup = ETickGroup.PostPhysics;
       this.managerTick.register();
+    }
+  }
+
+  protected resetProxyQueue(): void {
+    for (let i = 0; i < EProxyThread.MAX; ++i) {
+      this.proxyQueue[i] = [];
     }
   }
 }

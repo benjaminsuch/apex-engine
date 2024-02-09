@@ -21,6 +21,10 @@ export class ActorComponent {
 
   public isInitialized: boolean = false;
 
+  public name: string = '';
+
+  public uuid: string = '';
+
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger,

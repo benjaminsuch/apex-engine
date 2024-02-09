@@ -12,9 +12,9 @@ import { type RenderWorker } from './RenderWorker';
 export class RenderWorkerContext implements IRenderWorkerContext {
   declare readonly _injectibleService: undefined;
 
-  private readonly comlink: Comlink.Remote<RenderWorker>;
-
   private readonly worker: Worker;
+
+  private readonly comlink: Comlink.Remote<RenderWorker>;
 
   private canvas?: HTMLCanvasElement;
 
@@ -115,7 +115,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
         id: getTargetId(target) as number,
         tb: target.tripleBuffer,
         args,
-        thread: EProxyThread.Game,
+        originThread: EProxyThread.Game,
       };
     }
 

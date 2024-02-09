@@ -3,14 +3,14 @@ import { BoxGeometry, BufferGeometry, CapsuleGeometry, PlaneGeometry, type Vecto
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
-import { type MeshComponent } from '../renderer/MeshComponent';
-import { type SceneComponent } from '../renderer/SceneComponent';
 import { getTargetId } from '../core/class/decorators';
 import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
 import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
+import { type MeshComponent } from '../renderer/MeshComponent';
+import { type SceneComponent } from '../renderer/SceneComponent';
 import { ColliderProxy } from './Collider';
 import { KinematicControllerProxy } from './KinematicController';
 import { PhysicsInfo } from './PhysicsInfo';
@@ -165,7 +165,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
         id: getTargetId(target) as number,
         tb: target.tripleBuffer,
         args,
-        thread: EProxyThread.Game,
+        originThread: EProxyThread.Game,
       };
     }
 

@@ -62,7 +62,7 @@ export class PhysicsWorker {
     this.logger.debug('Creating proxies:', proxies);
 
     for (let i = 0; i < proxies.length; ++i) {
-      const { constructor, id, tb, args, thread } = proxies[i];
+      const { constructor, id, tb, args, originThread } = proxies[i];
       const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
 
       if (!ProxyConstructor) {
@@ -75,7 +75,7 @@ export class PhysicsWorker {
         args,
         new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
         id,
-        thread,
+        originThread,
         this,
       );
 

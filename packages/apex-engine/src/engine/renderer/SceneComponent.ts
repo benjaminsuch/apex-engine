@@ -25,7 +25,7 @@ export class SceneComponentProxy extends RenderProxy {
 
   declare scale: [number, number, number];
 
-  declare matrix: [
+  declare matrixWorld: [
     number,
     number,
     number,
@@ -83,7 +83,7 @@ export class SceneComponentProxy extends RenderProxy {
     this.sceneObject.position.fromArray(this.position);
     this.sceneObject.quaternion.fromArray(this.rotation);
     this.sceneObject.scale.fromArray(this.scale);
-    this.sceneObject.matrix.fromArray(this.matrix);
+    this.sceneObject.matrixWorld.fromArray(this.matrixWorld);
     this.sceneObject.up.fromArray(this.up);
   }
 }
@@ -132,7 +132,7 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   public scale: Vector3 = new Vector3(1, 1, 1);
 
   @PROP(serialize(mat4))
-  public matrix: Matrix4 = new Matrix4();
+  public matrixWorld: Matrix4 = new Matrix4();
 
   @PROP(serialize(vec3))
   public up: Vector3 = Object3D.DEFAULT_UP;
@@ -270,6 +270,12 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
       _obj.lookAt(x, y, z);
     }
 
-    this.matrix.copy(_obj.matrixWorld);
+    this.matrixWorld.copy(_obj.matrixWorld);
+  }
+
+  public copyFromObject3D(obj: Object3D): void {
+    this.name = obj.name;
+    this.uuid = obj.uuid;
+    this.matrixWorld.copy(obj.matrixWorld);
   }
 }

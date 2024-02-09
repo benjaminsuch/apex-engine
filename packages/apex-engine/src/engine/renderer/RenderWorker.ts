@@ -2,13 +2,13 @@ import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLigh
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { type SceneComponentProxy } from './SceneComponent';
 import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
 import { RenderingInfo } from '../renderer/RenderingInfo';
 import { RenderProxyManager } from '../renderer/RenderProxyManager';
 import { TickManager } from '../TickManager';
+import { SceneComponentProxy } from './SceneComponent';
 
 interface RenderWorkerInitMessageData {
   canvas: OffscreenCanvas;
@@ -122,7 +122,7 @@ export class RenderWorker {
     this.logger.debug('Creating proxies:', proxies);
 
     for (let i = 0; i < proxies.length; ++i) {
-      const { constructor, id, tb, args, thread } = proxies[i];
+      const { constructor, id, tb, args, originThread } = proxies[i];
       const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
 
       if (!ProxyConstructor) {
@@ -135,12 +135,15 @@ export class RenderWorker {
         args,
         new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
         id,
-        thread,
+        originThread,
         this
       ) as SceneComponentProxy;
 
       this.proxyManager.registerProxy(proxy);
-      this.scene.add(proxy.sceneObject);
+
+      if (proxy instanceof SceneComponentProxy) {
+        this.scene.add(proxy.sceneObject);
+      }
     }
   }
 

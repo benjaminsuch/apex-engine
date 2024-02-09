@@ -12,7 +12,7 @@ export interface IProxyConstructionData {
   id: number;
   tb: TripleBufferJSON;
   args: unknown[];
-  thread: EProxyThread;
+  originThread: EProxyThread;
 }
 
 export interface IProxyOrigin {
@@ -478,6 +478,10 @@ function setMat4(target: any, prop: string | symbol, val: Matrix4, dv: DataView,
         }
 
         return Reflect.get(target, prop);
+      },
+      set(target, prop, val): boolean {
+        console.log('setMat4', prop, val);
+        return Reflect.set(target, prop, val);
       },
     }),
     target,

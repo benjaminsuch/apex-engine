@@ -13,7 +13,7 @@ export abstract class ProxyInstance {
     args: unknown[] = [],
     tb: TripleBuffer,
     public readonly id: number,
-    public readonly thread: EProxyThread
+    public readonly originThread: EProxyThread
   ) {
     const originClass = Reflect.getMetadata('proxy:origin', this.constructor);
     const schema = getClassSchema(originClass);
@@ -38,7 +38,8 @@ export abstract class ProxyInstance {
           accessors = {
             get(this): ProxyInstance | void {
               const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
-              return ProxyManager.getInstance().getProxy(views[idx].getUint32(offset, true), this.thread);
+              console.log('ref val', views[idx].getUint32(offset, true), ProxyManager.getInstance());
+              return ProxyManager.getInstance().getProxy(views[idx].getUint32(offset, true));
             },
           };
         } else if (type === 'boolean') {
