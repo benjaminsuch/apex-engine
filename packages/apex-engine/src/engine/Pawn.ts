@@ -1,5 +1,5 @@
 import { Actor } from './Actor';
-import { InputComponent } from './components/InputComponent';
+import { InputComponent } from './input/InputComponent';
 import { type Controller } from './Controller';
 
 export class Pawn extends Actor {

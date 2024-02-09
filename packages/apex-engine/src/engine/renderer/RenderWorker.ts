@@ -2,13 +2,13 @@ import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLigh
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { type SceneComponentProxy } from '../components/SceneComponent';
+import { type SceneComponentProxy } from './SceneComponent';
 import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
 import { RenderingInfo } from '../renderer/RenderingInfo';
 import { RenderProxyManager } from '../renderer/RenderProxyManager';
-import { ETickGroup, TickManager } from '../TickManager';
+import { TickManager } from '../TickManager';
 
 interface RenderWorkerInitMessageData {
   canvas: OffscreenCanvas;

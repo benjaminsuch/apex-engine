@@ -3,7 +3,7 @@ import { CapsuleGeometry } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { MeshComponent } from './components/MeshComponent';
+import { MeshComponent } from './renderer/MeshComponent';
 import { Pawn } from './Pawn';
 
 export class Character extends Pawn {

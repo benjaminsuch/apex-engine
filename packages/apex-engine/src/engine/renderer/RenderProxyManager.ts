@@ -1,6 +1,6 @@
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { proxyComponents } from '../components';
+import { proxyComponents } from './components';
 import { EProxyThread } from '../core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyManager } from '../ProxyManager';

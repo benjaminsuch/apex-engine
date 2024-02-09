@@ -4,8 +4,8 @@ import { type GLTF } from 'three-stdlib';
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
-import { resolveComponent } from './components';
-import { type SceneComponent } from './components/SceneComponent';
+import { resolveComponent } from './renderer/components';
+import { type SceneComponent } from './renderer/SceneComponent';
 import { type World } from './World';
 
 export class Level {

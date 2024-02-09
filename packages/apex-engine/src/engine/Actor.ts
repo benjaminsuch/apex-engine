@@ -1,7 +1,7 @@
 import { type GetLeadingNonServiceArgs, IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { type ActorComponent } from './components/ActorComponent';
-import { type SceneComponent } from './components/SceneComponent';
+import { type ActorComponent } from './ActorComponent';
+import { type SceneComponent } from './renderer/SceneComponent';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Level } from './Level';
 import { TickFunction } from './TickManager';

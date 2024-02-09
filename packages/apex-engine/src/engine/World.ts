@@ -102,7 +102,6 @@ export class World {
     TickManager.getInstance().endTick();
   }
 
-  // 111
   public initActorsForPlay(): void {
     if (!this.isInitialized) {
       throw new Error(`World has not been initialized.`);
