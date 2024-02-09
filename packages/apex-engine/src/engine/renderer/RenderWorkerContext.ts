@@ -12,9 +12,9 @@ import { type RenderWorker } from './RenderWorker';
 export class RenderWorkerContext implements IRenderWorkerContext {
   declare readonly _injectibleService: undefined;
 
-  private readonly worker: Worker;
-
   private readonly comlink: Comlink.Remote<RenderWorker>;
+
+  private readonly worker: Worker;
 
   private canvas?: HTMLCanvasElement;
 

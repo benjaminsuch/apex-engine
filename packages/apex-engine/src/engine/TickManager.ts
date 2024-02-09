@@ -159,6 +159,12 @@ export class TickManager {
       await tickFunction.run(this.currentTick);
     }
   }
+
+  public async runAllTicks(): Promise<void> {
+    for (let i = 0; i < ETickGroup.MAX; ++i) {
+      await this.runTickGroup(i);
+    }
+  }
 }
 
 export class TickFunction<T> {
