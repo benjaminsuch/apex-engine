@@ -278,6 +278,8 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   public copyFromObject3D(obj: Object3D): void {
     this.name = obj.name;
     this.uuid = obj.uuid;
-    this.matrixWorld.copy(obj.matrixWorld);
+    this.position.copy(obj.position);
+    this.rotation.copy(obj.quaternion);
+    this.scale.copy(obj.scale);
   }
 }

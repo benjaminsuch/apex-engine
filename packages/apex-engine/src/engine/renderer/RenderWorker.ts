@@ -46,7 +46,7 @@ export class RenderWorker {
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
     this.tickManager = this.instantiationService.createInstance(TickManager);
-    this.proxyManager = this.instantiationService.createInstance(RenderProxyManager);
+    this.proxyManager = this.instantiationService.createInstance(RenderProxyManager, this);
 
     this.camera = new PerspectiveCamera();
     this.scene = new Scene();
@@ -130,20 +130,15 @@ export class RenderWorker {
         return;
       }
 
-      const proxy = this.instantiationService.createInstance(
-        ProxyConstructor,
-        args,
-        new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
-        id,
-        originThread,
-        this
-      ) as SceneComponentProxy;
+      this.proxyManager.createInstance(proxies[i], (proxy) => {
+        if (proxy) {
+          this.proxyManager.registerProxy(proxy);
 
-      this.proxyManager.registerProxy(proxy);
-
-      if (proxy instanceof SceneComponentProxy) {
-        this.scene.add(proxy.sceneObject);
-      }
+          if (proxy instanceof SceneComponentProxy) {
+            this.scene.add(proxy.sceneObject);
+          }
+        }
+      });
     }
   }
 

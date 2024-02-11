@@ -13,6 +13,9 @@ export interface IProxyConstructionData {
   tb: TripleBufferJSON;
   args: unknown[];
   originThread: EProxyThread;
+  ref?: {
+    parents: [number, string][];
+  };
 }
 
 export interface IProxyOrigin {
@@ -97,7 +100,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
           const propSchema = schema[key];
 
           if (isPropSchema(propSchema)) {
-            const { isArray, offset, size, type } = propSchema;
+            const { isArray, offset, size, type, required } = propSchema;
             const initialVal = this[key] as any;
 
             let accessors:
@@ -285,6 +288,15 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
                   set(this, val: InstanceType<TClass>): void {
                     const refId = val.isProxy ? val.id : getTargetId(val) ?? id(val);
                     dv.setUint32(offset, refId, true);
+
+                    if (required === true) {
+                      console.log('set required ref:', this.tripleBuffer.getWriteBufferIndex());
+                      const enqueuedProxy = ProxyManager.getInstance().getEnqueuedProxy(refId, thread);
+
+                      if (enqueuedProxy) {
+                        enqueuedProxy.parents.set(this, key);
+                      }
+                    }
 
                     Reflect.defineMetadata('value', val, this, key);
                   },

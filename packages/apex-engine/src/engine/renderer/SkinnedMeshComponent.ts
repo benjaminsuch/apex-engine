@@ -30,6 +30,7 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
     super([geometryData, materialData], tb, id, thread, renderer);
     // console.log('skinnedmesh skeleton', this, this.bindMatrix, this.bindMatrixInverse);
     this.sceneObject = new SkinnedMesh(...this.getMeshArgs(geometryData, materialData));
+    console.log('skeleton', id, this.skeleton);
     this.sceneObject.bind(new ThreeSkeleton());
   }
 
@@ -49,7 +50,7 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
 
 @CLASS(proxy(EProxyThread.Render, SkinnedMeshComponentProxy))
 export class SkinnedMeshComponent extends MeshComponent {
-  @PROP(serialize(ref))
+  @PROP(serialize(ref(true)))
   public skeleton: Skeleton | null = null;
 
   @PROP(serialize(mat4))

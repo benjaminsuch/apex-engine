@@ -108,7 +108,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     const data: IProxyConstructionData[] = [];
 
     for (let i = 0; i < proxies.length; ++i) {
-      const { target, args } = proxies[i];
+      const { target, args, ...proxy } = proxies[i];
 
       data[i] = {
         constructor: (target.constructor as TProxyOriginConstructor).proxyClassName,
@@ -117,6 +117,16 @@ export class RenderWorkerContext implements IRenderWorkerContext {
         args,
         originThread: EProxyThread.Game,
       };
+
+      if (proxy.parents.size > 0) {
+        const parents: [number, string][] = [];
+
+        proxy.parents.forEach((prop, parent) => {
+          parents.push([getTargetId(parent) as number, prop]);
+        });
+
+        data[i].ref = { parents };
+      }
     }
 
     return this.comlink.createProxies(data);

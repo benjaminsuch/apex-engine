@@ -128,6 +128,16 @@ export function serialize(fn: Function, size: number | [number] = 1): Serializer
   };
 }
 
-export function ref(): SerializerFunction {
-  return createSerializer('ref', Uint32Array, Uint32Array.BYTES_PER_ELEMENT);
+export function ref(isRequired?: boolean): (() => SerializerFunction) | SerializerFunction {
+  const serializer: SerializerFunction = (constructor, prop) => {
+    setPropType(constructor, prop, 'ref', Uint32Array, false);
+    setPropSize(constructor, prop, Uint32Array.BYTES_PER_ELEMENT);
+    setPropOnSchema(constructor, prop, 'required', isRequired);
+  };
+
+  if (typeof isRequired === 'boolean') {
+    return () => serializer;
+  }
+
+  return serializer;
 }

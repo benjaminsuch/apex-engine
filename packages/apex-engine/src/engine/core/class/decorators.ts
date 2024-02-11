@@ -79,6 +79,7 @@ export interface PropSchema {
   arrayType: TypedArrayConstructor;
   isArray: boolean;
   offset: number;
+  required: boolean;
   pos: number;
   size: number;
   type: string;
@@ -124,6 +125,7 @@ export function addPropToSchema(
     schema[key] = {
       type: 'uint8',
       size: 0,
+      required: false,
       arrayType: Uint8Array,
       isArray: false,
       offset: 0,
