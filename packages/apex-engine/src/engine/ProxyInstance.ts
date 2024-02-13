@@ -39,7 +39,7 @@ export abstract class ProxyInstance {
             get(this): ProxyInstance | void {
               const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
               console.log('ref val', idx, offset, views[idx].getUint32(offset, true), ProxyManager.getInstance());
-              return ProxyManager.getInstance().getProxy(views[idx].getUint32(offset, true));
+              return ProxyManager.getInstance().getProxy(views[idx].getUint32(offset, true), originThread)?.target;
             },
           };
         } else if (type === 'boolean') {

@@ -5,7 +5,6 @@ import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
 import { getTargetId } from '../core/class/decorators';
 import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
-import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { RenderingInfo } from './RenderingInfo';
 import { type RenderWorker } from './RenderWorker';
 
@@ -104,32 +103,8 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     });
   }
 
-  public createProxies(proxies: EnqueuedProxy<IProxyOrigin>[]): Promise<void> {
-    const data: IProxyConstructionData[] = [];
-
-    for (let i = 0; i < proxies.length; ++i) {
-      const { target, args, ...proxy } = proxies[i];
-
-      data[i] = {
-        constructor: (target.constructor as TProxyOriginConstructor).proxyClassName,
-        id: getTargetId(target) as number,
-        tb: target.tripleBuffer,
-        args,
-        originThread: EProxyThread.Game,
-      };
-
-      if (proxy.parents.size > 0) {
-        const parents: [number, string][] = [];
-
-        proxy.parents.forEach((prop, parent) => {
-          parents.push([getTargetId(parent) as number, prop]);
-        });
-
-        data[i].ref = { parents };
-      }
-    }
-
-    return this.comlink.createProxies(data);
+  public createProxies(stack: IProxyConstructionData[]): Promise<void> {
+    return this.comlink.createProxies(stack);
   }
 
   public start(): Promise<void> {
@@ -142,7 +117,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 }
 
 export interface IRenderWorkerContext extends IInjectibleService {
-  createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
+  createProxies(stack: IProxyConstructionData[]): Promise<void>;
   getRenderingInfo(): RenderingInfo;
   setSize(width: number, height: number): Promise<void>;
   start(): Promise<void>;

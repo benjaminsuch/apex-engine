@@ -163,8 +163,12 @@ export class RigidBody implements IProxyOrigin {
   }
 
   public kinematicTranslate(controllerId: number, colliderId: number, movement: RAPIER.Vector): void {
-    const controller = this.physicsContext.proxyManager.getProxy(controllerId, EProxyThread.Game) as KinematicController;
-    const collider = this.physicsContext.proxyManager.getProxy(colliderId, EProxyThread.Game) as Collider;
+    const controller = this.physicsContext.proxyManager.getOrigin<KinematicController>(controllerId);
+    const collider = this.physicsContext.proxyManager.getOrigin<Collider>(colliderId);
+
+    if (!controller || !collider) {
+      return;
+    }
 
     controller.worldController.computeColliderMovement(collider.worldCollider, movement);
 

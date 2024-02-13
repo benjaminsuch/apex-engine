@@ -2,38 +2,28 @@ import { IInstantiationService } from '../../platform/di/common/InstantiationSer
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { EProxyThread } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
-import { type IEngineLoopTickContext } from '../EngineLoop';
+import { type ProxyInstance } from '../ProxyInstance';
 import { ProxyManager } from '../ProxyManager';
 import { proxyComponents } from './components';
-import { type RenderProxy } from './RenderProxy';
 import { type RenderWorker } from './RenderWorker';
+import { SceneComponentProxy } from './SceneComponent';
 
-export class RenderProxyManager extends ProxyManager<RenderProxy> {
-  public static override getInstance(): RenderProxyManager {
-    return super.getInstance() as RenderProxyManager;
-  }
-
+export class RenderProxyManager extends ProxyManager {
   constructor(
-    private readonly renderer: RenderWorker,
+    protected readonly renderer: RenderWorker,
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger
   ) {
     super(EProxyThread.Render, { ...proxyComponents }, instantiationService, logger);
   }
 
-  protected override onCreateInstance(Constructor: TClass<any>, args: any[], tb: TripleBuffer, id: number, originThread: number): RenderProxy {
-    return this.instantiationService.createInstance(Constructor, args, tb, id, originThread, this.renderer);
-  }
+  protected override onRegisterProxy(Constructor: TClass<ProxyInstance>, args: any[], tb: TripleBuffer, id: number, originThread: number): MaybePromise<ProxyInstance> {
+    const proxy = this.instantiationService.createInstance(Constructor, args, tb, id, originThread, this.renderer);
 
-  public override tick(tick: IEngineLoopTickContext): void {
-    super.tick(tick);
-
-    for (let i = 0; i < this.proxies.entries; ++i) {
-      const proxy = this.proxies.getProxyByIndex(i);
-
-      if (proxy) {
-        proxy.target.tick(tick);
-      }
+    if (proxy instanceof SceneComponentProxy) {
+      this.renderer.addSceneObject(proxy.sceneObject);
     }
+
+    return proxy;
   }
 }

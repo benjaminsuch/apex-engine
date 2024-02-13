@@ -13,9 +13,8 @@ export interface IProxyConstructionData {
   tb: TripleBufferJSON;
   args: unknown[];
   originThread: EProxyThread;
-  ref?: {
-    parents: [number, string][];
-  };
+  parents: [number, string][];
+  tick: number;
 }
 
 export interface IProxyOrigin {
@@ -273,32 +272,14 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
                 };
                 break;
               case 'ref':
-                if (initialVal) {
-                  // todo: `id(initialVal)` only works if we have a proxy with that id (which does not work for 3rd-party instances)
-                  const refId = getTargetId(initialVal) ?? id(initialVal);
-                  dv.setUint32(offset, refId, true);
-                }
-
-                Reflect.defineMetadata('value', initialVal, this, key);
+                setRef(initialVal, dv, offset, required, this, key);
 
                 accessors = {
                   get(this): InstanceType<TClass> {
                     return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: InstanceType<TClass>): void {
-                    const refId = val.isProxy ? val.id : getTargetId(val) ?? id(val);
-                    dv.setUint32(offset, refId, true);
-
-                    if (required === true) {
-                      console.log('set required ref:', this.tripleBuffer.getWriteBufferIndex());
-                      const enqueuedProxy = ProxyManager.getInstance().getEnqueuedProxy(refId, thread);
-
-                      if (enqueuedProxy) {
-                        enqueuedProxy.parents.set(this, key);
-                      }
-                    }
-
-                    Reflect.defineMetadata('value', val, this, key);
+                    setRef(val, dv, offset, required, this, key);
                   },
                 };
                 break;
@@ -435,7 +416,11 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
         // the Worker is loading the Proxy-Classes (e.g. SceneComponentProxy) and thus, will load
         // the `GameProxyManager`, which imports the `IRenderWorkerContext`, which imports from
         // `RenderWorker`. This will lead to a "BAD_IMPORT" error from rollup.
-        ProxyManager.getInstance().enqueueProxy(thread, this, filterArgs(args));
+        ProxyManager.getInstance().deployProxy(this, filterArgs(args), thread);
+      }
+
+      public async tick(tick: IEngineLoopTickContext): Promise<void> {
+        await super.tick(tick);
       }
     };
   };
@@ -453,6 +438,19 @@ export function filterArgs(args: unknown[]): any[] {
             : false
       : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
   );
+}
+
+function setRef(val: InstanceType<TClass> | null, dv: DataView, offset: number, required: boolean, self: IProxyOrigin, key: string): void {
+  if (val) {
+    const refId = val.isProxy ? val.id : getTargetId(val) ?? id(val);
+    dv.setUint32(offset, refId, true);
+
+    if (required === true) {
+      ProxyManager.getInstance().addParent(refId, self, key);
+    }
+  }
+
+  Reflect.defineMetadata('value', val, self, key);
 }
 
 function setString(val: string, dv: DataView, offset: number, size: number): void {

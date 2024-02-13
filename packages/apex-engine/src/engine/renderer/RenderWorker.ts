@@ -118,28 +118,9 @@ export class RenderWorker {
     console.log('RenderWorker', this);
   }
 
-  public createProxies(proxies: IProxyConstructionData[]): void {
-    this.logger.debug('Creating proxies:', proxies);
-
-    for (let i = 0; i < proxies.length; ++i) {
-      const { constructor, id, tb, args, originThread } = proxies[i];
-      const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
-
-      if (!ProxyConstructor) {
-        this.logger.warn(`Constructor (${constructor}) not found for proxy "${id}".`);
-        return;
-      }
-
-      this.proxyManager.createInstance(proxies[i], (proxy) => {
-        if (proxy) {
-          this.proxyManager.registerProxy(proxy);
-
-          if (proxy instanceof SceneComponentProxy) {
-            this.scene.add(proxy.sceneObject);
-          }
-        }
-      });
-    }
+  public createProxies(stack: IProxyConstructionData[]): void {
+    this.logger.debug('Creating proxies:', stack.slice(0));
+    this.proxyManager.registerProxies(stack);
   }
 
   public start(): void {

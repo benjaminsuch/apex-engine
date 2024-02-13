@@ -18,10 +18,10 @@ export class SkeletonProxy extends RenderProxy {
     super([bones], tb, id, originThread, renderer);
 
     for (const boneId of bones) {
-      const proxy = this.renderer.proxyManager.getProxy<RenderProxy>(boneId);
+      const proxy = this.renderer.proxyManager.getProxy<RenderProxy>(boneId, EProxyThread.Game);
 
       if (proxy) {
-        this.bones.push(proxy);
+        this.bones.push(proxy.target);
       }
     }
   }

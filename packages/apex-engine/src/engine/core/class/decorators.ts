@@ -79,6 +79,12 @@ export interface PropSchema {
   arrayType: TypedArrayConstructor;
   isArray: boolean;
   offset: number;
+  /**
+   * Only relevant for type "ref".
+   *
+   * If `true`, the ref will be marked as a dependency and will defer
+   * the proxy instantation until all dependencies are available.
+   */
   required: boolean;
   pos: number;
   size: number;
