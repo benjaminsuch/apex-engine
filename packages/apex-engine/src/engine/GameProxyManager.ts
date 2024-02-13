@@ -1,8 +1,10 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { EProxyThread, type IProxyConstructionData } from './core/class/specifiers/proxy';
+import { type IEngineLoopTickContext } from './EngineLoop';
 import { IPhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { ProxyManager } from './ProxyManager';
+import { RenderTaskManager } from './renderer/RenderTaskManager';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 
 export class GameProxyManager extends ProxyManager {
@@ -13,6 +15,13 @@ export class GameProxyManager extends ProxyManager {
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     super(EProxyThread.Game, {}, instantiationService, logger);
+  }
+
+  public override tick(tick: IEngineLoopTickContext): void {
+    super.tick(tick);
+
+    this.renderContext.sendTasks(RenderTaskManager.getTasks());
+    RenderTaskManager.clear();
   }
 
   protected override onSubmitDeployments(queue: IProxyConstructionData[][]): void {

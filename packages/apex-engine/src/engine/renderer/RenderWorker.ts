@@ -2,12 +2,13 @@ import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLigh
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
 import { RenderingInfo } from '../renderer/RenderingInfo';
 import { RenderProxyManager } from '../renderer/RenderProxyManager';
 import { TickManager } from '../TickManager';
+import { AnyRenderWorkerTask, type RenderWorkerTaskJSON } from './RenderTaskManager';
 import { SceneComponentProxy } from './SceneComponent';
 
 interface RenderWorkerInitMessageData {
@@ -155,5 +156,24 @@ export class RenderWorker {
 
   public addSceneObject(child: Object3D): void {
     this.scene.add(child);
+  }
+
+  public receiveTasks(tasks: RenderWorkerTaskJSON[]): void {
+    if (tasks.length > 0) {
+      console.log('received tasks', tasks.slice());
+      let task: RenderWorkerTaskJSON | undefined;
+
+      while (task = tasks.shift()) {
+        const proxy = this.proxyManager.getProxy(task.target, EProxyThread.Game);
+
+        if (proxy) {
+          const descriptor = proxy.target[task.name as keyof typeof proxy];
+
+          if (typeof descriptor === 'function') {
+            (descriptor as Function).apply(proxy.target, task.params);
+          }
+        }
+      }
+    }
   }
 }

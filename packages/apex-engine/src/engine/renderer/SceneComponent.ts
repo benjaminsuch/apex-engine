@@ -5,7 +5,7 @@ import { IInstantiationService } from '../../platform/di/common/InstantiationSer
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type Actor } from '../Actor';
 import { ActorComponent } from '../ActorComponent';
-import { CLASS, PROP } from '../core/class/decorators';
+import { CLASS, getTargetId, PROP } from '../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
@@ -13,7 +13,9 @@ import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type ColliderProxy } from '../physics/Collider';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RigidBodyProxy } from '../physics/RigidBody';
+import { type ProxyInstance } from '../ProxyInstance';
 import { RenderProxy } from './RenderProxy';
+import { RenderTaskManager, RenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
 
 const _m1 = /* @__PURE__ */ new Matrix4();
@@ -74,6 +76,16 @@ export class SceneComponentProxy extends RenderProxy {
     super(args, tb, id, thread, renderer);
 
     this.sceneObject = new Object3D();
+  }
+
+  public setParent(id: ProxyInstance['id']): void {
+    const parent = this.renderer.proxyManager.getProxy<SceneComponentProxy>(id, EProxyThread.Game);
+
+    if (parent) {
+      parent.target.sceneObject.add(this.sceneObject);
+    } else {
+      console.warn(`Couldnt find parent ("${id}") for proxy "${this.id}".`);
+    }
   }
 
   public override tick(tick: IEngineLoopTickContext): void {
@@ -221,6 +233,8 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     this.parent = parent;
     this.childIndex = this.parent.children.push(this) - 1;
 
+    RenderTaskManager.addTask(new AttachToComponentTask(this, getTargetId(parent) as number));
+
     // ? Update child transformations, when attached to parent?
     // ? Broadcast an event, something like "onChildAttached"?
     return true;
@@ -281,5 +295,11 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     this.position.copy(obj.position);
     this.rotation.copy(obj.quaternion);
     this.scale.copy(obj.scale);
+  }
+}
+
+class AttachToComponentTask extends RenderWorkerTask<SceneComponent, 'setParent', [number]> {
+  constructor(target: SceneComponent, parent: number) {
+    super(target, 'setParent', [parent], 0);
   }
 }

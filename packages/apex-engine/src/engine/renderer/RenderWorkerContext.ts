@@ -6,6 +6,7 @@ import { getTargetId } from '../core/class/decorators';
 import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { RenderingInfo } from './RenderingInfo';
+import { type AnyRenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
 
 export class RenderWorkerContext implements IRenderWorkerContext {
@@ -114,11 +115,16 @@ export class RenderWorkerContext implements IRenderWorkerContext {
   public setSize(width: number, height: number): Promise<void> {
     return this.comlink.setSize(width, height);
   }
+
+  public sendTasks(tasks: AnyRenderWorkerTask[]): Promise<void> {
+    return this.comlink.receiveTasks(tasks.map(task => task.toJSON()));
+  }
 }
 
 export interface IRenderWorkerContext extends IInjectibleService {
   createProxies(stack: IProxyConstructionData[]): Promise<void>;
   getRenderingInfo(): RenderingInfo;
+  sendTasks(tasks: AnyRenderWorkerTask[]): Promise<void>;
   setSize(width: number, height: number): Promise<void>;
   start(): Promise<void>;
 }
