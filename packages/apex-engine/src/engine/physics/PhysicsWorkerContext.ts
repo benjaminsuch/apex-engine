@@ -3,8 +3,7 @@ import { BoxGeometry, BufferGeometry, CapsuleGeometry, PlaneGeometry, type Vecto
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
-import { getTargetId } from '../core/class/decorators';
-import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';

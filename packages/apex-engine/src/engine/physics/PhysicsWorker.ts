@@ -59,10 +59,13 @@ export class PhysicsWorker {
   }
 
   public createProxies(stack: IProxyConstructionData[]): void {
-
+    this.logger.debug('Create proxies:', stack);
+    this.proxyManager.registerProxies(stack);
   }
 
   public registerRigidBody(type: RAPIER.RigidBodyType, options: { position?: [number, number, number] } = {}): ICreatedProxyData {
+    this.logger.debug(`Register RigidBody`);
+
     const desc = createRigidBodyDesc(type);
 
     if (options) {
@@ -83,6 +86,8 @@ export class PhysicsWorker {
   }
 
   public registerCollider<T extends RAPIER.ShapeType>(type: T, { rigidBodyId, ...args }: ColliderRegisterArgs<T>): ICreatedProxyData {
+    this.logger.debug(`Register Collider (rigidBodyId=${rigidBodyId})`,);
+
     // @ts-ignore
     const desc = getColliderDescConstructor(type)(...Object.values(args));
     const proxyOrigin = this.instantiationService.createInstance(Collider, desc, rigidBodyId, this);
@@ -110,13 +115,13 @@ export class PhysicsWorker {
     let task: PhysicsWorkerTaskJSON | undefined;
 
     while (task = tasks.shift()) {
-      const proxy = this.proxyManager.getProxy(task.proxy, EProxyThread.Game);
+      const origin = this.proxyManager.getOrigin(task.proxy);
 
-      if (proxy) {
-        const descriptor = proxy.target[task.name as keyof typeof proxy.target];
+      if (origin) {
+        const descriptor = origin[task.name as keyof typeof origin];
 
         if (typeof descriptor === 'function') {
-          (descriptor as Function).apply(proxy, task.params);
+          (descriptor as Function).apply(origin, task.params);
         }
       }
     }

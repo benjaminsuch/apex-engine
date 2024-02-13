@@ -51,6 +51,8 @@ export class ProxyManager {
     this.registerTickFunctions();
 
     ProxyManager.instance = this;
+
+    this.logger.debug(this.constructor.name, this);
   }
 
   public tick(tick: IEngineLoopTickContext): void {
@@ -159,7 +161,7 @@ export class ProxyManager {
       }
     }
 
-    if (!throwIfNotFound && result) {
+    if (throwIfNotFound && !result) {
       throw new Error(`Couldn't find proxy origin "${id}".`);
     }
 
