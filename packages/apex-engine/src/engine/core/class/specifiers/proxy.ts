@@ -13,7 +13,6 @@ export interface IProxyConstructionData {
   tb: TripleBufferJSON;
   args: unknown[];
   originThread: EProxyThread;
-  parents: [number, string][];
   tick: number;
 }
 
@@ -444,10 +443,6 @@ function setRef(val: InstanceType<TClass> | null, dv: DataView, offset: number, 
   if (val) {
     const refId = val.isProxy ? val.id : getTargetId(val) ?? id(val);
     dv.setUint32(offset, refId, true);
-
-    if (required === true) {
-      ProxyManager.getInstance().addParent(refId, self, key);
-    }
   }
 
   Reflect.defineMetadata('value', val, self, key);

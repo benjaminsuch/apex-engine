@@ -1,4 +1,4 @@
-import { type BufferGeometry, type Material, Matrix4, type Object3D, Skeleton as ThreeSkeleton, SkinnedMesh } from 'three';
+import { type Bone, type BufferGeometry, type Material, Matrix4, type Object3D, Skeleton as ThreeSkeleton, SkinnedMesh } from 'three';
 
 import { CLASS, getTargetId, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
@@ -9,10 +9,10 @@ import { type ProxyInstance } from '../ProxyInstance';
 import { createBufferAttribute, MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { type RenderWorker } from './RenderWorker';
 import { type Matrix4AsArray, type SceneComponent } from './SceneComponent';
-import { Skeleton } from './Skeleton';
+import { Skeleton, type SkeletonProxy } from './Skeleton';
 
 export class SkinnedMeshComponentProxy extends MeshComponentProxy {
-  declare skeleton: any;
+  declare skeleton: SkeletonProxy;
 
   declare bindMatrix: Matrix4AsArray;
 
@@ -31,7 +31,12 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
     // console.log('skinnedmesh skeleton', this, this.bindMatrix, this.bindMatrixInverse);
     this.sceneObject = new SkinnedMesh(...this.getMeshArgs(geometryData, materialData));
     console.log('skeleton', id, this.skeleton);
-    this.sceneObject.bind(new ThreeSkeleton());
+    const bones = this.skeleton.bones.map((item: any) => {
+      item.sceneObject.isBone = true;
+      item.sceneObject.type = 'Bone';
+      return item.sceneObject as Bone;
+    });
+    this.sceneObject.bind(new ThreeSkeleton(bones, this.skeleton.boneInverses), new Matrix4().fromArray(this.bindMatrix));
   }
 
   protected override getMeshArgs(geometryData: Record<string, any> | undefined, materialData: Record<string, any> | undefined): [BufferGeometry | undefined, Material | undefined] {
@@ -70,15 +75,15 @@ export class SkinnedMeshComponent extends MeshComponent {
         const bonesUuid = obj.skeleton.bones.map(({ uuid }) => uuid);
         const bones: ProxyInstance['id'][] = [];
 
-        for (const proxy of GameProxyManager.getInstance().proxies) {
-          const target = proxy.target as SceneComponent;
+        for (const origin of GameProxyManager.getInstance().origins) {
+          const sceneComponent = origin as SceneComponent;
 
-          if (bonesUuid.includes(target.uuid)) {
-            bones.push(getTargetId(target) as number);
+          if (bonesUuid.includes(sceneComponent.uuid)) {
+            bones.push(getTargetId(sceneComponent) as number);
           }
         }
 
-        this.skeleton = this.instantiationService.createInstance(Skeleton, bones);
+        this.skeleton = this.instantiationService.createInstance(Skeleton, bones, obj.skeleton.boneInverses.map(m => m.toArray()).flat());
       }
     }
   }

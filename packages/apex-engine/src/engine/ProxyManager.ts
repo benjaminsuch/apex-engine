@@ -110,7 +110,7 @@ export class ProxyManager {
 
     while (data = stack.shift()) {
       if (data) {
-        const { constructor, id, tb, args, originThread, parents, tick } = data;
+        const { constructor, id, tb, args, originThread, tick } = data;
         const ProxyConstructor = this.getProxyConstructor(constructor);
 
         if (!ProxyConstructor) {
@@ -127,11 +127,11 @@ export class ProxyManager {
             if (hasUnresolvedDependencies) {
               break;
             }
-            hasUnresolvedDependencies = !!dependency.id;
+            hasUnresolvedDependencies = !dependency.id;
           }
 
           if (hasUnresolvedDependencies) {
-            console.info(`Proxy "${id}" has unresolved dependencies and will be deferred.`);
+            this.logger.info(`Proxy "${id}" has unresolved dependencies and will be deferred.`);
             this.deferredDeploymentMessages.push(data);
             continue;
           }
@@ -174,23 +174,6 @@ export class ProxyManager {
 
       if (proxy.originThread === originThread && proxy.target.id === id) {
         return proxy;
-      }
-    }
-  }
-
-  /**
-   * Adds a parent to a `ProxyDeployment`.
-   *
-   * @param id
-   * @param parent
-   * @param prop
-   */
-  public addParent(id: number, parent: IProxyOrigin, prop: string): void {
-    for (const deployment of this.deploymentQueue) {
-      if (getTargetId(deployment.origin) === id) {
-        deployment.parents.set(parent, prop);
-      } else {
-        this.logger.warn(`Adding a parent failed: Unable to find proxy deployment for "${id}".`);
       }
     }
   }
@@ -249,8 +232,6 @@ class ProxyManagerTickFunction extends TickFunction<ProxyManager> {
 export class ProxyDeployment {
   public tick: IEngineLoopTickContext['id'] = -1;
 
-  public readonly parents: Map<IProxyOrigin, string> = new Map();
-
   constructor(public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {}
 
   public toJSON(): IProxyConstructionData {
@@ -260,7 +241,6 @@ export class ProxyDeployment {
       tb: this.origin.tripleBuffer,
       args: this.args,
       originThread: EProxyThread.Game,
-      parents: [],
       tick: this.tick,
     };
   }
