@@ -31,7 +31,7 @@ export class SkeletonProxy extends RenderProxy {
     }
 
     if (boneInverses.length % 16 !== 0) {
-      throw new Error(`Invalid length: Bone inverses must be dividable by 16.`);
+      throw new Error(`Invalid length: Bone inverses must be a multiple of 16.`);
     }
 
     while (boneInverses.length > 0) {
