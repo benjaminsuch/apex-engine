@@ -1,10 +1,11 @@
-import RAPIER from '@dimforge/rapier3d-compat';
+import type RAPIER from '@dimforge/rapier3d-compat';
 import { Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { type Actor } from '../Actor';
-import { CLASS, PROP } from '../core/class/decorators';
+import { ActorComponent } from '../ActorComponent';
+import { CLASS, getTargetId, PROP } from '../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
 import { boolean, mat4, quat, ref, serialize, vec3 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
@@ -12,12 +13,11 @@ import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type ColliderProxy } from '../physics/Collider';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RigidBodyProxy } from '../physics/RigidBody';
-import { RenderProxy } from '../renderer/RenderProxy';
-import { type RenderWorker } from '../renderer/RenderWorker';
-import { ActorComponent } from './ActorComponent';
+import { type ProxyInstance } from '../ProxyInstance';
+import { RenderProxy } from './RenderProxy';
+import { RenderTaskManager, RenderWorkerTask } from './RenderTaskManager';
+import { type RenderWorker } from './RenderWorker';
 
-const _m1 = /* @__PURE__ */ new Matrix4();
-const _pos = /* @__PURE__ */ new Vector3();
 const _obj = /* @__PURE__ */ new Object3D();
 
 export class SceneComponentProxy extends RenderProxy {
@@ -25,24 +25,7 @@ export class SceneComponentProxy extends RenderProxy {
 
   declare scale: [number, number, number];
 
-  declare matrix: [
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-  ];
+  declare matrixWorld: Matrix4AsArray;
 
   declare rotation: [number, number, number, number];
 
@@ -74,6 +57,16 @@ export class SceneComponentProxy extends RenderProxy {
     this.sceneObject = new Object3D();
   }
 
+  public setParent(id: ProxyInstance['id']): void {
+    const parent = this.renderer.proxyManager.getProxy<SceneComponentProxy>(id, EProxyThread.Game);
+
+    if (parent) {
+      parent.target.sceneObject.add(this.sceneObject);
+    } else {
+      console.warn(`Couldnt find parent ("${id}") for proxy "${this.id}".`);
+    }
+  }
+
   public override tick(tick: IEngineLoopTickContext): void {
     super.tick(tick);
 
@@ -83,7 +76,7 @@ export class SceneComponentProxy extends RenderProxy {
     this.sceneObject.position.fromArray(this.position);
     this.sceneObject.quaternion.fromArray(this.rotation);
     this.sceneObject.scale.fromArray(this.scale);
-    this.sceneObject.matrix.fromArray(this.matrix);
+    this.sceneObject.matrixWorld.fromArray(this.matrixWorld);
     this.sceneObject.up.fromArray(this.up);
   }
 }
@@ -101,7 +94,7 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
    * Important: When the rigid-body has been registered, changing this property
    * directly will have no effect. Instead, use `setBodyType`.
    */
-  private bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
+  protected bodyType: RAPIER.RigidBodyType | null = null;
 
   public getBodyType(): SceneComponent['bodyType'] {
     return this.bodyType;
@@ -132,7 +125,7 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   public scale: Vector3 = new Vector3(1, 1, 1);
 
   @PROP(serialize(mat4))
-  public matrix: Matrix4 = new Matrix4();
+  public matrixWorld: Matrix4 = new Matrix4();
 
   @PROP(serialize(vec3))
   public up: Vector3 = Object3D.DEFAULT_UP;
@@ -160,10 +153,16 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
    */
   public children: SceneComponent[] = [];
 
+  /**
+   * When not `null`, will be registered in the `MeshComponent.beginPlay` call.
+   */
   public rigidBody: RigidBodyProxy | null = null;
 
   public colliderShape: RAPIER.ShapeType | null = null;
 
+  /**
+   * Will be registered when `MeshComponent.beginPlay` is called.
+   */
   public collider: ColliderProxy | null = null;
 
   constructor(
@@ -172,12 +171,6 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     super(instantiationService, logger);
-  }
-
-  public override async beginPlay(): Promise<void> {
-    if (this.bodyType !== null) {
-      await this.physicsContext.registerRigidBody(this, { position: this.position });
-    }
   }
 
   public override async tick(context: IEngineLoopTickContext): Promise<void> {
@@ -218,6 +211,8 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
 
     this.parent = parent;
     this.childIndex = this.parent.children.push(this) - 1;
+
+    RenderTaskManager.addTask(new AttachToComponentTask(this, getTargetId(parent) as number));
 
     // ? Update child transformations, when attached to parent?
     // ? Broadcast an event, something like "onChildAttached"?
@@ -270,6 +265,20 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
       _obj.lookAt(x, y, z);
     }
 
-    this.matrix.copy(_obj.matrixWorld);
+    this.matrixWorld.copy(_obj.matrixWorld);
+  }
+
+  public copyFromObject3D(obj: Object3D): void {
+    this.name = obj.name;
+    this.uuid = obj.uuid;
+    this.position.copy(obj.position);
+    this.rotation.copy(obj.quaternion);
+    this.scale.copy(obj.scale);
+  }
+}
+
+class AttachToComponentTask extends RenderWorkerTask<SceneComponent, 'setParent', [number]> {
+  constructor(target: SceneComponent, parent: number) {
+    super(target, 'setParent', [parent], 0);
   }
 }

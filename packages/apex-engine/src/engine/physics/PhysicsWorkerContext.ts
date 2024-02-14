@@ -3,14 +3,12 @@ import { BoxGeometry, BufferGeometry, CapsuleGeometry, PlaneGeometry, type Vecto
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
-import { type MeshComponent } from '../components/MeshComponent';
-import { type SceneComponent } from '../components/SceneComponent';
-import { getTargetId } from '../core/class/decorators';
-import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
-import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
+import { type MeshComponent } from '../renderer/MeshComponent';
+import { type SceneComponent } from '../renderer/SceneComponent';
 import { ColliderProxy } from './Collider';
 import { KinematicControllerProxy } from './KinematicController';
 import { PhysicsInfo } from './PhysicsInfo';
@@ -154,27 +152,13 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
     PhysicsTaskManager.clear();
   }
 
-  public createProxies(proxies: EnqueuedProxy<IProxyOrigin>[]): Promise<void> {
-    const data: IProxyConstructionData[] = [];
-
-    for (let i = 0; i < proxies.length; ++i) {
-      const { target, args } = proxies[i];
-
-      data[i] = {
-        constructor: (target.constructor as TProxyOriginConstructor).proxyClassName,
-        id: getTargetId(target) as number,
-        tb: target.tripleBuffer,
-        args,
-        thread: EProxyThread.Game,
-      };
-    }
-
-    return this.comlink.createProxies(data);
+  public createProxies(stack: IProxyConstructionData[]): Promise<void> {
+    return this.comlink.createProxies(stack);
   }
 }
 
 export interface IPhysicsWorkerContext extends IInjectibleService {
-  createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
+  createProxies(proxies: IProxyConstructionData[]): Promise<void>;
   step(tick: IEngineLoopTickContext): Promise<void>;
   registerCollider(component: SceneComponent): Promise<void>;
   /**

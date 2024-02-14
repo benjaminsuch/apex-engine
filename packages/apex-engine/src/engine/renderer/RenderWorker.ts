@@ -1,31 +1,44 @@
-import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, Color, DirectionalLight, Fog, HemisphereLight, LineBasicMaterial, LineSegments, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, SRGBColorSpace, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLight, HemisphereLight, LineBasicMaterial, LineSegments, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { type SceneComponentProxy } from '../components/SceneComponent';
-import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { Flags } from '../Flags';
 import { RenderingInfo } from '../renderer/RenderingInfo';
 import { RenderProxyManager } from '../renderer/RenderProxyManager';
-import { ETickGroup, TickManager } from '../TickManager';
+import { TickManager } from '../TickManager';
+import { AnyRenderWorkerTask, type RenderWorkerTaskJSON } from './RenderTaskManager';
+import { SceneComponentProxy } from './SceneComponent';
+
+interface RenderWorkerInitMessageData {
+  canvas: OffscreenCanvas;
+  flags: Uint8Array[];
+  initialHeight: number;
+  initialWidth: number;
+  physicsPort: MessagePort;
+}
 
 export class RenderWorker {
-  private renderer!: WebGLRenderer;
+  private frameId: number = 0;
 
   private readonly info: RenderingInfo;
+
+  /**
+   * Will be set during the `init` phase and will listen to incoming messages,
+   * to update the physics debugging lines.
+   */
+  private physicsPort: MessagePort | null = null;
+
+  private renderer!: WebGLRenderer;
 
   private scene: Scene;
 
   private readonly tickManager: TickManager;
 
-  private frameId: number = 0;
-
-  private physicsPort!: MessagePort;
+  public camera: PerspectiveCamera;
 
   public isInitialized: boolean = false;
-
-  public camera: PerspectiveCamera;
 
   public readonly proxyManager: RenderProxyManager;
 
@@ -34,19 +47,16 @@ export class RenderWorker {
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
     this.tickManager = this.instantiationService.createInstance(TickManager);
-    this.proxyManager = this.instantiationService.createInstance(RenderProxyManager);
+    this.proxyManager = this.instantiationService.createInstance(RenderProxyManager, this);
 
     this.camera = new PerspectiveCamera();
-
     this.scene = new Scene();
-    this.scene.background = new Color(0xa0a0a0);
-    this.scene.fog = new Fog(0xa0a0a0, 65, 75);
 
     this.info = this.instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
     this.info.init();
   }
 
-  public init({ canvas, flags, initialHeight, initialWidth, physicsPort }: any): void {
+  public init({ canvas, flags, initialHeight, initialWidth, physicsPort }: RenderWorkerInitMessageData): void {
     if (this.isInitialized) {
       this.logger.error(this.constructor.name, `Already initialized`);
       return;
@@ -79,13 +89,29 @@ export class RenderWorker {
       new BufferGeometry(),
       new LineBasicMaterial({ color: 0xffffff, vertexColors: true })
     );
+    lines.visible = true;
 
     this.scene.add(lines);
 
     this.physicsPort.addEventListener('message', (event) => {
-      lines.visible = true;
-      lines.geometry.setAttribute('position', new BufferAttribute(event.data.vertices, 3));
-      lines.geometry.setAttribute('color', new BufferAttribute(event.data.colors, 4));
+      const { colors, vertices } = event.data;
+      const position = lines.geometry.getAttribute('position');
+      const color = lines.geometry.getAttribute('color');
+
+      if (position instanceof BufferAttribute) {
+        position.copyArray(event.data.vertices);
+        position.needsUpdate = true;
+      }
+      if (!position) {
+        lines.geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+      }
+      if (color instanceof BufferAttribute) {
+        color.copyArray(event.data.colors);
+        color.needsUpdate = true;
+      }
+      if (!color) {
+        lines.geometry.setAttribute('color', new BufferAttribute(colors, 4));
+      }
     });
     this.physicsPort.start();
 
@@ -93,34 +119,13 @@ export class RenderWorker {
     console.log('RenderWorker', this);
   }
 
-  public createProxies(proxies: IProxyConstructionData[]): void {
-    this.logger.debug('Creating proxies:', proxies);
-
-    for (let i = 0; i < proxies.length; ++i) {
-      const { constructor, id, tb, args, thread } = proxies[i];
-      const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
-
-      if (!ProxyConstructor) {
-        this.logger.warn(`Constructor (${constructor}) not found for proxy "${id}".`);
-        return;
-      }
-
-      const proxy = this.instantiationService.createInstance(
-        ProxyConstructor,
-        args,
-        new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
-        id,
-        thread,
-        this
-      ) as SceneComponentProxy;
-
-      this.proxyManager.registerProxy(proxy);
-      this.scene.add(proxy.sceneObject);
-    }
+  public createProxies(stack: IProxyConstructionData[]): void {
+    this.logger.debug('Create proxies:', stack.slice(0));
+    this.proxyManager.registerProxies(stack);
   }
 
   public start(): void {
-    this.renderer.setAnimationLoop(time => this.tick(time));
+    this.renderer.setAnimationLoop(async time => this.tick(time));
   }
 
   public setSize(width: number, height: number): void {
@@ -132,7 +137,7 @@ export class RenderWorker {
     }
   }
 
-  public tick(time: number): void {
+  public async tick(time: number): Promise<void> {
     ++this.frameId;
 
     const tickContext = { id: this.frameId, delta: 0, elapsed: time };
@@ -140,9 +145,7 @@ export class RenderWorker {
     TripleBuffer.swapReadBufferFlags(Flags.GAME_FLAGS);
 
     this.tickManager.startTick(tickContext);
-    this.tickManager.runTickGroup(ETickGroup.PrePhysics);
-    this.tickManager.runTickGroup(ETickGroup.DuringPhysics);
-    this.tickManager.runTickGroup(ETickGroup.PostPhysics);
+    await this.tickManager.runAllTicks();
     this.tickManager.endTick();
 
     this.info.tick(tickContext);
@@ -153,5 +156,25 @@ export class RenderWorker {
 
   public addSceneObject(child: Object3D): void {
     this.scene.add(child);
+  }
+
+  public receiveTasks(tasks: RenderWorkerTaskJSON[]): void {
+    if (tasks.length > 0) {
+      this.logger.debug(`Received tasks:`, tasks.slice());
+
+      let task: RenderWorkerTaskJSON | undefined;
+
+      while (task = tasks.shift()) {
+        const proxy = this.proxyManager.getProxy(task.target, EProxyThread.Game);
+
+        if (proxy) {
+          const descriptor = proxy.target[task.name as keyof typeof proxy];
+
+          if (typeof descriptor === 'function') {
+            (descriptor as Function).apply(proxy.target, task.params);
+          }
+        }
+      }
+    }
   }
 }

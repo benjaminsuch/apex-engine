@@ -1,65 +1,42 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { getTargetId } from './core/class/decorators';
-import { EProxyThread, type IProxyOrigin } from './core/class/specifiers/proxy';
+import { getClassSchema, getTargetId, isPropSchema, type PropSchema } from './core/class/decorators';
+import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from './core/class/specifiers/proxy';
+import { TripleBuffer, type TripleBufferJSON } from './core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from './EngineLoop';
-import { ProxyInstance } from './ProxyInstance';
+import { type ProxyInstance } from './ProxyInstance';
 import { ETickGroup, TickFunction } from './TickManager';
 
-export class ProxyManager<T> {
-  private static instance?: ProxyManager<any>;
+export class ProxyManager {
+  private static instance?: ProxyManager;
 
   // I don't like applying the singleton pattern for this class, but an architectural
   // issue with the proxies force me to do so.
   //
   // For context: Currently, I don't see a way to pass the instance of ProxyManager to
   // the class that is returned by our `proxy` specifier (see /class/specifiers/proxy.ts).
-  public static getInstance(): ProxyManager<any> {
+  public static getInstance(): ProxyManager {
     if (!this.instance) {
       throw new Error(`There is no instance of ProxyManager.`);
     }
     return this.instance;
   }
 
-  protected proxyQueue: RegisteredProxy<T>[][] = [];
+  protected readonly deploymentQueue: ProxyDeployment[] = [];
 
-  public enqueueProxy(thread: EProxyThread, proxy: T, args: unknown[]): boolean {
-    const idx = this.proxyQueue[thread].findIndex(({ target }) => target === proxy);
+  protected deferredDeploymentMessages: IProxyConstructionData[] = [];
 
-    if (idx === -1) {
-      const enqueuedProxy = new EnqueuedProxy(thread, proxy, args);
-      enqueuedProxy.index = this.proxyQueue[thread].push(enqueuedProxy) - 1;
-      this.registerProxy(proxy, thread);
-      return true;
-    }
+  public readonly origins: IProxyOrigin[] = [];
 
-    return false;
-  }
-
-  public readonly proxies: ProxyRegistry<RegisteredProxy<T>>;
-
-  public registerProxy(proxy: T, thread: EProxyThread = this.thread): void {
-    const registeredProxy = new RegisteredProxy(thread, proxy);
-    registeredProxy.index = this.proxies.register(registeredProxy);
-  }
-
-  public getProxy<R extends InstanceType<TClass> = IProxyOrigin>(id: number, thread: EProxyThread = this.thread): R | void {
-    for (const proxy of this.proxies) {
-      if (proxy.thread === thread) {
-        const proxyId = proxy.target instanceof ProxyInstance ? proxy.target.id : getTargetId(proxy.target);
-
-        if (proxyId === id) {
-          // Later in development it turned out, that we would have both, proxy instances and origins in our proxy registry.
-          // @todo: Improve/simplify
-          return proxy.target as unknown as R;
-        }
-      }
-    }
-  }
+  public readonly proxies: RegisteredProxy<any>[] = [];
 
   protected managerTick: TickFunction<any>;
 
   constructor(
+    /**
+     * The thread the proxy manager is working on. This is especially relevant for the
+     * "proxy" specifier (see /core/class/specifiers/proxy.ts) when it creates the triple buffer.
+     */
     public readonly thread: EProxyThread,
     private readonly proxyConstructors: Record<string, TClass> = {},
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
@@ -69,53 +46,172 @@ export class ProxyManager<T> {
       throw new Error(`An instance of the ProxyManager already exists.`);
     }
 
-    for (let i = 0; i < EProxyThread.MAX; ++i) {
-      this.proxyQueue[i] = [];
-    }
-
-    this.proxies = this.instantiationService.createInstance(ProxyRegistry);
     this.managerTick = this.instantiationService.createInstance(ProxyManagerTickFunction, this);
 
     this.registerTickFunctions();
 
     ProxyManager.instance = this;
-  }
 
-  public init(): void {}
+    this.logger.debug(this.constructor.name, this);
+  }
 
   public tick(tick: IEngineLoopTickContext): void {
-    if (this.proxyQueue.length > 0) {
-      if (this.onProcessProxyQueue(tick)) {
-        this.proxyQueue = [];
+    if (this.deploymentQueue.length) {
+      const queue: IProxyConstructionData[][] = [];
+
+      for (let i = 0; i < EProxyThread.MAX; ++i) {
+        queue.push([]);
       }
-    }
 
-    for (let i = 0; i < this.proxies.entries; ++i) {
-      const proxy = this.proxies.getProxyByIndex(i);
+      let deployment: ProxyDeployment | undefined;
 
-      if (proxy) {
-        const target = proxy.target as IProxyOrigin;
-
-        if (!(target instanceof ProxyInstance)) {
-          target.tripleBuffer.copyToWriteBuffer(target.byteView);
+      while (deployment = this.deploymentQueue.shift()) {
+        if (deployment) {
+          deployment.tick = tick.id;
+          queue[deployment.thread].push(deployment.toJSON());
         }
       }
-    }
-  }
 
-  public getProxyConstructor(id: string): TClass {
-    return this.proxyConstructors[id];
+      this.onSubmitDeployments(queue);
+    }
+
+    if (this.deferredDeploymentMessages.length) {
+      const stack = this.deferredDeploymentMessages;
+
+      this.deferredDeploymentMessages = [];
+      this.registerProxies(stack);
+    }
+
+    for (let i = 0; i < this.origins.length; ++i) {
+      const origin = this.origins[i];
+      origin.tripleBuffer.copyToWriteBuffer(origin.byteView);
+    }
+
+    for (let i = 0; i < this.proxies.length; ++i) {
+      this.proxies[i].target.tick(tick);
+    }
   }
 
   /**
-   * This method will be called each tick and only if `proxyQueue` is not empty.
-   * Use it to modify how `proxyQueue` will be processed.
+   * Creates a `ProxyDeployment` and pushes it in a queue, that is submitted every
+   * tick (if the queue has items).
    *
-   * @param tick
-   * @returns Returning `true` will reset `proxyQueue` to an empty array.
+   * @param origin
+   * @param args
+   * @param thread The thread where the proxy is being instantiated on.
    */
-  protected onProcessProxyQueue(tick: IEngineLoopTickContext): boolean {
-    return false;
+  public deployProxy(origin: IProxyOrigin, args: unknown[], thread: EProxyThread): void {
+    this.origins.push(origin);
+    this.deploymentQueue.push(new ProxyDeployment(origin, args, thread));
+  }
+
+  public async registerProxies(stack: IProxyConstructionData[]): Promise<void> {
+    let data: IProxyConstructionData | undefined;
+
+    while (data = stack.shift()) {
+      if (data) {
+        const { constructor, id, tb, args, originThread, tick } = data;
+        const ProxyConstructor = this.getProxyConstructor(constructor);
+
+        if (!ProxyConstructor) {
+          this.logger.warn(`Proxy registration aborted for "${id}": No proxy class found for "${constructor}".`);
+          continue;
+        }
+
+        const dependencies = this.getProxyDependencies(ProxyConstructor, id, tb);
+
+        if (dependencies.length) {
+          let hasUnresolvedDependencies = false;
+
+          for (const dependency of dependencies) {
+            if (hasUnresolvedDependencies) {
+              break;
+            }
+            hasUnresolvedDependencies = !dependency.id;
+          }
+
+          if (hasUnresolvedDependencies) {
+            this.logger.info(`Proxy "${id}" has unresolved dependencies and will be deferred.`);
+            this.deferredDeploymentMessages.push(data);
+            continue;
+          }
+        }
+
+        const target = await this.onRegisterProxy(
+          ProxyConstructor,
+          args,
+          new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
+          id,
+          originThread
+        );
+
+        this.proxies.push(new RegisteredProxy(target, originThread, tick));
+      }
+    }
+  }
+
+  public getOrigin<T>(id: number, throwIfNotFound: boolean = false): T | undefined {
+    let result: T | undefined;
+
+    for (let i = 0; i < this.origins.length; ++i) {
+      const origin = this.origins[i];
+
+      if (getTargetId(origin) === id) {
+        result = origin as T;
+      }
+    }
+
+    if (throwIfNotFound && !result) {
+      throw new Error(`Couldn't find proxy origin "${id}".`);
+    }
+
+    return result;
+  }
+
+  public getProxy<T>(id: ProxyInstance['id'], originThread: EProxyThread): RegisteredProxy<T> | void {
+    for (let i = 0; i < this.proxies.length; ++i) {
+      const proxy = this.proxies[i];
+
+      if (proxy.originThread === originThread && proxy.target.id === id) {
+        return proxy;
+      }
+    }
+  }
+
+  protected onRegisterProxy(Constructor: TClass, args: any[], tb: TripleBuffer, id: number, originThread: number): MaybePromise<ProxyInstance> {
+    return this.instantiationService.createInstance(Constructor, args, tb, id, originThread);
+  }
+
+  protected onSubmitDeployments(queue: IProxyConstructionData[][]): MaybePromise<void> {}
+
+  protected getProxyConstructor(id: string): TClass {
+    return this.proxyConstructors[id];
+  }
+
+  protected getProxyDependencies(ProxyConstructor: TClass, id: ProxyInstance['id'], tb: TripleBufferJSON): ProxyDependency[] {
+    const originClass = Reflect.getMetadata('proxy:origin', ProxyConstructor);
+    const schema = getClassSchema(originClass);
+    const dependencies: ProxyDependency[] = [];
+
+    if (!schema) {
+      this.logger.warn(`No schema found for "${originClass.name}".`);
+      return [];
+    }
+
+    for (const prop in schema) {
+      const propSchema = schema[prop];
+
+      if (isPropSchema(propSchema)) {
+        const { type, required } = propSchema;
+
+        if (type === 'ref' && required === true) {
+          const dependency = new ProxyDependency({ prop, ...propSchema }, id, tb);
+          dependencies.push(dependency);
+        }
+      }
+    }
+
+    return dependencies;
   }
 
   protected registerTickFunctions(): void {
@@ -127,49 +223,72 @@ export class ProxyManager<T> {
   }
 }
 
-class ProxyRegistry<T> {
-  private readonly list: T[] = [];
-
-  public getProxyByIndex(idx: number): T | undefined {
-    return this.list[idx];
-  }
-
-  /**
-   * @param registeredProxy
-   * @returns Index of where the proxy is in our list of registered proxies.
-   */
-  public register(registeredProxy: T): number {
-    this.entries = this.list.push(registeredProxy);
-    return this.entries - 1;
-  }
-
-  public entries: number = 0;
-
-  constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {}
-
-  public *[Symbol.iterator](): Generator<T, any, any> {
-    let idx = 0;
-
-    while (idx < this.list.length) {
-      yield this.list[idx++];
-    }
-  }
-}
-
-class ProxyManagerTickFunction extends TickFunction<ProxyManager<any>> {
+class ProxyManagerTickFunction extends TickFunction<ProxyManager> {
   public override run(tick: IEngineLoopTickContext): void {
     this.target.tick(tick);
   }
 }
 
-export class RegisteredProxy<T> {
-  public index: number = -1;
+export class ProxyDeployment {
+  public tick: IEngineLoopTickContext['id'] = -1;
 
-  constructor(public readonly thread: EProxyThread, public readonly target: T) {}
+  constructor(public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {}
+
+  public toJSON(): IProxyConstructionData {
+    return {
+      constructor: (this.origin.constructor as TProxyOriginConstructor).proxyClassName,
+      id: getTargetId(this.origin) as number,
+      tb: this.origin.tripleBuffer,
+      args: this.args,
+      originThread: EProxyThread.Game,
+      tick: this.tick,
+    };
+  }
 }
 
-export class EnqueuedProxy<T> extends RegisteredProxy<T> {
-  constructor(thread: EProxyThread, target: T, public readonly args: unknown[]) {
-    super(thread, target);
+export class ProxyDependency {
+  private readonly views: [DataView, DataView, DataView];
+
+  public isResolved: boolean = false;
+
+  public prop: string;
+
+  /**
+   * Returns the id of the dependency or undefined if it hasn't been assigned yet.
+   */
+  public get id(): number | undefined {
+    const idx = TripleBuffer.getReadBufferIndexFromFlags(this.tb.flags);
+    return this.views[idx].getUint32(this.schema.offset, true);
   }
+
+  constructor(private readonly schema: { prop: string } & PropSchema, public readonly parentId: number, private readonly tb: TripleBufferJSON) {
+    this.prop = schema.prop;
+    this.views = [new DataView(tb.buffers[0]), new DataView(tb.buffers[1]), new DataView(tb.buffers[2])];
+  }
+}
+
+export class ProxyQueue {
+  public size: number = 0;
+
+  public readonly queue: ProxyDeployment[] = [];
+
+  public add(deployment: ProxyDeployment): number {
+    return this.queue.push(deployment) - 1;
+  }
+
+  public *[Symbol.iterator](): Generator<ProxyDeployment, any, any> {
+    let idx = 0;
+
+    while (idx < this.queue.length) {
+      yield this.queue[idx++];
+    }
+  }
+}
+
+export class RegisteredProxy<T> {
+  constructor(
+    public readonly target: T extends ProxyInstance ? T : never,
+    public readonly originThread: EProxyThread,
+    public readonly tick: IEngineLoopTickContext['id']
+  ) {}
 }

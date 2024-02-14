@@ -3,7 +3,7 @@ import * as RAPIER from '@dimforge/rapier3d-compat';
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { getTargetId } from '../core/class/decorators';
-import { EProxyThread, type IProxyConstructionData, type IProxyOrigin } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer, type TripleBufferJSON } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
@@ -33,14 +33,14 @@ export class PhysicsWorker {
 
   public world!: RAPIER.World;
 
-  public readonly proxyManager: ProxyManager<IProxyOrigin>;
+  public readonly proxyManager: ProxyManager;
 
   constructor(
     @IInstantiationService private readonly instantiationService: IInstantiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
   ) {
     this.tickManager = this.instantiationService.createInstance(TickManager);
-    this.proxyManager = this.instantiationService.createInstance(ProxyManager, EProxyThread.Physics, proxyConstructors);
+    this.proxyManager = this.instantiationService.createInstance(ProxyManager, EProxyThread.Physics, {});
   }
 
   public async init({ flags, renderPort }: any): Promise<void> {
@@ -58,32 +58,14 @@ export class PhysicsWorker {
     this.info = this.instantiationService.createInstance(PhysicsInfo, Flags.PHYSICS_FLAGS, undefined);
   }
 
-  public createProxies(proxies: IProxyConstructionData[]): void {
-    this.logger.debug('Creating proxies:', proxies);
-
-    for (let i = 0; i < proxies.length; ++i) {
-      const { constructor, id, tb, args, thread } = proxies[i];
-      const ProxyConstructor = this.proxyManager.getProxyConstructor(constructor);
-
-      if (!ProxyConstructor) {
-        this.logger.warn(`Constructor (${constructor}) not found for proxy "${id}".`);
-        return;
-      }
-
-      const proxy = this.instantiationService.createInstance(
-        ProxyConstructor,
-        args,
-        new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
-        id,
-        thread,
-        this,
-      );
-
-      this.proxyManager.registerProxy(proxy);
-    }
+  public createProxies(stack: IProxyConstructionData[]): void {
+    this.logger.debug('Create proxies:', stack);
+    this.proxyManager.registerProxies(stack);
   }
 
   public registerRigidBody(type: RAPIER.RigidBodyType, options: { position?: [number, number, number] } = {}): ICreatedProxyData {
+    this.logger.debug(`Register RigidBody`);
+
     const desc = createRigidBodyDesc(type);
 
     if (options) {
@@ -104,6 +86,8 @@ export class PhysicsWorker {
   }
 
   public registerCollider<T extends RAPIER.ShapeType>(type: T, { rigidBodyId, ...args }: ColliderRegisterArgs<T>): ICreatedProxyData {
+    this.logger.debug(`Register Collider (rigidBodyId=${rigidBodyId})`,);
+
     // @ts-ignore
     const desc = getColliderDescConstructor(type)(...Object.values(args));
     const proxyOrigin = this.instantiationService.createInstance(Collider, desc, rigidBodyId, this);
@@ -131,10 +115,14 @@ export class PhysicsWorker {
     let task: PhysicsWorkerTaskJSON | undefined;
 
     while (task = tasks.shift()) {
-      const proxy = this.proxyManager.getProxy<InstanceType<TClass>>(task.proxy, EProxyThread.Game);
+      const origin = this.proxyManager.getOrigin(task.proxy);
 
-      if (proxy) {
-        proxy[task.name].apply(proxy, task.params);
+      if (origin) {
+        const descriptor = origin[task.name as keyof typeof origin];
+
+        if (typeof descriptor === 'function') {
+          (descriptor as Function).apply(origin, task.params);
+        }
       }
     }
 

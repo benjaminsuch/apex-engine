@@ -3,11 +3,11 @@ import { CapsuleGeometry } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { MeshComponent } from './components/MeshComponent';
 import { Pawn } from './Pawn';
+import { MeshComponent } from './renderer/MeshComponent';
 
 export class Character extends Pawn {
-  protected readonly capsuleComponent: MeshComponent;
+  public readonly capsuleComponent: MeshComponent;
 
   constructor(@IInstantiationService instantiationService: IInstantiationService, @IConsoleLogger logger: IConsoleLogger) {
     super(instantiationService, logger);

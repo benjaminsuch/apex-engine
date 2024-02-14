@@ -12,7 +12,8 @@ export interface IProxyConstructionData {
   id: number;
   tb: TripleBufferJSON;
   args: unknown[];
-  thread: EProxyThread;
+  originThread: EProxyThread;
+  tick: number;
 }
 
 export interface IProxyOrigin {
@@ -97,7 +98,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
           const propSchema = schema[key];
 
           if (isPropSchema(propSchema)) {
-            const { isArray, offset, size, type } = propSchema;
+            const { isArray, offset, size, type, required } = propSchema;
             const initialVal = this[key] as any;
 
             let accessors:
@@ -270,23 +271,14 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
                 };
                 break;
               case 'ref':
-                if (initialVal) {
-                  // todo: `id(initialVal)` only works if we have a proxy with that id (which does not work for 3rd-party instances)
-                  const refId = getTargetId(initialVal) ?? id(initialVal);
-                  dv.setUint32(offset, refId, true);
-                }
-
-                Reflect.defineMetadata('value', initialVal, this, key);
+                setRef(initialVal, dv, offset, required, this, key);
 
                 accessors = {
                   get(this): InstanceType<TClass> {
                     return Reflect.getOwnMetadata('value', this, key);
                   },
                   set(this, val: InstanceType<TClass>): void {
-                    const refId = val.isProxy ? val.id : getTargetId(val) ?? id(val);
-                    dv.setUint32(offset, refId, true);
-
-                    Reflect.defineMetadata('value', val, this, key);
+                    setRef(val, dv, offset, required, this, key);
                   },
                 };
                 break;
@@ -423,7 +415,11 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
         // the Worker is loading the Proxy-Classes (e.g. SceneComponentProxy) and thus, will load
         // the `GameProxyManager`, which imports the `IRenderWorkerContext`, which imports from
         // `RenderWorker`. This will lead to a "BAD_IMPORT" error from rollup.
-        ProxyManager.getInstance().enqueueProxy(thread, this, filterArgs(args));
+        ProxyManager.getInstance().deployProxy(this, filterArgs(args), thread);
+      }
+
+      public async tick(tick: IEngineLoopTickContext): Promise<void> {
+        await super.tick(tick);
       }
     };
   };
@@ -441,6 +437,15 @@ export function filterArgs(args: unknown[]): any[] {
             : false
       : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
   );
+}
+
+function setRef(val: InstanceType<TClass> | null, dv: DataView, offset: number, required: boolean, self: IProxyOrigin, key: string): void {
+  if (val) {
+    const refId = val.isProxy ? val.id : getTargetId(val) ?? id(val);
+    dv.setUint32(offset, refId, true);
+  }
+
+  Reflect.defineMetadata('value', val, self, key);
 }
 
 function setString(val: string, dv: DataView, offset: number, size: number): void {
@@ -473,6 +478,9 @@ function setMat4(target: any, prop: string | symbol, val: Matrix4, dv: DataView,
     'value',
     new Proxy(val, {
       get(target: Matrix4, prop): any {
+        // Since values in a matrix are stored in `elements`, our proxy won't trigger `set`.
+        // Instead, when `get` (which is always the case, when it internally receives updates) is triggered,
+        // we update the dataview (`dv`).
         for (let i = 0; i < target.elements.length; ++i) {
           dv.setFloat32(offset + i * Float32Array.BYTES_PER_ELEMENT, target.elements[i], true);
         }

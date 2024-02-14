@@ -233,7 +233,7 @@ export class Collider implements IProxyOrigin {
     protected readonly physicsContext: PhysicsWorker,
     @IInstantiationService protected readonly instantiationService: IInstantiationService
   ) {
-    this.rigidBody = this.physicsContext.proxyManager.getProxy(rigidBodyId, EProxyThread.Game) as RigidBody;
+    this.rigidBody = this.physicsContext.proxyManager.getOrigin<RigidBody>(rigidBodyId, true) as RigidBody;
     this.worldCollider = this.physicsContext.world.createCollider(colliderDesc, this.rigidBody.worldBody);
 
     this.handle = this.worldCollider.handle;

@@ -1,32 +1,29 @@
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { proxyComponents } from '../components';
 import { EProxyThread } from '../core/class/specifiers/proxy';
-import { type IEngineLoopTickContext } from '../EngineLoop';
+import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type ProxyInstance } from '../ProxyInstance';
 import { ProxyManager } from '../ProxyManager';
-import { type RenderProxy } from './RenderProxy';
+import { proxyComponents } from './components';
+import { type RenderWorker } from './RenderWorker';
+import { SceneComponentProxy } from './SceneComponent';
 
-export class RenderProxyManager extends ProxyManager<RenderProxy> {
-  public static override getInstance(): RenderProxyManager {
-    return this.getInstance() as RenderProxyManager;
-  }
-
+export class RenderProxyManager extends ProxyManager {
   constructor(
+    protected readonly renderer: RenderWorker,
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger
   ) {
     super(EProxyThread.Render, { ...proxyComponents }, instantiationService, logger);
   }
 
-  public override tick(tick: IEngineLoopTickContext): void {
-    super.tick(tick);
+  protected override onRegisterProxy(Constructor: TClass<ProxyInstance>, args: any[], tb: TripleBuffer, id: number, originThread: number): MaybePromise<ProxyInstance> {
+    const proxy = this.instantiationService.createInstance(Constructor, args, tb, id, originThread, this.renderer);
 
-    for (let i = 0; i < this.proxies.entries; ++i) {
-      const proxy = this.proxies.getProxyByIndex(i);
-
-      if (proxy) {
-        proxy.target.tick(tick);
-      }
+    if (proxy instanceof SceneComponentProxy) {
+      this.renderer.addSceneObject(proxy.sceneObject);
     }
+
+    return proxy;
   }
 }

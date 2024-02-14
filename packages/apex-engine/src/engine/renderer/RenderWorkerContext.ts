@@ -5,8 +5,8 @@ import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
 import { getTargetId } from '../core/class/decorators';
 import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
-import { type EnqueuedProxy, type RegisteredProxy } from '../ProxyManager';
 import { RenderingInfo } from './RenderingInfo';
+import { type AnyRenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
 
 export class RenderWorkerContext implements IRenderWorkerContext {
@@ -104,22 +104,8 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     });
   }
 
-  public createProxies(proxies: EnqueuedProxy<IProxyOrigin>[]): Promise<void> {
-    const data: IProxyConstructionData[] = [];
-
-    for (let i = 0; i < proxies.length; ++i) {
-      const { target, args } = proxies[i];
-
-      data[i] = {
-        constructor: (target.constructor as TProxyOriginConstructor).proxyClassName,
-        id: getTargetId(target) as number,
-        tb: target.tripleBuffer,
-        args,
-        thread: EProxyThread.Game,
-      };
-    }
-
-    return this.comlink.createProxies(data);
+  public createProxies(stack: IProxyConstructionData[]): Promise<void> {
+    return this.comlink.createProxies(stack);
   }
 
   public start(): Promise<void> {
@@ -129,11 +115,16 @@ export class RenderWorkerContext implements IRenderWorkerContext {
   public setSize(width: number, height: number): Promise<void> {
     return this.comlink.setSize(width, height);
   }
+
+  public sendTasks(tasks: AnyRenderWorkerTask[]): Promise<void> {
+    return this.comlink.receiveTasks(tasks.map(task => task.toJSON()));
+  }
 }
 
 export interface IRenderWorkerContext extends IInjectibleService {
-  createProxies(proxies: RegisteredProxy<IProxyOrigin>[]): Promise<void>;
+  createProxies(stack: IProxyConstructionData[]): Promise<void>;
   getRenderingInfo(): RenderingInfo;
+  sendTasks(tasks: AnyRenderWorkerTask[]): Promise<void>;
   setSize(width: number, height: number): Promise<void>;
   start(): Promise<void>;
 }

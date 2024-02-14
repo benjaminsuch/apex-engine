@@ -1,6 +1,5 @@
 # `apex-engine`
 
-> [!IMPORTANT]  
 > The engine is very much in alpha stage and is actively being worked on. Features and API's can change drastically or even be removed. In it's current stage I would not recommend using it in production.
 
 The Apex Engine is a multiplatform game engine that allows you to create 3D games with TypeScript. It's focus is on lowering (or removing) the entry barrier for web developers who want to get into game development.

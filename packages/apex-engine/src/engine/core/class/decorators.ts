@@ -79,6 +79,13 @@ export interface PropSchema {
   arrayType: TypedArrayConstructor;
   isArray: boolean;
   offset: number;
+  /**
+   * Only relevant for type "ref".
+   *
+   * If `true`, the ref will be marked as a dependency and will defer
+   * the proxy instantation until all dependencies are available.
+   */
+  required: boolean;
   pos: number;
   size: number;
   type: string;
@@ -124,6 +131,7 @@ export function addPropToSchema(
     schema[key] = {
       type: 'uint8',
       size: 0,
+      required: false,
       arrayType: Uint8Array,
       isArray: false,
       offset: 0,

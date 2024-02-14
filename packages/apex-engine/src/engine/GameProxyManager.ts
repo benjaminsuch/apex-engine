@@ -1,16 +1,13 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { EProxyThread, type IProxyOrigin } from './core/class/specifiers/proxy';
+import { EProxyThread, type IProxyConstructionData } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { IPhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { ProxyManager } from './ProxyManager';
+import { RenderTaskManager } from './renderer/RenderTaskManager';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 
-export class GameProxyManager extends ProxyManager<IProxyOrigin> {
-  public static override getInstance(): GameProxyManager {
-    return super.getInstance() as GameProxyManager;
-  }
-
+export class GameProxyManager extends ProxyManager {
   constructor(
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger,
@@ -18,14 +15,17 @@ export class GameProxyManager extends ProxyManager<IProxyOrigin> {
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     super(EProxyThread.Game, {}, instantiationService, logger);
-    this.logger.debug(this.constructor.name, this);
   }
 
-  protected override onProcessProxyQueue(tick: IEngineLoopTickContext): boolean {
-    // No need to use `await` here, we just send the proxies and are done.
-    this.renderContext.createProxies(this.proxyQueue[EProxyThread.Render]);
-    this.physicsContext.createProxies(this.proxyQueue[EProxyThread.Physics]);
+  public override tick(tick: IEngineLoopTickContext): void {
+    super.tick(tick);
 
-    return true;
+    this.renderContext.sendTasks(RenderTaskManager.getTasks());
+    RenderTaskManager.clear();
+  }
+
+  protected override onSubmitDeployments(queue: IProxyConstructionData[][]): void {
+    this.physicsContext.createProxies(queue[EProxyThread.Physics]);
+    this.renderContext.createProxies(queue[EProxyThread.Render]);
   }
 }

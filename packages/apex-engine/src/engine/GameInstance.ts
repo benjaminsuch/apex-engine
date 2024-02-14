@@ -46,7 +46,6 @@ export class GameInstance {
     this.logger.debug(this.constructor.name, 'Initialize');
 
     this.proxyManager = this.instantiationService.createInstance(GameProxyManager);
-    this.proxyManager.init();
 
     this.world = this.instantiationService.createInstance(World);
     this.world.init(this);

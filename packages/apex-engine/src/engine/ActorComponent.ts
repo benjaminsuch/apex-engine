@@ -1,8 +1,8 @@
-import { IInstantiationService } from '../../platform/di/common/InstantiationService';
-import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { type Actor } from '../Actor';
-import { type IEngineLoopTickContext } from '../EngineLoop';
-import { ETickGroup, TickFunction } from '../TickManager';
+import { IInstantiationService } from '../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
+import { type Actor } from './Actor';
+import { type IEngineLoopTickContext } from './EngineLoop';
+import { ETickGroup, TickFunction } from './TickManager';
 
 export class ActorComponent {
   /**
@@ -20,6 +20,10 @@ export class ActorComponent {
   public readonly componentTick: ComponentTickFunction;
 
   public isInitialized: boolean = false;
+
+  public name: string = '';
+
+  public uuid: string = '';
 
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,

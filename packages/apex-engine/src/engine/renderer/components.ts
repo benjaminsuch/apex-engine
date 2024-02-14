@@ -3,18 +3,24 @@ import { type Group, Mesh, type Object3D } from 'three';
 import { CameraComponent, CameraComponentProxy } from './CameraComponent';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
+import { SkeletonProxy } from './Skeleton';
+import { SkinnedMeshComponent, SkinnedMeshComponentProxy } from './SkinnedMeshComponent';
 
 export const proxyComponents = {
   CameraComponentProxy,
   MeshComponentProxy,
   SceneComponentProxy,
+  SkinnedMeshComponentProxy,
+  SkeletonProxy,
 } as const;
 
 const objectComponentMap = {
+  Bone: SceneComponent,
   Mesh: MeshComponent,
   Group: SceneComponent,
   Object3D: SceneComponent,
   PerspectiveCamera: CameraComponent,
+  SkinnedMesh: SkinnedMeshComponent,
 } as const;
 
 export type SceneComponentType<T = typeof objectComponentMap> = T[keyof T];

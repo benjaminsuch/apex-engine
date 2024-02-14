@@ -6,15 +6,21 @@ import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type ColliderProxy } from '../physics/Collider';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
-import { type RenderWorker } from '../renderer/RenderWorker';
+import { type RigidBodyProxy } from '../physics/RigidBody';
+import { type RenderWorker } from './RenderWorker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
+
+type GeometryData = Record<string, any> | undefined;
+
+type MaterialData = Record<string, any> | undefined;
 
 export class MeshComponentProxy extends SceneComponentProxy {
   public override sceneObject: Mesh;
 
   constructor(
-    [geometryData, materialData]: [Record<string, any> | undefined, Record<string, any> | undefined] = [undefined, undefined],
+    [geometryData, materialData]: [GeometryData, MaterialData] = [undefined, undefined],
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
@@ -22,6 +28,10 @@ export class MeshComponentProxy extends SceneComponentProxy {
   ) {
     super([geometryData, materialData], tb, id, thread, renderer);
 
+    this.sceneObject = new Mesh(...this.getMeshArgs(geometryData, materialData));
+  }
+
+  protected getMeshArgs(geometryData: GeometryData, materialData: MaterialData): [BufferGeometry | undefined, Material | undefined] {
     const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
     if (geometryData) {
@@ -96,15 +106,17 @@ export class MeshComponentProxy extends SceneComponentProxy {
       args[1] = new materialConstructors[type as keyof typeof materialConstructors](params);
     }
 
-    this.sceneObject = new Mesh(...args);
+    return args;
   }
 }
 
 @CLASS(proxy(EProxyThread.Render, MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
+  protected override bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
+
   constructor(
     public geometry: BufferGeometry | undefined = undefined,
-    public material: Material | undefined = undefined,
+    public material: Material | Material[] | undefined = undefined,
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger,
     @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext
@@ -116,12 +128,14 @@ export class MeshComponent extends SceneComponent {
 
   public override async beginPlay(): Promise<void> {
     // When resolved, the rigid-body is available and we can register the collider
-    await super.beginPlay();
+    if (this.bodyType !== null) {
+      await this.physicsContext.registerRigidBody(this, { position: this.position });
+    }
     await this.physicsContext.registerCollider(this);
   }
 }
 
-function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
+export function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
   const ArrayConstructor = Array.TYPED_ARRAY_CONSTRUCTORS[type];
 
   if (Array.isBigInt64Array(ArrayConstructor) || Array.isBigUint64Array(ArrayConstructor)) {

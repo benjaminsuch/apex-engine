@@ -23,6 +23,25 @@ declare global {
   type IntervalReturn = number | NodeJS.Timer | undefined;
 
   type TimeoutReturn = number | NodeJS.Timeout | undefined;
+
+  type Matrix4AsArray = [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ];
 }
 
 export {};

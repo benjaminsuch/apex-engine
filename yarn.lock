@@ -1697,6 +1697,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@dimforge/rapier3d-compat@npm:^0.12.0":
+  version: 0.12.0
+  resolution: "@dimforge/rapier3d-compat@npm:0.12.0"
+  checksum: 86cb3b39925673761aa5dca5429ca44e0c7ac8072472cca925e2ca732be695292e318501a2ab39110be1549d4f143a0af0620246657f76570c8cdd1b0b3df36c
+  languageName: node
+  linkType: hard
+
 "@discoveryjs/json-ext@npm:0.5.7":
   version: 0.5.7
   resolution: "@discoveryjs/json-ext@npm:0.5.7"
@@ -12716,6 +12723,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "sandbox-v1@workspace:sandboxes/v1"
   dependencies:
+    "@dimforge/rapier3d-compat": ^0.12.0
     "@types/node": ^20.10.5
     "@types/three": ^0.159.0
     apex-engine: "workspace:^"
