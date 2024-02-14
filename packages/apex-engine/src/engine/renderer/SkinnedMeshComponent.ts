@@ -8,7 +8,7 @@ import { GameProxyManager } from '../GameProxyManager';
 import { type ProxyInstance } from '../ProxyInstance';
 import { createBufferAttribute, MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { type RenderWorker } from './RenderWorker';
-import { type Matrix4AsArray, type SceneComponent } from './SceneComponent';
+import { type SceneComponent } from './SceneComponent';
 import { Skeleton, type SkeletonProxy } from './Skeleton';
 
 export class SkinnedMeshComponentProxy extends MeshComponentProxy {
@@ -28,14 +28,15 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
     renderer: RenderWorker
   ) {
     super([geometryData, materialData], tb, id, thread, renderer);
-    // console.log('skinnedmesh skeleton', this, this.bindMatrix, this.bindMatrixInverse);
+
     this.sceneObject = new SkinnedMesh(...this.getMeshArgs(geometryData, materialData));
-    console.log('skeleton', id, this.skeleton);
+
     const bones = this.skeleton.bones.map((item: any) => {
       item.sceneObject.isBone = true;
       item.sceneObject.type = 'Bone';
       return item.sceneObject as Bone;
     });
+
     this.sceneObject.bind(new ThreeSkeleton(bones, this.skeleton.boneInverses), new Matrix4().fromArray(this.bindMatrix));
   }
 

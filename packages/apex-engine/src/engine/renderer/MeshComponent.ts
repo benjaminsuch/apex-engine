@@ -6,7 +6,9 @@ import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type ColliderProxy } from '../physics/Collider';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
+import { type RigidBodyProxy } from '../physics/RigidBody';
 import { type RenderWorker } from './RenderWorker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
@@ -110,6 +112,8 @@ export class MeshComponentProxy extends SceneComponentProxy {
 
 @CLASS(proxy(EProxyThread.Render, MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
+  protected override bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
+
   constructor(
     public geometry: BufferGeometry | undefined = undefined,
     public material: Material | Material[] | undefined = undefined,
@@ -124,7 +128,9 @@ export class MeshComponent extends SceneComponent {
 
   public override async beginPlay(): Promise<void> {
     // When resolved, the rigid-body is available and we can register the collider
-    await super.beginPlay();
+    if (this.bodyType !== null) {
+      await this.physicsContext.registerRigidBody(this, { position: this.position });
+    }
     await this.physicsContext.registerCollider(this);
   }
 }

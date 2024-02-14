@@ -7,7 +7,7 @@ import { Pawn } from './Pawn';
 import { MeshComponent } from './renderer/MeshComponent';
 
 export class Character extends Pawn {
-  protected readonly capsuleComponent: MeshComponent;
+  public readonly capsuleComponent: MeshComponent;
 
   constructor(@IInstantiationService instantiationService: IInstantiationService, @IConsoleLogger logger: IConsoleLogger) {
     super(instantiationService, logger);

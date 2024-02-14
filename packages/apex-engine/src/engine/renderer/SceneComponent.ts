@@ -1,4 +1,4 @@
-import RAPIER from '@dimforge/rapier3d-compat';
+import type RAPIER from '@dimforge/rapier3d-compat';
 import { Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
@@ -18,28 +18,7 @@ import { RenderProxy } from './RenderProxy';
 import { RenderTaskManager, RenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
 
-const _m1 = /* @__PURE__ */ new Matrix4();
-const _pos = /* @__PURE__ */ new Vector3();
 const _obj = /* @__PURE__ */ new Object3D();
-
-export type Matrix4AsArray = [
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-];
 
 export class SceneComponentProxy extends RenderProxy {
   declare position: [number, number, number];
@@ -115,7 +94,7 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
    * Important: When the rigid-body has been registered, changing this property
    * directly will have no effect. Instead, use `setBodyType`.
    */
-  private bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
+  protected bodyType: RAPIER.RigidBodyType | null = null;
 
   public getBodyType(): SceneComponent['bodyType'] {
     return this.bodyType;
@@ -174,10 +153,16 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
    */
   public children: SceneComponent[] = [];
 
+  /**
+   * When not `null`, will be registered in the `MeshComponent.beginPlay` call.
+   */
   public rigidBody: RigidBodyProxy | null = null;
 
   public colliderShape: RAPIER.ShapeType | null = null;
 
+  /**
+   * Will be registered when `MeshComponent.beginPlay` is called.
+   */
   public collider: ColliderProxy | null = null;
 
   constructor(
@@ -186,12 +171,6 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
   ) {
     super(instantiationService, logger);
-  }
-
-  public override async beginPlay(): Promise<void> {
-    if (this.bodyType !== null) {
-      await this.physicsContext.registerRigidBody(this, { position: this.position });
-    }
   }
 
   public override async tick(context: IEngineLoopTickContext): Promise<void> {
