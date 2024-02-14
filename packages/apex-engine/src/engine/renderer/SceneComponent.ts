@@ -140,7 +140,7 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   public receiveShadow: boolean = true;
 
   /**
-   * The component it is attached to.1
+   * The component it is attached to.
    */
   @PROP(serialize(ref))
   public parent: SceneComponent | null = null;
