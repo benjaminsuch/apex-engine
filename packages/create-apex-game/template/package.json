@@ -4,7 +4,9 @@
   "private": true,
   "main": "build/electron/index.cjs",
   "scripts": {
-    "dev": "abt serve"
+    "dev": "abt serve",
+    "dev-browser": "yarn abt serve --platform browser",
+    "dev-electron": "yarn abt serve --platform electron"
   },
   "dependencies": {
     "apex-engine": "latest",
@@ -12,8 +14,10 @@
     "three": "^0.154.0"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^18.11.18",
     "@types/three": "^0.153.0",
+    "@types/ws": "^8.5.10",
     "tslib": "^2.5.0",
     "typescript": "^4.9.4"
   },
