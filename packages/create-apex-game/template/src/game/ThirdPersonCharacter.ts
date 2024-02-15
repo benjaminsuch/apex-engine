@@ -1,15 +1,11 @@
 import { Character } from 'apex-engine/src/engine/Character';
-import { CameraComponent } from 'apex-engine/src/engine/components/CameraComponent';
 import { type IEngineLoopTickContext } from 'apex-engine/src/engine/EngineLoop';
 import { InputAction } from 'apex-engine/src/engine/input/InputAction';
 import { InputMappingContext } from 'apex-engine/src/engine/input/InputMappingContext';
-import { EInputAxisSwizzleOrder,
-  InputModifierNegate,
-  InputModifierScalar,
-  InputModifierScalarByDelta,
-  InputModifierSwizzleAxis } from 'apex-engine/src/engine/input/InputModifiers';
+import { EInputAxisSwizzleOrder, InputModifierNegate, InputModifierScalar, InputModifierScalarByDelta, InputModifierSwizzleAxis } from 'apex-engine/src/engine/input/InputModifiers';
 import { ETriggerEvent } from 'apex-engine/src/engine/input/InputTriggers';
 import { PlayerController } from 'apex-engine/src/engine/PlayerController';
+import { CameraComponent } from 'apex-engine/src/engine/renderer/CameraComponent';
 import { Vector3 } from 'apex-engine/src/engine/three';
 import { ETickGroup, TickFunction } from 'apex-engine/src/engine/TickManager';
 import { IInstantiationService } from 'apex-engine/src/platform/di/common/InstantiationService';
@@ -28,7 +24,7 @@ export default class ThirdPersonCharacter extends Character {
 
   public defaultMappingContext: InputMappingContext;
 
-  public readonly postPhysicsTick: PostPhysicsTickFunction;
+  public readonly renderPositionTick: RenderPositionTickFunction;
 
   constructor(
     @IInstantiationService instantiationService: IInstantiationService,
@@ -49,8 +45,8 @@ export default class ThirdPersonCharacter extends Character {
     if (rootComponent) {
       this.camera.attachToComponent(rootComponent);
       this.camera.position.set(CAMERA_POS_X, CAMERA_POS_Y, CAMERA_POS_Z);
-      this.camera.matrix.lookAt(this.camera.position, rootComponent.position, this.camera.up);
-      this.camera.rotation.setFromRotationMatrix(this.camera.matrix);
+      this.camera.matrixWorld.lookAt(this.camera.position, rootComponent.position, this.camera.up);
+      this.camera.rotation.setFromRotationMatrix(this.camera.matrixWorld);
     }
 
     this.moveAction = this.instantiationService.createInstance(MoveAction);
@@ -76,10 +72,13 @@ export default class ThirdPersonCharacter extends Character {
 
     this.actorTick.canTick = true;
 
-    this.postPhysicsTick = this.instantiationService.createInstance(PostPhysicsTickFunction, this);
-    this.postPhysicsTick.canTick = true;
-    this.postPhysicsTick.tickGroup = ETickGroup.PostPhysics;
-    this.postPhysicsTick.register();
+    this.renderPositionTick = this.instantiationService.createInstance(
+      RenderPositionTickFunction,
+      this
+    );
+    this.renderPositionTick.canTick = true;
+    this.renderPositionTick.tickGroup = ETickGroup.PostPhysics;
+    this.renderPositionTick.register();
   }
 
   public override async beginPlay(): Promise<void> {
@@ -130,7 +129,7 @@ export default class ThirdPersonCharacter extends Character {
 
 class MoveAction extends InputAction {}
 
-class PostPhysicsTickFunction extends TickFunction<ThirdPersonCharacter> {
+class RenderPositionTickFunction extends TickFunction<ThirdPersonCharacter> {
   public override run(context: IEngineLoopTickContext): void | Promise<void> {
     this.target.movement.set(0, -0.2, 0);
 
