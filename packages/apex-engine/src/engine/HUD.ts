@@ -1,0 +1,206 @@
+import { el, type List, list, mount, type RedomComponent, setAttr, unmount } from 'redom';
+
+import { IInstantiationService } from '../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
+import { Actor } from './Actor';
+import { type IEngineLoopTickContext } from './EngineLoop';
+import { TickManager } from './TickManager';
+import { type World } from './World';
+
+export class HUD extends Actor {
+  private static instance?: HUD;
+
+  public static getInstance(): HUD {
+    if (!this.instance) {
+      throw new Error(`There is no instance of HUD.`);
+    }
+    return this.instance;
+  }
+
+  private readonly canvas: HTMLCanvasElement;
+
+  private readonly debugContainer: DebugContainer;
+
+  private readonly hudContainer: HUDContainer;
+
+  public isDebugEnabled: boolean = IS_DEV;
+
+  public get debugInterval(): number {
+    return this.debugContainer.intervalTime;
+  }
+
+  public set debugInterval(val: number) {
+    this.debugContainer.intervalTime = val;
+    this.debugContainer.restart();
+  }
+
+  public isInitialized: boolean = false;
+
+  constructor(@IInstantiationService instantiationService: IInstantiationService, @IConsoleLogger logger: IConsoleLogger) {
+    super(instantiationService, logger);
+
+    this.canvas = el('canvas', { id: 'hud' });
+
+    this.debugContainer = new DebugContainer();
+    this.hudContainer = new HUDContainer();
+
+    this.actorTick.canTick = true;
+
+    HUD.instance = this;
+  }
+
+  public init(): void {
+    this.logger.debug(this.constructor.name, `Initialize`);
+
+    mount(document.body, this.canvas);
+    mount(document.body, this.hudContainer);
+
+    this.debugContainer.world = this.getWorld();
+
+    if (this.isDebugEnabled) {
+      this.showDebug();
+      this.startDebug();
+    }
+
+    this.isInitialized = true;
+  }
+
+  public startDebug(): void {
+    this.debugContainer.start();
+  }
+
+  public stopDebug(): void {
+    this.debugContainer.stop();
+  }
+
+  public showDebug(): void {
+    this.debugContainer.show();
+  }
+
+  public hideDebug(): void {
+    this.debugContainer.hide();
+  }
+
+  public override tick({ id, delta, elapsed }: IEngineLoopTickContext): void | Promise<void> {
+    this.debugContainer.tick.id = id;
+    this.debugContainer.tick.delta = delta;
+    this.debugContainer.tick.elapsed = elapsed;
+  }
+}
+
+class DebugContainer implements RedomComponent {
+  private readonly stats: List;
+
+  private intervalId: IntervalReturn;
+
+  /**
+   * The time in milliseconds in which the debug HUD gets updated.
+   */
+  public intervalTime: number = 250;
+
+  public readonly tick: IEngineLoopTickContext;
+
+  public readonly el: HTMLElement;
+
+  public world: World | null = null;
+
+  constructor() {
+    this.tick = { id: 0, delta: 0, elapsed: 0 };
+    this.el = el('div', this.stats = list('div', DebugStat));
+
+    setAttr(this.stats.el, {
+      id: 'stats',
+      style: { textAlign: 'right', position: 'absolute', top: '1rem', right: '1rem', display: 'flex', flexDirection: 'column' },
+    });
+
+    setAttr(this.el, {
+      id: 'debug',
+      style: { fontFamily: 'monospace', position: 'fixed', top: 0, right: 0, left: 0, bottom: 0, zIndex: 1000 },
+    });
+  }
+
+  public show(): void {
+    mount(document.body, this.el);
+  }
+
+  public hide(): void {
+    unmount(document.body, this.el);
+  }
+
+  public update(): void {
+    const context = {
+      tick: this.tick,
+      fps: (1 / this.tick.delta).toFixed(0),
+    };
+
+    const world = this.world;
+    const tickManager = TickManager.getInstance();
+    const avgDelta = context.tick.elapsed / context.tick.id;
+    const avgFPS = context.tick.id / (context.tick.elapsed / 1000);
+
+    const data = [
+      `FPS: ${context.fps} (avg. ${avgFPS.toFixed(0)})`,
+      `Tick Id: ${context.tick.id}`,
+      `Tick Delta: ${(context.tick.delta * 1000).toFixed(2)}ms (avg. ${avgDelta.toFixed(2)}ms)`,
+      `Time Elapsed: ${(context.tick.elapsed / 1000).toFixed(0)}s`,
+    ];
+
+    if (world) {
+      const actorCount = world.actors.length;
+      const registeredTicksCount = tickManager.registeredTicksCount;
+      const enabledTicksCount = tickManager.enabledTicksCount;
+
+      data.push(
+        `Level: ${world.getCurrentLevel().constructor.name}`,
+        `Actors: ${actorCount}`,
+        `Tick Functions (enabled/registered): ${enabledTicksCount}/${registeredTicksCount}`,
+      );
+    }
+
+    this.stats.update(data, context);
+  }
+
+  public start(): void {
+    this.intervalId = setInterval(() => {
+      this.update();
+    }, this.intervalTime);
+  }
+
+  public stop(): void {
+    clearInterval(this.intervalId as number);
+  }
+
+  public restart(): void {
+    this.stop();
+    this.start();
+  }
+}
+
+class DebugStat implements RedomComponent {
+  public readonly el: HTMLSpanElement;
+
+  constructor() {
+    this.el = el('span');
+  }
+
+  update(...args: any[]): void {
+    this.el.textContent = args[0];
+  }
+}
+
+class HUDContainer implements RedomComponent {
+  public readonly el: HTMLDivElement;
+
+  constructor() {
+    this.el = el('div');
+
+    setAttr(this.el, {
+      id: 'hud',
+      style: { position: 'fixed', top: 0, right: 0, left: 0, bottom: 0, zIndex: 900 },
+    });
+  }
+
+  public update(): void {
+
+  }
+}

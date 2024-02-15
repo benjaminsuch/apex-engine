@@ -39,6 +39,14 @@ export class TickManager {
    */
   private currentTick: IEngineLoopTickContext = { id: 0, delta: 0, elapsed: 0 };
 
+  public get registeredTicksCount(): number {
+    return this.registeredTickFunctions.length;
+  }
+
+  public get enabledTicksCount(): number {
+    return this.enabledTickFunctions.length;
+  }
+
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
     @IConsoleLogger protected readonly logger: IConsoleLogger

@@ -6,7 +6,7 @@ declare global {
   var DEFAULT_PAWN: string;
   var IS_BROWSER: string;
   var IS_CLIENT: boolean;
-  var IS_DEV: string;
+  var IS_DEV: boolean;
   var IS_GAME: boolean;
   var IS_SERVER: boolean;
   var IS_NODE: boolean;

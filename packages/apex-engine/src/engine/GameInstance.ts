@@ -3,6 +3,7 @@ import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type ApexEngine } from './ApexEngine';
 import { GameMode } from './GameMode';
 import { GameProxyManager } from './GameProxyManager';
+import { HUD } from './HUD';
 import { Player } from './Player';
 import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { World } from './World';
@@ -35,6 +36,15 @@ export class GameInstance {
     return this.player;
   }
 
+  public HUD: HUD | null = null;
+
+  public getHUD(): HUD {
+    if (!this.HUD) {
+      throw new Error(`No HUD set.`);
+    }
+    return this.HUD;
+  }
+
   constructor(
     private readonly engine: ApexEngine,
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
@@ -57,6 +67,16 @@ export class GameInstance {
     return this.engine.loadMap(DEFAULT_MAP)
       .then(() => this.renderWorker.start())
       .then(() => this.getWorld().beginPlay());
+  }
+
+  public setupHUD(): void {
+    if (this.HUD) {
+      this.logger.warn(`HUD already set up.`);
+      return;
+    }
+
+    this.HUD = this.getWorld().spawnActor(HUD);
+    this.HUD.init();
   }
 
   public createPlayer(withPlayerController: boolean = false): void {

@@ -96,6 +96,7 @@ export class ApexEngine {
       await world.setGameMode(url);
 
       level.init();
+      gameInstance.setupHUD();
       world.initActorsForPlay();
 
       if (IS_BROWSER) {

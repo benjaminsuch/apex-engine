@@ -1,16 +1,16 @@
 import { type GetLeadingNonServiceArgs, IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type ActorComponent } from './ActorComponent';
-import { type SceneComponent } from './renderer/SceneComponent';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type Level } from './Level';
+import { type SceneComponent } from './renderer/SceneComponent';
 import { TickFunction } from './TickManager';
 import { type World } from './World';
 
 export type ActorComponentType = new (...args: any[]) => ActorComponent;
 
 export class Actor {
-  private level: Level | null = null;
+  protected level: Level | null = null;
 
   public getLevel(): Level {
     if (!this.level) {
@@ -19,7 +19,7 @@ export class Actor {
     return this.level;
   }
 
-  private world: World | null = null;
+  protected world: World | null = null;
 
   public getWorld(): World {
     if (!this.world) {
