@@ -44,38 +44,38 @@ export class RenderWorkerContext implements IRenderWorkerContext {
       return;
     }
 
-    try {
-      // @todo: A temporary try/catch to prevent the engine from crashing in nodejs environment -> Remove
-      this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
-    } catch {
-      if (IS_NODE) {
-        return Promise.resolve();
-      }
-    }
-
-    if (this.canvas) {
-      const offscreenCanvas = this.canvas.transferControlToOffscreen();
-
-      this.worker.postMessage(
-        {
-          type: 'init',
-          canvas: offscreenCanvas,
-          initialHeight: this.canvas.clientHeight,
-          initialWidth: this.canvas.clientWidth,
-          flags,
-          physicsPort,
-        },
-        [offscreenCanvas, physicsPort]
-      );
-
-      window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
-    }
-
     return new Promise<void>((resolve, reject) => {
+      try {
+        // @todo: A temporary try/catch to prevent the engine from crashing in nodejs environment -> Remove
+        this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
+      } catch {
+        if (IS_NODE) {
+          return resolve();
+        }
+      }
+
       let timeoutId = setTimeout(() => {
         this.worker.removeEventListener('message', handleInitResponse);
         reject(`Render-Worker initialization failed.`);
       }, 5_000);
+
+      if (this.canvas) {
+        const offscreenCanvas = this.canvas.transferControlToOffscreen();
+
+        this.worker.postMessage(
+          {
+            type: 'init',
+            canvas: offscreenCanvas,
+            initialHeight: this.canvas.clientHeight,
+            initialWidth: this.canvas.clientWidth,
+            flags,
+            physicsPort,
+          },
+          [offscreenCanvas, physicsPort]
+        );
+
+        window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
+      }
 
       const handleInitResponse = (event: MessageEvent): void => {
         if (typeof event.data !== 'object') {

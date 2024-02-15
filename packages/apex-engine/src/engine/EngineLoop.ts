@@ -10,7 +10,13 @@ import { TickManager } from './TickManager';
 
 export interface IEngineLoopTickContext {
   id: number;
+  /**
+   * Time since the last tick in seconds.
+   */
   delta: number;
+  /**
+   * Elapsed time since the engine started in milliseconds.
+   */
   elapsed: number;
 }
 
@@ -99,7 +105,7 @@ export class EngineLoop {
       }
 
       this.tickTimeout = await this.tick();
-    }, 1);
+    });
 
     return this.tickTimeout;
   }

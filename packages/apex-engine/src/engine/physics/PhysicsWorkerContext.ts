@@ -40,13 +40,13 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
       return;
     }
 
-    this.worker.postMessage({ type: 'init', flags, renderPort }, [renderPort]);
-
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
         this.worker.removeEventListener('message', handleInitResponse);
         reject(`Physics-Worker initialization failed.`);
       }, 5_000);
+
+      this.worker.postMessage({ type: 'init', flags, renderPort }, [renderPort]);
 
       const handleInitResponse = (event: MessageEvent): void => {
         if (typeof event.data !== 'object') {
