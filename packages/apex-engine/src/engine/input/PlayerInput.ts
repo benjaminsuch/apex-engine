@@ -50,7 +50,7 @@ export class PlayerInput {
           value = modifier.modify(value, delta);
         }
 
-        actionMapping.action.value.copy(value);
+        actionMapping.action.value.add(value);
 
         triggerEvent = actionMapping.action.evaluateTriggers(
           this,
@@ -67,11 +67,15 @@ export class PlayerInput {
       }
 
       for (const binding of bindingsToExecute) {
+        binding.exec();
+
         if (binding.action.consumeInput) {
           this.consumeKey(key);
         }
+      }
 
-        binding.exec();
+      for (const actionBinding of inputComponent.actionBindings) {
+        actionBinding.action.value.set(0, 0, 0);
       }
 
       bindingsToExecute = [];

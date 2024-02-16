@@ -46,8 +46,6 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
         reject(`Physics-Worker initialization failed.`);
       }, 5_000);
 
-      this.worker.postMessage({ type: 'init', flags, renderPort }, [renderPort]);
-
       const handleInitResponse = (event: MessageEvent): void => {
         if (typeof event.data !== 'object') {
           return;
@@ -66,6 +64,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
       };
 
       this.worker.addEventListener('message', handleInitResponse);
+      this.worker.postMessage({ type: 'init', flags, renderPort }, [renderPort]);
     });
   }
 

@@ -11,7 +11,7 @@ export class InputAction {
 
   public readonly triggers: InputTrigger[] = [];
 
-  public value: Vector3;
+  public readonly value: Vector3;
 
   public consumeInput: boolean = true;
 
