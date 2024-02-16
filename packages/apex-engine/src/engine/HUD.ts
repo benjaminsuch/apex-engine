@@ -1,4 +1,4 @@
-import { el, type List, list, mount, type RedomComponent, setAttr, unmount } from 'redom';
+import { el, type List, list, mount, type RedomComponent, setAttr, setChildren, setStyle, unmount } from 'redom';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
@@ -65,6 +65,12 @@ export class HUD extends Actor {
     this.isInitialized = true;
   }
 
+  public override tick({ id, delta, elapsed }: IEngineLoopTickContext): void | Promise<void> {
+    this.debugContainer.tick.id = id;
+    this.debugContainer.tick.delta = delta;
+    this.debugContainer.tick.elapsed = elapsed;
+  }
+
   public startDebug(): void {
     this.debugContainer.start();
   }
@@ -81,17 +87,23 @@ export class HUD extends Actor {
     this.debugContainer.hide();
   }
 
-  public override tick({ id, delta, elapsed }: IEngineLoopTickContext): void | Promise<void> {
-    this.debugContainer.tick.id = id;
-    this.debugContainer.tick.delta = delta;
-    this.debugContainer.tick.elapsed = elapsed;
+  public showDebugMessage(message: string, timeout: number = 1000): void {
+    this.debugContainer.showMessage(message, timeout);
+  }
+
+  public createDebugMessage(): DebugMessage {
+    return this.debugContainer.createMessage();
   }
 }
 
 class DebugContainer implements RedomComponent {
+  private readonly messagesEl: List;
+
   private readonly stats: List;
 
   private intervalId: IntervalReturn;
+
+  private messageInstances: DebugMessage[] = [];
 
   /**
    * The time in milliseconds in which the debug HUD gets updated.
@@ -104,9 +116,17 @@ class DebugContainer implements RedomComponent {
 
   public world: World | null = null;
 
+  public messages: string[] = [];
+
   constructor() {
     this.tick = { id: 0, delta: 0, elapsed: 0 };
-    this.el = el('div', this.stats = list('div', DebugStat));
+    this.messagesEl = list('div', Span);
+    this.el = el('div', this.messagesEl, this.stats = list('div', Span));
+
+    setAttr(this.messagesEl, {
+      id: 'debug-messages',
+      style: { position: 'absolute', top: '1rem', left: '1rem', display: 'flex', flexDirection: 'column' },
+    });
 
     setAttr(this.stats.el, {
       id: 'stats',
@@ -158,6 +178,7 @@ class DebugContainer implements RedomComponent {
     }
 
     this.stats.update(data, context);
+    this.messagesEl.update([...this.messageInstances.map(instance => instance.value), ...this.messages]);
   }
 
   public start(): void {
@@ -174,9 +195,28 @@ class DebugContainer implements RedomComponent {
     this.stop();
     this.start();
   }
+
+  public createMessage(): DebugMessage {
+    const message = new DebugMessage(this);
+    this.messageInstances.push(message);
+    return message;
+  }
+
+  public destroyMessage(message: DebugMessage): void {
+    const idx = this.messageInstances.findIndex(item => item === message);
+    this.messageInstances.removeAtSwap(idx);
+  }
+
+  public showMessage(message: string, timeout: number = 1000): void {
+    this.messages.push(message);
+
+    setTimeout(() => {
+      this.messages.removeAtSwap(0);
+    }, timeout + this.intervalTime * this.messages.length);
+  }
 }
 
-class DebugStat implements RedomComponent {
+class Span implements RedomComponent {
   public readonly el: HTMLSpanElement;
 
   constructor() {
@@ -202,5 +242,13 @@ class HUDContainer implements RedomComponent {
 
   public update(): void {
 
+  }
+}
+
+export class DebugMessage {
+  constructor(private readonly debugContainer: DebugContainer, public value: string = '') {}
+
+  public destroy(): void {
+    this.debugContainer.destroyMessage(this);
   }
 }

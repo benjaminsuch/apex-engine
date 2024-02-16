@@ -8,8 +8,7 @@ import { Flags } from '../Flags';
 import { RenderingInfo } from '../renderer/RenderingInfo';
 import { RenderProxyManager } from '../renderer/RenderProxyManager';
 import { TickManager } from '../TickManager';
-import { AnyRenderWorkerTask, type RenderWorkerTaskJSON } from './RenderTaskManager';
-import { SceneComponentProxy } from './SceneComponent';
+import { type RenderWorkerTaskJSON } from './RenderTaskManager';
 
 interface RenderWorkerInitMessageData {
   canvas: OffscreenCanvas;

@@ -59,24 +59,6 @@ export class RenderWorkerContext implements IRenderWorkerContext {
         reject(`Render-Worker initialization failed.`);
       }, 5_000);
 
-      if (this.canvas) {
-        const offscreenCanvas = this.canvas.transferControlToOffscreen();
-
-        this.worker.postMessage(
-          {
-            type: 'init',
-            canvas: offscreenCanvas,
-            initialHeight: this.canvas.clientHeight,
-            initialWidth: this.canvas.clientWidth,
-            flags,
-            physicsPort,
-          },
-          [offscreenCanvas, physicsPort]
-        );
-
-        window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
-      }
-
       const handleInitResponse = (event: MessageEvent): void => {
         if (typeof event.data !== 'object') {
           return;
@@ -101,6 +83,24 @@ export class RenderWorkerContext implements IRenderWorkerContext {
       };
 
       this.worker.addEventListener('message', handleInitResponse);
+
+      if (this.canvas) {
+        const offscreenCanvas = this.canvas.transferControlToOffscreen();
+
+        this.worker.postMessage(
+          {
+            type: 'init',
+            canvas: offscreenCanvas,
+            initialHeight: this.canvas.clientHeight,
+            initialWidth: this.canvas.clientWidth,
+            flags,
+            physicsPort,
+          },
+          [offscreenCanvas, physicsPort]
+        );
+
+        window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
+      }
     });
   }
 
