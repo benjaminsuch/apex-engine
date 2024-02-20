@@ -4,6 +4,7 @@ import { IInstantiationService } from '../platform/di/common/InstantiationServic
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { Actor } from './Actor';
 import { type IEngineLoopTickContext } from './EngineLoop';
+import { IRenderWorkerContext } from './renderer/RenderWorkerContext';
 import { TickManager } from './TickManager';
 import { type World } from './World';
 
@@ -41,8 +42,8 @@ export class HUD extends Actor {
 
     this.canvas = el('canvas', { id: 'hud' });
 
-    this.debugContainer = new DebugContainer();
-    this.hudContainer = new HUDContainer();
+    this.debugContainer = this.instantiationService.createInstance(DebugContainer);
+    this.hudContainer = this.instantiationService.createInstance(HUDContainer);
 
     this.actorTick.canTick = true;
 
@@ -118,7 +119,7 @@ class DebugContainer implements RedomComponent {
 
   public messages: string[] = [];
 
-  constructor() {
+  constructor(@IRenderWorkerContext private readonly renderContext: IRenderWorkerContext) {
     this.tick = { id: 0, delta: 0, elapsed: 0 };
     this.messagesEl = list('div', Span);
     this.el = el('div', this.messagesEl, this.stats = list('div', Span));
@@ -159,10 +160,14 @@ class DebugContainer implements RedomComponent {
     const avgFPS = context.tick.id / (context.tick.elapsed / 1000);
 
     const data = [
-      `FPS: ${context.fps} (avg. ${avgFPS.toFixed(0)})`,
+      `Game-Thread`,
+      `Tickrate: ${context.fps} (avg. ${avgFPS.toFixed(0)})`,
       `Tick Id: ${context.tick.id}`,
       `Tick Delta: ${(context.tick.delta * 1000).toFixed(2)}ms (avg. ${avgDelta.toFixed(2)}ms)`,
       `Time Elapsed: ${(context.tick.elapsed / 1000).toFixed(0)}s`,
+      `Render-Thread`,
+      `Elapsed: ${this.renderContext.getRenderingInfo().elapsed}`,
+      `Delta: ${this.renderContext.getRenderingInfo().delta}`,
     ];
 
     if (world) {

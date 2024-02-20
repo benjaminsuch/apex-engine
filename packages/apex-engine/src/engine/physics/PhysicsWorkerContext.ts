@@ -1,7 +1,9 @@
+import RAPIER from '@dimforge/rapier3d-compat';
 import * as Comlink from 'comlink';
 import { BoxGeometry, BufferGeometry, CapsuleGeometry, PlaneGeometry, type Vector3 } from 'three';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
 import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
@@ -29,6 +31,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
 
   constructor(
     @IInstantiationService private readonly instantiationService: IInstantiationService,
+    @IConsoleLogger private readonly logger: IConsoleLogger,
     @IWorkerManager private readonly workerManager: IWorkerManager
   ) {
     this.worker = this.workerManager.physicsWorker;
@@ -104,6 +107,8 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
       return;
     }
 
+    this.logger.debug(`Request Collider`, RAPIER.ShapeType[component.colliderShape]);
+
     return this.comlink.registerCollider(component.colliderShape, { rigidBodyId, ...args }).then(({ id, tb }: ICreatedProxyData) => {
       component.collider = this.instantiationService.createInstance(
         ColliderProxy,
@@ -122,6 +127,8 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
       return;
     }
 
+    this.logger.debug(`Request RigidBody`, RAPIER.RigidBodyType[bodyType]);
+
     // ? Should we throw an error after x amount of time?
     return this.comlink.registerRigidBody(bodyType, { position: options?.position?.toArray() }).then(({ id, tb }: ICreatedProxyData) => {
       component.rigidBody = this.instantiationService.createInstance(
@@ -135,6 +142,8 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
   }
 
   public async registerKinematicController(options: { offset: number }): Promise<KinematicControllerProxy> {
+    this.logger.debug(`Request KinematicController`);
+
     const { id, tb } = await this.comlink.registerKinematicController(options);
 
     return this.instantiationService.createInstance(

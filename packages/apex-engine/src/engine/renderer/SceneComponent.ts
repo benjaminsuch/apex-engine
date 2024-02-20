@@ -18,7 +18,9 @@ import { RenderProxy } from './RenderProxy';
 import { RenderTaskManager, RenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
 
-const _obj = /* @__PURE__ */ new Object3D();
+const _target = new Vector3();
+const _position = new Vector3();
+const _m1 = new Matrix4();
 
 export class SceneComponentProxy extends RenderProxy {
   declare position: [number, number, number];
@@ -258,14 +260,10 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     return false;
   }
 
-  public lookAt(x: number | Vector3, y: number, z: number): void {
-    if (x instanceof Vector3) {
-      _obj.lookAt(x);
-    } else {
-      _obj.lookAt(x, y, z);
-    }
-
-    this.matrixWorld.copy(_obj.matrixWorld);
+  public lookAt(x: number, y: number, z: number): void {
+    _target.set(x, y, z);
+    _position.setFromMatrixPosition(this.matrixWorld);
+    this.rotation.setFromRotationMatrix(this.onLookAt(_target, _position, this.up));
   }
 
   public copyFromObject3D(obj: Object3D): void {
@@ -274,6 +272,10 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     this.position.copy(obj.position);
     this.rotation.copy(obj.quaternion);
     this.scale.copy(obj.scale);
+  }
+
+  protected onLookAt(target: Vector3, position: Vector3, up: Vector3): Matrix4 {
+    return _m1.lookAt(target, position, up);
   }
 }
 

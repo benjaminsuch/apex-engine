@@ -87,6 +87,7 @@ export class Level {
     function traverseChildren(children: Object3D['children'] = [], parent: SceneComponent): void {
       for (const child of children) {
         const component = addComponent(child, parent.getOwner());
+        component.copyFromObject3D(child);
         component.attachToComponent(parent);
         traverseChildren(child.children, component);
       }

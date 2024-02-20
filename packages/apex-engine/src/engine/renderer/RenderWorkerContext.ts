@@ -2,8 +2,7 @@ import * as Comlink from 'comlink';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
-import { getTargetId } from '../core/class/decorators';
-import { EProxyThread, type IProxyConstructionData, type IProxyOrigin, type TProxyOriginConstructor } from '../core/class/specifiers/proxy';
+import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
 import { RenderingInfo } from './RenderingInfo';
 import { type AnyRenderWorkerTask } from './RenderTaskManager';
