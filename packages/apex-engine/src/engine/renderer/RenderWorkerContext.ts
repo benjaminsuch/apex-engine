@@ -56,7 +56,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
       let timeoutId = setTimeout(() => {
         this.worker.removeEventListener('message', handleInitResponse);
         reject(`Render-Worker initialization failed.`);
-      }, 5_000);
+      }, 30_000);
 
       const handleInitResponse = (event: MessageEvent): void => {
         if (typeof event.data !== 'object') {
