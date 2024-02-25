@@ -139,7 +139,9 @@ export class RenderWorker {
   public async tick(time: number): Promise<void> {
     ++this.frameId;
 
-    const tickContext = { id: this.frameId, delta: 0, elapsed: time };
+    const then = performance.now();
+    const delta = (then - time) / 1000;
+    const tickContext = { id: this.frameId, delta, elapsed: time };
 
     TripleBuffer.swapReadBufferFlags(Flags.GAME_FLAGS);
 
@@ -159,8 +161,6 @@ export class RenderWorker {
 
   public receiveTasks(tasks: RenderWorkerTaskJSON[]): void {
     if (tasks.length > 0) {
-      this.logger.debug(`Received tasks:`, tasks.slice());
-
       let task: RenderWorkerTaskJSON | undefined;
 
       while (task = tasks.shift()) {

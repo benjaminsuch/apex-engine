@@ -141,8 +141,10 @@ export class PlayerInput {
 
   private handleContextMenu(event: PointerEvent): void {}
 
-  private handleMouseMove({ movementX: x, movementY: y }: MouseEvent): void {
+  private handleMouseMove({ clientX, clientY }: MouseEvent): void {
     let state = this.keyStates['MouseXY'];
+    const x = (clientX / window.innerWidth) * 2 - 1;
+    const y = -(clientY / window.innerHeight) * 2 + 1;
 
     if (!state) {
       state = this.keyStates['MouseXY'] = new KeyState(new Vector3(x, y, 0), new Vector3(x, y, 0));

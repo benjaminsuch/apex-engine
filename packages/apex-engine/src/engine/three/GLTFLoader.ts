@@ -8,15 +8,30 @@ type LoadParameters = Parameters<BaseGLTFLoader['load']>;
 type OnProgress = LoadParameters[2];
 
 export class GLTFLoader {
+  private static instance?: GLTFLoader;
+
+  public static getInstance(): GLTFLoader {
+    if (!this.instance) {
+      throw new Error(`There is no instance of GLTFLoader.`);
+    }
+    return this.instance;
+  }
+
   private readonly loader: BaseGLTFLoader;
 
   constructor(@IConsoleLogger protected readonly logger: IConsoleLogger) {
+    if (GLTFLoader.instance) {
+      throw new Error(`An instance of the GLTFLoader already exists.`);
+    }
+
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
     dracoLoader.setDecoderConfig({ type: 'js' });
 
     this.loader = new BaseGLTFLoader();
     this.loader.setDRACOLoader(dracoLoader);
+
+    GLTFLoader.instance = this;
   }
 
   public async load(url: string, onProgress?: OnProgress): Promise<GLTF> {

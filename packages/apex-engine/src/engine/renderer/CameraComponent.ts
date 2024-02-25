@@ -1,4 +1,4 @@
-import { PerspectiveCamera } from 'three';
+import { Matrix4, PerspectiveCamera, type Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -10,6 +10,8 @@ import { type IEngineLoopTickContext } from '../EngineLoop';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RenderWorker } from './RenderWorker';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
+
+const _m1 = new Matrix4();
 
 export class CameraComponentProxy extends SceneComponentProxy {
   declare aspect: number;
@@ -103,5 +105,9 @@ export class CameraComponent extends SceneComponent {
     this.setBodyType(null);
 
     this.componentTick.canTick = true;
+  }
+
+  protected override onLookAt(target: Vector3, position: Vector3, up: Vector3): Matrix4 {
+    return _m1.lookAt(position, target, up);
   }
 }

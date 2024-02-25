@@ -1,5 +1,6 @@
-import { type Group, Mesh, type Object3D } from 'three';
+import { type AnimationClip, type Group, Mesh, type Object3D, SkinnedMesh } from 'three';
 
+import { type Actor } from '../Actor';
 import { CameraComponent, CameraComponentProxy } from './CameraComponent';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
@@ -41,4 +42,39 @@ export function getComponentArgs(obj: Object3D | Group | Mesh): any[] {
     return [obj.geometry, obj.material];
   }
   return [];
+}
+
+export function loadComponent(obj: Object3D, animations: AnimationClip[], component: SceneComponent): void {
+  const jobs: Function[] = [];
+
+  function addComponent(child: Object3D, actor: Actor): SceneComponent {
+    const [ComponentConstructor, args] = resolveComponent(child);
+    // @ts-ignore
+    return actor.addComponent(ComponentConstructor, ...args);
+  }
+
+  function traverseChildren(children: Object3D[] | SkinnedMesh[] = [], parent: SceneComponent): void {
+    for (const child of children) {
+      const component = addComponent(child, parent.getOwner());
+
+      if (child instanceof SkinnedMesh) {
+        jobs.push(() => component.copyFromObject3D(child));
+      } else {
+        component.copyFromObject3D(child);
+      }
+
+      component.setBodyType(null);
+      component.attachToComponent(parent);
+
+      traverseChildren(child.children, component);
+    }
+  }
+
+  traverseChildren(obj.children, component);
+
+  for (const job of jobs) {
+    job();
+  }
+
+  component.loadAnimations(animations, obj);
 }

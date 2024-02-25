@@ -31,7 +31,7 @@ export class EngineLoop {
 
   public elapsed: number = 0;
 
-  public fps: number = 0;
+  public tickRate: number = 0;
 
   constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
     this.tickManager = this.instantiationService.createInstance(TickManager);
@@ -93,7 +93,7 @@ export class EngineLoop {
 
       this.delta = (then - this.elapsed) / 1000;
       this.elapsed = then;
-      this.fps = (this.tickId * 1000) / then;
+      this.tickRate = (this.tickId * 1000) / then;
 
       const currentTick = { delta: this.delta, elapsed: this.elapsed, id: this.tickId };
 

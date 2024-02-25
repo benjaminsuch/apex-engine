@@ -1,5 +1,5 @@
 import type RAPIER from '@dimforge/rapier3d-compat';
-import { Matrix4, Object3D, Quaternion, Vector3 } from 'three';
+import { type AnimationAction, type AnimationClip, AnimationMixer, Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -18,7 +18,9 @@ import { RenderProxy } from './RenderProxy';
 import { RenderTaskManager, RenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
 
-const _obj = /* @__PURE__ */ new Object3D();
+const _target = new Vector3();
+const _position = new Vector3();
+const _m1 = new Matrix4();
 
 export class SceneComponentProxy extends RenderProxy {
   declare position: [number, number, number];
@@ -86,6 +88,13 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   declare readonly byteView: Uint8Array;
 
   declare readonly tripleBuffer: TripleBuffer;
+
+  /**
+   * Available after `loadAnimations` has been called.
+   */
+  private mixer: AnimationMixer | null = null;
+
+  private readonly animations: Map<AnimationClip['name'], AnimationAction> = new Map();
 
   /**
    * This property is used for registering the rigid-body. It supports `null`,
@@ -242,7 +251,7 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
       child.childIndex = this.children.indexOf(child);
     }
 
-    // this.componentTick.removeDependency(component.componentTick);
+    this.componentTick.removeDependency(component.componentTick);
 
     // ? Broadcast an event, something like "onChildDetached"?
     // todo: Update world transformations for the detached component
@@ -258,14 +267,10 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     return false;
   }
 
-  public lookAt(x: number | Vector3, y: number, z: number): void {
-    if (x instanceof Vector3) {
-      _obj.lookAt(x);
-    } else {
-      _obj.lookAt(x, y, z);
-    }
-
-    this.matrixWorld.copy(_obj.matrixWorld);
+  public lookAt(x: number, y: number, z: number): void {
+    _target.set(x, y, z);
+    _position.setFromMatrixPosition(this.matrixWorld);
+    this.rotation.setFromRotationMatrix(this.onLookAt(_target, _position, this.up));
   }
 
   public copyFromObject3D(obj: Object3D): void {
@@ -274,6 +279,24 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     this.position.copy(obj.position);
     this.rotation.copy(obj.quaternion);
     this.scale.copy(obj.scale);
+  }
+
+  public loadAnimations(animations: AnimationClip[], obj: Object3D): void {
+    this.mixer = new AnimationMixer(obj);
+
+    for (const clip of animations) {
+      const action = this.mixer.clipAction(clip);
+      action.enabled = false;
+      action.setEffectiveTimeScale(1);
+      action.setEffectiveWeight(1);
+      action.play();
+
+      this.animations.set(clip.name, action);
+    }
+  }
+
+  protected onLookAt(target: Vector3, position: Vector3, up: Vector3): Matrix4 {
+    return _m1.lookAt(target, position, up);
   }
 }
 
