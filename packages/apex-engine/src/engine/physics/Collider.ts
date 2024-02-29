@@ -244,6 +244,10 @@ export class Collider implements IProxyOrigin {
   }
 
   public tick(context: IEngineLoopTickContext): void {}
+
+  public serializeArgs(args: any[]): any[] {
+    return [];
+  }
 }
 
 class ColliderTickFunction extends TickFunction<Collider> {

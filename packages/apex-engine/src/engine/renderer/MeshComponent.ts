@@ -40,10 +40,10 @@ export class MeshComponentProxy extends SceneComponentProxy {
       const geometry = new BufferGeometry();
 
       geometry.uuid = uuid;
-      geometry.setAttribute('position', createBufferAttribute({ ...position, type: position.array.constructor.name }));
+      geometry.setAttribute('position', createBufferAttribute({ ...position, type: position.type }));
 
-      if (normal) geometry.setAttribute('normal', createBufferAttribute({ ...normal, type: normal.array.constructor.name }));
-      if (uv) geometry.setAttribute('uv', createBufferAttribute({ ...uv, type: uv.array.constructor.name }));
+      if (normal) geometry.setAttribute('normal', createBufferAttribute({ ...normal, type: normal.type }));
+      if (uv) geometry.setAttribute('uv', createBufferAttribute({ ...uv, type: uv.type }));
 
       geometry.setIndex(createBufferAttribute({ ...index, normalized: false, itemSize: 1, type: 'Uint16Array' }));
 
@@ -79,13 +79,17 @@ export class MeshComponentProxy extends SceneComponentProxy {
       const params: Record<string, any> = rest;
 
       if (aoMap) {
-        const bitmap = this.renderer.sourceBitmapMappings.get(aoMap.source.uuid);
+        let texture = this.renderer.getTexture(aoMap.uuid);
 
-        if (bitmap) {
-          const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = aoMap;
-          params.aoMap = new Texture(bitmap, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
-          params.aoMap.uuid = aoMap.uuid;
+        if (!texture) {
+
         }
+
+        // if (bitmap) {
+        //   const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = aoMap;
+        //   params.aoMap = new Texture(bitmap, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
+        //   params.aoMap.uuid = aoMap.uuid;
+        // }
       }
 
       if (map) {
@@ -139,32 +143,6 @@ type AnyMaterial = LineBasicMaterial
 
 @CLASS(proxy(EProxyThread.Render, MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
-  public static override serializeArgs([geometry, material]: [BufferGeometry, any]): any[] {
-    const geometryData = geometry.toJSON();
-    const materialData: Record<string, any> = {};
-
-    if (material.aoMap && material.aoMap.isTexture) materialData.aoMap = material.aoMap.uuid;
-    if (material.aoMapIntensity) materialData.aoMapIntensity = material.aoMapIntensity;
-    if (material.blendColor && material.blendColor.isColor) materialData.blendColor = material.blendColor.getHex();
-    if (material.blendAlpha !== 0) materialData.blendAlpha = material.blendAlpha;
-    if (material.name !== '') materialData.name = material.name;
-    if (material.color && material.color.isColor) materialData.color = material.color.getHex();
-    if (material.side !== FrontSide) materialData.side = material.side;
-    if (material.emissive && material.emissive.isColor) materialData.emissive = material.emissive.getHex();
-    if (material.emissiveIntensity && material.emissiveIntensity !== 1) materialData.emissiveIntensity = material.emissiveIntensity;
-    if (material.roughnessMap && material.roughnessMap.isTexture) materialData.roughnessMap = material.roughnessMap.uuid;
-    if (material.metalnessMap && material.metalnessMap.isTexture) materialData.metalnessMap = material.metalnessMap.uuid;
-    if (material.map && material.map.isTexture) materialData.map = material.uuid;
-
-    if (material.normalMap && material.normalMap.isTexture) {
-      materialData.normalMap = material.normalMap.uuid;
-      materialData.normalMapType = material.normalMapType;
-      materialData.normalScale = material.normalScale.toArray();
-    }
-
-    return [geometryData, materialData];
-  }
-
   protected override bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
 
   constructor(
@@ -186,6 +164,41 @@ export class MeshComponent extends SceneComponent {
       await this.physicsContext.registerRigidBody(this, { position: this.position });
     }
     await this.physicsContext.registerCollider(this);
+  }
+
+  public override serializeArgs([geometry, material]: [BufferGeometry, any]): any[] {
+    const { metadata, ...geometryData } = geometry.toJSON() as any;
+    const materialData: Record<string, any> = {};
+
+    if (material) {
+      materialData.uuid = material.uuid;
+      materialData.type = material.type;
+
+      function serializeTexture({ anisotropy, center, channel, colorSpace, flipY, format, generateMipmaps, image, magFilter, mapping, minFilter, name, offset, premultiplyAlpha, repeat, rotation, source, type, unpackAlignment, userData, uuid, wrapS, wrapT }: Texture): any {
+        return { anisotropy, center, channel, colorSpace, flipY, format, generateMipmaps, image, magFilter, mapping, minFilter, name, offset, premultiplyAlpha, repeat, rotation, source: source.uuid, type, unpackAlignment, userData, uuid, wrap: [wrapS, wrapT] };
+      }
+
+      if (material.aoMap && material.aoMap.isTexture) materialData.aoMap = serializeTexture(material.aoMap);
+      if (material.aoMapIntensity) materialData.aoMapIntensity = material.aoMapIntensity;
+      if (material.blendColor && material.blendColor.isColor) materialData.blendColor = material.blendColor.getHex();
+      if (material.blendAlpha !== 0) materialData.blendAlpha = material.blendAlpha;
+      if (material.name !== '') materialData.name = material.name;
+      if (material.color && material.color.isColor) materialData.color = material.color.getHex();
+      if (material.side !== FrontSide) materialData.side = material.side;
+      if (material.emissive && material.emissive.isColor) materialData.emissive = material.emissive.getHex();
+      if (material.emissiveIntensity && material.emissiveIntensity !== 1) materialData.emissiveIntensity = material.emissiveIntensity;
+      if (material.roughnessMap && material.roughnessMap.isTexture) materialData.roughnessMap = serializeTexture(material.roughnessMap);
+      if (material.metalnessMap && material.metalnessMap.isTexture) materialData.metalnessMap = serializeTexture(material.metalnessMap);
+      if (material.map && material.map.isTexture) materialData.map = serializeTexture(material.map);
+
+      if (material.normalMap && material.normalMap.isTexture) {
+        materialData.normalMap = serializeTexture(material.normalMap);
+        materialData.normalMapType = material.normalMapType;
+        materialData.normalScale = material.normalScale.toArray();
+      }
+    }
+
+    return [{ ...geometryData.data, uuid: geometryData.uuid }, materialData];
   }
 }
 

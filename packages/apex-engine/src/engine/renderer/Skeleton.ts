@@ -1,8 +1,9 @@
 import { Matrix4 } from 'three';
 
 import { CLASS } from '../core/class/decorators';
-import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type ProxyInstance } from '../ProxyInstance';
 import { RenderProxy } from './RenderProxy';
 import { type RenderWorker } from './RenderWorker';
@@ -41,6 +42,16 @@ export class SkeletonProxy extends RenderProxy {
 }
 
 @CLASS(proxy(EProxyThread.Render, SkeletonProxy))
-export class Skeleton {
+export class Skeleton implements IProxyOrigin {
+  declare readonly tripleBuffer: TripleBuffer;
+
+  declare readonly byteView: Uint8Array;
+
   constructor(public readonly bones: ProxyInstance['id'][], public readonly boneInverses: number[]) {}
+
+  public tick(context: IEngineLoopTickContext): void {}
+
+  public serializeArgs(args: any[]): any[] {
+    return [];
+  }
 }

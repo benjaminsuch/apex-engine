@@ -20,6 +20,7 @@ export interface IProxyOrigin {
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
   tick(tick: IEngineLoopTickContext): Promise<void> | void;
+  serializeArgs(args: any[]): any[];
 }
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
@@ -415,11 +416,15 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
         // the Worker is loading the Proxy-Classes (e.g. SceneComponentProxy) and thus, will load
         // the `GameProxyManager`, which imports the `IRenderWorkerContext`, which imports from
         // `RenderWorker`. This will lead to a "BAD_IMPORT" error from rollup.
-        ProxyManager.getInstance().deployProxy(this, args, thread);
+        ProxyManager.getInstance().deployProxy(this, this.serializeArgs(args), thread);
       }
 
       public async tick(tick: IEngineLoopTickContext): Promise<void> {
         await super.tick(tick);
+      }
+
+      public serializeArgs(args: any[]): any[] {
+        return super.serializeArgs(args);
       }
     };
   };
@@ -430,9 +435,11 @@ export function filterArgs(args: unknown[]): any[] {
     val => typeof val === 'object'
       ? Array.isArray(val)
         ? filterArgs(val)
-        : Object.hasObjectConstructor(val)
-          ? filterArgs(Object.values(val)).length
-          : false
+        : val && typeof (val as any)['toJSON'] === 'function'
+          ? (val as any).toJSON()
+          : Object.hasObjectConstructor(val)
+            ? filterArgs(Object.values(val)).length
+            : false
       : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
   );
 }

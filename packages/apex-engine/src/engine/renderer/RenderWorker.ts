@@ -1,4 +1,4 @@
-import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLight, HemisphereLight, LineBasicMaterial, LineSegments, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, type Source, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLight, HemisphereLight, LineBasicMaterial, LineSegments, type Material, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, type Source, Texture, WebGLRenderer } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -16,8 +16,13 @@ interface RenderWorkerInitMessageData {
   initialHeight: number;
   initialWidth: number;
   physicsPort: MessagePort;
-  sourceBitmapMappings: RenderWorker['sourceBitmapMappings'];
+  sourceBitmapMappings: typeof images;
 }
+
+let images = new Map<Source['uuid'], ImageBitmap>();
+const geometries = new Map<BufferGeometry['uuid'], BufferGeometry>();
+const materials = new Map<Material['uuid'], Material>();
+const textures = new Map<Texture['uuid'], Texture>();
 
 export class RenderWorker {
   private frameId: number = 0;
@@ -42,8 +47,6 @@ export class RenderWorker {
 
   public readonly proxyManager: RenderProxyManager;
 
-  public sourceBitmapMappings: Map<Source['uuid'], ImageBitmap> = new Map();
-
   constructor(
     @IInstantiationService private readonly instantiationService: IInstantiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
@@ -64,6 +67,8 @@ export class RenderWorker {
       return;
     }
 
+    images = sourceBitmapMappings;
+
     Flags.GAME_FLAGS = flags[0];
     Flags.RENDER_FLAGS = flags[1];
 
@@ -73,7 +78,6 @@ export class RenderWorker {
     this.renderer.shadowMap.type = PCFSoftShadowMap;
 
     this.physicsPort = physicsPort;
-    this.sourceBitmapMappings = sourceBitmapMappings;
 
     const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 1);
     hemiLight.position.set(0, 20, 0);
@@ -179,5 +183,17 @@ export class RenderWorker {
         }
       }
     }
+  }
+
+  public getImage(uuid: Source['uuid']): ImageBitmap | undefined {
+    return images.get(uuid);
+  }
+
+  public getTexture<T extends Texture>(uuid: Texture['uuid']): T | undefined {
+    return textures.get(uuid) as (T | undefined);
+  }
+
+  public createTexture({ mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace, source }: any): Texture {
+    return new Texture(this.getImage(source), mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
   }
 }

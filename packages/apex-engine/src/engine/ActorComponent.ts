@@ -1,14 +1,11 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type Actor } from './Actor';
+import { filterArgs } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { ETickGroup, TickFunction } from './TickManager';
 
 export class ActorComponent {
-  public static serializeArgs(args: any[]): any[] {
-    return args;
-  }
-
   /**
    * The actor that owns this component.
    */
@@ -58,6 +55,10 @@ export class ActorComponent {
     if (this.componentTick.canTick) {
       this.componentTick.register();
     }
+  }
+
+  public serializeArgs(args: any[]): any[] {
+    return filterArgs(args);
   }
 
   protected async onRegister(): Promise<void> {}

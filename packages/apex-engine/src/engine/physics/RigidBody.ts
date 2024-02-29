@@ -183,6 +183,10 @@ export class RigidBody implements IProxyOrigin {
     this.applyWorldBodyTransformations();
   }
 
+  public serializeArgs(args: any[]): any[] {
+    return [];
+  }
+
   protected applyWorldBodyTransformations(): void {
     this.angularDamping = this.worldBody.angularDamping();
     this.dominanceGroup = this.worldBody.dominanceGroup();

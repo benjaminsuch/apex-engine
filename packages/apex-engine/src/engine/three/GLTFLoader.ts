@@ -82,8 +82,6 @@ export class GLTFLoader {
       }
     });
 
-    console.log('Cache', Cache, { ...Cache.files });
-
     return content;
   }
 }
