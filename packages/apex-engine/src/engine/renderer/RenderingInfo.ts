@@ -60,6 +60,7 @@ export class RenderingInfo {
   public init(): void {
     if (IS_WORKER && !IS_NODE) {
       this.logger.debug(this.constructor.name, `Initialize`);
+      this.logger.info('Send initialization response');
       self.postMessage({ type: 'init-response', data: this.tripleBuffer });
     }
   }

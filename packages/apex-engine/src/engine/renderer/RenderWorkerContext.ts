@@ -1,6 +1,8 @@
 import * as Comlink from 'comlink';
+import { type Source } from 'three';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { IWorkerManager } from '../../platform/worker/common/WorkerManager';
 import { type IProxyConstructionData } from '../core/class/specifiers/proxy';
 import { TripleBuffer } from '../core/memory/TripleBuffer';
@@ -9,6 +11,29 @@ import { type AnyRenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
 
 export class RenderWorkerContext implements IRenderWorkerContext {
+  public static transferableImages: ImageBitmap[] = [];
+
+  public static readonly sourceImageBitmapMappings: RenderWorker['sourceBitmapMappings'] = new Map();
+
+  public static addTransferableSource(source: Source): void {
+    // If a source with the given uuid already exists we can skipped the whole process
+    if (this.sourceImageBitmapMappings.has(source.uuid)) {
+      if (IS_DEV) {
+        console.warn(`The source with id "${source.uuid}" has already been added and will be skipped.`);
+      }
+      return;
+    }
+
+    const idx = this.transferableImages.indexOf(source.data);
+
+    // An ImageBitmap though, can be used by many sources, which is why we do separate check
+    if (idx === -1) {
+      this.transferableImages.push(source.data);
+    }
+
+    this.sourceImageBitmapMappings.set(source.uuid, source.data);
+  }
+
   declare readonly _injectibleService: undefined;
 
   private readonly worker: Worker;
@@ -32,6 +57,7 @@ export class RenderWorkerContext implements IRenderWorkerContext {
 
   constructor(
     @IInstantiationService private readonly instantiationService: IInstantiationService,
+    @IConsoleLogger private readonly logger: IConsoleLogger,
     @IWorkerManager private readonly workerManager: IWorkerManager
   ) {
     this.worker = this.workerManager.renderWorker;
@@ -75,6 +101,8 @@ export class RenderWorkerContext implements IRenderWorkerContext {
             new TripleBuffer(flags, byteLength, buffers, byteViews)
           );
 
+          RenderWorkerContext.transferableImages = [];
+
           clearTimeout(timeoutId);
           this.worker.removeEventListener('message', handleInitResponse);
           resolve();
@@ -84,6 +112,8 @@ export class RenderWorkerContext implements IRenderWorkerContext {
       this.worker.addEventListener('message', handleInitResponse);
 
       if (this.canvas) {
+        this.logger.info('Initialize RenderWorker');
+
         const offscreenCanvas = this.canvas.transferControlToOffscreen();
 
         this.worker.postMessage(
@@ -94,8 +124,9 @@ export class RenderWorkerContext implements IRenderWorkerContext {
             initialWidth: this.canvas.clientWidth,
             flags,
             physicsPort,
+            sourceBitmapMappings: RenderWorkerContext.sourceImageBitmapMappings,
           },
-          [offscreenCanvas, physicsPort]
+          [offscreenCanvas, physicsPort, ...RenderWorkerContext.transferableImages]
         );
 
         window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));

@@ -5,6 +5,10 @@ import { type IEngineLoopTickContext } from './EngineLoop';
 import { ETickGroup, TickFunction } from './TickManager';
 
 export class ActorComponent {
+  public static serializeArgs(args: any[]): any[] {
+    return args;
+  }
+
   /**
    * The actor that owns this component.
    */

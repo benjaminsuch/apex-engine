@@ -57,6 +57,7 @@ export class ApexEngine {
     TripleBuffer.swapReadBufferFlags(Flags.PHYSICS_FLAGS);
 
     await this.getGameInstance().getWorld().tick(tick);
+    // this.renderContext.sendTransferables()
 
     TripleBuffer.swapWriteBufferFlags(Flags.PHYSICS_FLAGS);
     TripleBuffer.swapWriteBufferFlags(Flags.GAME_FLAGS);

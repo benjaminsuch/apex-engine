@@ -1,4 +1,4 @@
-import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLight, HemisphereLight, LineBasicMaterial, LineSegments, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLight, HemisphereLight, LineBasicMaterial, LineSegments, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, type Source, WebGLRenderer } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -16,6 +16,7 @@ interface RenderWorkerInitMessageData {
   initialHeight: number;
   initialWidth: number;
   physicsPort: MessagePort;
+  sourceBitmapMappings: RenderWorker['sourceBitmapMappings'];
 }
 
 export class RenderWorker {
@@ -41,6 +42,8 @@ export class RenderWorker {
 
   public readonly proxyManager: RenderProxyManager;
 
+  public sourceBitmapMappings: Map<Source['uuid'], ImageBitmap> = new Map();
+
   constructor(
     @IInstantiationService private readonly instantiationService: IInstantiationService,
     @IConsoleLogger private readonly logger: IConsoleLogger
@@ -55,7 +58,7 @@ export class RenderWorker {
     this.info.init();
   }
 
-  public init({ canvas, flags, initialHeight, initialWidth, physicsPort }: RenderWorkerInitMessageData): void {
+  public init({ canvas, flags, initialHeight, initialWidth, physicsPort, sourceBitmapMappings }: RenderWorkerInitMessageData): void {
     if (this.isInitialized) {
       this.logger.error(this.constructor.name, `Already initialized`);
       return;
@@ -70,6 +73,7 @@ export class RenderWorker {
     this.renderer.shadowMap.type = PCFSoftShadowMap;
 
     this.physicsPort = physicsPort;
+    this.sourceBitmapMappings = sourceBitmapMappings;
 
     const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 1);
     hemiLight.position.set(0, 20, 0);
