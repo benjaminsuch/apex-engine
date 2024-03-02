@@ -2,6 +2,8 @@ import { type AnimationClip, type Group, Mesh, type Object3D, SkinnedMesh } from
 
 import { type Actor } from '../Actor';
 import { CameraComponent, CameraComponentProxy } from './CameraComponent';
+import { Material, MaterialProxy } from './materials/Material';
+import { MeshStandardMaterial, MeshStandardMaterialProxy } from './materials/MeshStandardMaterial';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 import { SkeletonProxy } from './Skeleton';
@@ -9,10 +11,12 @@ import { SkinnedMeshComponent, SkinnedMeshComponentProxy } from './SkinnedMeshCo
 
 export const proxyComponents = {
   CameraComponentProxy,
+  MaterialProxy,
   MeshComponentProxy,
+  MeshStandardMaterialProxy,
   SceneComponentProxy,
-  SkinnedMeshComponentProxy,
   SkeletonProxy,
+  SkinnedMeshComponentProxy,
 } as const;
 
 const objectComponentMap = {
@@ -22,6 +26,8 @@ const objectComponentMap = {
   Object3D: SceneComponent,
   PerspectiveCamera: CameraComponent,
   SkinnedMesh: SkinnedMeshComponent,
+  Material,
+  MeshStandardMaterial,
 } as const;
 
 export type SceneComponentType<T = typeof objectComponentMap> = T[keyof T];

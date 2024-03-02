@@ -57,10 +57,6 @@ export class ActorComponent {
     }
   }
 
-  public serializeArgs(args: any[]): any[] {
-    return filterArgs(args);
-  }
-
   protected async onRegister(): Promise<void> {}
 }
 

@@ -1,4 +1,4 @@
-import type { Matrix4, Quaternion, Vector2, Vector3 } from 'three';
+import type { Matrix3, Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { type IEngineLoopTickContext } from '../../../EngineLoop';
 import { Flags } from '../../../Flags';
@@ -20,7 +20,6 @@ export interface IProxyOrigin {
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
   tick(tick: IEngineLoopTickContext): Promise<void> | void;
-  serializeArgs(args: any[]): any[];
 }
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
@@ -230,6 +229,26 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
                   },
                 };
                 break;
+              case 'mat3':
+                if (initialVal) {
+                  const { elements } = initialVal as Matrix3;
+
+                  for (let i = 0; i < elements.length; ++i) {
+                    dv.setFloat32(offset + i * Float32Array.BYTES_PER_ELEMENT, elements[i], true);
+                  }
+
+                  setMat4(this, key, initialVal, dv, offset);
+                }
+
+                accessors = {
+                  get(this): Matrix3 {
+                    return Reflect.getOwnMetadata('value', this, key);
+                  },
+                  set(this, val: Matrix3): void {
+                    setMat3(this, key, val, dv, offset);
+                  },
+                };
+                break;
               case 'mat4':
                 if (initialVal) {
                   const { elements } = initialVal as Matrix4;
@@ -250,6 +269,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
                   },
                 };
                 break;
+
               case 'quat':
                 if (initialVal) {
                   const { x, y, z, w } = initialVal as Quaternion;
@@ -416,15 +436,11 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
         // the Worker is loading the Proxy-Classes (e.g. SceneComponentProxy) and thus, will load
         // the `GameProxyManager`, which imports the `IRenderWorkerContext`, which imports from
         // `RenderWorker`. This will lead to a "BAD_IMPORT" error from rollup.
-        ProxyManager.getInstance().deployProxy(this, this.serializeArgs(args), thread);
+        ProxyManager.getInstance().deployProxy(this, filterArgs(args), thread);
       }
 
       public async tick(tick: IEngineLoopTickContext): Promise<void> {
         await super.tick(tick);
-      }
-
-      public serializeArgs(args: any[]): any[] {
-        return super.serializeArgs(args);
       }
     };
   };
@@ -441,7 +457,7 @@ export function filterArgs(args: unknown[]): any[] {
             ? filterArgs(Object.values(val)).length
             : false
       : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
-  );
+  ).map(val => typeof val === 'object' && typeof (val as any)['toJSON'] === 'function' ? (val as any).toJSON() : val);
 }
 
 function setRef(val: InstanceType<TClass> | null, dv: DataView, offset: number, required: boolean, self: IProxyOrigin, key: string): void {
@@ -476,6 +492,23 @@ function setNumber(
   } else {
     dv[setter](offset, (val ?? 0) as number, true);
   }
+}
+
+function setMat3(target: any, prop: string | symbol, val: Matrix3, dv: DataView, offset: number): void {
+  Reflect.defineMetadata(
+    'value',
+    new Proxy(val, {
+      get(target: Matrix3, prop): any {
+        for (let i = 0; i < target.elements.length; ++i) {
+          dv.setFloat32(offset + i * Float32Array.BYTES_PER_ELEMENT, target.elements[i], true);
+        }
+
+        return Reflect.get(target, prop);
+      },
+    }),
+    target,
+    prop
+  );
 }
 
 function setMat4(target: any, prop: string | symbol, val: Matrix4, dv: DataView, offset: number): void {

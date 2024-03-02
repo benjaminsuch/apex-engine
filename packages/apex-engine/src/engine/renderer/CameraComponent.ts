@@ -9,6 +9,7 @@ import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RenderWorker } from './RenderWorker';
+import { IRenderWorkerContext } from './RenderWorkerContext';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
 const _m1 = new Matrix4();
@@ -94,9 +95,10 @@ export class CameraComponent extends SceneComponent {
     far: CameraComponent['far'],
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger,
-    @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext
+    @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext,
+    @IRenderWorkerContext renderContext: IRenderWorkerContext
   ) {
-    super(instantiationService, logger, physicsContext);
+    super(instantiationService, logger, physicsContext, renderContext);
 
     this.fov = fov;
     this.aspect = aspect;

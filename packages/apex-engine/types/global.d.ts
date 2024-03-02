@@ -1,4 +1,4 @@
-import { type NormalMapTypes, type PerspectiveCamera, type Side } from 'three';
+import { type CanvasTexture, type CubeTexture, type DataTexture, type DepthTexture, type LineBasicMaterial, type LineDashedMaterial, type MeshBasicMaterial, type MeshDepthMaterial, type MeshDistanceMaterial, type MeshLambertMaterial, type MeshMatcapMaterial, type MeshNormalMaterial, type MeshPhongMaterial, type MeshPhysicalMaterial, type MeshStandardMaterial, type MeshToonMaterial, type NormalMapTypes, type PerspectiveCamera, type PointsMaterial, type RawShaderMaterial, type ShaderMaterial, type ShadowMaterial, type Side, type SpriteMaterial, type Texture, type VideoTexture } from 'three';
 
 declare global {
   var DEFAULT_GAME_MODE: string;
@@ -47,6 +47,26 @@ declare global {
 export {};
 
 module 'three' {
+  export type AnyMaterial = LineBasicMaterial
+    | LineDashedMaterial
+    | MeshBasicMaterial
+    | MeshDepthMaterial
+    | MeshDistanceMaterial
+    | MeshLambertMaterial
+    | MeshMatcapMaterial
+    | MeshNormalMaterial
+    | MeshPhongMaterial
+    | MeshPhysicalMaterial
+    | MeshStandardMaterial
+    | MeshToonMaterial
+    | PointsMaterial
+    | RawShaderMaterial
+    | ShaderMaterial
+    | ShadowMaterial
+    | SpriteMaterial;
+
+  export type AnyTexture = CanvasTexture | CubeTexture | DataTexture | DepthTexture | Texture | VideoTexture;
+
   export interface PerspectiveCameraJSON {
     object: Pick<PerspectiveCamera, 'aspect' | 'far' | 'filmGauge' | 'filmOffset' | 'focus' | 'fov' | 'layers' | 'near' | 'type' | 'uuid' | 'zoom'> & {
       matrix: number[];

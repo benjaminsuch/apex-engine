@@ -17,6 +17,7 @@ import { type ProxyInstance } from '../ProxyInstance';
 import { RenderProxy } from './RenderProxy';
 import { RenderTaskManager, RenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
+import { IRenderWorkerContext } from './RenderWorkerContext';
 
 const _target = new Vector3();
 const _position = new Vector3();
@@ -177,7 +178,8 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   constructor(
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger,
-    @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
+    @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext,
+    @IRenderWorkerContext protected readonly renderContext: IRenderWorkerContext
   ) {
     super(instantiationService, logger);
   }

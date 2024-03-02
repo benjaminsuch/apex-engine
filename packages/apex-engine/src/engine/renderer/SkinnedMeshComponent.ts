@@ -65,27 +65,25 @@ export class SkinnedMeshComponent extends MeshComponent {
   @PROP(serialize(mat4))
   public bindMatrixInverse: Matrix4 = new Matrix4();
 
-  public override copyFromObject3D(obj: Object3D | SkinnedMesh): void {
-    super.copyFromObject3D(obj);
+  public override copyFromObject3D(mesh: SkinnedMesh): void {
+    super.copyFromObject3D(mesh);
 
-    if (obj instanceof SkinnedMesh) {
-      this.bindMatrix = obj.bindMatrix;
-      this.bindMatrixInverse = obj.bindMatrixInverse;
+    this.bindMatrix = mesh.bindMatrix;
+    this.bindMatrixInverse = mesh.bindMatrixInverse;
 
-      if (obj.skeleton) {
-        const bonesUuid = obj.skeleton.bones.map(({ uuid }) => uuid);
-        const bones: ProxyInstance['id'][] = [];
+    if (mesh.skeleton) {
+      const bonesUuid = mesh.skeleton.bones.map(({ uuid }) => uuid);
+      const bones: ProxyInstance['id'][] = [];
 
-        for (const origin of GameProxyManager.getInstance().origins) {
-          const sceneComponent = origin as SceneComponent;
+      for (const origin of GameProxyManager.getInstance().origins) {
+        const sceneComponent = origin as SceneComponent;
 
-          if (bonesUuid.includes(sceneComponent.uuid)) {
-            bones.push(getTargetId(sceneComponent) as number);
-          }
+        if (bonesUuid.includes(sceneComponent.uuid)) {
+          bones.push(getTargetId(sceneComponent) as number);
         }
-
-        this.skeleton = this.instantiationService.createInstance(Skeleton, bones, obj.skeleton.boneInverses.map(m => m.toArray()).flat());
       }
+
+      this.skeleton = this.instantiationService.createInstance(Skeleton, bones, mesh.skeleton.boneInverses.map(m => m.toArray()).flat());
     }
   }
 }

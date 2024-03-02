@@ -19,7 +19,7 @@ export class Character extends Pawn {
 
     this.rootComponent = this.addComponent(SceneComponent);
 
-    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(1, 3), undefined);
+    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(1, 3), null);
     this.capsuleComponent.position.set(0, 4, 0);
     this.capsuleComponent.colliderShape = RAPIER.ShapeType.ConvexPolyhedron;
     this.capsuleComponent.setBodyType(RAPIER.RigidBodyType.KinematicPositionBased);

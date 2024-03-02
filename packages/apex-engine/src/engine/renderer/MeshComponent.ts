@@ -1,23 +1,27 @@
 import RAPIER from '@dimforge/rapier3d-compat';
-import { BufferAttribute, BufferGeometry, CanvasTexture, FrontSide, type IBufferAttributeJSON, LineBasicMaterial, LineDashedMaterial, type Material, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshDistanceMaterial, MeshLambertMaterial, MeshMatcapMaterial, MeshNormalMaterial, MeshPhongMaterial, MeshPhysicalMaterial, MeshStandardMaterial, MeshToonMaterial, PointsMaterial, RawShaderMaterial, ShaderMaterial, ShadowMaterial, Sphere, SpriteMaterial, Texture, Vector2, Vector3 } from 'three';
+import * as THREE from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { CLASS } from '../core/class/decorators';
+import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
+import { ref, serialize } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
-import { type ColliderProxy } from '../physics/Collider';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
-import { type RigidBodyProxy } from '../physics/RigidBody';
+import { BufferGeometry } from './BufferGeometry';
+import { Material } from './materials/Material';
+import { MeshStandardMaterial } from './materials/MeshStandardMaterial';
 import { type RenderWorker } from './RenderWorker';
+import { IRenderWorkerContext } from './RenderWorkerContext';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
+import { Texture } from './textures/Texture';
 
 type GeometryData = Record<string, any> | undefined;
 
 type MaterialData = Record<string, any> | undefined;
 
 export class MeshComponentProxy extends SceneComponentProxy {
-  public override sceneObject: Mesh;
+  public override sceneObject: THREE.Mesh;
 
   constructor(
     [geometryData, materialData]: [GeometryData, MaterialData] = [undefined, undefined],
@@ -28,18 +32,18 @@ export class MeshComponentProxy extends SceneComponentProxy {
   ) {
     super([geometryData, materialData], tb, id, thread, renderer);
 
-    this.sceneObject = new Mesh(...this.getMeshArgs(geometryData, materialData));
+    this.sceneObject = new THREE.Mesh(...this.getMeshArgs(geometryData, materialData));
   }
 
   protected getMeshArgs(geometryData: GeometryData, materialData: MaterialData): [BufferGeometry | undefined, Material | undefined] {
     const args: [BufferGeometry | undefined, Material | undefined] = [undefined, undefined];
 
     if (geometryData) {
-      const { attributes, boundingSphere, index, uuid } = geometryData;
+      const { attributes, boundingSphere, index } = geometryData.data;
       const { normal, position, uv } = attributes;
       const geometry = new BufferGeometry();
 
-      geometry.uuid = uuid;
+      geometry.uuid = geometryData.uuid;
       geometry.setAttribute('position', createBufferAttribute({ ...position, type: position.type }));
 
       if (normal) geometry.setAttribute('normal', createBufferAttribute({ ...normal, type: normal.type }));
@@ -48,7 +52,7 @@ export class MeshComponentProxy extends SceneComponentProxy {
       geometry.setIndex(createBufferAttribute({ ...index, normalized: false, itemSize: 1, type: 'Uint16Array' }));
 
       if (boundingSphere) {
-        geometry.boundingSphere = new Sphere(new Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
+        geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
       }
 
       args[0] = geometry;
@@ -56,23 +60,23 @@ export class MeshComponentProxy extends SceneComponentProxy {
 
     if (materialData) {
       const materialConstructors = {
-        LineBasicMaterial,
-        LineDashedMaterial,
-        MeshBasicMaterial,
-        MeshDepthMaterial,
-        MeshDistanceMaterial,
-        MeshLambertMaterial,
-        MeshMatcapMaterial,
-        MeshNormalMaterial,
-        MeshPhongMaterial,
-        MeshPhysicalMaterial,
-        MeshStandardMaterial,
-        MeshToonMaterial,
-        PointsMaterial,
-        RawShaderMaterial,
-        ShaderMaterial,
-        ShadowMaterial,
-        SpriteMaterial,
+        LineBasicMaterial: THREE.LineBasicMaterial,
+        LineDashedMaterial: THREE.LineDashedMaterial,
+        MeshBasicMaterial: THREE.MeshBasicMaterial,
+        MeshDepthMaterial: THREE.MeshDepthMaterial,
+        MeshDistanceMaterial: THREE.MeshDistanceMaterial,
+        MeshLambertMaterial: THREE.MeshLambertMaterial,
+        MeshMatcapMaterial: THREE.MeshMatcapMaterial,
+        MeshNormalMaterial: THREE.MeshNormalMaterial,
+        MeshPhongMaterial: THREE.MeshPhongMaterial,
+        MeshPhysicalMaterial: THREE.MeshPhysicalMaterial,
+        MeshStandardMaterial: THREE.MeshStandardMaterial,
+        MeshToonMaterial: THREE.MeshToonMaterial,
+        PointsMaterial: THREE.PointsMaterial,
+        RawShaderMaterial: THREE.RawShaderMaterial,
+        ShaderMaterial: THREE.ShaderMaterial,
+        ShadowMaterial: THREE.ShadowMaterial,
+        SpriteMaterial: THREE.SpriteMaterial,
       } as const;
 
       let { aoMap, map, metalnessMap, normalMap, normalScale, roughnessMap, type, ...rest } = materialData;
@@ -94,25 +98,25 @@ export class MeshComponentProxy extends SceneComponentProxy {
 
       if (map) {
         const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy } = map;
-        params.map = new CanvasTexture(map.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
+        params.map = new THREE.CanvasTexture(map.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
         params.map.uuid = map.uuid;
       }
 
       if (metalnessMap) {
         const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = metalnessMap;
-        params.metalnessMap = new Texture(metalnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
+        params.metalnessMap = new THREE.Texture(metalnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
         params.metalnessMap.uuid = metalnessMap.uuid;
       }
 
       if (normalMap) {
         const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy } = normalMap;
-        params.normalMap = new CanvasTexture(normalMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
+        params.normalMap = new THREE.CanvasTexture(normalMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
         params.normalMap.uuid = normalMap.uuid;
       }
 
       if (roughnessMap) {
         const { mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace } = roughnessMap;
-        params.roughnessMap = new Texture(roughnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
+        params.roughnessMap = new THREE.Texture(roughnessMap.source.data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
         params.roughnessMap.uuid = roughnessMap.uuid;
       }
 
@@ -123,39 +127,28 @@ export class MeshComponentProxy extends SceneComponentProxy {
   }
 }
 
-type AnyMaterial = LineBasicMaterial
-  | LineDashedMaterial
-  | MeshBasicMaterial
-  | MeshDepthMaterial
-  | MeshDistanceMaterial
-  | MeshLambertMaterial
-  | MeshMatcapMaterial
-  | MeshNormalMaterial
-  | MeshPhongMaterial
-  | MeshPhysicalMaterial
-  | MeshStandardMaterial
-  | MeshToonMaterial
-  | PointsMaterial
-  | RawShaderMaterial
-  | ShaderMaterial
-  | ShadowMaterial
-  | SpriteMaterial;
-
 @CLASS(proxy(EProxyThread.Render, MeshComponentProxy))
 export class MeshComponent extends SceneComponent {
   protected override bodyType: RAPIER.RigidBodyType | null = RAPIER.RigidBodyType.Fixed;
 
+  public geometry: BufferGeometry | null = null;
+
+  @PROP(serialize(ref))
+  public material: Material | null = null;
+
   constructor(
-    public geometry: BufferGeometry | undefined = undefined,
-    public material: Material | Material[] | undefined = undefined,
+    geometry: BufferGeometry | null,
+    material: Material | null,
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger,
-    @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext
+    @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext,
+    @IRenderWorkerContext renderContext: IRenderWorkerContext
   ) {
-    super(instantiationService, logger, physicsContext);
+    super(instantiationService, logger, physicsContext, renderContext);
 
+    this.geometry = geometry;
+    this.material = material;
     this.colliderShape = RAPIER.ShapeType.TriMesh;
-    // this.renderContext.addTransferableSource(material.aoMap.source)
   }
 
   public override async beginPlay(): Promise<void> {
@@ -166,48 +159,67 @@ export class MeshComponent extends SceneComponent {
     await this.physicsContext.registerCollider(this);
   }
 
-  public override serializeArgs([geometry, material]: [BufferGeometry, any]): any[] {
-    const { metadata, ...geometryData } = geometry.toJSON() as any;
-    const materialData: Record<string, any> = {};
+  public override copyFromObject3D(mesh: THREE.Mesh): void {
+    super.copyFromObject3D(mesh);
 
-    if (material) {
-      materialData.uuid = material.uuid;
-      materialData.type = material.type;
+    this.geometry = mesh.geometry;
+    this.material = this.createMaterial((Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as THREE.AnyMaterial);
+  }
 
-      function serializeTexture({ anisotropy, center, channel, colorSpace, flipY, format, generateMipmaps, image, magFilter, mapping, minFilter, name, offset, premultiplyAlpha, repeat, rotation, source, type, unpackAlignment, userData, uuid, wrapS, wrapT }: Texture): any {
-        return { anisotropy, center, channel, colorSpace, flipY, format, generateMipmaps, image, magFilter, mapping, minFilter, name, offset, premultiplyAlpha, repeat, rotation, source: source.uuid, type, unpackAlignment, userData, uuid, wrap: [wrapS, wrapT] };
-      }
+  protected createMaterial(inMaterial: THREE.AnyMaterial): Material {
+    let outMaterial: Material;
 
-      if (material.aoMap && material.aoMap.isTexture) materialData.aoMap = serializeTexture(material.aoMap);
-      if (material.aoMapIntensity) materialData.aoMapIntensity = material.aoMapIntensity;
-      if (material.blendColor && material.blendColor.isColor) materialData.blendColor = material.blendColor.getHex();
-      if (material.blendAlpha !== 0) materialData.blendAlpha = material.blendAlpha;
-      if (material.name !== '') materialData.name = material.name;
-      if (material.color && material.color.isColor) materialData.color = material.color.getHex();
-      if (material.side !== FrontSide) materialData.side = material.side;
-      if (material.emissive && material.emissive.isColor) materialData.emissive = material.emissive.getHex();
-      if (material.emissiveIntensity && material.emissiveIntensity !== 1) materialData.emissiveIntensity = material.emissiveIntensity;
-      if (material.roughnessMap && material.roughnessMap.isTexture) materialData.roughnessMap = serializeTexture(material.roughnessMap);
-      if (material.metalnessMap && material.metalnessMap.isTexture) materialData.metalnessMap = serializeTexture(material.metalnessMap);
-      if (material.map && material.map.isTexture) materialData.map = serializeTexture(material.map);
+    if (inMaterial.type === 'MeshStandardMaterial') {
+      const { color, roughness, metalness, map, lightMap, lightMapIntensity, aoMap, aoMapIntensity, emissive, emissiveIntensity, emissiveMap, bumpMap, bumpScale, normalMap, normalMapType, normalScale, displacementMap, displacementScale, displacementBias, roughnessMap, metalnessMap, alphaMap, envMap, envMapIntensity, wireframe, wireframeLinewidth, fog, flatShading } = inMaterial as MeshStandardMaterial;
 
-      if (material.normalMap && material.normalMap.isTexture) {
-        materialData.normalMap = serializeTexture(material.normalMap);
-        materialData.normalMapType = material.normalMapType;
-        materialData.normalScale = material.normalScale.toArray();
-      }
+      outMaterial = this.instantiationService.createInstance(MeshStandardMaterial, {
+        color,
+        roughness,
+        metalness,
+        map: map ? this.createTexture(map) : null,
+        lightMap: lightMap ? this.createTexture(lightMap) : null,
+        lightMapIntensity,
+        aoMap: aoMap ? this.createTexture(aoMap) : null,
+        aoMapIntensity,
+        emissive,
+        emissiveIntensity,
+        emissiveMap: emissiveMap ? this.createTexture(emissiveMap) : null,
+        bumpMap: bumpMap ? this.createTexture(bumpMap) : null,
+        bumpScale,
+        normalMap: normalMap ? this.createTexture(normalMap) : null,
+        normalMapType,
+        normalScale,
+        displacementMap: displacementMap ? this.createTexture(displacementMap) : null,
+        displacementScale,
+        displacementBias,
+        roughnessMap: roughnessMap ? this.createTexture(roughnessMap) : null,
+        metalnessMap: metalnessMap ? this.createTexture(metalnessMap) : null,
+        alphaMap: alphaMap ? this.createTexture(alphaMap) : null,
+        envMap: envMap ? this.createTexture(envMap) : null,
+        envMapIntensity,
+        wireframe,
+        wireframeLinewidth,
+        fog,
+        flatShading,
+      });
+    } else {
+      outMaterial = this.instantiationService.createInstance(Material);
     }
 
-    return [{ ...geometryData.data, uuid: geometryData.uuid }, materialData];
+    return outMaterial;
+  }
+
+  protected createTexture({ image, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace }: THREE.AnyTexture): Texture {
+    return this.instantiationService.createInstance(Texture, image, mapping as THREE.Mapping, wrapS, wrapT, magFilter, minFilter, format as THREE.PixelFormat, type, anisotropy, colorSpace);
   }
 }
 
-export function createBufferAttribute({ type, array, itemSize, normalized }: IBufferAttributeJSON): BufferAttribute {
+export function createBufferAttribute({ type, array, itemSize, normalized }: THREE.IBufferAttributeJSON): THREE.BufferAttribute {
   const ArrayConstructor = Array.TYPED_ARRAY_CONSTRUCTORS[type];
 
   if (Array.isBigInt64Array(ArrayConstructor) || Array.isBigUint64Array(ArrayConstructor)) {
     throw new Error(`Cannot use BigInt arrays.`);
   }
 
-  return new BufferAttribute(new ArrayConstructor(array), itemSize, normalized);
+  return new THREE.BufferAttribute(new ArrayConstructor(array), itemSize, normalized);
 }

@@ -217,7 +217,6 @@ export class ProxyManager {
   protected registerTickFunctions(): void {
     if (!this.managerTick.isRegistered) {
       this.managerTick.canTick = true;
-      this.managerTick.tickGroup = ETickGroup.PostPhysics;
       this.managerTick.register();
     }
   }
@@ -232,7 +231,9 @@ class ProxyManagerTickFunction extends TickFunction<ProxyManager> {
 export class ProxyDeployment {
   public tick: IEngineLoopTickContext['id'] = -1;
 
-  constructor(public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {}
+  constructor(public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {
+    console.log('ProxyDeployment', origin, args);
+  }
 
   public toJSON(): IProxyConstructionData {
     return {
