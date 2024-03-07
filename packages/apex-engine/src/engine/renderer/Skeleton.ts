@@ -1,4 +1,4 @@
-import { Matrix4 } from 'three';
+import { Matrix4, type Matrix4Tuple } from 'three';
 
 import { CLASS } from '../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
@@ -47,7 +47,7 @@ export class Skeleton implements IProxyOrigin {
 
   declare readonly byteView: Uint8Array;
 
-  constructor(public readonly bones: ProxyInstance['id'][], public readonly boneInverses: number[]) {}
+  constructor(public readonly bones: ProxyInstance['id'][], public readonly boneInverses: number[] | Matrix4Tuple[]) {}
 
   public tick(context: IEngineLoopTickContext): void {}
 

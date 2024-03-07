@@ -66,9 +66,6 @@ export class TextureProxy extends RenderProxy {
 
 @CLASS(proxy(EProxyThread.Render, TextureProxy))
 export class Texture extends THREE.Texture {
-  @PROP(serialize(string))
-  declare name: string;
-
   @PROP(serialize(ref(true)))
   declare source: Source;
 
@@ -99,7 +96,7 @@ export class Texture extends THREE.Texture {
   @PROP(serialize(uint16))
   declare type: THREE.TextureDataType;
 
-  @PROP(serialize(string))
+  @PROP(serialize(string, 18))
   declare internalFormat: THREE.PixelFormatGPU | null;
 
   @PROP(serialize(mat3))
@@ -132,7 +129,7 @@ export class Texture extends THREE.Texture {
   @PROP(serialize(uint8))
   declare unpackAlignment: number;
 
-  @PROP(serialize(string))
+  @PROP(serialize(string, 17))
   declare colorSpace: THREE.ColorSpace;
 
   constructor(

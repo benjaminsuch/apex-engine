@@ -3,13 +3,21 @@ import * as THREE from 'three';
 import { CLASS, PROP } from '../../core/class/decorators';
 import { EProxyThread, proxy } from '../../core/class/specifiers/proxy';
 import { boolean, float32, ref, serialize, string, uint8, uint32, vec2 } from '../../core/class/specifiers/serialize';
+import { type Color } from '../Color';
 import { type Texture } from '../textures/Texture';
 import { MaterialProxy } from './Material';
 
 export class MeshStandardMaterialProxy extends MaterialProxy {}
 
+export interface MeshStandardMaterialParameters extends Omit<THREE.MeshStandardMaterialParameters, 'color'> {
+  color?: Color;
+}
+
 @CLASS(proxy(EProxyThread.Render, MeshStandardMaterialProxy))
 export class MeshStandardMaterial extends THREE.MeshStandardMaterial {
+  @PROP(serialize(ref(true)))
+  declare color: Color;
+
   @PROP(serialize(ref))
   declare aoMap: Texture | null;
 
@@ -79,18 +87,22 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial {
   @PROP(serialize(boolean))
   declare wireframe: boolean;
 
-  @PROP(serialize(string))
+  @PROP(serialize(float32))
   declare wireframeLinewidth: number;
 
-  @PROP(serialize(string))
-  declare wireframeLinecap: string;
+  @PROP(serialize(string, 6))
+  declare wireframeLinecap: 'butt' | 'round' | 'square';
 
-  @PROP(serialize(string))
-  declare wireframeLinejoin: string;
+  @PROP(serialize(string, 5))
+  declare wireframeLinejoin: 'round' | 'bevel' | 'miter';
 
   @PROP(serialize(boolean))
   declare flatShading: boolean;
 
   @PROP(serialize(boolean))
   declare fog: boolean;
+
+  constructor(params?: MeshStandardMaterialParameters) {
+    super(params);
+  }
 }

@@ -1,9 +1,7 @@
-import { type Object3D, Scene, Texture } from 'three';
-import { Mesh } from 'three';
-import { DRACOLoader, type GLTF, GLTFLoader as BaseGLTFLoader } from 'three-stdlib';
+import { Scene } from 'three';
+import { DRACOLoader, type GLTF, GLTFLoader as BaseGLTFLoader, type GLTFLoaderPlugin, type GLTFParser } from 'three-stdlib';
 
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
-import { RenderWorkerContext } from '../renderer/RenderWorkerContext';
 
 type LoadParameters = Parameters<BaseGLTFLoader['load']>;
 
@@ -32,6 +30,7 @@ export class GLTFLoader {
 
     this.loader = new BaseGLTFLoader();
     this.loader.setDRACOLoader(dracoLoader);
+    this.loader.register(parser => new GLTFApexEngineExtension(parser));
 
     GLTFLoader.instance = this;
   }
@@ -66,5 +65,25 @@ export class GLTFLoader {
     this.logger.debug(this.constructor.name, `Content loaded:`, content);
 
     return content;
+  }
+}
+
+export class GLTFApexEngineExtension implements GLTFLoaderPlugin {
+  public readonly name: string = 'ApexEngine_GLTF_Extension';
+
+  constructor(private readonly parser: GLTFParser) {
+
+  }
+
+  public async beforeRoot(): Promise<void> {
+    console.log('beforeRoot');
+  }
+
+  public async afterRoot(result: GLTF): Promise<void> {
+    console.log('afterRoot', result);
+  }
+
+  public async loadTexture(textureIndex: number): Promise<any> {
+    console.log('loadTexture');
   }
 }
