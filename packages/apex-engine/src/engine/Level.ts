@@ -69,9 +69,4 @@ export class Level {
   public isCurrentLevel(): boolean {
     return this.world?.getCurrentLevel() === this;
   }
-
-  public load(url: string): void {
-    // const loader = this.instantiationService.createInstance(GLTFLoader)
-    // const actors = loader.loadAsync(url)
-  }
 }

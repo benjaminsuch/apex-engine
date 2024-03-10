@@ -1,4 +1,5 @@
 import { loadLevel } from 'build:info';
+import { DefaultLoadingManager } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
@@ -6,8 +7,8 @@ import { TripleBuffer } from './core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Flags } from './Flags';
 import { GameInstance } from './GameInstance';
+import { GLTFLoader } from './GLTFLoader';
 import { type Level } from './Level';
-import { GLTFLoader } from './three/GLTFLoader';
 
 export class ApexEngine {
   private static instance?: ApexEngine;
@@ -88,10 +89,11 @@ export class ApexEngine {
 
       const { default: LoadedLevel }: { default: typeof Level } = await loadLevel(url);
       const level = this.instantiationService.createInstance(LoadedLevel);
+      const loader = this.instantiationService.createInstance(GLTFLoader, level);
 
       world.setCurrentLevel(level);
-      level.load(`game/maps/${url}`);
-
+      const registerCallbacks = (await loader.loadAsync(`game/maps/${url}.glb`)) as Function[];
+      registerCallbacks.forEach(async register => register(level));
       await world.setGameMode(url);
 
       level.init();
