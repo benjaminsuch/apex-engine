@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 import { CLASS, PROP } from '../../core/class/decorators';
-import { EProxyThread, proxy } from '../../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifiers/proxy';
 import { boolean, mat3, ref, serialize, string, uint8, uint16, uint32, vec2 } from '../../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../../core/memory/TripleBuffer';
 import { RenderProxy } from '../RenderProxy';
@@ -65,7 +65,11 @@ export class TextureProxy extends RenderProxy {
 }
 
 @CLASS(proxy(EProxyThread.Render, TextureProxy))
-export class Texture extends THREE.Texture {
+export class Texture extends THREE.Texture implements IProxyOrigin {
+  declare readonly byteView: Uint8Array;
+
+  declare readonly tripleBuffer: TripleBuffer;
+
   @PROP(serialize(ref(true)))
   declare source: Source;
 
@@ -147,5 +151,11 @@ export class Texture extends THREE.Texture {
     super(image, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
 
     this.source = new Source(image);
+  }
+
+  public tick(): void {}
+
+  public getProxyArgs(): [] {
+    return [];
   }
 }

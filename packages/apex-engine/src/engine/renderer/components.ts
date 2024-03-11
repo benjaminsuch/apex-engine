@@ -10,6 +10,7 @@ import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 import { SkeletonProxy } from './Skeleton';
 import { SkinnedMeshComponent, SkinnedMeshComponentProxy } from './SkinnedMeshComponent';
+import { Source, SourceProxy } from './textures/Source';
 import { Texture, TextureProxy } from './textures/Texture';
 
 export const proxyComponents = {
@@ -22,6 +23,7 @@ export const proxyComponents = {
   SceneComponentProxy,
   SkeletonProxy,
   SkinnedMeshComponentProxy,
+  SourceProxy,
   TextureProxy,
 } as const;
 
@@ -36,6 +38,7 @@ const objectComponentMap = {
   SkinnedMesh: SkinnedMeshComponent,
   Material,
   MeshStandardMaterial,
+  Source,
   Texture,
 } as const;
 

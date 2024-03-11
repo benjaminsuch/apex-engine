@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 
 import { CLASS, PROP } from '../../core/class/decorators';
-import { EProxyThread, proxy } from '../../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifiers/proxy';
 import { boolean, float32, ref, serialize, string, uint8 } from '../../core/class/specifiers/serialize';
+import { type TripleBuffer } from '../../core/memory/TripleBuffer';
 import { type Color } from '../Color';
 import { type Texture } from '../textures/Texture';
 import { MaterialProxy } from './Material';
@@ -14,7 +15,11 @@ export interface MeshBasicMaterialParameters extends Omit<THREE.MeshBasicMateria
 }
 
 @CLASS(proxy(EProxyThread.Render, MeshBasicMaterialProxy))
-export class MeshBasicMaterial extends THREE.MeshBasicMaterial {
+export class MeshBasicMaterial extends THREE.MeshBasicMaterial implements IProxyOrigin {
+  declare readonly byteView: Uint8Array;
+
+  declare readonly tripleBuffer: TripleBuffer;
+
   @PROP(serialize(ref(true)))
   declare color: Color;
 
@@ -68,5 +73,11 @@ export class MeshBasicMaterial extends THREE.MeshBasicMaterial {
 
   constructor(params?: MeshBasicMaterialParameters) {
     super(params);
+  }
+
+  public tick(): void {}
+
+  public getProxyArgs(): any[] {
+    return [];
   }
 }

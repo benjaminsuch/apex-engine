@@ -297,6 +297,10 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     }
   }
 
+  public getProxyArgs(): [] {
+    return [];
+  }
+
   protected onLookAt(target: Vector3, position: Vector3, up: Vector3): Matrix4 {
     return _m1.lookAt(target, position, up);
   }

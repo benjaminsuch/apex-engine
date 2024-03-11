@@ -131,7 +131,8 @@ export class ProxyManager {
           }
 
           if (hasUnresolvedDependencies) {
-            this.logger.info(`Proxy "${id}" has unresolved dependencies and will be deferred.`);
+            // 8
+            // this.logger.info(`Proxy "${id}" has unresolved dependencies and will be deferred.`);
             this.deferredDeploymentMessages.push(data);
             continue;
           }
@@ -240,7 +241,7 @@ export class ProxyDeployment {
       constructor: (this.origin.constructor as TProxyOriginConstructor).proxyClassName,
       id: getTargetId(this.origin) as number,
       tb: this.origin.tripleBuffer,
-      args: this.args,
+      args: this.origin.getProxyArgs(),
       originThread: EProxyThread.Game,
       tick: this.tick,
     };

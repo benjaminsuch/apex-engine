@@ -54,7 +54,7 @@ export class KinematicController implements IProxyOrigin {
     this.worldController.enableSnapToGround(distance);
   }
 
-  public serializeArgs(args: any[]): any[] {
+  public getProxyArgs(): [] {
     return [];
   }
 }

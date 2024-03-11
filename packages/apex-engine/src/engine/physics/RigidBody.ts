@@ -183,7 +183,7 @@ export class RigidBody implements IProxyOrigin {
     this.applyWorldBodyTransformations();
   }
 
-  public serializeArgs(args: any[]): any[] {
+  public getProxyArgs(): [] {
     return [];
   }
 

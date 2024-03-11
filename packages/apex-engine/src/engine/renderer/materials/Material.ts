@@ -1,14 +1,19 @@
 import * as THREE from 'three';
 
 import { CLASS, PROP } from '../../core/class/decorators';
-import { EProxyThread, proxy } from '../../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifiers/proxy';
 import { boolean, serialize, string, uint8, uint32 } from '../../core/class/specifiers/serialize';
+import { type TripleBuffer } from '../../core/memory/TripleBuffer';
 import { RenderProxy } from '../RenderProxy';
 
 export class MaterialProxy extends RenderProxy {}
 
 @CLASS(proxy(EProxyThread.Render, MaterialProxy))
-export class Material extends THREE.Material {
+export class Material extends THREE.Material implements IProxyOrigin {
+  declare readonly byteView: Uint8Array;
+
+  declare readonly tripleBuffer: TripleBuffer;
+
   @PROP(serialize(boolean))
   declare alphaHash: boolean;
 
@@ -128,4 +133,10 @@ export class Material extends THREE.Material {
 
   @PROP(serialize(boolean))
   declare visible: boolean;
+
+  public tick(): void {}
+
+  public getProxyArgs(): any[] {
+    return [];
+  }
 }

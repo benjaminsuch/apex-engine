@@ -502,8 +502,6 @@ export type GLTFParserOnErrorHandler = (event: ErrorEvent) => void;
 export type GLTFParserRegisterComponentCallback = (actor: Actor, parent?: SceneComponent) => Promise<SceneComponent>;
 
 export class GLTFParser {
-  private readonly nodeCache: Record<string, Promise<GLTFParserRegisterComponentCallback>> = {};
-
   private readonly textureCache: Record<string, Promise<Texture | null>> = {};
 
   private readonly sourceCache: Record<number, Promise<Texture>> = {};
@@ -826,6 +824,7 @@ export class GLTFParser {
     }
 
     return Promise.all(pending).then(() => {
+      console.log('material', materialType.name, materialParams);
       const material = new materialType(materialParams);
 
       if (materialDef.name) {
@@ -841,6 +840,10 @@ export class GLTFParser {
 
       return material;
     });
+  }
+
+  public assignFinalMaterial(component: MeshComponent): any {
+
   }
 
   public async loadCamera(index: number): Promise<any> {
@@ -895,17 +898,19 @@ export class GLTFParser {
     pending.push(this.loadGeometries(primitives));
 
     return Promise.all(pending).then((results) => {
-      console.log('results', results);
+      console.log('loadMesh results', results);
       const materials = results.slice(0, results.length - 1);
       const geometries = results[results.length - 1];
       const meshRegisterCallbacks: GLTFParserRegisterComponentCallback[] = [];
-
+      console.log('loadMesh materials', materials);
+      console.log('loadMesh geometries', geometries);
       for (let i = 0; i < geometries.length; i++) {
         const geometry = geometries[i];
         const primitive = primitives[i];
         const material = materials[i];
 
         meshRegisterCallbacks.push(async (actor) => {
+          console.log('loadMesh meshRegisterCallback');
           let component: MeshComponent;
 
           if (
@@ -923,7 +928,8 @@ export class GLTFParser {
           } else {
             component = actor.addComponent(MeshComponent, geometry, material);
           }
-
+          console.log('loadMesh material', material);
+          console.log('loadMesh component', component);
           if (Object.keys(component.geometry!.morphAttributes).length > 0) {
             updateMorphTargets(component, meshDef);
           }
@@ -944,7 +950,7 @@ export class GLTFParser {
           return component;
         });
       }
-
+      console.log('loadMesh meshRegisterCallbacks', meshRegisterCallbacks);
       return meshRegisterCallbacks;
     });
   }
@@ -979,56 +985,68 @@ export class GLTFParser {
     };
   }
 
-  private async loadNodeShallow(index: number): Promise<any> {
-    const { camera, children = [], extensions, matrix, mesh, name = '', rotation, scale, skin, translation } = this.data.nodes[index];
-    const pending: Promise<GLTFParserRegisterComponentCallback>[] = [];
-
-    if (mesh) {
+  private async loadNodeShallow(index: number): Promise<GLTFParserRegisterComponentCallback> {
+    const { camera, extensions, matrix, mesh, name = '', rotation, scale, translation } = this.data.nodes[index];
+    const pending: Promise<GLTFParserRegisterComponentCallback[]>[] = [];
+    console.log('loadMesh loadNodeShallow', this.data.nodes[index]);
+    if (mesh !== undefined) {
       pending.push(this.getDependency('mesh', mesh));
     }
 
-    if (camera) {
+    if (camera !== undefined) {
       pending.push(this.getDependency('camera', camera));
     }
 
-    this.nodeCache[index] = Promise.all(pending).then(([registerComponent, ...rest]) => async (actor: Actor, parent?: SceneComponent) => {
-      let component: SceneComponent;
+    return Promise.all(pending).then(([meshRegisterCallbacks, camera]) => async (actor: Actor, parent?: SceneComponent) => {
+      const components: SceneComponent[] = [];
 
-      if (!rest) {
-        component = await registerComponent(actor);
+      for (let i = 0; i < meshRegisterCallbacks.length; i++) {
+        const registerComponent = meshRegisterCallbacks[i];
+        const component = await registerComponent(actor);
+
+        component.name = name;
+        // assignExtrasToUserData(component, nodeDef);
+
+        if (extensions) {
+        // addUnknownExtensionsToUserData(extensions, node, nodeDef);
+        }
+
+        if (matrix) {
+          // component.applyMatrix4(new Matrix4().fromArray(matrix))
+        } else {
+          if (translation) component.position.fromArray(translation);
+          if (rotation) component.rotation.fromArray(rotation);
+          if (scale) component.scale.fromArray(scale);
+        }
+
+        if (!this.associations.has(component)) {
+          this.associations.set(component, {});
+        }
+
+        this.associations.get(component).nodes = index;
+
+        components.push(component);
+      }
+
+      if (components.length === 1) {
+        if (parent) {
+          components[0].attachToComponent(parent);
+        }
+        return components[0];
       } else {
-        component = actor.addComponent(SceneComponent);
+        const group = actor.addComponent(SceneComponent);
+
+        for (let i = 0; i < components.length; i++) {
+          components[i].attachToComponent(group);
+        }
+
+        if (parent) {
+          group.attachToComponent(parent);
+        }
+
+        return group;
       }
-
-      if (parent) {
-        component.attachToComponent(parent);
-      }
-
-      component.name = name;
-      // assignExtrasToUserData(component, nodeDef);
-
-      if (extensions) {
-      // addUnknownExtensionsToUserData(extensions, node, nodeDef);
-      }
-
-      if (matrix) {
-        // component.applyMatrix4(new Matrix4().fromArray(matrix))
-      } else {
-        if (translation) component.position.fromArray(translation);
-        if (rotation) component.rotation.fromArray(rotation);
-        if (scale) component.scale.fromArray(scale);
-      }
-
-      if (!this.associations.has(component)) {
-        this.associations.set(component, {});
-      }
-
-      this.associations.get(component).nodes = index;
-
-      return component;
     });
-
-    return this.nodeCache[index];
   }
 
   public async loadBuffer(index: number): Promise<ArrayBuffer> {
