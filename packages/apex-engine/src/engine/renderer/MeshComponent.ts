@@ -8,28 +8,20 @@ import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { ref, serialize } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
-import { type BufferGeometry } from './BufferGeometry';
-import { type Material } from './materials/Material';
+import { type BufferGeometry, type BufferGeometryProxy } from './geometries/BufferGeometry';
+import { type Material, type MaterialProxy } from './materials/Material';
 import { MeshStandardMaterial } from './materials/MeshStandardMaterial';
 import { type RenderWorker } from './RenderWorker';
 import { IRenderWorkerContext } from './RenderWorkerContext';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 import { Texture } from './textures/Texture';
 
-interface CapsuleGeometryJSON {
-  capSegments: number;
-  length: number;
-  radiusSegments: number;
-  radius: number;
-  type: 'CapsuleGeometry';
-}
+export class MeshComponentProxy extends SceneComponentProxy<THREE.Mesh> {
+  declare geometry: BufferGeometryProxy;
 
-type GeometryData = CapsuleGeometryJSON | undefined;
+  declare material: MaterialProxy;
 
-type MaterialData = Record<string, any> | undefined;
-
-export class MeshComponentProxy extends SceneComponentProxy {
-  // public override sceneObject: THREE.Mesh;
+  protected override readonly object: THREE.Mesh;
 
   constructor(
     args: never[],
@@ -39,6 +31,8 @@ export class MeshComponentProxy extends SceneComponentProxy {
     renderer: RenderWorker
   ) {
     super(args, tb, id, thread, renderer);
+
+    this.object = new THREE.Mesh(this.geometry.get(), this.material.get());
   }
 }
 

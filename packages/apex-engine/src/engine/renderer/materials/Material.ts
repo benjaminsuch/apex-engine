@@ -5,8 +5,23 @@ import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifi
 import { boolean, serialize, string, uint8, uint32 } from '../../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../../core/memory/TripleBuffer';
 import { RenderProxy } from '../RenderProxy';
+import { type RenderWorker } from '../RenderWorker';
 
-export class MaterialProxy extends RenderProxy {}
+export class MaterialProxy<T extends THREE.Material = THREE.Material> extends RenderProxy<T> {
+  protected readonly object: T;
+
+  constructor(
+    args: never[],
+    tb: TripleBuffer,
+    id: number,
+    thread: EProxyThread,
+    renderer: RenderWorker
+  ) {
+    super(args, tb, id, thread, renderer);
+
+    this.object = new THREE.Material() as T;
+  }
+}
 
 @CLASS(proxy(EProxyThread.Render, MaterialProxy))
 export class Material extends THREE.Material implements IProxyOrigin {

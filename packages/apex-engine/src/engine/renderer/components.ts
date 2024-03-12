@@ -1,9 +1,10 @@
 import { type AnimationClip, type Group, Mesh, type Object3D, SkinnedMesh } from 'three';
 
 import { type Actor } from '../Actor';
-import { BufferGeometry, BufferGeometryProxy } from './BufferGeometry';
 import { CameraComponent, CameraComponentProxy } from './CameraComponent';
 import { Color, ColorProxy } from './Color';
+import { BufferGeometry, BufferGeometryProxy } from './geometries/BufferGeometry';
+import { CapsuleGeometry, CapsuleGeometryProxy } from './geometries/CapsuleGeometry';
 import { Material, MaterialProxy } from './materials/Material';
 import { MeshStandardMaterial, MeshStandardMaterialProxy } from './materials/MeshStandardMaterial';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
@@ -16,6 +17,7 @@ import { Texture, TextureProxy } from './textures/Texture';
 export const proxyComponents = {
   BufferGeometryProxy,
   CameraComponentProxy,
+  CapsuleGeometryProxy,
   ColorProxy,
   MaterialProxy,
   MeshComponentProxy,
@@ -30,6 +32,7 @@ export const proxyComponents = {
 const objectComponentMap = {
   Bone: SceneComponent,
   BufferGeometry,
+  CapsuleGeometry,
   Color,
   Mesh: MeshComponent,
   Group: SceneComponent,

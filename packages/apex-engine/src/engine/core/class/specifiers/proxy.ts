@@ -437,7 +437,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
         // the Worker is loading the Proxy-Classes (e.g. SceneComponentProxy) and thus, will load
         // the `GameProxyManager`, which imports the `IRenderWorkerContext`, which imports from
         // `RenderWorker`. This will lead to a "BAD_IMPORT" error from rollup.
-        ProxyManager.getInstance().deployProxy(this, filterArgs(args), thread);
+        ProxyManager.getInstance().deployProxy(this, args, thread);
       }
 
       public async tick(tick: IEngineLoopTickContext): Promise<void> {
@@ -445,7 +445,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
       }
 
       public getProxyArgs(): any[] {
-        return super.getProxyArgs() ?? [];
+        return super.getProxyArgs();
       }
     };
   };

@@ -23,7 +23,7 @@ const _target = new Vector3();
 const _position = new Vector3();
 const _m1 = new Matrix4();
 
-export class SceneComponentProxy extends RenderProxy {
+export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderProxy<T> {
   declare position: [number, number, number];
 
   declare scale: [number, number, number];
@@ -46,7 +46,7 @@ export class SceneComponentProxy extends RenderProxy {
 
   public childIndex: number = -1;
 
-  public sceneObject: Object3D;
+  protected readonly object: T;
 
   constructor(
     args: unknown[] = [],
@@ -57,14 +57,14 @@ export class SceneComponentProxy extends RenderProxy {
   ) {
     super(args, tb, id, thread, renderer);
 
-    this.sceneObject = new Object3D();
+    this.object = new Object3D() as T;
   }
 
   public setParent(id: ProxyInstance['id']): void {
     const parent = this.renderer.proxyManager.getProxy<SceneComponentProxy>(id, EProxyThread.Game);
 
     if (parent) {
-      parent.target.sceneObject.add(this.sceneObject);
+      parent.target.object.add(this.object);
     } else {
       console.warn(`Couldnt find parent ("${id}") for proxy "${this.id}".`);
     }
@@ -73,14 +73,14 @@ export class SceneComponentProxy extends RenderProxy {
   public override tick(tick: IEngineLoopTickContext): void {
     super.tick(tick);
 
-    this.sceneObject.castShadow = this.castShadow;
-    this.sceneObject.receiveShadow = this.receiveShadow;
-    this.sceneObject.visible = this.visible;
-    this.sceneObject.position.fromArray(this.position);
-    this.sceneObject.quaternion.fromArray(this.rotation);
-    this.sceneObject.scale.fromArray(this.scale);
-    this.sceneObject.matrixWorld.fromArray(this.matrixWorld);
-    this.sceneObject.up.fromArray(this.up);
+    this.object.castShadow = this.castShadow;
+    this.object.receiveShadow = this.receiveShadow;
+    this.object.visible = this.visible;
+    this.object.position.fromArray(this.position);
+    this.object.quaternion.fromArray(this.rotation);
+    this.object.scale.fromArray(this.scale);
+    this.object.matrixWorld.fromArray(this.matrixWorld);
+    this.object.up.fromArray(this.up);
   }
 }
 

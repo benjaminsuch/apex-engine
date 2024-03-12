@@ -4,8 +4,8 @@ import { DRACOLoader, type GLTF, type KTX2Loader } from 'three-stdlib';
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { Actor } from './Actor';
 import { type Level } from './Level';
-import { BufferGeometry } from './renderer/BufferGeometry';
 import { Color } from './renderer/Color';
+import { BufferGeometry } from './renderer/geometries/BufferGeometry';
 import { type Material } from './renderer/materials/Material';
 import { MeshBasicMaterial, type MeshBasicMaterialParameters } from './renderer/materials/MeshBasicMaterial';
 import { MeshStandardMaterial, type MeshStandardMaterialParameters } from './renderer/materials/MeshStandardMaterial';
@@ -898,19 +898,16 @@ export class GLTFParser {
     pending.push(this.loadGeometries(primitives));
 
     return Promise.all(pending).then((results) => {
-      console.log('loadMesh results', results);
       const materials = results.slice(0, results.length - 1);
       const geometries = results[results.length - 1];
       const meshRegisterCallbacks: GLTFParserRegisterComponentCallback[] = [];
-      console.log('loadMesh materials', materials);
-      console.log('loadMesh geometries', geometries);
+
       for (let i = 0; i < geometries.length; i++) {
         const geometry = geometries[i];
         const primitive = primitives[i];
         const material = materials[i];
 
         meshRegisterCallbacks.push(async (actor) => {
-          console.log('loadMesh meshRegisterCallback');
           let component: MeshComponent;
 
           if (
@@ -928,8 +925,7 @@ export class GLTFParser {
           } else {
             component = actor.addComponent(MeshComponent, geometry, material);
           }
-          console.log('loadMesh material', material);
-          console.log('loadMesh component', component);
+
           if (Object.keys(component.geometry!.morphAttributes).length > 0) {
             updateMorphTargets(component, meshDef);
           }
@@ -950,7 +946,7 @@ export class GLTFParser {
           return component;
         });
       }
-      console.log('loadMesh meshRegisterCallbacks', meshRegisterCallbacks);
+
       return meshRegisterCallbacks;
     });
   }

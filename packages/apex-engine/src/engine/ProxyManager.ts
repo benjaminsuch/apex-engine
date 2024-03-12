@@ -131,8 +131,7 @@ export class ProxyManager {
           }
 
           if (hasUnresolvedDependencies) {
-            // 8
-            // this.logger.info(`Proxy "${id}" has unresolved dependencies and will be deferred.`);
+            this.logger.info(`Proxy "${id}" has unresolved dependencies and will be deferred.`);
             this.deferredDeploymentMessages.push(data);
             continue;
           }

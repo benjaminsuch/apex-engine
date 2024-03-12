@@ -1,10 +1,11 @@
 import RAPIER from '@dimforge/rapier3d-compat';
-import { CapsuleGeometry } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Pawn } from './Pawn';
+import { CapsuleGeometry } from './renderer/geometries/CapsuleGeometry';
+import { MeshStandardMaterial } from './renderer/materials/MeshStandardMaterial';
 import { MeshComponent } from './renderer/MeshComponent';
 import { SceneComponent } from './renderer/SceneComponent';
 import { ETickGroup, TickFunction } from './TickManager';
@@ -19,7 +20,7 @@ export class Character extends Pawn {
 
     this.rootComponent = this.addComponent(SceneComponent);
 
-    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(1, 3), null);
+    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(1, 3), new MeshStandardMaterial());
     this.capsuleComponent.position.set(0, 4, 0);
     this.capsuleComponent.colliderShape = RAPIER.ShapeType.ConvexPolyhedron;
     this.capsuleComponent.setBodyType(RAPIER.RigidBodyType.KinematicPositionBased);

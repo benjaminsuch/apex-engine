@@ -2,15 +2,16 @@ import * as THREE from 'three';
 
 import { CLASS, PROP } from '../../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifiers/proxy';
+import { boolean, serialize, string } from '../../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../../core/memory/TripleBuffer';
 import { RenderProxy } from '../RenderProxy';
 import { type RenderWorker } from '../RenderWorker';
 
-export class SourceProxy extends RenderProxy<THREE.Source> {
-  protected readonly object: THREE.Source;
+export class CapsuleGeometryProxy extends RenderProxy<THREE.CapsuleGeometry> {
+  protected readonly object: THREE.CapsuleGeometry;
 
   constructor(
-    [data]: [ImageBitmap | OffscreenCanvas],
+    [data]: [any],
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
@@ -18,25 +19,22 @@ export class SourceProxy extends RenderProxy<THREE.Source> {
   ) {
     super([], tb, id, thread, renderer);
 
-    this.object = new THREE.Source(data);
+    this.object = THREE.CapsuleGeometry.fromJSON(data);
   }
 }
 
-@CLASS(proxy(EProxyThread.Render, SourceProxy))
-export class Source extends THREE.Source implements IProxyOrigin {
+export interface CapsuleGeometryJSON {}
+
+@CLASS(proxy(EProxyThread.Render, CapsuleGeometryProxy))
+export class CapsuleGeometry extends THREE.CapsuleGeometry implements IProxyOrigin {
   declare readonly byteView: Uint8Array;
 
   declare readonly tripleBuffer: TripleBuffer;
 
-  declare readonly data: ImageBitmap | OffscreenCanvas;
-
-  constructor(data: Source['data']) {
-    super(data);
-  }
-
   public tick(): void {}
 
-  public getProxyArgs(): [Source['data']] {
-    return [this.data];
+  public getProxyArgs(): [any] {
+    const { metadata, uuid, ...rest } = this.toJSON() as any;
+    return [rest];
   }
 }

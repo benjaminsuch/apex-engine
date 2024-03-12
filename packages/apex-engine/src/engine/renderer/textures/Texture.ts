@@ -8,7 +8,7 @@ import { RenderProxy } from '../RenderProxy';
 import { type RenderWorker } from '../RenderWorker';
 import { Source, type SourceProxy } from './Source';
 
-export class TextureProxy extends RenderProxy {
+export class TextureProxy extends RenderProxy<THREE.Texture> {
   declare name: Texture['name'];
 
   declare source: SourceProxy;
@@ -55,12 +55,12 @@ export class TextureProxy extends RenderProxy {
 
   declare colorSpace: Texture['colorSpace'];
 
-  public readonly texture: THREE.Texture;
+  protected readonly object: THREE.Texture;
 
   constructor(args: unknown[] = [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super(args, tb, id, thread, renderer);
 
-    this.texture = new THREE.Texture(this.source.data, this.mapping, this.wrapS, this.wrapT, this.magFilter, this.minFilter, this.format, this.type, this.anisotropy, this.colorSpace);
+    this.object = new THREE.Texture(this.source.get().data, this.mapping, this.wrapS, this.wrapT, this.magFilter, this.minFilter, this.format, this.type, this.anisotropy, this.colorSpace);
   }
 }
 

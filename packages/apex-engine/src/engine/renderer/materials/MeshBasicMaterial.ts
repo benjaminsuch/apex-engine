@@ -5,10 +5,25 @@ import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifi
 import { boolean, float32, ref, serialize, string, uint8 } from '../../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../../core/memory/TripleBuffer';
 import { type Color } from '../Color';
+import { type RenderWorker } from '../RenderWorker';
 import { type Texture } from '../textures/Texture';
 import { MaterialProxy } from './Material';
 
-export class MeshBasicMaterialProxy extends MaterialProxy {}
+export class MeshBasicMaterialProxy extends MaterialProxy<THREE.MeshBasicMaterial> {
+  protected override readonly object: THREE.MeshBasicMaterial;
+
+  constructor(
+    args: never[],
+    tb: TripleBuffer,
+    id: number,
+    thread: EProxyThread,
+    renderer: RenderWorker
+  ) {
+    super(args, tb, id, thread, renderer);
+
+    this.object = new THREE.MeshBasicMaterial();
+  }
+}
 
 export interface MeshBasicMaterialParameters extends Omit<THREE.MeshBasicMaterialParameters, 'color'> {
   color?: Color;

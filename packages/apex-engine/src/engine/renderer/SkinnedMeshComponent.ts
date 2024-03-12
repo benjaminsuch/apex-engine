@@ -1,4 +1,4 @@
-import { type Bone, type BufferGeometry, type Material, Matrix4, type Object3D, Skeleton as ThreeSkeleton, SkinnedMesh } from 'three';
+import { type Bone, type BufferGeometry, type Material, Matrix4, type Object3D, Skeleton as ThreeSkeleton, type SkinnedMesh } from 'three';
 
 import { CLASS, getTargetId, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
@@ -18,39 +18,16 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
 
   declare bindMatrixInverse: Matrix4AsArray;
 
-  public override sceneObject: SkinnedMesh;
+  // public override sceneObject: SkinnedMesh;
 
   constructor(
-    [geometryData, materialData]: [Record<string, any> | undefined, Record<string, any> | undefined] = [undefined, undefined],
+    args: [],
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
     renderer: RenderWorker
   ) {
-    super([geometryData, materialData], tb, id, thread, renderer);
-
-    this.sceneObject = new SkinnedMesh(...this.getMeshArgs(geometryData, materialData));
-
-    const bones = this.skeleton.bones.map((item: any) => {
-      item.sceneObject.isBone = true;
-      item.sceneObject.type = 'Bone';
-      return item.sceneObject as Bone;
-    });
-
-    this.sceneObject.bind(new ThreeSkeleton(bones, this.skeleton.boneInverses), new Matrix4().fromArray(this.bindMatrix));
-  }
-
-  protected override getMeshArgs(geometryData: Record<string, any> | undefined, materialData: Record<string, any> | undefined): [BufferGeometry | undefined, Material | undefined] {
-    const [geometry, material] = super.getMeshArgs(geometryData, materialData);
-
-    if (geometry) {
-      const { skinIndex, skinWeight } = geometryData!.attributes;
-
-      geometry.setAttribute('skinIndex', createBufferAttribute({ ...skinIndex, type: skinIndex.array.constructor.name }));
-      geometry.setAttribute('skinWeight', createBufferAttribute({ ...skinWeight, type: skinWeight.array.constructor.name }));
-    }
-
-    return [geometry, material];
+    super([], tb, id, thread, renderer);
   }
 }
 
