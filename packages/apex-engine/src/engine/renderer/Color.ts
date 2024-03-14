@@ -2,16 +2,22 @@ import * as THREE from 'three';
 
 import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
-import { serialize, uint16 } from '../core/class/specifiers/serialize';
+import { float32, serialize } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { RenderProxy } from './RenderProxy';
 import { type RenderWorker } from './RenderWorker';
 
 export class ColorProxy extends RenderProxy<THREE.Color> {
+  declare r: number;
+
+  declare g: number;
+
+  declare b: number;
+
   protected readonly object: THREE.Color;
 
   constructor(
-    [data]: [any],
+    [r, g, b]: [number, number, number],
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
@@ -19,7 +25,7 @@ export class ColorProxy extends RenderProxy<THREE.Color> {
   ) {
     super([], tb, id, thread, renderer);
 
-    this.object = new THREE.Color();
+    this.object = new THREE.Color(r, g, b);
   }
 }
 
@@ -29,18 +35,18 @@ export class Color extends THREE.Color implements IProxyOrigin {
 
   declare readonly tripleBuffer: TripleBuffer;
 
-  @PROP(serialize(uint16))
+  @PROP(serialize(float32))
   declare r: number;
 
-  @PROP(serialize(uint16))
+  @PROP(serialize(float32))
   declare g: number;
 
-  @PROP(serialize(uint16))
+  @PROP(serialize(float32))
   declare b: number;
 
   public tick(): void {}
 
-  public getProxyArgs(): [] {
-    return [];
+  public getProxyArgs(): [number, number, number] {
+    return [this.r, this.g, this.b];
   }
 }

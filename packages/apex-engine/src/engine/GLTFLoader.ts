@@ -708,7 +708,6 @@ export class GLTFParser {
           if ((loader as any).isImageBitmapLoader === true) {
             onLoad = (imageBitmap: ImageBitmap): void => {
               const texture = new Texture(imageBitmap);
-              texture.needsUpdate = true;
               resolve(texture);
             };
           }
@@ -741,6 +740,7 @@ export class GLTFParser {
 
   public async loadMaterial(index: number): Promise<any> {
     const materialDef = this.data.materials[index];
+    console.log('materialDef', materialDef);
     const pending = [];
 
     const { extensions = {}, pbrMetallicRoughness = {} } = materialDef;
@@ -753,7 +753,7 @@ export class GLTFParser {
       materialType = kmuExtension.getMaterialType();
       pending.push(kmuExtension.extendParams(materialParams, materialDef, this));
     } else {
-      const { baseColorFactor, baseColorTexture, metallicFactor, metallicRoughnessTexture, roughnessFactor } = pbrMetallicRoughness;
+      const { baseColorFactor, baseColorTexture, metallicFactor = 1, metallicRoughnessTexture, roughnessFactor = 1 } = pbrMetallicRoughness;
 
       materialParams.color = new Color(1, 1, 1);
       materialParams.opacity = 1;
@@ -799,7 +799,7 @@ export class GLTFParser {
 
     if (materialDef.normalTexture !== undefined && materialType !== MeshBasicMaterial) {
       pending.push(this.assignTexture(materialParams, 'normalMap', materialDef.normalTexture));
-      materialParams.normalScale = new Vector2(1, 1);
+      materialParams.normalScale = new Vector2(1, -1);
 
       if (materialDef.normalTexture.scale !== undefined) {
         const scale = materialDef.normalTexture.scale;
@@ -824,7 +824,6 @@ export class GLTFParser {
     }
 
     return Promise.all(pending).then(() => {
-      console.log('material', materialType.name, materialParams);
       const material = new materialType(materialParams);
 
       if (materialDef.name) {
@@ -857,9 +856,7 @@ export class GLTFParser {
     async function createDracoPrimitive(primitive: GLTFPrimitive): Promise<any> {
       return (self.extensions[EXTENSIONS.KHR_DRACO_MESH_COMPRESSION] as GLTFDracoMeshCompressionExtension)
         .decodePrimitive(primitive, self)
-        .then((geometry: BufferGeometry) => {
-          return addPrimitiveAttributes(geometry, primitive, self);
-        });
+        .then((geometry: BufferGeometry) => addPrimitiveAttributes(geometry, primitive, self));
     }
 
     for (let i = 0; i < primitives.length; i++) {
@@ -984,7 +981,7 @@ export class GLTFParser {
   private async loadNodeShallow(index: number): Promise<GLTFParserRegisterComponentCallback> {
     const { camera, extensions, matrix, mesh, name = '', rotation, scale, translation } = this.data.nodes[index];
     const pending: Promise<GLTFParserRegisterComponentCallback[]>[] = [];
-    console.log('loadMesh loadNodeShallow', this.data.nodes[index]);
+
     if (mesh !== undefined) {
       pending.push(this.getDependency('mesh', mesh));
     }
@@ -1507,7 +1504,7 @@ async function addPrimitiveAttributes(geometry: BufferGeometry, primitiveDef: GL
     pending.push(assignAttributeAccessor(attributes[attr], threeAttributeName));
   }
 
-  if (typeof indices !== 'undefined' && !geometry.index) {
+  if (indices !== undefined && !geometry.index) {
     pending.push(
       parser.getDependency('accessor', indices).then((accessor: BufferAttribute) => {
         geometry.setIndex(accessor);
@@ -1522,7 +1519,7 @@ async function addPrimitiveAttributes(geometry: BufferGeometry, primitiveDef: GL
 }
 
 function computeBounds(geometry: BufferGeometry, { attributes, targets }: GLTFPrimitive, parser: GLTFParser): void {
-  if (typeof attributes.POSITION === 'undefined') {
+  if (attributes.POSITION === undefined) {
     return;
   }
 
@@ -1532,7 +1529,7 @@ function computeBounds(geometry: BufferGeometry, { attributes, targets }: GLTFPr
   const min = accessor.min;
   const max = accessor.max;
 
-  if (typeof min !== 'undefined' && typeof max !== 'undefined') {
+  if (min !== undefined && max !== undefined) {
     box.set(new Vector3(min[0], min[1], min[2]), new Vector3(max[0], max[1], max[2]));
 
     if (accessor.normalized) {
@@ -1552,12 +1549,12 @@ function computeBounds(geometry: BufferGeometry, { attributes, targets }: GLTFPr
     for (let i = 0, il = targets.length; i < il; i++) {
       const target = targets[i];
 
-      if (typeof target.POSITION !== 'undefined') {
+      if (target.POSITION !== undefined) {
         const accessor = parser.data.accessors[target.POSITION];
         const min = accessor.min;
         const max = accessor.max;
 
-        if (typeof min !== 'undefined' && typeof max !== 'undefined') {
+        if (min !== undefined && max !== undefined) {
           vector.setX(Math.max(Math.abs(min[0]), Math.abs(max[0])));
           vector.setY(Math.max(Math.abs(min[1]), Math.abs(max[1])));
           vector.setZ(Math.max(Math.abs(min[2]), Math.abs(max[2])));

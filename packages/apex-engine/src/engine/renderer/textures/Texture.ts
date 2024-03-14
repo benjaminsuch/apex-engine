@@ -61,6 +61,7 @@ export class TextureProxy extends RenderProxy<THREE.Texture> {
     super(args, tb, id, thread, renderer);
 
     this.object = new THREE.Texture(this.source.get().data, this.mapping, this.wrapS, this.wrapT, this.magFilter, this.minFilter, this.format, this.type, this.anisotropy, this.colorSpace);
+    this.object.needsUpdate = true;
   }
 }
 
@@ -151,6 +152,7 @@ export class Texture extends THREE.Texture implements IProxyOrigin {
     super(image, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
 
     this.source = new Source(image);
+    this.needsUpdate = true;
   }
 
   public tick(): void {}

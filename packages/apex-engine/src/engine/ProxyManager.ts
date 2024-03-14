@@ -232,10 +232,17 @@ export class ProxyDeployment {
   public tick: IEngineLoopTickContext['id'] = -1;
 
   constructor(public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {
-    console.log('ProxyDeployment', origin, args);
+    console.log('ProxyDeployment', origin, this.origin.getProxyArgs());
   }
 
   public toJSON(): IProxyConstructionData {
+    const [image] = this.origin.getProxyArgs();
+    const transferables: any[] = [];
+
+    if (image instanceof ImageBitmap) {
+      transferables.push(image);
+    }
+
     return {
       constructor: (this.origin.constructor as TProxyOriginConstructor).proxyClassName,
       id: getTargetId(this.origin) as number,
@@ -243,6 +250,7 @@ export class ProxyDeployment {
       args: this.origin.getProxyArgs(),
       originThread: EProxyThread.Game,
       tick: this.tick,
+      transferables,
     };
   }
 }

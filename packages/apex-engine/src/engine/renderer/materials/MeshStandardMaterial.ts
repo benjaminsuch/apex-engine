@@ -4,24 +4,103 @@ import { CLASS, PROP } from '../../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifiers/proxy';
 import { boolean, float32, ref, serialize, string, uint8, uint32, vec2 } from '../../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../../core/memory/TripleBuffer';
-import { type Color } from '../Color';
+import { type IEngineLoopTickContext } from '../../EngineLoop';
+import { Color, type ColorProxy } from '../Color';
 import { type RenderWorker } from '../RenderWorker';
-import { type Texture } from '../textures/Texture';
+import { type Texture, type TextureProxy } from '../textures/Texture';
 import { MaterialProxy } from './Material';
 
 export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardMaterial> {
+  declare aoMap: TextureProxy | null;
+
+  declare aoMapIntensity: number;
+
+  declare lightMapIntensity: number;
+
+  declare map: TextureProxy | null;
+
+  declare normalMap: TextureProxy | null;
+
+  declare roughness: number;
+
+  declare roughnessMap: TextureProxy | null;
+
+  declare metalness: number;
+
+  declare metalnessMap: TextureProxy | null;
+
+  declare emissiveIntensity: number;
+
+  declare color: ColorProxy;
+
+  declare side: THREE.Side;
+
   protected override readonly object: THREE.MeshStandardMaterial;
 
   constructor(
-    args: never[],
+    [params]: [any],
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
     renderer: RenderWorker
   ) {
-    super(args, tb, id, thread, renderer);
+    super([], tb, id, thread, renderer);
 
-    this.object = new THREE.MeshStandardMaterial();
+    this.object = new THREE.MeshStandardMaterial({ color: this.color.get(), ...params });
+  }
+
+  public override tick(tick: IEngineLoopTickContext): void | Promise<void> {
+    super.tick(tick);
+
+    if (this.aoMap) {
+      const texture = this.aoMap.get();
+
+      if (this.object.aoMap !== texture) {
+        this.object.aoMap = texture;
+      }
+
+      this.object.needsUpdate = true;
+    }
+
+    if (this.map) {
+      const texture = this.map.get();
+
+      if (this.object.map !== texture) {
+        this.object.map = texture;
+      }
+
+      this.object.needsUpdate = true;
+    }
+
+    if (this.normalMap) {
+      const texture = this.normalMap.get();
+
+      if (this.object.normalMap !== texture) {
+        this.object.normalMap = texture;
+      }
+
+      this.object.needsUpdate = true;
+    }
+
+    if (this.roughnessMap) {
+      const texture = this.roughnessMap.get();
+
+      if (this.object.roughnessMap !== texture) {
+        this.object.roughnessMap = texture;
+      }
+
+      this.object.needsUpdate = true;
+    }
+
+    if (this.metalnessMap) {
+      const texture = this.metalnessMap.get();
+
+      if (this.object.metalnessMap !== texture) {
+        this.object.metalnessMap = texture;
+      }
+
+      this.object.needsUpdate = true;
+    }
   }
 }
 
@@ -58,6 +137,9 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
 
   @PROP(serialize(uint8))
   declare lightMapIntensity: number;
+
+  @PROP(serialize(ref(true)))
+  declare emissive: Color;
 
   @PROP(serialize(uint8))
   declare emissiveIntensity: number;
@@ -124,11 +206,21 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
 
   constructor(params?: MeshStandardMaterialParameters) {
     super(params);
+
+    this.color = new Color(params?.color);
+    this.emissive = new Color(params?.emissive ?? 0x000000);
   }
 
   public tick(): void {}
 
-  public getProxyArgs(): any[] {
-    return [];
+  public getProxyArgs(): [any] {
+    return [
+      {
+        side: this.side,
+        wireframe: this.wireframe,
+        roughness: this.roughness,
+        metalness: this.metalness,
+      },
+    ];
   }
 }

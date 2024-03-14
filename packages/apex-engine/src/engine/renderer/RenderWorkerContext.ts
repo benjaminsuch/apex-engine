@@ -109,8 +109,9 @@ export class RenderWorkerContext implements IRenderWorkerContext {
   }
 
   public async createProxies(stack: IProxyConstructionData[]): Promise<void> {
-    console.log('stack', stack);
-    return this.comlink.createProxies(stack);
+    const transferables = stack.reduce<any[]>((res, cur) => res.concat(cur.transferables), []);
+    const data = stack.map(({ transferables, ...rest }) => rest) as IProxyConstructionData[];
+    return this.comlink.createProxies(Comlink.transfer(data, transferables));
   }
 
   public async start(): Promise<void> {

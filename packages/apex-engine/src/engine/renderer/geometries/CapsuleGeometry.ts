@@ -23,8 +23,6 @@ export class CapsuleGeometryProxy extends RenderProxy<THREE.CapsuleGeometry> {
   }
 }
 
-export interface CapsuleGeometryJSON {}
-
 @CLASS(proxy(EProxyThread.Render, CapsuleGeometryProxy))
 export class CapsuleGeometry extends THREE.CapsuleGeometry implements IProxyOrigin {
   declare readonly byteView: Uint8Array;

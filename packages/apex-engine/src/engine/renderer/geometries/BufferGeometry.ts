@@ -52,7 +52,7 @@ export class BufferGeometry<Attributes extends THREE.NormalOrGLBufferAttributes 
   }
 }
 
-function createBufferAttribute({ type, array, itemSize, normalized }: THREE.IBufferAttributeJSON): THREE.BufferAttribute {
+function createBufferAttribute({ type, array, itemSize = 1, normalized = false }: THREE.IBufferAttributeJSON): THREE.BufferAttribute {
   const ArrayConstructor = Array.TYPED_ARRAY_CONSTRUCTORS[type];
 
   if (Array.isBigInt64Array(ArrayConstructor) || Array.isBigUint64Array(ArrayConstructor)) {

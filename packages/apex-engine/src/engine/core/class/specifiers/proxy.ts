@@ -14,6 +14,7 @@ export interface IProxyConstructionData {
   args: unknown[];
   originThread: EProxyThread;
   tick: number;
+  transferables: any[];
 }
 
 export interface IProxyOrigin {
@@ -467,8 +468,11 @@ export function filterArgs(args: unknown[]): any[] {
 
 function setRef(val: InstanceType<TClass> | null, dv: DataView, offset: number, required: boolean, self: IProxyOrigin, key: string): void {
   if (val) {
-    const refId = val.isProxy ? val.id : getTargetId(val) ?? id(val);
-    dv.setUint32(offset, refId, true);
+    const refId = val.isProxy ? val.id : getTargetId(val);
+
+    if (refId) {
+      dv.setUint32(offset, refId, true);
+    }
   }
 
   Reflect.defineMetadata('value', val, self, key);
