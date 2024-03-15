@@ -57,12 +57,54 @@ export class TextureProxy extends RenderProxy<THREE.Texture> {
 
   protected readonly object: THREE.Texture;
 
-  constructor(args: unknown[] = [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
-    super(args, tb, id, thread, renderer);
+  constructor([params]: [TextureProxyArgs], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
+    super([], tb, id, thread, renderer);
 
-    this.object = new THREE.Texture(this.source.get().data, this.mapping, this.wrapS, this.wrapT, this.magFilter, this.minFilter, this.format, this.type, this.anisotropy, this.colorSpace);
+    const { uuid, name, mapping, channel, repeat: [repeatX, repeatY], offset: [offsetX, offsetY], center: [centerX, centerY], rotation, wrap: [wrapS, wrapT], format, internalFormat, type, colorSpace, minFilter, magFilter, anisotropy, flipY, generateMipmaps, premultiplyAlpha, unpackAlignment } = params;
+
+    this.object = new THREE.Texture(this.source.get().data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
+
+    this.object.name = name;
+    this.object.uuid = uuid;
+
+    this.object.channel = channel;
+    this.object.rotation = rotation;
+
+    this.object.repeat = new THREE.Vector2(repeatX, repeatY);
+    this.object.offset = new THREE.Vector2(offsetX, offsetY);
+    this.object.center = new THREE.Vector2(centerX, centerY);
+
+    this.object.flipY = flipY;
+
+    this.object.internalFormat = internalFormat;
+    this.object.generateMipmaps = generateMipmaps;
+    this.object.premultiplyAlpha = premultiplyAlpha;
+    this.object.unpackAlignment = unpackAlignment;
     this.object.needsUpdate = true;
   }
+}
+
+export interface TextureProxyArgs {
+  uuid: string;
+  name: string;
+  mapping: Texture['mapping'];
+  channel: number;
+  repeat: [number, number];
+  offset: [number, number];
+  center: [number, number];
+  rotation: number;
+  wrap: [Texture['wrapS'], Texture['wrapT']];
+  format: Texture['format'];
+  internalFormat: Texture['internalFormat'];
+  type: Texture['type'];
+  colorSpace: Texture['colorSpace'];
+  minFilter: Texture['minFilter'];
+  magFilter: Texture['magFilter'];
+  anisotropy: number;
+  flipY: boolean;
+  generateMipmaps: boolean;
+  premultiplyAlpha: boolean;
+  unpackAlignment: number;
 }
 
 @CLASS(proxy(EProxyThread.Render, TextureProxy))
@@ -137,6 +179,9 @@ export class Texture extends THREE.Texture implements IProxyOrigin {
   @PROP(serialize(string, 17))
   declare colorSpace: THREE.ColorSpace;
 
+  @PROP(serialize(uint32))
+  declare version: number;
+
   constructor(
     image: ImageBitmap | OffscreenCanvas = Texture.DEFAULT_IMAGE,
     mapping: THREE.Mapping = Texture.DEFAULT_MAPPING,
@@ -152,12 +197,34 @@ export class Texture extends THREE.Texture implements IProxyOrigin {
     super(image, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
 
     this.source = new Source(image);
-    this.needsUpdate = true;
   }
 
   public tick(): void {}
 
-  public getProxyArgs(): [] {
-    return [];
+  public getProxyArgs(): [TextureProxyArgs] {
+    return [
+      {
+        uuid: this.uuid,
+        name: this.name,
+        mapping: this.mapping,
+        channel: this.channel,
+        repeat: [this.repeat.x, this.repeat.y],
+        offset: [this.offset.x, this.offset.y],
+        center: [this.center.x, this.center.y],
+        rotation: this.rotation,
+        wrap: [this.wrapS, this.wrapT],
+        format: this.format,
+        internalFormat: this.internalFormat,
+        type: this.type,
+        colorSpace: this.colorSpace,
+        minFilter: this.minFilter,
+        magFilter: this.magFilter,
+        anisotropy: this.anisotropy,
+        flipY: this.flipY,
+        generateMipmaps: this.generateMipmaps,
+        premultiplyAlpha: this.premultiplyAlpha,
+        unpackAlignment: this.unpackAlignment,
+      },
+    ];
   }
 }
