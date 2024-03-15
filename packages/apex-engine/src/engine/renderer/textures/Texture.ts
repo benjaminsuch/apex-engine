@@ -10,51 +10,53 @@ import { type RenderWorker } from '../RenderWorker';
 import { Source, type SourceProxy } from './Source';
 
 export class TextureProxy extends RenderProxy<THREE.Texture> {
-  declare name: Texture['name'];
+  declare anisotropy: Texture['anisotropy'];
 
-  declare source: SourceProxy;
+  declare center: [number, number];
+
+  declare channel: Texture['channel'];
+
+  declare colorSpace: Texture['colorSpace'];
+
+  declare flipY: Texture['flipY'];
+
+  declare format: Texture['format'];
+
+  declare generateMipmaps: Texture['generateMipmaps'];
+
+  declare internalFormat: Texture['internalFormat'];
+
+  declare magFilter: Texture['magFilter'];
 
   declare mapping: Texture['mapping'];
 
-  declare channel: Texture['channel'];
+  declare matrix: number[];
+
+  declare matrixAutoUpdate: Texture['matrixAutoUpdate'];
+
+  declare minFilter: Texture['minFilter'];
+
+  declare name: Texture['name'];
+
+  declare offset: [number, number];
+
+  declare premultiplyAlpha: Texture['premultiplyAlpha'];
+
+  declare repeat: [number, number];
+
+  declare rotation: Texture['rotation'];
+
+  declare source: SourceProxy;
+
+  declare type: Texture['type'];
+
+  declare unpackAlignment: Texture['unpackAlignment'];
+
+  declare version: Texture['version'];
 
   declare wrapS: Texture['wrapS'];
 
   declare wrapT: Texture['wrapT'];
-
-  declare magFilter: Texture['magFilter'];
-
-  declare minFilter: Texture['minFilter'];
-
-  declare anisotropy: Texture['anisotropy'];
-
-  declare format: Texture['format'];
-
-  declare type: Texture['type'];
-
-  declare internalFormat: Texture['internalFormat'];
-
-  declare matrix: Texture['matrix'];
-
-  declare matrixAutoUpdate: Texture['matrixAutoUpdate'];
-
-  declare offset: Texture['offset'];
-
-  declare repeat: Texture['repeat'];
-
-  declare center: Texture['center'];
-
-  declare rotation: Texture['rotation'];
-
-  declare generateMipmaps: Texture['generateMipmaps'];
-
-  declare premultiplyAlpha: Texture['premultiplyAlpha'];
-
-  declare flipY: Texture['flipY'];
-
-  declare unpackAlignment: Texture['unpackAlignment'];
-
-  declare colorSpace: Texture['colorSpace'];
 
   protected readonly object: THREE.Texture;
 
@@ -67,10 +69,33 @@ export class TextureProxy extends RenderProxy<THREE.Texture> {
 
     this.object.name = name;
     this.object.uuid = uuid;
+  }
 
+  public override tick(tick: IEngineLoopTickContext): void | Promise<void> {
+    super.tick(tick);
+
+    this.object.anisotropy = this.anisotropy;
+    this.object.center.fromArray(this.center);
+    this.object.channel = this.channel;
+    this.object.colorSpace = this.colorSpace;
     this.object.flipY = this.flipY;
-    this.object.rotation = rotation;
-    this.object.needsUpdate = true;
+    this.object.format = this.format;
+    this.object.generateMipmaps = this.generateMipmaps;
+    this.object.internalFormat = this.internalFormat;
+    this.object.magFilter = this.magFilter;
+    this.object.mapping = this.mapping;
+    this.object.matrix.fromArray(this.matrix);
+    this.object.matrixAutoUpdate = this.matrixAutoUpdate;
+    this.object.minFilter = this.minFilter;
+    this.object.offset.fromArray(this.offset);
+    this.object.premultiplyAlpha = this.premultiplyAlpha;
+    this.object.repeat.fromArray(this.repeat);
+    this.object.rotation = this.rotation;
+    this.object.type = this.type;
+    this.object.unpackAlignment = this.unpackAlignment;
+    this.object.version = this.version;
+    this.object.wrapS = this.wrapS;
+    this.object.wrapT = this.wrapT;
   }
 }
 

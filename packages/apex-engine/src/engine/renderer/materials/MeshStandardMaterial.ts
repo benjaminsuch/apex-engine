@@ -269,7 +269,7 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
       const texture = this.normalMap.get();
 
       if (this.object.normalMap !== texture) {
-        texture.needsUpdate = true;
+        this.object.normalMap = texture;
       }
     }
 
