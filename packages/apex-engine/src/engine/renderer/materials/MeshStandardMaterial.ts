@@ -91,7 +91,7 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
 
   declare normalMapType: THREE.NormalMapTypes;
 
-  declare normalScale: THREE.Vector2;
+  declare normalScale: [number, number];
 
   declare opacity: number;
 
@@ -160,8 +160,8 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
     this.object.uuid = uuid;
   }
 
-  public override tick(tick: IEngineLoopTickContext): void | Promise<void> {
-    super.tick(tick);
+  public override tick(context: IEngineLoopTickContext): void | Promise<void> {
+    super.tick(context);
 
     this.object.alphaHash = this.alphaHash;
     this.object.alphaTest = this.alphaTest;
@@ -274,7 +274,7 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
     }
 
     this.object.normalMapType = this.normalMapType;
-    this.object.normalScale = this.normalScale;
+    this.object.normalScale.fromArray(this.normalScale);
     this.object.opacity = this.opacity;
     this.object.polygonOffset = this.polygonOffset;
     this.object.polygonOffsetFactor = this.polygonOffsetFactor;

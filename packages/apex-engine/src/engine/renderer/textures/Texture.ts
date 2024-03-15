@@ -63,7 +63,7 @@ export class TextureProxy extends RenderProxy<THREE.Texture> {
   constructor([params]: [TextureProxyArgs], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super([], tb, id, thread, renderer);
 
-    const { uuid, name, mapping, rotation, wrap: [wrapS, wrapT], format, type, colorSpace, minFilter, magFilter, anisotropy } = params;
+    const { uuid, name, mapping, wrap: [wrapS, wrapT], format, type, colorSpace, minFilter, magFilter, anisotropy } = params;
 
     this.object = new THREE.Texture(this.source.get().data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
 
@@ -71,8 +71,8 @@ export class TextureProxy extends RenderProxy<THREE.Texture> {
     this.object.uuid = uuid;
   }
 
-  public override tick(tick: IEngineLoopTickContext): void | Promise<void> {
-    super.tick(tick);
+  public override tick(context: IEngineLoopTickContext): void | Promise<void> {
+    super.tick(context);
 
     this.object.anisotropy = this.anisotropy;
     this.object.center.fromArray(this.center);
@@ -81,7 +81,7 @@ export class TextureProxy extends RenderProxy<THREE.Texture> {
     this.object.flipY = this.flipY;
     this.object.format = this.format;
     this.object.generateMipmaps = this.generateMipmaps;
-    this.object.internalFormat = this.internalFormat;
+    this.object.internalFormat = (this.internalFormat as string) === 'null' ? null : this.internalFormat;
     this.object.magFilter = this.magFilter;
     this.object.mapping = this.mapping;
     this.object.matrix.fromArray(this.matrix);
@@ -203,6 +203,7 @@ export class Texture extends THREE.Texture implements IProxyOrigin {
     super(image, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
 
     this.source = new Source(image);
+    this.needsUpdate = true;
   }
 
   public tick(): void {}

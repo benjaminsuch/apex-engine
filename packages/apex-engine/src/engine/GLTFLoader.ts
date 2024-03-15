@@ -1,4 +1,4 @@
-import { Box3, BufferAttribute, ClampToEdgeWrapping, DefaultLoadingManager, DoubleSide, FileLoader, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, Loader, LoaderUtils, type LoadingManager, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3 } from 'three';
+import { Box3, BufferAttribute, ClampToEdgeWrapping, DefaultLoadingManager, DoubleSide, FileLoader, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, Loader, LoaderUtils, type LoadingManager, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3 } from 'three';
 import { DRACOLoader, type GLTF, type KTX2Loader } from 'three-stdlib';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
@@ -707,10 +707,7 @@ export class GLTFParser {
           let onLoad = resolve;
 
           if ((loader as any).isImageBitmapLoader === true) {
-            onLoad = (imageBitmap: ImageBitmap): void => {
-              const texture = new Texture(imageBitmap);
-              resolve(texture);
-            };
+            onLoad = (imageBitmap: ImageBitmap): void => resolve(new Texture(imageBitmap));
           }
 
           loader.load(LoaderUtils.resolveURL(uri, this.options.path), onLoad, undefined, reject);
@@ -801,7 +798,7 @@ export class GLTFParser {
 
     if (materialDef.normalTexture !== undefined && materialType !== MeshBasicMaterial) {
       pending.push(this.assignTexture(materialParams, 'normalMap', materialDef.normalTexture));
-      materialParams.normalScale = new Vector2(1, -1);
+      materialParams.normalScale = new Vector2(1, 1);
 
       if (materialDef.normalTexture.scale !== undefined) {
         const scale = materialDef.normalTexture.scale;
@@ -846,7 +843,14 @@ export class GLTFParser {
   }
 
   public assignFinalMaterial(component: MeshComponent): any {
+    const material = component.material as MeshStandardMaterial;
 
+    if (component.geometry.attributes.tangent === undefined) {
+      material.normalScale.y *= -1;
+    }
+
+    material.flatShading = component.geometry.attributes.normal === undefined;
+    material.vertexColors = component.geometry.attributes.color !== undefined;
   }
 
   public async loadCamera(index: number): Promise<any> {
@@ -937,7 +941,7 @@ export class GLTFParser {
           // addUnknownExtensionsToUserData(this.extensions, component, primitive);
           }
 
-          // this.assignFinalMaterial(component);
+          this.assignFinalMaterial(component);
 
           this.associations.set(component, {
             meshes: index,
@@ -1189,7 +1193,7 @@ export class GLTFParser {
         return null;
       }
 
-      if (typeof texCoord !== 'undefined' && texCoord > 0) {
+      if (texCoord !== undefined && texCoord > 0) {
         texture = texture.clone();
         texture.channel = texCoord;
       }
@@ -1197,12 +1201,18 @@ export class GLTFParser {
       const transformExt = this.extensions[EXTENSIONS.KHR_TEXTURE_TRANSFORM] as GLTFTextureTransformExtension;
 
       if (transformExt) {
-        const transformData = extensions[EXTENSIONS.KHR_TEXTURE_TRANSFORM] ?? {};
-        this.associations.set(transformExt.extendTexture(texture, transformData), this.associations.get(texture));
+        const ref = this.associations.get(texture);
+        const data = extensions[EXTENSIONS.KHR_TEXTURE_TRANSFORM] ?? {};
+
+        this.associations.set(transformExt.extendTexture(texture, data), ref);
       }
 
-      if (encoding && 'colorSpace' in texture) {
-        texture.colorSpace = encoding === 3001 ? 'srgb' : 'srgb-linear';
+      if (encoding !== undefined) {
+        if ('colorSpace' in texture) {
+          texture.colorSpace = encoding === 3001 ? 'srgb' : 'srgb-linear';
+        } else {
+          (texture as Texture).encoding = encoding as THREE.TextureEncoding;
+        }
       }
 
       params[mapName as keyof typeof params] = texture;
@@ -1394,6 +1404,7 @@ class GLTFTextureTransformExtension implements GLTFLoaderExtension {
   public readonly name: string = EXTENSIONS.KHR_TEXTURE_TRANSFORM;
 
   public extendTexture(texture: Texture, transform: { [key: string]: any }): Texture {
+    console.log('GLTFTextureTransformExtension extendTexture', transform);
     if (
       (transform.texCoord === undefined || transform.texCoord === texture.channel)
       && transform.offset === undefined
