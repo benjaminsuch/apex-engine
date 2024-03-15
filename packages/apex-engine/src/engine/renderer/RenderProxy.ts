@@ -10,13 +10,7 @@ export abstract class RenderProxy<T = any> extends ProxyInstance {
     return this.object;
   }
 
-  constructor(
-    args: unknown[] = [],
-    tb: TripleBuffer,
-    id: number,
-    originThread: EProxyThread,
-    protected readonly renderer: RenderWorker
-  ) {
+  constructor(args: unknown[] = [], tb: TripleBuffer, id: number, originThread: EProxyThread, protected readonly renderer: RenderWorker) {
     super(args, tb, id, originThread);
   }
 }

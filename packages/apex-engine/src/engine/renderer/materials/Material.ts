@@ -104,9 +104,6 @@ export class Material extends THREE.Material implements IProxyOrigin {
   @PROP(serialize(string))
   declare name: string;
 
-  @PROP(serialize(boolean))
-  declare needsUpdate: boolean;
-
   @PROP(serialize(uint8))
   declare opacity: number;
 

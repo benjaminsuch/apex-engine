@@ -13,37 +13,137 @@ import { MaterialProxy } from './Material';
 export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardMaterial> {
   declare alphaHash: boolean;
 
+  declare alphaMap: TextureProxy | null;
+
   declare alphaTest: number;
 
   declare alphaToCoverage: boolean;
-
-  declare blendAlpha: number;
-
-  declare blendDst: THREE.BlendingDstFactor;
 
   declare aoMap: TextureProxy | null;
 
   declare aoMapIntensity: number;
 
+  declare blendAlpha: number;
+
+  declare blendDst: THREE.BlendingDstFactor;
+
+  declare blendDstAlpha: number | null;
+
+  declare blendEquation: THREE.BlendingEquation;
+
+  declare blendEquationAlpha: number | null;
+
+  declare blending: THREE.Blending;
+
+  declare blendSrc: THREE.BlendingSrcFactor | THREE.BlendingDstFactor;
+
+  declare blendSrcAlpha: number | null;
+
+  declare bumpMap: TextureProxy | null;
+
+  declare bumpScale: number;
+
+  declare clipIntersection: boolean;
+
+  declare clipShadows: boolean;
+
+  declare color: ColorProxy;
+
+  declare colorWrite: boolean;
+
+  declare depthFunc: THREE.DepthModes;
+
+  declare depthTest: boolean;
+
+  declare displacementMap: TextureProxy | null;
+
+  declare displacementBias: number;
+
+  declare displacementScale: number;
+
+  declare dithering: boolean;
+
+  declare emissive: ColorProxy;
+
+  declare emissiveIntensity: number;
+
+  declare emissiveMap: TextureProxy | null;
+
+  declare envMap: TextureProxy | null;
+
+  declare envMapIntensity: number;
+
+  declare flatShading: boolean;
+
+  declare fog: boolean;
+
+  declare forceSinglePass: boolean;
+
   declare lightMapIntensity: number;
 
   declare map: TextureProxy | null;
-
-  declare normalMap: TextureProxy | null;
-
-  declare roughness: number;
-
-  declare roughnessMap: TextureProxy | null;
 
   declare metalness: number;
 
   declare metalnessMap: TextureProxy | null;
 
-  declare emissiveIntensity: number;
+  declare normalMap: TextureProxy | null;
 
-  declare color: ColorProxy;
+  declare normalMapType: THREE.NormalMapTypes;
+
+  declare normalScale: THREE.Vector2;
+
+  declare opacity: number;
+
+  declare polygonOffset: boolean;
+
+  declare polygonOffsetFactor: number;
+
+  declare polygonOffsetUnits: number;
+
+  declare precision: 'highp' | 'mediump' | 'lowp' | null;
+
+  declare premultipliedAlpha: boolean;
+
+  declare roughness: number;
+
+  declare roughnessMap: TextureProxy | null;
 
   declare side: THREE.Side;
+
+  declare stencilWrite: boolean;
+
+  declare stencilFunc: THREE.StencilFunc;
+
+  declare stencilRef: number;
+
+  declare stencilWriteMask: number;
+
+  declare stencilFuncMask: number;
+
+  declare stencilFail: THREE.StencilOp;
+
+  declare stencilZFail: THREE.StencilOp;
+
+  declare stencilZPass: THREE.StencilOp;
+
+  declare shadowSide: THREE.Side | null;
+
+  declare toneMapped: boolean;
+
+  declare transparent: boolean;
+
+  declare vertexColors: boolean;
+
+  declare visible: boolean;
+
+  declare wireframe: boolean;
+
+  declare wireframeLinewidth: number;
+
+  declare wireframeLinecap: 'butt' | 'round' | 'square';
+
+  declare wireframeLinejoin: 'round' | 'bevel' | 'miter';
 
   protected override readonly object: THREE.MeshStandardMaterial;
 
@@ -56,6 +156,18 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
   public override tick(tick: IEngineLoopTickContext): void | Promise<void> {
     super.tick(tick);
 
+    this.object.alphaHash = this.alphaHash;
+    this.object.alphaTest = this.alphaTest;
+    this.object.alphaToCoverage = this.alphaToCoverage;
+
+    if (this.alphaMap) {
+      const texture = this.alphaMap.get();
+
+      if (this.object.alphaMap?.uuid !== texture.uuid) {
+        this.object.alphaMap = texture;
+      }
+    }
+
     if (this.aoMap) {
       const texture = this.aoMap.get();
 
@@ -64,11 +176,85 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
       }
     }
 
+    this.object.aoMapIntensity = this.aoMapIntensity;
+    this.object.blendAlpha = this.blendAlpha;
+    this.object.blendDst = this.blendDst;
+    this.object.blendDstAlpha = this.blendDstAlpha;
+    this.object.blendEquation = this.blendEquation;
+    this.object.blendEquationAlpha = this.blendEquationAlpha;
+    this.object.blending = this.blending;
+    this.object.blendSrc = this.blendSrc;
+    this.object.blendSrcAlpha = this.blendSrcAlpha;
+
+    if (this.bumpMap) {
+      const texture = this.bumpMap.get();
+
+      if (this.object.bumpMap?.uuid !== texture.uuid) {
+        this.object.bumpMap = texture;
+      }
+    }
+
+    this.object.bumpScale = this.bumpScale;
+    this.object.clipIntersection = this.clipIntersection;
+    this.object.clipShadows = this.clipShadows;
+
+    if (this.color) this.object.color.copy(this.color.get());
+
+    this.object.colorWrite = this.colorWrite;
+    this.object.depthFunc = this.depthFunc;
+    this.object.depthTest = this.depthTest;
+
+    if (this.displacementMap) {
+      const texture = this.displacementMap.get();
+
+      if (this.object.displacementMap?.uuid !== texture.uuid) {
+        this.object.displacementMap = texture;
+      }
+    }
+
+    this.object.displacementBias = this.displacementBias;
+    this.object.displacementScale = this.displacementScale;
+    this.object.dithering = this.dithering;
+
+    if (this.emissive) this.object.emissive.copy(this.emissive.get());
+
+    if (this.emissiveMap) {
+      const texture = this.emissiveMap.get();
+
+      if (this.object.emissiveMap?.uuid !== texture.uuid) {
+        this.object.emissiveMap = texture;
+      }
+    }
+
+    if (this.envMap) {
+      const texture = this.envMap.get();
+
+      if (this.object.envMap?.uuid !== texture.uuid) {
+        this.object.envMap = texture;
+      }
+    }
+
+    this.object.envMapIntensity = this.envMapIntensity;
+    this.object.flatShading = this.flatShading;
+    this.object.fog = this.fog;
+    this.object.forceSinglePass = this.forceSinglePass;
+    this.object.lightMapIntensity = this.lightMapIntensity;
+
     if (this.map) {
       const texture = this.map.get();
 
       if (this.object.map?.uuid !== texture.uuid) {
         this.object.map = texture;
+      }
+    }
+
+    this.object.metalness = this.metalness;
+
+    if (this.metalnessMap) {
+      const texture = this.metalnessMap.get();
+
+      if (this.object.metalnessMap?.uuid !== texture.uuid) {
+        this.object.metalnessMap = texture;
       }
     }
 
@@ -80,6 +266,16 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
       }
     }
 
+    this.object.normalMapType = this.normalMapType;
+    this.object.normalScale = this.normalScale;
+    this.object.opacity = this.opacity;
+    this.object.polygonOffset = this.polygonOffset;
+    this.object.polygonOffsetFactor = this.polygonOffsetFactor;
+    this.object.polygonOffsetUnits = this.polygonOffsetUnits;
+    this.object.precision = this.precision;
+    this.object.premultipliedAlpha = this.premultipliedAlpha;
+    this.object.roughness = this.roughness;
+
     if (this.roughnessMap) {
       const texture = this.roughnessMap.get();
 
@@ -88,13 +284,24 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
       }
     }
 
-    if (this.metalnessMap) {
-      const texture = this.metalnessMap.get();
-
-      if (this.object.metalnessMap?.uuid !== texture.uuid) {
-        this.object.metalnessMap = texture;
-      }
-    }
+    this.object.side = this.side;
+    this.object.stencilWrite = this.stencilWrite;
+    this.object.stencilFunc = this.stencilFunc;
+    this.object.stencilRef = this.stencilRef;
+    this.object.stencilWriteMask = this.stencilWriteMask;
+    this.object.stencilFuncMask = this.stencilFuncMask;
+    this.object.stencilFail = this.stencilFail;
+    this.object.stencilZFail = this.stencilZFail;
+    this.object.stencilZPass = this.stencilZPass;
+    this.object.shadowSide = this.shadowSide;
+    this.object.toneMapped = this.toneMapped;
+    this.object.transparent = this.transparent;
+    this.object.vertexColors = this.vertexColors;
+    this.object.visible = this.visible;
+    this.object.wireframe = this.wireframe;
+    this.object.wireframeLinewidth = this.wireframeLinewidth;
+    this.object.wireframeLinecap = this.wireframeLinecap;
+    this.object.wireframeLinejoin = this.wireframeLinejoin;
   }
 }
 
@@ -182,9 +389,6 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
 
   @PROP(serialize(string))
   declare name: string;
-
-  @PROP(serialize(boolean))
-  declare needsUpdate: boolean;
 
   @PROP(serialize(uint8))
   declare opacity: number;
