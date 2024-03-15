@@ -4,6 +4,7 @@ import { CLASS, PROP } from '../../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifiers/proxy';
 import { boolean, mat3, ref, serialize, string, uint8, uint16, uint32, vec2 } from '../../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../../EngineLoop';
 import { RenderProxy } from '../RenderProxy';
 import { type RenderWorker } from '../RenderWorker';
 import { Source, type SourceProxy } from './Source';
@@ -60,51 +61,31 @@ export class TextureProxy extends RenderProxy<THREE.Texture> {
   constructor([params]: [TextureProxyArgs], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super([], tb, id, thread, renderer);
 
-    const { uuid, name, mapping, channel, repeat: [repeatX, repeatY], offset: [offsetX, offsetY], center: [centerX, centerY], rotation, wrap: [wrapS, wrapT], format, internalFormat, type, colorSpace, minFilter, magFilter, anisotropy, flipY, generateMipmaps, premultiplyAlpha, unpackAlignment } = params;
+    const { uuid, name, mapping, rotation, wrap: [wrapS, wrapT], format, type, colorSpace, minFilter, magFilter, anisotropy } = params;
 
     this.object = new THREE.Texture(this.source.get().data, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, colorSpace);
 
     this.object.name = name;
     this.object.uuid = uuid;
 
-    this.object.channel = channel;
+    this.object.flipY = this.flipY;
     this.object.rotation = rotation;
-
-    this.object.repeat = new THREE.Vector2(repeatX, repeatY);
-    this.object.offset = new THREE.Vector2(offsetX, offsetY);
-    this.object.center = new THREE.Vector2(centerX, centerY);
-
-    this.object.flipY = flipY;
-
-    this.object.internalFormat = internalFormat;
-    this.object.generateMipmaps = generateMipmaps;
-    this.object.premultiplyAlpha = premultiplyAlpha;
-    this.object.unpackAlignment = unpackAlignment;
     this.object.needsUpdate = true;
   }
 }
 
 export interface TextureProxyArgs {
-  uuid: string;
-  name: string;
-  mapping: Texture['mapping'];
-  channel: number;
-  repeat: [number, number];
-  offset: [number, number];
-  center: [number, number];
-  rotation: number;
-  wrap: [Texture['wrapS'], Texture['wrapT']];
-  format: Texture['format'];
-  internalFormat: Texture['internalFormat'];
-  type: Texture['type'];
-  colorSpace: Texture['colorSpace'];
-  minFilter: Texture['minFilter'];
-  magFilter: Texture['magFilter'];
   anisotropy: number;
-  flipY: boolean;
-  generateMipmaps: boolean;
-  premultiplyAlpha: boolean;
-  unpackAlignment: number;
+  colorSpace: Texture['colorSpace'];
+  format: Texture['format'];
+  magFilter: Texture['magFilter'];
+  mapping: Texture['mapping'];
+  minFilter: Texture['minFilter'];
+  name: string;
+  rotation: number;
+  type: Texture['type'];
+  uuid: string;
+  wrap: [Texture['wrapS'], Texture['wrapT']];
 }
 
 @CLASS(proxy(EProxyThread.Render, TextureProxy))
@@ -204,26 +185,17 @@ export class Texture extends THREE.Texture implements IProxyOrigin {
   public getProxyArgs(): [TextureProxyArgs] {
     return [
       {
-        uuid: this.uuid,
-        name: this.name,
-        mapping: this.mapping,
-        channel: this.channel,
-        repeat: [this.repeat.x, this.repeat.y],
-        offset: [this.offset.x, this.offset.y],
-        center: [this.center.x, this.center.y],
-        rotation: this.rotation,
-        wrap: [this.wrapS, this.wrapT],
-        format: this.format,
-        internalFormat: this.internalFormat,
-        type: this.type,
-        colorSpace: this.colorSpace,
-        minFilter: this.minFilter,
-        magFilter: this.magFilter,
         anisotropy: this.anisotropy,
-        flipY: this.flipY,
-        generateMipmaps: this.generateMipmaps,
-        premultiplyAlpha: this.premultiplyAlpha,
-        unpackAlignment: this.unpackAlignment,
+        colorSpace: this.colorSpace,
+        format: this.format,
+        magFilter: this.magFilter,
+        mapping: this.mapping,
+        name: this.name,
+        minFilter: this.minFilter,
+        rotation: this.rotation,
+        type: this.type,
+        uuid: this.uuid,
+        wrap: [this.wrapS, this.wrapT],
       },
     ];
   }

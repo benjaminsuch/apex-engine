@@ -37,7 +37,13 @@ export abstract class ProxyInstance {
           accessors = {
             get(this): string {
               const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
-              return new TextDecoder().decode(tb.buffers[idx].slice(offset, offset + size));
+              const arr = new Uint8Array(new ArrayBuffer(size));
+
+              for (let i = 0; i < size; i++) {
+                arr[i] = views[idx].getUint8(offset + i);
+              }
+
+              return new TextDecoder().decode(arr).replace(/\u0000+$/, '');
             },
           };
         } else if (type === 'ref') {

@@ -234,6 +234,7 @@ export class GLTFLoader extends Loader {
 
         switch (extensionName) {
           case EXTENSIONS.KHR_MATERIALS_UNLIT:
+            // @ts-ignore
             this.extensions[extensionName] = new GLTFMaterialsUnlitExtension();
             break;
           case EXTENSIONS.KHR_DRACO_MESH_COMPRESSION:
@@ -749,6 +750,7 @@ export class GLTFParser {
     let materialType: typeof MeshBasicMaterial | typeof MeshStandardMaterial;
 
     if (extensions[EXTENSIONS.KHR_MATERIALS_UNLIT]) {
+      // @ts-ignore
       const kmuExtension = this.extensions[EXTENSIONS.KHR_MATERIALS_UNLIT] as GLTFMaterialsUnlitExtension;
       materialType = kmuExtension.getMaterialType();
       pending.push(kmuExtension.extendParams(materialParams, materialDef, this));
@@ -836,6 +838,8 @@ export class GLTFParser {
       if (materialDef.extensions) {
         // addUnknownExtensionsToUserData(extensions, material, materialDef);
       }
+
+      material.needsUpdate = true;
 
       return material;
     });
@@ -1300,6 +1304,7 @@ class GLTFBinaryExtension implements GLTFLoaderExtension {
 class GLTFMaterialsUnlitExtension implements GLTFLoaderExtension {
   public readonly name: string = EXTENSIONS.KHR_MATERIALS_UNLIT;
 
+  // @ts-ignore
   public getMaterialType(): typeof MeshBasicMaterial {
     return MeshBasicMaterial;
   }

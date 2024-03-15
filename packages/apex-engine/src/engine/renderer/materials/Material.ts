@@ -10,55 +10,21 @@ import { type RenderWorker } from '../RenderWorker';
 export class MaterialProxy<T extends THREE.Material = THREE.Material> extends RenderProxy<T> {
   protected readonly object: T;
 
-  constructor(
-    args: never[],
-    tb: TripleBuffer,
-    id: number,
-    thread: EProxyThread,
-    renderer: RenderWorker
-  ) {
-    super(args, tb, id, thread, renderer);
+  constructor([params]: [MaterialProxyArgs], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
+    super([], tb, id, thread, renderer);
+
+    const { name, uuid } = params;
 
     this.object = new THREE.Material() as T;
+
+    this.object.name = name;
+    this.object.uuid = uuid;
   }
 }
 
 export interface MaterialProxyArgs {
-  alphaHash: boolean;
-  alphaTest: number;
-  alphaToCoverage: boolean;
-  blendAlpha: number;
-  blendDst: Material['blendDst'];
-  blendDstAlpha: Material['blendDstAlpha'];
-  blendEquation: Material['blendEquation'];
-  blendEquationAlpha: Material['blendEquationAlpha'];
-  blending: Material['blending'];
-  blendSrc: Material['blendSrc'];
-  colorWrite: boolean;
-  depthFunc: Material['depthFunc'];
-  depthTest: boolean;
-  dithering: boolean;
-  forceSinglePass: boolean;
   name: string;
-  opacity: number;
-  polygonOffset: boolean;
-  polygonOffsetFactor: number;
-  polygonOffsetUnits: number;
-  premultipliedAlpha: boolean;
-  shadowSide: Material['shadowSide'];
-  side: Material['side'];
-  stencilFunc: Material['stencilFunc'];
-  stencilRef: number;
-  stencilWrite: boolean;
-  stencilWriteMask: number;
-  stencilFuncMask: number;
-  stencilFail: Material['stencilFail'];
-  stencilZFail: Material['stencilZFail'];
-  stencilZPass: Material['stencilZPass'];
-  toneMapped: boolean;
-  transparent: boolean;
   uuid: string;
-  vertexColors: boolean;
 }
 
 @CLASS(proxy(EProxyThread.Render, MaterialProxy))
@@ -121,7 +87,7 @@ export class Material extends THREE.Material implements IProxyOrigin {
   @PROP(serialize(boolean))
   declare forceSinglePass: boolean;
 
-  @PROP(serialize(string))
+  @PROP(serialize(string, 50))
   declare name: string;
 
   @PROP(serialize(uint8))
@@ -136,7 +102,7 @@ export class Material extends THREE.Material implements IProxyOrigin {
   @PROP(serialize(uint32))
   declare polygonOffsetUnits: number;
 
-  @PROP(serialize(string))
+  @PROP(serialize(string, 7))
   declare precision: 'highp' | 'mediump' | 'lowp' | null;
 
   @PROP(serialize(boolean))
@@ -178,6 +144,9 @@ export class Material extends THREE.Material implements IProxyOrigin {
   @PROP(serialize(boolean))
   declare transparent: boolean;
 
+  @PROP(serialize(uint32))
+  declare version: number;
+
   @PROP(serialize(boolean))
   declare vertexColors: boolean;
 
@@ -187,44 +156,6 @@ export class Material extends THREE.Material implements IProxyOrigin {
   public tick(): void {}
 
   public getProxyArgs(): [MaterialProxyArgs] {
-    return [
-      {
-        alphaHash: this.alphaHash,
-        alphaTest: this.alphaTest,
-        alphaToCoverage: this.alphaToCoverage,
-        blendAlpha: this.blendAlpha,
-        blendDst: this.blendDst,
-        blendDstAlpha: this.blendDstAlpha,
-        blendEquation: this.blendEquation,
-        blendEquationAlpha: this.blendEquationAlpha,
-        blending: this.blending,
-        blendSrc: this.blendSrc,
-        colorWrite: this.colorWrite,
-        depthFunc: this.depthFunc,
-        depthTest: this.depthTest,
-        dithering: this.dithering,
-        forceSinglePass: this.forceSinglePass,
-        name: this.name,
-        opacity: this.opacity,
-        polygonOffset: this.polygonOffset,
-        polygonOffsetFactor: this.polygonOffsetFactor,
-        polygonOffsetUnits: this.polygonOffsetUnits,
-        premultipliedAlpha: this.premultipliedAlpha,
-        shadowSide: this.shadowSide,
-        side: this.side,
-        stencilFunc: this.stencilFunc,
-        stencilRef: this.stencilRef,
-        stencilWrite: this.stencilWrite,
-        stencilWriteMask: this.stencilWriteMask,
-        stencilFuncMask: this.stencilFuncMask,
-        stencilFail: this.stencilFail,
-        stencilZFail: this.stencilZFail,
-        stencilZPass: this.stencilZPass,
-        toneMapped: this.toneMapped,
-        transparent: this.transparent,
-        uuid: this.uuid,
-        vertexColors: this.vertexColors,
-      },
-    ];
+    return [{ name: this.name, uuid: this.uuid }];
   }
 }

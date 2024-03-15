@@ -46,7 +46,7 @@ export class Color extends THREE.Color implements IProxyOrigin {
 
   public tick(): void {}
 
-  public getProxyArgs(): [number, number, number] {
-    return [this.r, this.g, this.b];
+  public getProxyArgs(): [number] {
+    return [this.getHex()];
   }
 }
