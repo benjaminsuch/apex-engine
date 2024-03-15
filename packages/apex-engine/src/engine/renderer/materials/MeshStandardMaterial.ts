@@ -8,7 +8,7 @@ import { type IEngineLoopTickContext } from '../../EngineLoop';
 import { Color, type ColorProxy } from '../Color';
 import { type RenderWorker } from '../RenderWorker';
 import { type Texture, type TextureProxy } from '../textures/Texture';
-import { MaterialProxy } from './Material';
+import { MaterialProxy, type MaterialProxyArgs } from './Material';
 
 export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardMaterial> {
   declare alphaHash: boolean;
@@ -309,6 +309,28 @@ export interface MeshStandardMaterialParameters extends Omit<THREE.MeshStandardM
   color?: Color;
 }
 
+export interface MeshStandardMaterialProxyArgs extends MaterialProxyArgs {
+  aoMapIntensity: number;
+  bumpScale: number;
+  color: number;
+  displacementBias: number;
+  displacementScale: number;
+  emissive: number;
+  emissiveIntensity: number;
+  envMapIntensity: number;
+  flatShading: boolean;
+  fog: boolean;
+  lightMapIntensity: number;
+  metalness: number;
+  normalMapType: MeshStandardMaterial['normalMapType'];
+  normalScale: number;
+  roughness: number;
+  wireframe: boolean;
+  wireframeLinewidth: number;
+  wireframeLinecap: MeshStandardMaterial['wireframeLinecap'];
+  wireframeLinejoin: MeshStandardMaterial['wireframeLinejoin'];
+}
+
 @CLASS(proxy(EProxyThread.Render, MeshStandardMaterialProxy))
 export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements IProxyOrigin {
   declare readonly byteView: Uint8Array;
@@ -318,11 +340,20 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
   @PROP(serialize(boolean))
   declare alphaHash: boolean;
 
+  @PROP(serialize(ref))
+  declare alphaMap: Texture | null;
+
   @PROP(serialize(uint8))
   declare alphaTest: number;
 
   @PROP(serialize(boolean))
   declare alphaToCoverage: boolean;
+
+  @PROP(serialize(ref))
+  declare aoMap: Texture | null;
+
+  @PROP(serialize(float32))
+  declare aoMapIntensity: number;
 
   @PROP(serialize(uint8))
   declare blendAlpha: number;
@@ -348,11 +379,20 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
   @PROP(serialize(uint8))
   declare blendSrcAlpha: number | null;
 
+  @PROP(serialize(ref))
+  declare bumpMap: Texture | null;
+
+  @PROP(serialize(uint8))
+  declare bumpScale: number;
+
   @PROP(serialize(boolean))
   declare clipIntersection: boolean;
 
   @PROP(serialize(boolean))
   declare clipShadows: boolean;
+
+  @PROP(serialize(ref(true)))
+  declare color: Color;
 
   @PROP(serialize(boolean))
   declare colorWrite: boolean;
@@ -362,6 +402,99 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
 
   @PROP(serialize(boolean))
   declare depthTest: boolean;
+
+  @PROP(serialize(ref))
+  declare displacementMap: Texture | null;
+
+  @PROP(serialize(uint8))
+  declare displacementScale: number;
+
+  @PROP(serialize(uint32))
+  declare displacementBias: number;
+
+  @PROP(serialize(boolean))
+  declare dithering: boolean;
+
+  @PROP(serialize(boolean))
+  declare flatShading: boolean;
+
+  @PROP(serialize(boolean))
+  declare fog: boolean;
+
+  @PROP(serialize(ref(true)))
+  declare emissive: Color;
+
+  @PROP(serialize(uint8))
+  declare emissiveIntensity: number;
+
+  @PROP(serialize(ref))
+  declare emissiveMap: Texture | null;
+
+  @PROP(serialize(ref))
+  declare envMap: Texture | null;
+
+  @PROP(serialize(uint8))
+  declare envMapIntensity: number;
+
+  @PROP(serialize(boolean))
+  declare forceSinglePass: boolean;
+
+  @PROP(serialize(ref))
+  declare lightMap: Texture | null;
+
+  @PROP(serialize(uint8))
+  declare lightMapIntensity: number;
+
+  @PROP(serialize(ref))
+  declare map: Texture | null;
+
+  @PROP(serialize(uint8))
+  declare metalness: number;
+
+  @PROP(serialize(ref))
+  declare metalnessMap: Texture | null;
+
+  @PROP(serialize(string))
+  declare name: string;
+
+  @PROP(serialize(ref))
+  declare normalMap: Texture | null;
+
+  @PROP(serialize(uint8))
+  declare normalMapType: THREE.NormalMapTypes;
+
+  @PROP(serialize(vec2))
+  declare normalScale: THREE.Vector2;
+
+  @PROP(serialize(uint8))
+  declare opacity: number;
+
+  @PROP(serialize(boolean))
+  declare polygonOffset: boolean;
+
+  @PROP(serialize(uint32))
+  declare polygonOffsetFactor: number;
+
+  @PROP(serialize(uint32))
+  declare polygonOffsetUnits: number;
+
+  @PROP(serialize(string))
+  declare precision: 'highp' | 'mediump' | 'lowp' | null;
+
+  @PROP(serialize(boolean))
+  declare premultipliedAlpha: boolean;
+
+  @PROP(serialize(uint8))
+  declare roughness: number;
+
+  @PROP(serialize(ref))
+  declare roughnessMap: Texture | null;
+
+  @PROP(serialize(uint8))
+  declare side: THREE.Side;
+
+  @PROP(serialize(uint8))
+  declare shadowSide: THREE.Side | null;
 
   @PROP(serialize(boolean))
   declare stencilWrite: boolean;
@@ -387,39 +520,6 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
   @PROP(serialize(uint8))
   declare stencilZPass: THREE.StencilOp;
 
-  @PROP(serialize(string))
-  declare name: string;
-
-  @PROP(serialize(uint8))
-  declare opacity: number;
-
-  @PROP(serialize(boolean))
-  declare polygonOffset: boolean;
-
-  @PROP(serialize(uint32))
-  declare polygonOffsetFactor: number;
-
-  @PROP(serialize(uint32))
-  declare polygonOffsetUnits: number;
-
-  @PROP(serialize(string))
-  declare precision: 'highp' | 'mediump' | 'lowp' | null;
-
-  @PROP(serialize(boolean))
-  declare premultipliedAlpha: boolean;
-
-  @PROP(serialize(boolean))
-  declare forceSinglePass: boolean;
-
-  @PROP(serialize(boolean))
-  declare dithering: boolean;
-
-  @PROP(serialize(uint8))
-  declare side: THREE.Side;
-
-  @PROP(serialize(uint8))
-  declare shadowSide: THREE.Side | null;
-
   @PROP(serialize(boolean))
   declare toneMapped: boolean;
 
@@ -431,78 +531,6 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
 
   @PROP(serialize(boolean))
   declare visible: boolean;
-
-  @PROP(serialize(ref(true)))
-  declare color: Color;
-
-  @PROP(serialize(ref))
-  declare aoMap: Texture | null;
-
-  @PROP(serialize(float32))
-  declare aoMapIntensity: number;
-
-  @PROP(serialize(uint8))
-  declare roughness: number;
-
-  @PROP(serialize(uint8))
-  declare metalness: number;
-
-  @PROP(serialize(ref))
-  declare map: Texture | null;
-
-  @PROP(serialize(ref))
-  declare lightMap: Texture | null;
-
-  @PROP(serialize(uint8))
-  declare lightMapIntensity: number;
-
-  @PROP(serialize(ref(true)))
-  declare emissive: Color;
-
-  @PROP(serialize(uint8))
-  declare emissiveIntensity: number;
-
-  @PROP(serialize(ref))
-  declare emissiveMap: Texture | null;
-
-  @PROP(serialize(ref))
-  declare bumpMap: Texture | null;
-
-  @PROP(serialize(uint8))
-  declare bumpScale: number;
-
-  @PROP(serialize(ref))
-  declare normalMap: Texture | null;
-
-  @PROP(serialize(uint8))
-  declare normalMapType: THREE.NormalMapTypes;
-
-  @PROP(serialize(vec2))
-  declare normalScale: THREE.Vector2;
-
-  @PROP(serialize(ref))
-  declare displacementMap: Texture | null;
-
-  @PROP(serialize(uint8))
-  declare displacementScale: number;
-
-  @PROP(serialize(uint32))
-  declare displacementBias: number;
-
-  @PROP(serialize(ref))
-  declare roughnessMap: Texture | null;
-
-  @PROP(serialize(ref))
-  declare metalnessMap: Texture | null;
-
-  @PROP(serialize(ref))
-  declare alphaMap: Texture | null;
-
-  @PROP(serialize(ref))
-  declare envMap: Texture | null;
-
-  @PROP(serialize(uint8))
-  declare envMapIntensity: number;
 
   @PROP(serialize(boolean))
   declare wireframe: boolean;
@@ -516,12 +544,6 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
   @PROP(serialize(string, 5))
   declare wireframeLinejoin: 'round' | 'bevel' | 'miter';
 
-  @PROP(serialize(boolean))
-  declare flatShading: boolean;
-
-  @PROP(serialize(boolean))
-  declare fog: boolean;
-
   constructor(params?: MeshStandardMaterialParameters) {
     super(params);
 
@@ -534,10 +556,59 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
   public getProxyArgs(): [any] {
     return [
       {
-        side: this.side,
-        wireframe: this.wireframe,
-        roughness: this.roughness,
+        alphaHash: this.alphaHash,
+        alphaTest: this.alphaTest,
+        alphaToCoverage: this.alphaToCoverage,
+        aoMapIntensity: this.aoMapIntensity,
+        blendAlpha: this.blendAlpha,
+        blendDst: this.blendDst,
+        blendDstAlpha: this.blendDstAlpha,
+        blendEquation: this.blendEquation,
+        blendEquationAlpha: this.blendEquationAlpha,
+        blending: this.blending,
+        blendSrc: this.blendSrc,
+        bumpScale: this.bumpScale,
+        colorWrite: this.colorWrite,
+        depthFunc: this.depthFunc,
+        depthTest: this.depthTest,
+        displacementBias: this.displacementBias,
+        displacementScale: this.displacementScale,
+        dithering: this.dithering,
+        emissive: this.emissive,
+        emissiveIntensity: this.emissiveIntensity,
+        envMapIntensity: this.envMapIntensity,
+        flatShading: this.flatShading,
+        fog: this.fog,
+        forceSinglePass: this.forceSinglePass,
+        lightMapIntensity: this.lightMapIntensity,
         metalness: this.metalness,
+        name: this.name,
+        normalMapType: this.normalMapType,
+        normalScale: this.normalScale,
+        opacity: this.opacity,
+        polygonOffset: this.polygonOffset,
+        polygonOffsetFactor: this.polygonOffsetFactor,
+        polygonOffsetUnits: this.polygonOffsetUnits,
+        premultipliedAlpha: this.premultipliedAlpha,
+        shadowSide: this.shadowSide,
+        roughness: this.roughness,
+        side: this.side,
+        stencilFunc: this.stencilFunc,
+        stencilRef: this.stencilRef,
+        stencilWrite: this.stencilWrite,
+        stencilWriteMask: this.stencilWriteMask,
+        stencilFuncMask: this.stencilFuncMask,
+        stencilFail: this.stencilFail,
+        stencilZFail: this.stencilZFail,
+        stencilZPass: this.stencilZPass,
+        toneMapped: this.toneMapped,
+        transparent: this.transparent,
+        uuid: this.uuid,
+        vertexColors: this.vertexColors,
+        wireframe: this.wireframe,
+        wireframeLinewidth: this.wireframeLinewidth,
+        wireframeLinecap: this.wireframeLinecap,
+        wireframeLinejoin: this.wireframeLinejoin,
       },
     ];
   }

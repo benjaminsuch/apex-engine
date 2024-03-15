@@ -23,6 +23,44 @@ export class MaterialProxy<T extends THREE.Material = THREE.Material> extends Re
   }
 }
 
+export interface MaterialProxyArgs {
+  alphaHash: boolean;
+  alphaTest: number;
+  alphaToCoverage: boolean;
+  blendAlpha: number;
+  blendDst: Material['blendDst'];
+  blendDstAlpha: Material['blendDstAlpha'];
+  blendEquation: Material['blendEquation'];
+  blendEquationAlpha: Material['blendEquationAlpha'];
+  blending: Material['blending'];
+  blendSrc: Material['blendSrc'];
+  colorWrite: boolean;
+  depthFunc: Material['depthFunc'];
+  depthTest: boolean;
+  dithering: boolean;
+  forceSinglePass: boolean;
+  name: string;
+  opacity: number;
+  polygonOffset: boolean;
+  polygonOffsetFactor: number;
+  polygonOffsetUnits: number;
+  premultipliedAlpha: boolean;
+  shadowSide: Material['shadowSide'];
+  side: Material['side'];
+  stencilFunc: Material['stencilFunc'];
+  stencilRef: number;
+  stencilWrite: boolean;
+  stencilWriteMask: number;
+  stencilFuncMask: number;
+  stencilFail: Material['stencilFail'];
+  stencilZFail: Material['stencilZFail'];
+  stencilZPass: Material['stencilZPass'];
+  toneMapped: boolean;
+  transparent: boolean;
+  uuid: string;
+  vertexColors: boolean;
+}
+
 @CLASS(proxy(EProxyThread.Render, MaterialProxy))
 export class Material extends THREE.Material implements IProxyOrigin {
   declare readonly byteView: Uint8Array;
@@ -78,28 +116,10 @@ export class Material extends THREE.Material implements IProxyOrigin {
   declare depthTest: boolean;
 
   @PROP(serialize(boolean))
-  declare stencilWrite: boolean;
+  declare dithering: boolean;
 
-  @PROP(serialize(uint8))
-  declare stencilFunc: THREE.StencilFunc;
-
-  @PROP(serialize(uint32))
-  declare stencilRef: number;
-
-  @PROP(serialize(uint32))
-  declare stencilWriteMask: number;
-
-  @PROP(serialize(uint32))
-  declare stencilFuncMask: number;
-
-  @PROP(serialize(uint8))
-  declare stencilFail: THREE.StencilOp;
-
-  @PROP(serialize(uint8))
-  declare stencilZFail: THREE.StencilOp;
-
-  @PROP(serialize(uint8))
-  declare stencilZPass: THREE.StencilOp;
+  @PROP(serialize(boolean))
+  declare forceSinglePass: boolean;
 
   @PROP(serialize(string))
   declare name: string;
@@ -122,17 +142,35 @@ export class Material extends THREE.Material implements IProxyOrigin {
   @PROP(serialize(boolean))
   declare premultipliedAlpha: boolean;
 
-  @PROP(serialize(boolean))
-  declare forceSinglePass: boolean;
-
-  @PROP(serialize(boolean))
-  declare dithering: boolean;
+  @PROP(serialize(uint8))
+  declare shadowSide: THREE.Side | null;
 
   @PROP(serialize(uint8))
   declare side: THREE.Side;
 
   @PROP(serialize(uint8))
-  declare shadowSide: THREE.Side | null;
+  declare stencilFunc: THREE.StencilFunc;
+
+  @PROP(serialize(uint32))
+  declare stencilRef: number;
+
+  @PROP(serialize(boolean))
+  declare stencilWrite: boolean;
+
+  @PROP(serialize(uint32))
+  declare stencilWriteMask: number;
+
+  @PROP(serialize(uint32))
+  declare stencilFuncMask: number;
+
+  @PROP(serialize(uint8))
+  declare stencilFail: THREE.StencilOp;
+
+  @PROP(serialize(uint8))
+  declare stencilZFail: THREE.StencilOp;
+
+  @PROP(serialize(uint8))
+  declare stencilZPass: THREE.StencilOp;
 
   @PROP(serialize(boolean))
   declare toneMapped: boolean;
@@ -148,7 +186,45 @@ export class Material extends THREE.Material implements IProxyOrigin {
 
   public tick(): void {}
 
-  public getProxyArgs(): any[] {
-    return [];
+  public getProxyArgs(): [MaterialProxyArgs] {
+    return [
+      {
+        alphaHash: this.alphaHash,
+        alphaTest: this.alphaTest,
+        alphaToCoverage: this.alphaToCoverage,
+        blendAlpha: this.blendAlpha,
+        blendDst: this.blendDst,
+        blendDstAlpha: this.blendDstAlpha,
+        blendEquation: this.blendEquation,
+        blendEquationAlpha: this.blendEquationAlpha,
+        blending: this.blending,
+        blendSrc: this.blendSrc,
+        colorWrite: this.colorWrite,
+        depthFunc: this.depthFunc,
+        depthTest: this.depthTest,
+        dithering: this.dithering,
+        forceSinglePass: this.forceSinglePass,
+        name: this.name,
+        opacity: this.opacity,
+        polygonOffset: this.polygonOffset,
+        polygonOffsetFactor: this.polygonOffsetFactor,
+        polygonOffsetUnits: this.polygonOffsetUnits,
+        premultipliedAlpha: this.premultipliedAlpha,
+        shadowSide: this.shadowSide,
+        side: this.side,
+        stencilFunc: this.stencilFunc,
+        stencilRef: this.stencilRef,
+        stencilWrite: this.stencilWrite,
+        stencilWriteMask: this.stencilWriteMask,
+        stencilFuncMask: this.stencilFuncMask,
+        stencilFail: this.stencilFail,
+        stencilZFail: this.stencilZFail,
+        stencilZPass: this.stencilZPass,
+        toneMapped: this.toneMapped,
+        transparent: this.transparent,
+        uuid: this.uuid,
+        vertexColors: this.vertexColors,
+      },
+    ];
   }
 }
