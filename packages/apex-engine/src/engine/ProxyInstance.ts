@@ -34,6 +34,12 @@ export abstract class ProxyInstance {
         let accessors: { get: (this: ProxyInstance) => any } | undefined;
 
         if (type === 'string') {
+          accessors = {
+            get(this): string {
+              const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
+              return new TextDecoder().decode(tb.buffers[idx].slice(offset, offset + size));
+            },
+          };
         } else if (type === 'ref') {
           accessors = {
             get(this): ProxyInstance | void {
@@ -58,13 +64,11 @@ export abstract class ProxyInstance {
                 const arr: number[] = [];
 
                 for (let i = 0; i < size / arrayType.BYTES_PER_ELEMENT; ++i) {
-                  // @ts-ignore
                   arr.push(views[idx][getter](offset + i * arrayType.BYTES_PER_ELEMENT, true));
                 }
 
                 return arr;
               } else {
-                // @ts-ignore
                 return views[idx][getter](offset, true);
               }
             },

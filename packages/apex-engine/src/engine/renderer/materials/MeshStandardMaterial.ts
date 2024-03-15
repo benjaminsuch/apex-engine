@@ -47,13 +47,7 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
 
   protected override readonly object: THREE.MeshStandardMaterial;
 
-  constructor(
-    [params]: [any],
-    tb: TripleBuffer,
-    id: number,
-    thread: EProxyThread,
-    renderer: RenderWorker
-  ) {
+  constructor([params]: [any], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super([], tb, id, thread, renderer);
 
     this.object = new THREE.MeshStandardMaterial({ color: this.color.get(), ...params });
@@ -65,51 +59,41 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
     if (this.aoMap) {
       const texture = this.aoMap.get();
 
-      if (this.object.aoMap !== texture) {
+      if (this.object.aoMap?.uuid !== texture.uuid) {
         this.object.aoMap = texture;
       }
-
-      this.object.needsUpdate = true;
     }
 
     if (this.map) {
       const texture = this.map.get();
 
-      if (this.object.map !== texture) {
+      if (this.object.map?.uuid !== texture.uuid) {
         this.object.map = texture;
       }
-
-      this.object.needsUpdate = true;
     }
 
     if (this.normalMap) {
       const texture = this.normalMap.get();
 
-      if (this.object.normalMap !== texture) {
+      if (this.object.normalMap?.uuid !== texture.uuid) {
         this.object.normalMap = texture;
       }
-
-      this.object.needsUpdate = true;
     }
 
     if (this.roughnessMap) {
       const texture = this.roughnessMap.get();
 
-      if (this.object.roughnessMap !== texture) {
+      if (this.object.roughnessMap?.uuid !== texture.uuid) {
         this.object.roughnessMap = texture;
       }
-
-      this.object.needsUpdate = true;
     }
 
     if (this.metalnessMap) {
       const texture = this.metalnessMap.get();
 
-      if (this.object.metalnessMap !== texture) {
+      if (this.object.metalnessMap?.uuid !== texture.uuid) {
         this.object.metalnessMap = texture;
       }
-
-      this.object.needsUpdate = true;
     }
   }
 }
