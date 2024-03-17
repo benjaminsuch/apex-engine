@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { CLASS, PROP } from '../../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifiers/proxy';
-import { boolean, serialize, string } from '../../core/class/specifiers/serialize';
+import { boolean, serialize } from '../../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../../EngineLoop';
 import { RenderProxy } from '../RenderProxy';
@@ -10,8 +10,6 @@ import { type RenderWorker } from '../RenderWorker';
 
 export class BufferGeometryProxy extends RenderProxy<THREE.BufferGeometry> {
   declare morphTargetsRelative: boolean;
-
-  declare name: BufferGeometry['name'];
 
   protected readonly object: THREE.BufferGeometry;
 
@@ -70,7 +68,7 @@ export class BufferGeometry<Attributes extends THREE.NormalOrGLBufferAttributes 
 
   public tick(): void {}
 
-  public getProxyArgs(): [BufferGeometryProxyArgs] {
+  public getProxyArgs(): [any] {
     return [
       {
         ...(this.toJSON() as any).data,
