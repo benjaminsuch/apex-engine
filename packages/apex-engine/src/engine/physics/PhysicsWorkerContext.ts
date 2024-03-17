@@ -115,7 +115,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
         [],
         new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
         id,
-        EProxyThread.Game
+        EProxyThread.Physics
       );
     });
   }
@@ -136,7 +136,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
         [],
         new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
         id,
-        EProxyThread.Game
+        EProxyThread.Physics
       );
     });
   }
@@ -151,7 +151,7 @@ export class PhysicsWorkerContext implements IPhysicsWorkerContext {
       [],
       new TripleBuffer(tb.flags, tb.byteLength, tb.buffers),
       id,
-      EProxyThread.Game
+      EProxyThread.Physics
     );
   }
 

@@ -139,6 +139,6 @@ export class PhysicsWorker {
 
     this.tickManager.endTick();
 
-    // this.renderPort.postMessage({ type: 'physics-debug-buffers', ...this.world.debugRender() });
+    this.renderPort.postMessage({ type: 'physics-debug-buffers', ...this.world.debugRender() });
   }
 }

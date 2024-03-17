@@ -457,11 +457,11 @@ export function filterArgs(args: unknown[]): any[] {
     val => typeof val === 'object'
       ? Array.isArray(val)
         ? filterArgs(val)
-        // : val && typeof (val as any)['toJSON'] === 'function'
-        //   ? (val as any).toJSON()
-        : Object.hasObjectConstructor(val)
-          ? filterArgs(Object.values(val)).length
-          : false
+        : val && typeof (val as any)['toJSON'] === 'function'
+          ? (val as any).toJSON()
+          : Object.hasObjectConstructor(val)
+            ? filterArgs(Object.values(val)).length
+            : false
       : typeof val === 'boolean' || typeof val === 'number' || typeof val === 'string'
   ).map(val => typeof val === 'object' && typeof (val as any)['toJSON'] === 'function' ? (val as any).toJSON() : val);
 }

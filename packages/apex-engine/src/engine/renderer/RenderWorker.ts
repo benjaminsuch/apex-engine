@@ -160,7 +160,13 @@ export class RenderWorker {
           const descriptor = proxy.target[task.name as keyof typeof proxy];
 
           if (typeof descriptor === 'function') {
-            (descriptor as Function).apply(proxy.target, task.params);
+            const result = (descriptor as Function).apply(proxy.target, task.params);
+
+            // In case `result` returns `false`, that means the task was unsuccessful and should re-run
+            // in the next tick. Tasks that failed and should not re-run throw an exception.
+            if (!result) {
+              deferredTasks.push(task);
+            }
           }
         } else {
           // If the proxy does not exist (it could be created at a later point), we push it back

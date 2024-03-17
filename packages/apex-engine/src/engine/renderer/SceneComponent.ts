@@ -48,30 +48,27 @@ export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderPr
 
   protected readonly object: T;
 
-  constructor(
-    args: unknown[] = [],
-    tb: TripleBuffer,
-    id: number,
-    thread: EProxyThread,
-    renderer: RenderWorker
-  ) {
+  constructor(args: unknown[] = [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super(args, tb, id, thread, renderer);
 
     this.object = new Object3D() as T;
   }
 
-  public setParent(id: ProxyInstance['id']): void {
+  public setParent(id: ProxyInstance['id']): boolean {
     const parent = this.renderer.proxyManager.getProxy<SceneComponentProxy>(id, EProxyThread.Game);
 
-    if (parent) {
-      parent.target.object.add(this.object);
-    } else {
-      console.warn(`Couldnt find parent ("${id}") for proxy "${this.id}".`);
+    if (!parent) {
+      console.warn(`Couldnt find parent "${id}" for proxy "${this.id}".`);
+      return false;
     }
+
+    parent.target.object.add(this.object);
+
+    return true;
   }
 
-  public override tick(tick: IEngineLoopTickContext): void {
-    super.tick(tick);
+  public override tick(context: IEngineLoopTickContext): void {
+    super.tick(context);
 
     this.object.castShadow = this.castShadow;
     this.object.receiveShadow = this.receiveShadow;
