@@ -9,12 +9,7 @@ export abstract class ProxyInstance {
 
   public readonly isProxy: boolean = true;
 
-  constructor(
-    args: unknown[] = [],
-    tb: TripleBuffer,
-    public readonly id: number,
-    public readonly originThread: EProxyThread
-  ) {
+  constructor(args: unknown[] = [], tb: TripleBuffer, public readonly id: number, public readonly originThread: EProxyThread) {
     const originClass = Reflect.getMetadata('proxy:origin', this.constructor);
     const schema = getClassSchema(originClass);
 

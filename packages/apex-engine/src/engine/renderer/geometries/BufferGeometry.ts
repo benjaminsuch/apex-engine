@@ -4,35 +4,57 @@ import { CLASS, PROP } from '../../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifiers/proxy';
 import { boolean, serialize, string } from '../../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../../EngineLoop';
 import { RenderProxy } from '../RenderProxy';
 import { type RenderWorker } from '../RenderWorker';
 
 export class BufferGeometryProxy extends RenderProxy<THREE.BufferGeometry> {
+  declare morphTargetsRelative: boolean;
+
   declare name: BufferGeometry['name'];
 
   protected readonly object: THREE.BufferGeometry;
 
-  constructor(
-    [data]: [any],
-    tb: TripleBuffer,
-    id: number,
-    thread: EProxyThread,
-    renderer: RenderWorker
-  ) {
-    super([], tb, id, thread, renderer);
+  constructor([data]: [BufferGeometryProxyArgs], tb: TripleBuffer, id: number, originThread: EProxyThread, renderer: RenderWorker) {
+    super([], tb, id, originThread, renderer);
 
-    const { attributes, index, boundingSphere } = data;
+    const { attributes, index, boundingSphere, uuid, name } = data;
     const { position, normal, uv } = attributes;
 
     this.object = new THREE.BufferGeometry();
 
     this.object.setAttribute('position', createBufferAttribute(position));
-    this.object.setAttribute('normal', createBufferAttribute(normal));
-    this.object.setAttribute('uv', createBufferAttribute(uv));
-    this.object.setIndex(createBufferAttribute(index));
+    if (normal) this.object.setAttribute('normal', createBufferAttribute(normal));
+    if (uv) this.object.setAttribute('uv', createBufferAttribute(uv));
 
-    this.object.boundingSphere = new THREE.Sphere(boundingSphere.center, boundingSphere.radius);
+    this.object.setIndex(createBufferAttribute(index as THREE.IBufferAttributeJSON));
+
+    this.object.name = name;
+    this.object.uuid = uuid;
+    this.object.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(boundingSphere.center), boundingSphere.radius);
   }
+
+  public override tick(context: IEngineLoopTickContext): void | Promise<void> {
+    this.object.morphTargetsRelative = this.morphTargetsRelative;
+  }
+}
+
+export interface BufferGeometryProxyArgs {
+  attributes: {
+    position: THREE.IBufferAttributeJSON;
+    normal?: THREE.IBufferAttributeJSON;
+    uv?: THREE.IBufferAttributeJSON;
+  };
+  boundingSphere: {
+    center: [number, number, number];
+    radius: number;
+  };
+  index: {
+    array: number[];
+    type: string;
+  };
+  name: string;
+  uuid: string;
 }
 
 @CLASS(proxy(EProxyThread.Render, BufferGeometryProxy))
@@ -41,7 +63,6 @@ export class BufferGeometry<Attributes extends THREE.NormalOrGLBufferAttributes 
 
   declare readonly tripleBuffer: TripleBuffer;
 
-  @PROP(serialize(string))
   declare name: string;
 
   @PROP(serialize(boolean))
@@ -49,8 +70,14 @@ export class BufferGeometry<Attributes extends THREE.NormalOrGLBufferAttributes 
 
   public tick(): void {}
 
-  public getProxyArgs(): [any] {
-    return [(this.toJSON() as any).data];
+  public getProxyArgs(): [BufferGeometryProxyArgs] {
+    return [
+      {
+        ...(this.toJSON() as any).data,
+        name: this.name,
+        uuid: this.uuid,
+      },
+    ];
   }
 }
 

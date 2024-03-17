@@ -1,7 +1,6 @@
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type Actor } from './Actor';
-import { filterArgs } from './core/class/specifiers/proxy';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { ETickGroup, TickFunction } from './TickManager';
 

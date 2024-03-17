@@ -23,6 +23,8 @@ export class RenderWorker {
 
   private readonly info: RenderingInfo;
 
+  private readonly tasks: RenderWorkerTaskJSON[] = [];
+
   /**
    * Will be set during the `init` phase and will listen to incoming messages,
    * to update the physics debugging lines.
@@ -145,6 +147,30 @@ export class RenderWorker {
 
     TripleBuffer.swapReadBufferFlags(Flags.GAME_FLAGS);
 
+    const deferredTasks: RenderWorkerTaskJSON[] = [];
+
+    // todo: Convert to TickFunction
+    if (this.tasks.length > 0) {
+      let task: RenderWorkerTaskJSON | undefined;
+
+      while (task = this.tasks.shift()) {
+        const proxy = this.proxyManager.getProxy(task.target, EProxyThread.Game);
+
+        if (proxy) {
+          const descriptor = proxy.target[task.name as keyof typeof proxy];
+
+          if (typeof descriptor === 'function') {
+            (descriptor as Function).apply(proxy.target, task.params);
+          }
+        } else {
+          // If the proxy does not exist (it could be created at a later point), we push it back
+          deferredTasks.push(task);
+        }
+      }
+
+      this.tasks.push(...deferredTasks);
+    }
+
     this.tickManager.startTick(tickContext);
     await this.tickManager.runAllTicks();
     this.tickManager.endTick();
@@ -160,20 +186,6 @@ export class RenderWorker {
   }
 
   public receiveTasks(tasks: RenderWorkerTaskJSON[]): void {
-    if (tasks.length > 0) {
-      let task: RenderWorkerTaskJSON | undefined;
-
-      while (task = tasks.shift()) {
-        const proxy = this.proxyManager.getProxy(task.target, EProxyThread.Game);
-
-        if (proxy) {
-          const descriptor = proxy.target[task.name as keyof typeof proxy];
-
-          if (typeof descriptor === 'function') {
-            (descriptor as Function).apply(proxy.target, task.params);
-          }
-        }
-      }
-    }
+    this.tasks.push(...tasks);
   }
 }

@@ -706,7 +706,7 @@ export class GLTFParser {
           let onLoad = resolve;
 
           if ((loader as any).isImageBitmapLoader === true) {
-            onLoad = (imageBitmap: ImageBitmap): void => resolve(new Texture(imageBitmap));
+            onLoad = (imageBitmap: ImageBitmap): void => resolve(this.instantiationService.createInstance(Texture, imageBitmap));
           }
 
           loader.load(LoaderUtils.resolveURL(uri, this.options.path), onLoad, undefined, reject);
@@ -822,7 +822,7 @@ export class GLTFParser {
     }
 
     return Promise.all(pending).then(() => {
-      const material = new materialType(materialParams);
+      const material = this.instantiationService.createInstance(materialType, materialParams);
 
       if (materialDef.name) {
         material.name = materialDef.name;
@@ -892,7 +892,7 @@ export class GLTFParser {
 
   public async loadMesh(index: number): Promise<GLTFParserRegisterComponentCallback[]> {
     const meshDef = this.data.meshes[index];
-    const { primitives } = meshDef;
+    const { primitives, name = '' } = meshDef;
     const pending = [];
 
     for (let i = 0; i < primitives.length; i++) {
@@ -939,6 +939,8 @@ export class GLTFParser {
           if (primitive.extensions) {
           // addUnknownExtensionsToUserData(this.extensions, component, primitive);
           }
+
+          component.name = name;
 
           this.assignFinalMaterial(component);
 
