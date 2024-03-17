@@ -79,6 +79,8 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
 
   declare forceSinglePass: boolean;
 
+  declare lightMap: TextureProxy | null;
+
   declare lightMapIntensity: number;
 
   declare map: TextureProxy | null;
@@ -245,6 +247,15 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
     this.object.flatShading = this.flatShading;
     this.object.fog = this.fog;
     this.object.forceSinglePass = this.forceSinglePass;
+
+    if (this.lightMap) {
+      const texture = this.lightMap.get();
+
+      if (this.object.lightMap !== texture) {
+        this.object.lightMap = texture;
+      }
+    }
+
     this.object.lightMapIntensity = this.lightMapIntensity;
 
     if (this.map) {
@@ -528,6 +539,8 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
 
   @PROP(serialize(boolean))
   declare transparent: boolean;
+
+  declare userData: Record<string, any>;
 
   @PROP(serialize(uint32))
   declare version: number;

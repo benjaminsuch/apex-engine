@@ -1,4 +1,4 @@
-import { type Bone, type BufferGeometry, type Material, Matrix4, type Object3D, Skeleton as ThreeSkeleton, type SkinnedMesh } from 'three';
+import { Matrix4, type SkinnedMesh } from 'three';
 
 import { CLASS, getTargetId, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
@@ -6,7 +6,7 @@ import { mat4, ref, serialize } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { GameProxyManager } from '../GameProxyManager';
 import { type ProxyInstance } from '../ProxyInstance';
-import { createBufferAttribute, MeshComponent, MeshComponentProxy } from './MeshComponent';
+import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { type RenderWorker } from './RenderWorker';
 import { type SceneComponent } from './SceneComponent';
 import { Skeleton, type SkeletonProxy } from './Skeleton';
@@ -20,13 +20,7 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
 
   // public override sceneObject: SkinnedMesh;
 
-  constructor(
-    args: [],
-    tb: TripleBuffer,
-    id: number,
-    thread: EProxyThread,
-    renderer: RenderWorker
-  ) {
+  constructor(args: [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super([], tb, id, thread, renderer);
   }
 }

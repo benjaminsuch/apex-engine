@@ -25,10 +25,12 @@ export class BufferGeometryProxy extends RenderProxy<THREE.BufferGeometry> {
     const { position, normal, uv } = attributes;
 
     this.object = new THREE.BufferGeometry();
+
     this.object.setAttribute('position', createBufferAttribute(position));
     this.object.setAttribute('normal', createBufferAttribute(normal));
     this.object.setAttribute('uv', createBufferAttribute(uv));
     this.object.setIndex(createBufferAttribute(index));
+
     this.object.boundingSphere = new THREE.Sphere(boundingSphere.center, boundingSphere.radius);
   }
 }

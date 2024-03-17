@@ -144,6 +144,8 @@ export class Material extends THREE.Material implements IProxyOrigin {
   @PROP(serialize(boolean))
   declare transparent: boolean;
 
+  declare userData: Record<string, any>;
+
   @PROP(serialize(uint32))
   declare version: number;
 

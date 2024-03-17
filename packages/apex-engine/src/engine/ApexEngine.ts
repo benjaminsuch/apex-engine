@@ -93,7 +93,7 @@ export class ApexEngine {
 
       world.setCurrentLevel(level);
       const registerCallbacks = (await loader.loadAsync(`game/maps/${url}.glb`)) as Function[];
-      registerCallbacks.forEach(async register => register(level));
+      await Promise.all(registerCallbacks.map(async register => register(level)));
       await world.setGameMode(url);
 
       level.init();

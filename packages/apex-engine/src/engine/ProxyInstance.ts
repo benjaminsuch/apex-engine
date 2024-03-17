@@ -88,5 +88,5 @@ export abstract class ProxyInstance {
     }
   }
 
-  public tick(tick: IEngineLoopTickContext): Promise<void> | void {}
+  public tick(context: IEngineLoopTickContext): Promise<void> | void {}
 }

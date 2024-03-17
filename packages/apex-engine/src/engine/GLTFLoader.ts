@@ -234,7 +234,6 @@ export class GLTFLoader extends Loader {
 
         switch (extensionName) {
           case EXTENSIONS.KHR_MATERIALS_UNLIT:
-            // @ts-ignore
             this.extensions[extensionName] = new GLTFMaterialsUnlitExtension();
             break;
           case EXTENSIONS.KHR_DRACO_MESH_COMPRESSION:
@@ -833,7 +832,7 @@ export class GLTFParser {
       this.associations.set(material, { materials: index });
 
       if (materialDef.extensions) {
-        // addUnknownExtensionsToUserData(extensions, material, materialDef);
+        addUnknownExtensionsToUserData(extensions, material, materialDef);
       }
 
       material.needsUpdate = true;
@@ -1445,7 +1444,7 @@ function getImageURIMimeType(uri: string): string {
   return 'image/png';
 }
 
-function assignExtrasToUserData(object: Record<string, any>, { extras }: GLTFObject): void {
+function assignExtrasToUserData(object: InstanceType<TClass>, { extras }: GLTFObject): void {
   if (extras) {
     if (typeof extras === 'object') {
       Object.assign(object.userData, extras);
@@ -1687,6 +1686,17 @@ function updateMorphTargets(component: MeshComponent, { extras, weights = [] }: 
     // } else {
     //   console.warn('THREE.GLTFLoader: Invalid extras.targetNames length. Ignoring names.');
     // }
+  }
+}
+
+function addUnknownExtensionsToUserData(knownExtensions: Record<string, any>, object: InstanceType<TClass>, objectDef: GLTFObject): void {
+  for (const name in objectDef.extensions) {
+    if (knownExtensions[name]) {
+      object.userData.gltfExtensions = {
+        ...object.userData.gltfExtensions,
+        [name]: objectDef.extensions[name],
+      };
+    }
   }
 }
 
