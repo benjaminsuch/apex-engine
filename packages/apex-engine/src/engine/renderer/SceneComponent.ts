@@ -58,7 +58,7 @@ export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderPr
     const parent = this.renderer.proxyManager.getProxy<SceneComponentProxy>(id, EProxyThread.Game);
 
     if (!parent) {
-      console.warn(`Couldnt find parent "${id}" for proxy "${this.id}".`);
+      console.warn(`Parent (${id}) for proxy "${this.id}" not found. Trying again next tick.`);
       return false;
     }
 
