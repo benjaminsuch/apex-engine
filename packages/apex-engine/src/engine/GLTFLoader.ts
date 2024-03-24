@@ -1,8 +1,15 @@
-import { Box3, BufferAttribute, ClampToEdgeWrapping, DefaultLoadingManager, DoubleSide, FileLoader, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, Loader, LoaderUtils, type LoadingManager, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3 } from 'three';
+// The code below is based on:
+//
+// https://github.com/pmndrs/three-stdlib/blob/main/src/loaders/GLTFLoader.js
+//
+// and is licensed under the MIT license.
+
+import { Box3, BufferAttribute, ClampToEdgeWrapping, DoubleSide, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, Loader, LoaderUtils, type LoadingManager, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3 } from 'three';
 import { DRACOLoader, type GLTF, type KTX2Loader } from 'three-stdlib';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { Actor } from './Actor';
+import { FileLoader } from './FileLoader';
 import { type Level } from './Level';
 import { Color } from './renderer/Color';
 import { BufferGeometry } from './renderer/geometries/BufferGeometry';
@@ -190,9 +197,9 @@ export class GLTFLoader extends Loader {
       self.manager.itemEnd(url);
     }
 
-    const loader = new FileLoader(this.manager);
+    const loader = this.instantiationService.createInstance(FileLoader, this.manager);
+    loader.responseType = 'arraybuffer';
     loader.setPath(this.path);
-    loader.setResponseType('arraybuffer');
     loader.setRequestHeader(this.requestHeader);
     loader.setWithCredentials(this.withCredentials);
 
@@ -217,7 +224,7 @@ export class GLTFLoader extends Loader {
 
   public parse(data: string | ArrayBuffer, path: string, onLoad: GLTFParserOnLoadHandler, onError: GLTFParserOnErrorHandler): void {
     const json = this.readData(data);
-    console.log('GLTFLoader.parse', json);
+    // console.log('GLTFLoader.parse', json);
     const parser = this.instantiationService.createInstance(GLTFParser, json, {
       // extensions: this.extensions,
       path,
@@ -527,8 +534,8 @@ export class GLTFParser {
     this.textureLoader.setCrossOrigin(this.options.crossOrigin);
     this.textureLoader.setRequestHeader(this.options.requestHeader);
 
-    this.fileLoader = new FileLoader(this.options.manager);
-    this.fileLoader.setResponseType('arraybuffer');
+    this.fileLoader = this.instantiationService.createInstance(FileLoader, this.options.manager);
+    this.fileLoader.responseType = 'arraybuffer';
     this.fileLoader.setRequestHeader(this.options.requestHeader);
 
     if (this.options.crossOrigin === 'use-credentials') {
@@ -737,7 +744,7 @@ export class GLTFParser {
 
   public async loadMaterial(index: number): Promise<any> {
     const materialDef = this.data.materials[index];
-    console.log('materialDef', materialDef);
+    // console.log('materialDef', materialDef);
     const pending = [];
 
     const { extensions = {}, pbrMetallicRoughness = {} } = materialDef;
@@ -893,17 +900,26 @@ export class GLTFParser {
   public async loadMesh(index: number): Promise<GLTFParserRegisterComponentCallback[]> {
     const meshDef = this.data.meshes[index];
     const { primitives, name = '' } = meshDef;
+    const isBrowser = IS_NODE === false && IS_WORKER === false;
     const pending = [];
 
     for (let i = 0; i < primitives.length; i++) {
-      pending.push(primitives[i].material === undefined ? createDefaultMaterial(this.cache) : this.getDependency('material', primitives[i].material));
+      let material: Promise<Material | null>;
+
+      if (isBrowser) {
+        material = primitives[i].material === undefined ? Promise.resolve(createDefaultMaterial(this.cache)) : this.getDependency('material', primitives[i].material);
+      } else {
+        material = Promise.resolve(null);
+      }
+
+      pending.push(material);
     }
 
     pending.push(this.loadGeometries(primitives));
 
     return Promise.all(pending).then((results) => {
-      const materials = results.slice(0, results.length - 1);
-      const geometries = results[results.length - 1];
+      const materials = results.slice(0, results.length - 1) as Array<Material | null>;
+      const geometries = results[results.length - 1] as Array<BufferGeometry>;
       const meshRegisterCallbacks: GLTFParserRegisterComponentCallback[] = [];
 
       for (let i = 0; i < geometries.length; i++) {
@@ -942,7 +958,9 @@ export class GLTFParser {
 
           component.name = name;
 
-          this.assignFinalMaterial(component);
+          if (isBrowser) {
+            this.assignFinalMaterial(component);
+          }
 
           this.associations.set(component, {
             meshes: index,
@@ -989,11 +1007,7 @@ export class GLTFParser {
 
   private async loadNodeShallow(index: number): Promise<GLTFParserRegisterComponentCallback> {
     const { camera, extensions, matrix, mesh, name = '', rotation, scale, translation } = this.data.nodes[index];
-    const pending: Promise<GLTFParserRegisterComponentCallback[]>[] = [];
-
-    if (mesh !== undefined) {
-      pending.push(this.getDependency('mesh', mesh));
-    }
+    const pending: Promise<GLTFParserRegisterComponentCallback[]>[] = [mesh !== undefined ? this.getDependency('mesh', mesh) : Promise.resolve([])];
 
     if (camera !== undefined) {
       pending.push(this.getDependency('camera', camera));
@@ -1405,7 +1419,7 @@ class GLTFTextureTransformExtension implements GLTFLoaderExtension {
   public readonly name: string = EXTENSIONS.KHR_TEXTURE_TRANSFORM;
 
   public extendTexture(texture: Texture, transform: { [key: string]: any }): Texture {
-    console.log('GLTFTextureTransformExtension extendTexture', transform);
+    // console.log('GLTFTextureTransformExtension extendTexture', transform);
     if (
       (transform.texCoord === undefined || transform.texCoord === texture.channel)
       && transform.offset === undefined

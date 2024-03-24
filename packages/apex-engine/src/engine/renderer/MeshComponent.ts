@@ -35,14 +35,14 @@ export class MeshComponent extends SceneComponent {
   @PROP(serialize(ref(true)))
   public geometry: BufferGeometry;
 
-  @PROP(serialize(ref(true)))
-  public material: Material;
+  @PROP(serialize(ref))
+  public material: Material | null;
 
   public type: string = '';
 
   constructor(
-    geometry: BufferGeometry,
-    material: Material,
+    geometry: MeshComponent['geometry'],
+    material: MeshComponent['material'],
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger,
     @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext,

@@ -1,9 +1,9 @@
 import { createRequire } from 'node:module';
 import { basename, dirname, extname, isAbsolute, join, posix, sep } from 'node:path';
 
+import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
-import fs from 'fs-extra';
 import { type EmittedAsset, type InputPluginOption, type OutputChunk, rollup, type RollupBuild } from 'rollup';
 
 import { APEX_DIR, type TargetConfig } from '../config';
@@ -89,9 +89,10 @@ export function workerPlugin({
         bundle = await rollup({
           input: id,
           plugins: [
-            workerPlugin({ target }),
             replace(target),
+            workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
+            commonjs({ requireReturnsDefault: true }),
             typescript(),
           ],
           onwarn() {},

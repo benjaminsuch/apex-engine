@@ -20,8 +20,8 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
     Reflect.defineMetadata('schema', schema, constructor);
 
     if (IS_DEV) {
-      console.log('CLASS:', constructor.name);
-      console.log(Reflect.getOwnMetadata('schema', constructor));
+      // console.log('CLASS:', constructor.name);
+      // console.log(Reflect.getOwnMetadata('schema', constructor));
     }
 
     let byteLength = 0;

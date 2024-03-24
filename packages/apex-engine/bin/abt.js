@@ -12,13 +12,14 @@ import { builtinModules, createRequire } from 'node:module';
 import virtual from '@rollup/plugin-virtual';
 import html, { makeHtmlAttributes } from '@rollup/plugin-html';
 import replace from '@rollup/plugin-replace';
+import commonjs from '@rollup/plugin-commonjs';
 import { createServer } from 'node:http';
 import mime from 'mime';
 import { WebSocketServer } from 'ws';
 import { spawn } from 'node:child_process';
 
 var name = "apex-engine";
-var version = "0.16.1-0";
+var version = "0.18.2-0";
 var description = "A cross-platform game engine written in Typescript.";
 var author = "Benjamin Such";
 var keywords = [
@@ -85,6 +86,8 @@ var dependencies = {
 	"fast-glob": "^3.3.2",
 	"fs-extra": "^11.2.0",
 	mime: "^4.0.1",
+	"node-fetch": "^3.3.2",
+	redom: "^4.0.0",
 	"reflect-metadata": "^0.2.1",
 	rollup: "^4.9.1",
 	three: "^0.160.0",
@@ -315,7 +318,10 @@ function htmlPlugin(entryFile = './index.js', options, body = '') {
     });
 }
 
-function replacePlugin(target) {
+const DEFAULT_ENV_VARS = {
+    PHYSICS_DEBUG_BUFFER_ENABLED: false,
+};
+function replacePlugin({ env = DEFAULT_ENV_VARS, ...target }) {
     const DEFAULT_MAP = JSON.stringify(target.defaultMap);
     // @todo: I need a better solution for this. I don't want default values hardcoded in here.
     const DEFAULT_PAWN = JSON.stringify(target.defaultPawn ? posix.join('game', target.defaultPawn) : './DefaultPawn');
@@ -333,6 +339,7 @@ function replacePlugin(target) {
             IS_BROWSER: String(target.platform === 'browser'),
             IS_NODE: String(target.platform === 'node'),
             IS_WORKER: 'typeof window === \'undefined\'',
+            PHYSICS_DEBUG_BUFFER_ENABLED: String(env.PHYSICS_DEBUG_BUFFER_ENABLED),
         },
     });
 }
@@ -387,9 +394,10 @@ function workerPlugin({ inline, isBuild = false, target, format = 'esm', }) {
                 bundle = await rollup({
                     input: id,
                     plugins: [
-                        workerPlugin({ target }),
                         replacePlugin(target),
+                        workerPlugin({ target }),
                         nodeResolve({ preferBuiltins: true }),
+                        commonjs({ requireReturnsDefault: true }),
                         typescript(),
                     ],
                     onwarn() { },
@@ -640,6 +648,7 @@ async function serveBrowserTarget(target) {
             buildInfo(target, levels),
             workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
+            commonjs({ requireReturnsDefault: true }),
             typescript(),
             htmlPlugin('./index.js', {}, [
                 `<script type="module">`,
@@ -770,6 +779,7 @@ async function serveElectronTarget(target) {
             buildInfo(target, levels),
             workerPlugin({ target }),
             nodeResolve({ preferBuiltins: true }),
+            commonjs({ requireReturnsDefault: true }),
             typescript(),
             htmlPlugin('./sandbox.js', {
                 meta: [
@@ -840,6 +850,7 @@ async function serveNodeTarget(target) {
             buildInfo(target, levels),
             workerPlugin({ target, format: 'cjs' }),
             nodeResolve({ preferBuiltins: true }),
+            commonjs({ requireReturnsDefault: true }),
             typescript(),
         ],
         watch: {

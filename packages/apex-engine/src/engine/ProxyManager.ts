@@ -231,16 +231,16 @@ class ProxyManagerTickFunction extends TickFunction<ProxyManager> {
 export class ProxyDeployment {
   public tick: IEngineLoopTickContext['id'] = -1;
 
-  constructor(public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {
-    console.log('ProxyDeployment', origin, this.origin.getProxyArgs());
-  }
+  constructor(public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {}
 
   public toJSON(): IProxyConstructionData {
     const [image] = this.origin.getProxyArgs();
     const transferables: any[] = [];
 
-    if (image instanceof ImageBitmap) {
-      transferables.push(image);
+    if (IS_BROWSER) {
+      if (image instanceof ImageBitmap) {
+        transferables.push(image);
+      }
     }
 
     return {

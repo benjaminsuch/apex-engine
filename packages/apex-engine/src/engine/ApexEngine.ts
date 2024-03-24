@@ -58,7 +58,6 @@ export class ApexEngine {
     TripleBuffer.swapReadBufferFlags(Flags.PHYSICS_FLAGS);
 
     await this.getGameInstance().getWorld().tick(tick);
-    // this.renderContext.sendTransferables()
 
     TripleBuffer.swapWriteBufferFlags(Flags.PHYSICS_FLAGS);
     TripleBuffer.swapWriteBufferFlags(Flags.GAME_FLAGS);
@@ -97,7 +96,11 @@ export class ApexEngine {
       await world.setGameMode(url);
 
       level.init();
-      gameInstance.setupHUD();
+
+      if (IS_BROWSER) {
+        gameInstance.setupHUD();
+      }
+
       world.initActorsForPlay();
 
       if (IS_BROWSER) {

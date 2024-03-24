@@ -11,6 +11,7 @@ declare global {
   var IS_SERVER: boolean;
   var IS_NODE: boolean;
   var IS_WORKER: boolean;
+  var PHYSICS_DEBUG_BUFFER_ENABLED: boolean;
 
   type TClass<T = any> = { new (...args: any[]): T };
 

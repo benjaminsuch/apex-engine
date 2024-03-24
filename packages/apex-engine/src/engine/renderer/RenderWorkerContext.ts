@@ -1,5 +1,4 @@
 import * as Comlink from 'comlink';
-import { type Source } from 'three';
 
 import { type IInjectibleService, IInstantiationService, InstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -47,83 +46,108 @@ export class RenderWorkerContext implements IRenderWorkerContext {
     }
 
     return new Promise<void>((resolve, reject) => {
-      try {
+      if (IS_BROWSER) {
         // @todo: A temporary try/catch to prevent the engine from crashing in nodejs environment -> Remove
         this.canvas = document.getElementById('canvas') as HTMLCanvasElement | undefined;
-      } catch {
-        if (IS_NODE) {
-          return resolve();
-        }
-      }
 
-      let timeoutId = setTimeout(() => {
-        this.worker.removeEventListener('message', handleInitResponse);
-        reject(`Render-Worker initialization failed.`);
-      }, 30_000);
+        if (this.canvas) {
+          let timeoutId = setTimeout(() => {
+            this.worker.removeEventListener('message', handleInitResponse);
+            reject(`Render-Worker initialization failed.`);
+          }, 30_000);
 
-      const handleInitResponse = (event: MessageEvent): void => {
-        if (typeof event.data !== 'object') {
-          return;
-        }
+          const handleInitResponse = (event: MessageEvent): void => {
+            if (typeof event.data !== 'object') {
+              return;
+            }
 
-        const { type, data } = event.data;
+            const { type, data } = event.data;
 
-        if (type === 'init-response') {
-          const { flags, byteLength, buffers, byteViews } = data;
+            if (type === 'init-response') {
+              const { flags, byteLength, buffers, byteViews } = data;
 
-          this.isInitialized = true;
-          this.rendererInfo = this.instantiationService.createInstance(
-            RenderingInfo,
-            flags,
-            new TripleBuffer(flags, byteLength, buffers, byteViews)
+              this.isInitialized = true;
+              this.rendererInfo = this.instantiationService.createInstance(
+                RenderingInfo,
+                flags,
+                new TripleBuffer(flags, byteLength, buffers, byteViews)
+              );
+
+              clearTimeout(timeoutId);
+              this.worker.removeEventListener('message', handleInitResponse);
+              resolve();
+            }
+          };
+
+          this.worker.addEventListener('message', handleInitResponse);
+
+          this.logger.info('Initialize RenderWorker');
+
+          const offscreenCanvas = this.canvas.transferControlToOffscreen();
+
+          this.worker.postMessage(
+            {
+              type: 'init',
+              canvas: offscreenCanvas,
+              initialHeight: this.canvas.clientHeight,
+              initialWidth: this.canvas.clientWidth,
+              flags,
+              physicsPort,
+            },
+            [offscreenCanvas, physicsPort]
           );
 
-          clearTimeout(timeoutId);
-          this.worker.removeEventListener('message', handleInitResponse);
-          resolve();
+          window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
         }
-      };
+      } else if (IS_NODE) {
+        const timeoutId = setTimeout(() => {
+          this.worker.removeEventListener('message', handleInitResponse);
+          reject(`Render-Worker initialization failed.`);
+        }, 30_000);
 
-      this.worker.addEventListener('message', handleInitResponse);
+        const handleInitResponse = (event: Record<string, any>): void => {
+          if (event.data.type === 'init-response') {
+            const tb = new TripleBuffer();
 
-      if (this.canvas) {
-        this.logger.info('Initialize RenderWorker');
+            this.isInitialized = true;
+            this.rendererInfo = this.instantiationService.createInstance(RenderingInfo, tb.flags, tb);
 
-        const offscreenCanvas = this.canvas.transferControlToOffscreen();
+            this.worker.removeEventListener('message', handleInitResponse);
+            clearTimeout(timeoutId);
+            resolve();
+          }
+        };
 
-        this.worker.postMessage(
-          {
-            type: 'init',
-            canvas: offscreenCanvas,
-            initialHeight: this.canvas.clientHeight,
-            initialWidth: this.canvas.clientWidth,
-            flags,
-            physicsPort,
-          },
-          [offscreenCanvas, physicsPort]
-        );
-
-        window.addEventListener('resize', () => this.setSize(window.innerWidth, window.innerHeight));
+        this.worker.addEventListener('message', handleInitResponse);
+        this.worker.postMessage({ type: 'init', isNode: true });
       }
     });
   }
 
   public async createProxies(stack: IProxyConstructionData[]): Promise<void> {
-    const transferables = stack.reduce<any[]>((res, cur) => res.concat(cur.transferables), []);
-    const data = stack.map(({ transferables, ...rest }) => rest) as IProxyConstructionData[];
-    return this.comlink.createProxies(Comlink.transfer(data, transferables));
+    if (!IS_NODE) {
+      const transferables = stack.reduce<any[]>((res, cur) => res.concat(cur.transferables), []);
+      const data = stack.map(({ transferables, ...rest }) => rest) as IProxyConstructionData[];
+      return this.comlink.createProxies(Comlink.transfer(data, transferables));
+    }
   }
 
   public async start(): Promise<void> {
-    return this.comlink.start();
+    if (!IS_NODE) {
+      return this.comlink.start();
+    }
   }
 
   public async setSize(width: number, height: number): Promise<void> {
-    return this.comlink.setSize(width, height);
+    if (!IS_NODE) {
+      return this.comlink.setSize(width, height);
+    }
   }
 
   public async sendTasks(tasks: AnyRenderWorkerTask[]): Promise<void> {
-    return this.comlink.receiveTasks(tasks.map(task => task.toJSON()));
+    if (!IS_NODE) {
+      return this.comlink.receiveTasks(tasks.map(task => task.toJSON()));
+    }
   }
 }
 

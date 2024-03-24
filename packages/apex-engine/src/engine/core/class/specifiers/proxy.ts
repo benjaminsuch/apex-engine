@@ -157,7 +157,6 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
 
                 accessors = {
                   get(): number | Float64Array {
-                    console.log('float64 get:', dv.getFloat64(offset, true));
                     return isArray
                       ? Reflect.getOwnMetadata('value', this, key)
                       : dv.getFloat64(offset, true);

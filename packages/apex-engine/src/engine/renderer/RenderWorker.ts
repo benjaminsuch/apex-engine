@@ -15,6 +15,7 @@ interface RenderWorkerInitMessageData {
   flags: Uint8Array[];
   initialHeight: number;
   initialWidth: number;
+  isNode?: boolean;
   physicsPort: MessagePort;
 }
 
@@ -54,68 +55,70 @@ export class RenderWorker {
     this.scene = new Scene();
 
     this.info = this.instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
-    this.info.init();
   }
 
-  public init({ canvas, flags, initialHeight, initialWidth, physicsPort }: RenderWorkerInitMessageData): void {
+  public init({ canvas, flags, initialHeight, initialWidth, physicsPort, isNode }: RenderWorkerInitMessageData): void {
     if (this.isInitialized) {
       this.logger.error(this.constructor.name, `Already initialized`);
       return;
     }
 
-    Flags.GAME_FLAGS = flags[0];
-    Flags.RENDER_FLAGS = flags[1];
+    if (!isNode) {
+      Flags.GAME_FLAGS = flags[0];
+      Flags.RENDER_FLAGS = flags[1];
 
-    this.renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
-    this.renderer.toneMapping = ACESFilmicToneMapping;
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = PCFSoftShadowMap;
+      this.renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
+      this.renderer.toneMapping = ACESFilmicToneMapping;
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = PCFSoftShadowMap;
 
-    this.physicsPort = physicsPort;
+      this.physicsPort = physicsPort;
 
-    const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 1);
-    hemiLight.position.set(0, 20, 0);
+      const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 1);
+      hemiLight.position.set(0, 20, 0);
 
-    this.scene.add(hemiLight);
+      this.scene.add(hemiLight);
 
-    const dirLight = new DirectionalLight(0xffffff, 3);
-    dirLight.castShadow = false;
-    dirLight.position.set(5, 10, 25);
+      const dirLight = new DirectionalLight(0xffffff, 3);
+      dirLight.castShadow = false;
+      dirLight.position.set(5, 10, 25);
 
-    this.scene.add(dirLight);
+      this.scene.add(dirLight);
 
-    this.setSize(initialWidth, initialHeight);
+      this.setSize(initialWidth, initialHeight);
 
-    const lines = new LineSegments(
-      new BufferGeometry(),
-      new LineBasicMaterial({ color: 0xffffff, vertexColors: true })
-    );
-    lines.visible = true;
+      const lines = new LineSegments(
+        new BufferGeometry(),
+        new LineBasicMaterial({ color: 0xffffff, vertexColors: true })
+      );
+      lines.visible = true;
 
-    this.scene.add(lines);
+      this.scene.add(lines);
 
-    this.physicsPort.addEventListener('message', (event) => {
-      const { colors, vertices } = event.data;
-      const position = lines.geometry.getAttribute('position');
-      const color = lines.geometry.getAttribute('color');
+      this.physicsPort.addEventListener('message', (event) => {
+        const { colors, vertices } = event.data;
+        const position = lines.geometry.getAttribute('position');
+        const color = lines.geometry.getAttribute('color');
 
-      if (position instanceof BufferAttribute) {
-        position.copyArray(event.data.vertices);
-        position.needsUpdate = true;
-      }
-      if (!position) {
-        lines.geometry.setAttribute('position', new BufferAttribute(vertices, 3));
-      }
-      if (color instanceof BufferAttribute) {
-        color.copyArray(event.data.colors);
-        color.needsUpdate = true;
-      }
-      if (!color) {
-        lines.geometry.setAttribute('color', new BufferAttribute(colors, 4));
-      }
-    });
-    this.physicsPort.start();
+        if (position instanceof BufferAttribute) {
+          position.copyArray(event.data.vertices);
+          position.needsUpdate = true;
+        }
+        if (!position) {
+          lines.geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+        }
+        if (color instanceof BufferAttribute) {
+          color.copyArray(event.data.colors);
+          color.needsUpdate = true;
+        }
+        if (!color) {
+          lines.geometry.setAttribute('color', new BufferAttribute(colors, 4));
+        }
+      });
+      this.physicsPort.start();
+    }
 
+    this.info.init();
     this.isInitialized = true;
     console.log('RenderWorker', this);
   }
