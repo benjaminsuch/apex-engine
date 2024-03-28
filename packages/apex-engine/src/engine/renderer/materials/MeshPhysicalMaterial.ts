@@ -375,8 +375,6 @@ export class MeshPhysicalMaterial extends THREE.MeshPhysicalMaterial implements 
   @PROP(serialize(ref))
   declare metalnessMap: Texture | null;
 
-  declare name: string;
-
   @PROP(serialize(ref))
   declare normalMap: Texture | null;
 
@@ -484,8 +482,6 @@ export class MeshPhysicalMaterial extends THREE.MeshPhysicalMaterial implements 
 
   @PROP(serialize(boolean))
   declare transparent: boolean;
-
-  declare userData: Record<string, any>;
 
   @PROP(serialize(uint32))
   declare version: number;

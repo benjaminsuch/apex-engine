@@ -411,8 +411,6 @@ export class MeshBasicMaterial extends THREE.MeshBasicMaterial implements IProxy
   @PROP(serialize(boolean))
   declare transparent: boolean;
 
-  declare userData: Record<string, any>;
-
   @PROP(serialize(uint32))
   declare version: number;
 
