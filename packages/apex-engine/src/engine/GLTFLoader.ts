@@ -15,6 +15,7 @@ import { Color } from './renderer/Color';
 import { BufferGeometry } from './renderer/geometries/BufferGeometry';
 import { type Material } from './renderer/materials/Material';
 import { MeshBasicMaterial, type MeshBasicMaterialParameters } from './renderer/materials/MeshBasicMaterial';
+import { MeshPhysicalMaterial } from './renderer/materials/MeshPhysicalMaterial';
 import { MeshStandardMaterial, type MeshStandardMaterialParameters } from './renderer/materials/MeshStandardMaterial';
 import { MeshComponent } from './renderer/MeshComponent';
 import { SceneComponent } from './renderer/SceneComponent';
@@ -1734,8 +1735,7 @@ class GLTFMaterialsClearcoatExtension implements GLTFLoaderExtension {
       return null;
     }
 
-    // return MeshPhysicalMaterial;
-    return MeshBasicMaterial;
+    return MeshPhysicalMaterial;
   }
 
   public async extendMaterialParams(materialIndex: number, materialParams: Record<string, any>): Promise<any> {
@@ -2011,8 +2011,7 @@ class GLTFMaterialsSheenExtension implements GLTFLoaderExtension {
 
     if (!materialDef.extensions || !materialDef.extensions[this.name]) return null;
 
-    // return MeshPhysicalMaterial;
-    return MeshBasicMaterial;
+    return MeshPhysicalMaterial;
   }
 
   public async extendMaterialParams(materialIndex: number, materialParams: Record<string, any>): Promise<any> {
@@ -2066,8 +2065,7 @@ class GLTFMaterialsTransmissionExtension implements GLTFLoaderExtension {
 
     if (!materialDef.extensions || !materialDef.extensions[this.name]) return null;
 
-    // return MeshPhysicalMaterial;
-    return MeshBasicMaterial;
+    return MeshPhysicalMaterial;
   }
 
   public async extendMaterialParams(materialIndex: number, materialParams: Record<string, any>): Promise<any> {
@@ -2107,8 +2105,7 @@ class GLTFMaterialsVolumeExtension implements GLTFLoaderExtension {
 
     if (!materialDef.extensions || !materialDef.extensions[this.name]) return null;
 
-    // return MeshPhysicalMaterial;
-    return MeshBasicMaterial;
+    return MeshPhysicalMaterial;
   }
 
   public async extendMaterialParams(materialIndex: number, materialParams: Record<string, any>): Promise<any> {
@@ -2151,8 +2148,7 @@ class GLTFMaterialsIorExtension {
 
     if (!materialDef.extensions || !materialDef.extensions[this.name]) return null;
 
-    // return MeshPhysicalMaterial;
-    return MeshBasicMaterial;
+    return MeshPhysicalMaterial;
   }
 
   public async extendMaterialParams(materialIndex: number, materialParams: Record<string, any>): Promise<any> {
@@ -2185,8 +2181,7 @@ class GLTFMaterialsSpecularExtension implements GLTFLoaderExtension {
 
     if (!materialDef.extensions || !materialDef.extensions[this.name]) return null;
 
-    // return MeshPhysicalMaterial;
-    return MeshBasicMaterial;
+    return MeshPhysicalMaterial;
   }
 
   public async extendMaterialParams(materialIndex: number, materialParams: Record<string, any>): Promise<any> {
@@ -2233,8 +2228,7 @@ class GLTFMaterialsAnisotropyExtension implements GLTFLoaderExtension {
 
     if (!materialDef.extensions || !materialDef.extensions[this.name]) return null;
 
-    // return MeshPhysicalMaterial;
-    return MeshBasicMaterial;
+    return MeshPhysicalMaterial;
   }
 
   public async extendMaterialParams(materialIndex: number, materialParams: Record<string, any>): Promise<any> {
@@ -2305,8 +2299,7 @@ class GLTFMaterialsIridescenceExtension implements GLTFLoaderExtension {
 
     if (!materialDef.extensions || !materialDef.extensions[this.name]) return null;
 
-    // return MeshPhysicalMaterial;
-    return MeshBasicMaterial;
+    return MeshPhysicalMaterial;
   }
 
   public async extendMaterialParams(materialIndex: number, materialParams: Record<string, any>): Promise<any> {
