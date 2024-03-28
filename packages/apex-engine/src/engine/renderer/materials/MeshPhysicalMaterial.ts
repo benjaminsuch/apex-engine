@@ -8,193 +8,58 @@ import { type IEngineLoopTickContext } from '../../EngineLoop';
 import { Color, type ColorProxy } from '../Color';
 import { type RenderWorker } from '../RenderWorker';
 import { type Texture, type TextureProxy } from '../textures/Texture';
-import { MaterialProxy } from './Material';
-import { type MeshStandardMaterialProxyArgs } from './MeshStandardMaterial';
+import { MeshStandardMaterialProxy, type MeshStandardMaterialProxyArgs } from './MeshStandardMaterial';
 
-export class MeshPhysicalMaterialProxy extends MaterialProxy<THREE.MeshPhysicalMaterial> {
-  declare alphaHash: boolean;
-
-  declare alphaMap: TextureProxy | null;
-
-  declare alphaTest: number;
-
-  declare alphaToCoverage: boolean;
-
+export class MeshPhysicalMaterialProxy extends MeshStandardMaterialProxy {
   declare anisotropy?: number | undefined;
 
-  declare aoMap: TextureProxy | null;
-
-  declare aoMapIntensity: number;
-
-  declare attenuationColor: THREE.Color;
+  declare attenuationColor: ColorProxy;
 
   declare attenuationDistance: number;
 
-  declare blendAlpha: number;
-
-  declare blendDst: THREE.BlendingDstFactor;
-
-  declare blendDstAlpha: number | null;
-
-  declare blendEquation: THREE.BlendingEquation;
-
-  declare blendEquationAlpha: number | null;
-
-  declare blending: THREE.Blending;
-
-  declare blendSrc: THREE.BlendingSrcFactor | THREE.BlendingDstFactor;
-
-  declare blendSrcAlpha: number | null;
-
-  declare bumpMap: TextureProxy | null;
-
-  declare bumpScale: number;
-
   declare clearcoat: number;
 
-  declare clearcoatMap: THREE.Texture | null;
+  declare clearcoatMap: TextureProxy | null;
 
-  declare clearcoatNormalMap: THREE.Texture | null;
+  declare clearcoatNormalMap: TextureProxy | null;
 
-  declare clearcoatNormalScale: THREE.Vector2;
+  declare clearcoatNormalScale: [number, number];
 
   declare clearcoatRoughness: number;
 
-  declare clearcoatRoughnessMap: THREE.Texture | null;
-
-  declare clipIntersection: boolean;
-
-  declare clipShadows: boolean;
-
-  declare color: ColorProxy;
-
-  declare colorWrite: boolean;
-
-  declare depthFunc: THREE.DepthModes;
-
-  declare depthTest: boolean;
-
-  declare displacementMap: TextureProxy | null;
-
-  declare displacementBias: number;
-
-  declare displacementScale: number;
-
-  declare dithering: boolean;
-
-  declare emissive: ColorProxy;
-
-  declare emissiveIntensity: number;
-
-  declare emissiveMap: TextureProxy | null;
-
-  declare envMap: TextureProxy | null;
-
-  declare envMapIntensity: number;
-
-  declare flatShading: boolean;
-
-  declare fog: boolean;
-
-  declare forceSinglePass: boolean;
+  declare clearcoatRoughnessMap: TextureProxy | null;
 
   declare iridescence: number;
 
   declare iridescenceIOR: number;
 
-  declare iridescenceMap: THREE.Texture | null;
+  declare iridescenceMap: TextureProxy | null;
 
-  declare iridescenceThicknessMap: THREE.Texture | null;
+  declare iridescenceThicknessMap: TextureProxy | null;
 
   declare iridescenceThicknessRange: [number, number];
 
-  declare lightMap: TextureProxy | null;
-
-  declare lightMapIntensity: number;
-
-  declare map: TextureProxy | null;
-
-  declare metalness: number;
-
-  declare metalnessMap: TextureProxy | null;
-
-  declare normalMap: TextureProxy | null;
-
-  declare normalMapType: THREE.NormalMapTypes;
-
-  declare normalScale: [number, number];
-
-  declare opacity: number;
-
-  declare polygonOffset: boolean;
-
-  declare polygonOffsetFactor: number;
-
-  declare polygonOffsetUnits: number;
-
-  declare precision: 'highp' | 'mediump' | 'lowp' | null;
-
-  declare premultipliedAlpha: boolean;
-
-  declare roughness: number;
-
-  declare roughnessMap: TextureProxy | null;
-
   declare sheen: number;
 
-  declare sheenColor: THREE.Color;
+  declare sheenColor: ColorProxy;
 
-  declare sheenColorMap: THREE.Texture | null;
+  declare sheenColorMap: TextureProxy | null;
 
   declare sheenRoughness: number;
 
-  declare sheenRoughnessMap: THREE.Texture | null;
+  declare sheenRoughnessMap: TextureProxy | null;
 
-  declare shadowSide: THREE.Side | null;
+  declare specularColor: ColorProxy;
 
-  declare side: THREE.Side;
+  declare specularColorMap: TextureProxy | null;
 
-  declare specularColor: THREE.Color;
+  declare specularIntensity: number;
 
-  declare specularColorMap: THREE.Texture | null;
-
-  declare stencilWrite: boolean;
-
-  declare stencilFunc: THREE.StencilFunc;
-
-  declare stencilRef: number;
-
-  declare stencilWriteMask: number;
-
-  declare stencilFuncMask: number;
-
-  declare stencilFail: THREE.StencilOp;
-
-  declare stencilZFail: THREE.StencilOp;
-
-  declare stencilZPass: THREE.StencilOp;
-
-  declare toneMapped: boolean;
+  declare specularIntensityMap: TextureProxy | null;
 
   declare transmission: number;
 
-  declare transmissionMap: THREE.Texture | null;
-
-  declare transparent: boolean;
-
-  declare version: number;
-
-  declare vertexColors: boolean;
-
-  declare visible: boolean;
-
-  declare wireframe: boolean;
-
-  declare wireframeLinewidth: number;
-
-  declare wireframeLinecap: 'butt' | 'round' | 'square';
-
-  declare wireframeLinejoin: 'round' | 'bevel' | 'miter';
+  declare transmissionMap: TextureProxy | null;
 
   protected override readonly object: THREE.MeshPhysicalMaterial;
 
@@ -215,162 +80,111 @@ export class MeshPhysicalMaterialProxy extends MaterialProxy<THREE.MeshPhysicalM
   public override tick(context: IEngineLoopTickContext): void | Promise<void> {
     super.tick(context);
 
-    this.object.alphaHash = this.alphaHash;
-    this.object.alphaTest = this.alphaTest;
-    this.object.alphaToCoverage = this.alphaToCoverage;
+    this.object.anisotropy = this.anisotropy;
 
-    if (this.alphaMap) {
-      const texture = this.alphaMap.get();
+    if (this.attenuationColor) this.object.attenuationColor.copy(this.attenuationColor.get());
 
-      if (this.object.alphaMap !== texture) {
-        this.object.alphaMap = texture;
+    this.object.attenuationDistance = this.attenuationDistance;
+    this.object.clearcoat = this.clearcoat;
+
+    if (this.clearcoatMap) {
+      const texture = this.clearcoatMap.get();
+
+      if (this.object.clearcoatMap !== texture) {
+        this.object.clearcoatMap = texture;
       }
     }
 
-    if (this.aoMap) {
-      const texture = this.aoMap.get();
+    if (this.clearcoatNormalMap) {
+      const texture = this.clearcoatNormalMap.get();
 
-      if (this.object.aoMap !== texture) {
-        this.object.aoMap = texture;
+      if (this.object.clearcoatNormalMap !== texture) {
+        this.object.clearcoatNormalMap = texture;
       }
     }
 
-    this.object.aoMapIntensity = this.aoMapIntensity;
-    this.object.blendAlpha = this.blendAlpha;
-    this.object.blendDst = this.blendDst;
-    this.object.blendDstAlpha = this.blendDstAlpha;
-    this.object.blendEquation = this.blendEquation;
-    this.object.blendEquationAlpha = this.blendEquationAlpha;
-    this.object.blending = this.blending;
-    this.object.blendSrc = this.blendSrc;
-    this.object.blendSrcAlpha = this.blendSrcAlpha;
+    this.object.clearcoatNormalScale.fromArray(this.clearcoatNormalScale);
+    this.object.clearcoatRoughness = this.clearcoatRoughness;
 
-    if (this.bumpMap) {
-      const texture = this.bumpMap.get();
+    if (this.clearcoatRoughnessMap) {
+      const texture = this.clearcoatRoughnessMap.get();
 
-      if (this.object.bumpMap !== texture) {
-        this.object.bumpMap = texture;
+      if (this.object.clearcoatRoughnessMap !== texture) {
+        this.object.clearcoatRoughnessMap = texture;
       }
     }
 
-    this.object.bumpScale = this.bumpScale;
-    this.object.clipIntersection = this.clipIntersection;
-    this.object.clipShadows = this.clipShadows;
+    this.object.iridescence = this.iridescence;
+    this.object.iridescenceIOR = this.iridescenceIOR;
 
-    if (this.color) this.object.color.copy(this.color.get());
+    if (this.iridescenceMap) {
+      const texture = this.iridescenceMap.get();
 
-    this.object.colorWrite = this.colorWrite;
-    this.object.depthFunc = this.depthFunc;
-    this.object.depthTest = this.depthTest;
-
-    if (this.displacementMap) {
-      const texture = this.displacementMap.get();
-
-      if (this.object.displacementMap !== texture) {
-        this.object.displacementMap = texture;
+      if (this.object.iridescenceMap !== texture) {
+        this.object.iridescenceMap = texture;
       }
     }
 
-    this.object.displacementBias = this.displacementBias;
-    this.object.displacementScale = this.displacementScale;
-    this.object.dithering = this.dithering;
+    if (this.iridescenceThicknessMap) {
+      const texture = this.iridescenceThicknessMap.get();
 
-    if (this.emissive) this.object.emissive.copy(this.emissive.get());
-
-    if (this.emissiveMap) {
-      const texture = this.emissiveMap.get();
-
-      if (this.object.emissiveMap !== texture) {
-        this.object.emissiveMap = texture;
+      if (this.object.iridescenceThicknessMap !== texture) {
+        this.object.iridescenceThicknessMap = texture;
       }
     }
 
-    if (this.envMap) {
-      const texture = this.envMap.get();
+    this.object.iridescenceThicknessRange = this.iridescenceThicknessRange;
+    this.object.sheen = this.sheen;
 
-      if (this.object.envMap !== texture) {
-        this.object.envMap = texture;
+    if (this.sheenColor) this.object.sheenColor.copy(this.sheenColor.get());
+
+    if (this.sheenColorMap) {
+      const texture = this.sheenColorMap.get();
+
+      if (this.object.sheenColorMap !== texture) {
+        this.object.sheenColorMap = texture;
       }
     }
 
-    this.object.envMapIntensity = this.envMapIntensity;
-    this.object.flatShading = this.flatShading;
-    this.object.fog = this.fog;
-    this.object.forceSinglePass = this.forceSinglePass;
+    this.object.sheenRoughness = this.sheenRoughness;
 
-    if (this.lightMap) {
-      const texture = this.lightMap.get();
+    if (this.sheenRoughnessMap) {
+      const texture = this.sheenRoughnessMap.get();
 
-      if (this.object.lightMap !== texture) {
-        this.object.lightMap = texture;
+      if (this.object.sheenRoughnessMap !== texture) {
+        this.object.sheenRoughnessMap = texture;
       }
     }
 
-    this.object.lightMapIntensity = this.lightMapIntensity;
+    if (this.specularColor) this.object.specularColor.copy(this.specularColor.get());
 
-    if (this.map) {
-      const texture = this.map.get();
+    if (this.specularColorMap) {
+      const texture = this.specularColorMap.get();
 
-      if (this.object.map !== texture) {
-        this.object.map = texture;
+      if (this.object.specularColorMap !== texture) {
+        this.object.specularColorMap = texture;
       }
     }
 
-    this.object.metalness = this.metalness;
+    this.object.specularIntensity = this.specularIntensity;
 
-    if (this.metalnessMap) {
-      const texture = this.metalnessMap.get();
+    if (this.specularIntensityMap) {
+      const texture = this.specularIntensityMap.get();
 
-      if (this.object.metalnessMap !== texture) {
-        this.object.metalnessMap = texture;
+      if (this.object.specularIntensityMap !== texture) {
+        this.object.specularIntensityMap = texture;
       }
     }
 
-    if (this.normalMap) {
-      const texture = this.normalMap.get();
+    this.object.transmission = this.transmission;
 
-      if (this.object.normalMap !== texture) {
-        this.object.normalMap = texture;
+    if (this.transmissionMap) {
+      const texture = this.transmissionMap.get();
+
+      if (this.object.transmissionMap !== texture) {
+        this.object.transmissionMap = texture;
       }
     }
-
-    this.object.normalMapType = this.normalMapType;
-    this.object.normalScale.fromArray(this.normalScale);
-    this.object.opacity = this.opacity;
-    this.object.polygonOffset = this.polygonOffset;
-    this.object.polygonOffsetFactor = this.polygonOffsetFactor;
-    this.object.polygonOffsetUnits = this.polygonOffsetUnits;
-    this.object.precision = (this.precision as string) === 'null' ? null : this.precision;
-    this.object.premultipliedAlpha = this.premultipliedAlpha;
-    this.object.roughness = this.roughness;
-
-    if (this.roughnessMap) {
-      const texture = this.roughnessMap.get();
-
-      if (this.object.roughnessMap !== texture) {
-        this.object.roughnessMap = texture;
-      }
-    }
-
-    this.object.side = this.side;
-    this.object.stencilWrite = this.stencilWrite;
-    this.object.stencilFunc = this.stencilFunc;
-    this.object.stencilRef = this.stencilRef;
-    this.object.stencilWriteMask = this.stencilWriteMask;
-    this.object.stencilFuncMask = this.stencilFuncMask;
-    this.object.stencilFail = this.stencilFail;
-    this.object.stencilZFail = this.stencilZFail;
-    this.object.stencilZPass = this.stencilZPass;
-    this.object.shadowSide = this.shadowSide;
-    this.object.toneMapped = this.toneMapped;
-    this.object.transparent = this.transparent;
-    this.object.vertexColors = this.vertexColors;
-    this.object.version = this.version;
-    this.object.visible = this.visible;
-    this.object.wireframe = this.wireframe;
-    this.object.wireframeLinewidth = this.wireframeLinewidth;
-    this.object.wireframeLinecap = this.wireframeLinecap;
-    this.object.wireframeLinejoin = this.wireframeLinejoin;
   }
 }
 
@@ -543,7 +357,7 @@ export class MeshPhysicalMaterial extends THREE.MeshPhysicalMaterial implements 
   @PROP(serialize(ref))
   declare iridescenceThicknessMap: THREE.Texture | null;
 
-  @PROP(serialize(uint32, [1]))
+  @PROP(serialize(uint32, [2]))
   declare iridescenceThicknessRange: [number, number];
 
   @PROP(serialize(ref))
