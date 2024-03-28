@@ -8,7 +8,7 @@ import { type IEngineLoopTickContext } from '../../EngineLoop';
 import { Color, type ColorProxy } from '../Color';
 import { type RenderWorker } from '../RenderWorker';
 import { type Texture, type TextureProxy } from '../textures/Texture';
-import { MaterialProxy, type MaterialProxyArgs } from './Material';
+import { MaterialProxy } from './Material';
 import { type MeshStandardMaterialProxyArgs } from './MeshStandardMaterial';
 
 export class MeshPhysicalMaterialProxy extends MaterialProxy<THREE.MeshPhysicalMaterial> {
@@ -20,9 +20,15 @@ export class MeshPhysicalMaterialProxy extends MaterialProxy<THREE.MeshPhysicalM
 
   declare alphaToCoverage: boolean;
 
+  declare anisotropy?: number | undefined;
+
   declare aoMap: TextureProxy | null;
 
   declare aoMapIntensity: number;
+
+  declare attenuationColor: THREE.Color;
+
+  declare attenuationDistance: number;
 
   declare blendAlpha: number;
 
@@ -43,6 +49,18 @@ export class MeshPhysicalMaterialProxy extends MaterialProxy<THREE.MeshPhysicalM
   declare bumpMap: TextureProxy | null;
 
   declare bumpScale: number;
+
+  declare clearcoat: number;
+
+  declare clearcoatMap: THREE.Texture | null;
+
+  declare clearcoatNormalMap: THREE.Texture | null;
+
+  declare clearcoatNormalScale: THREE.Vector2;
+
+  declare clearcoatRoughness: number;
+
+  declare clearcoatRoughnessMap: THREE.Texture | null;
 
   declare clipIntersection: boolean;
 
@@ -80,6 +98,16 @@ export class MeshPhysicalMaterialProxy extends MaterialProxy<THREE.MeshPhysicalM
 
   declare forceSinglePass: boolean;
 
+  declare iridescence: number;
+
+  declare iridescenceIOR: number;
+
+  declare iridescenceMap: THREE.Texture | null;
+
+  declare iridescenceThicknessMap: THREE.Texture | null;
+
+  declare iridescenceThicknessRange: [number, number];
+
   declare lightMap: TextureProxy | null;
 
   declare lightMapIntensity: number;
@@ -112,7 +140,23 @@ export class MeshPhysicalMaterialProxy extends MaterialProxy<THREE.MeshPhysicalM
 
   declare roughnessMap: TextureProxy | null;
 
+  declare sheen: number;
+
+  declare sheenColor: THREE.Color;
+
+  declare sheenColorMap: THREE.Texture | null;
+
+  declare sheenRoughness: number;
+
+  declare sheenRoughnessMap: THREE.Texture | null;
+
+  declare shadowSide: THREE.Side | null;
+
   declare side: THREE.Side;
+
+  declare specularColor: THREE.Color;
+
+  declare specularColorMap: THREE.Texture | null;
 
   declare stencilWrite: boolean;
 
@@ -130,9 +174,11 @@ export class MeshPhysicalMaterialProxy extends MaterialProxy<THREE.MeshPhysicalM
 
   declare stencilZPass: THREE.StencilOp;
 
-  declare shadowSide: THREE.Side | null;
-
   declare toneMapped: boolean;
+
+  declare transmission: number;
+
+  declare transmissionMap: THREE.Texture | null;
 
   declare transparent: boolean;
 
@@ -368,11 +414,20 @@ export class MeshPhysicalMaterial extends THREE.MeshPhysicalMaterial implements 
   @PROP(serialize(boolean))
   declare alphaToCoverage: boolean;
 
+  @PROP(serialize(uint8))
+  declare anisotropy?: number | undefined;
+
   @PROP(serialize(ref))
   declare aoMap: Texture | null;
 
   @PROP(serialize(float32))
   declare aoMapIntensity: number;
+
+  @PROP(serialize(ref))
+  declare attenuationColor: THREE.Color;
+
+  @PROP(serialize(uint32))
+  declare attenuationDistance: number;
 
   @PROP(serialize(uint8))
   declare blendAlpha: number;
@@ -403,6 +458,24 @@ export class MeshPhysicalMaterial extends THREE.MeshPhysicalMaterial implements 
 
   @PROP(serialize(uint8))
   declare bumpScale: number;
+
+  @PROP(serialize(uint8))
+  declare clearcoat: number;
+
+  @PROP(serialize(ref))
+  declare clearcoatMap: THREE.Texture | null;
+
+  @PROP(serialize(ref))
+  declare clearcoatNormalMap: THREE.Texture | null;
+
+  @PROP(serialize(vec2))
+  declare clearcoatNormalScale: THREE.Vector2;
+
+  @PROP(serialize(uint8))
+  declare clearcoatRoughness: number;
+
+  @PROP(serialize(ref))
+  declare clearcoatRoughnessMap: THREE.Texture | null;
 
   @PROP(serialize(boolean))
   declare clipIntersection: boolean;
@@ -458,6 +531,21 @@ export class MeshPhysicalMaterial extends THREE.MeshPhysicalMaterial implements 
   @PROP(serialize(boolean))
   declare forceSinglePass: boolean;
 
+  @PROP(serialize(uint8))
+  declare iridescence: number;
+
+  @PROP(serialize(uint8))
+  declare iridescenceIOR: number;
+
+  @PROP(serialize(ref))
+  declare iridescenceMap: THREE.Texture | null;
+
+  @PROP(serialize(ref))
+  declare iridescenceThicknessMap: THREE.Texture | null;
+
+  @PROP(serialize(uint32, [1]))
+  declare iridescenceThicknessRange: [number, number];
+
   @PROP(serialize(ref))
   declare lightMap: Texture | null;
 
@@ -509,10 +597,37 @@ export class MeshPhysicalMaterial extends THREE.MeshPhysicalMaterial implements 
   declare roughnessMap: Texture | null;
 
   @PROP(serialize(uint8))
-  declare side: THREE.Side;
+  declare sheen: number;
+
+  @PROP(serialize(ref))
+  declare sheenColor: THREE.Color;
+
+  @PROP(serialize(ref))
+  declare sheenColorMap: THREE.Texture | null;
+
+  @PROP(serialize(uint8))
+  declare sheenRoughness: number;
+
+  @PROP(serialize(ref))
+  declare sheenRoughnessMap: THREE.Texture | null;
 
   @PROP(serialize(uint8))
   declare shadowSide: THREE.Side | null;
+
+  @PROP(serialize(uint8))
+  declare side: THREE.Side;
+
+  @PROP(serialize(ref))
+  declare specularColor: THREE.Color;
+
+  @PROP(serialize(ref))
+  declare specularColorMap: THREE.Texture | null;
+
+  @PROP(serialize(uint8))
+  declare specularIntensity: number;
+
+  @PROP(serialize(ref))
+  declare specularIntensityMap: THREE.Texture | null;
 
   @PROP(serialize(boolean))
   declare stencilWrite: boolean;
@@ -538,8 +653,20 @@ export class MeshPhysicalMaterial extends THREE.MeshPhysicalMaterial implements 
   @PROP(serialize(uint8))
   declare stencilZPass: THREE.StencilOp;
 
+  @PROP(serialize(uint8))
+  declare thickness: number;
+
+  @PROP(serialize(ref))
+  declare thicknessMap: THREE.Texture | null;
+
   @PROP(serialize(boolean))
   declare toneMapped: boolean;
+
+  @PROP(serialize(uint32))
+  declare transmission: number;
+
+  @PROP(serialize(ref))
+  declare transmissionMap: THREE.Texture | null;
 
   @PROP(serialize(boolean))
   declare transparent: boolean;

@@ -111,6 +111,8 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
 
   declare roughnessMap: TextureProxy | null;
 
+  declare shadowSide: THREE.Side | null;
+
   declare side: THREE.Side;
 
   declare stencilWrite: boolean;
@@ -128,8 +130,6 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
   declare stencilZFail: THREE.StencilOp;
 
   declare stencilZPass: THREE.StencilOp;
-
-  declare shadowSide: THREE.Side | null;
 
   declare toneMapped: boolean;
 
@@ -505,10 +505,10 @@ export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements 
   declare roughnessMap: Texture | null;
 
   @PROP(serialize(uint8))
-  declare side: THREE.Side;
+  declare shadowSide: THREE.Side | null;
 
   @PROP(serialize(uint8))
-  declare shadowSide: THREE.Side | null;
+  declare side: THREE.Side;
 
   @PROP(serialize(boolean))
   declare stencilWrite: boolean;
