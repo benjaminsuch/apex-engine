@@ -1,5 +1,4 @@
 import { loadLevel } from 'build:info';
-import { DefaultLoadingManager } from 'three';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
@@ -7,7 +6,7 @@ import { TripleBuffer } from './core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Flags } from './Flags';
 import { GameInstance } from './GameInstance';
-import { GLTFLoader } from './GLTFLoader';
+import { GLTFLoader, type GLTFParserRegisterActorCallback } from './GLTFLoader';
 import { type Level } from './Level';
 
 export class ApexEngine {
@@ -88,14 +87,13 @@ export class ApexEngine {
 
       const { default: LoadedLevel }: { default: typeof Level } = await loadLevel(url);
       const level = this.instantiationService.createInstance(LoadedLevel);
-      const loader = this.instantiationService.createInstance(GLTFLoader, level);
-
-      world.setCurrentLevel(level);
-      const registerCallbacks = (await loader.loadAsync(`game/maps/${url}.glb`)) as Function[];
-      await Promise.all(registerCallbacks.map(async register => register(level)));
-      await world.setGameMode(url);
+      const loader = this.instantiationService.createInstance(GLTFLoader);
 
       level.init();
+      world.setCurrentLevel(level);
+
+      await world.setGameMode(url);
+      await world.registerActors((await loader.loadAsync(`game/maps/${url}.glb`)) as GLTFParserRegisterActorCallback[]);
 
       if (IS_BROWSER) {
         gameInstance.setupHUD();

@@ -162,10 +162,7 @@ export class GLTFLoader extends Loader {
 
   public meshoptDecoder: any = null;
 
-  constructor(
-    private readonly level: Level,
-    @IInstantiationService private readonly instantiationService: IInstantiationService
-  ) {
+  constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) {
     super();
 
     this.dracoLoader = new DRACOLoader();
@@ -509,7 +506,7 @@ export interface GLTFParserOptions {
   requestHeader: { [header: string]: string };
 }
 
-export type GLTFParserRegisterActorCallback = (level: Level) => Promise<Actor>;
+export type GLTFParserRegisterActorCallback = (level: Level, actor?: Actor) => Promise<Actor>;
 
 export type GLTFParserOnLoadHandler = (actors: GLTFParserRegisterActorCallback[]) => void;
 
@@ -635,8 +632,7 @@ export class GLTFParser {
     for (let i = 0; i < nodes.length; i++) {
       const registerComponent = await this.getDependency('node', nodes[i]);
 
-      callbacks.push(async (level) => {
-        const actor = level.getWorld().spawnActor(Actor);
+      callbacks.push(async (level, actor: Actor = level.getWorld().spawnActor(Actor)) => {
         await registerComponent(actor);
         return actor;
       });

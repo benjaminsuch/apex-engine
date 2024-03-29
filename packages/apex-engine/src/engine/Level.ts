@@ -1,11 +1,6 @@
-import { type Object3D } from 'three';
-import { type GLTF } from 'three-stdlib';
-
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type Actor } from './Actor';
-import { resolveComponent } from './renderer/components';
-import { type SceneComponent } from './renderer/SceneComponent';
 import { type World } from './World';
 
 export class Level {
