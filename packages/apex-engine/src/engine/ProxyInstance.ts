@@ -9,12 +9,7 @@ export abstract class ProxyInstance {
 
   public readonly isProxy: boolean = true;
 
-  constructor(
-    args: unknown[] = [],
-    tb: TripleBuffer,
-    public readonly id: number,
-    public readonly originThread: EProxyThread
-  ) {
+  constructor(args: unknown[] = [], tb: TripleBuffer, public readonly id: number, public readonly originThread: EProxyThread) {
     const originClass = Reflect.getMetadata('proxy:origin', this.constructor);
     const schema = getClassSchema(originClass);
 
@@ -34,6 +29,18 @@ export abstract class ProxyInstance {
         let accessors: { get: (this: ProxyInstance) => any } | undefined;
 
         if (type === 'string') {
+          accessors = {
+            get(this): string {
+              const idx = TripleBuffer.getReadBufferIndexFromFlags(tb.flags);
+              const arr = new Uint8Array(new ArrayBuffer(size));
+
+              for (let i = 0; i < size; i++) {
+                arr[i] = views[idx].getUint8(offset + i);
+              }
+
+              return new TextDecoder().decode(arr).replace(/\u0000+$/, '');
+            },
+          };
         } else if (type === 'ref') {
           accessors = {
             get(this): ProxyInstance | void {
@@ -58,13 +65,11 @@ export abstract class ProxyInstance {
                 const arr: number[] = [];
 
                 for (let i = 0; i < size / arrayType.BYTES_PER_ELEMENT; ++i) {
-                  // @ts-ignore
                   arr.push(views[idx][getter](offset + i * arrayType.BYTES_PER_ELEMENT, true));
                 }
 
                 return arr;
               } else {
-                // @ts-ignore
                 return views[idx][getter](offset, true);
               }
             },
@@ -78,5 +83,5 @@ export abstract class ProxyInstance {
     }
   }
 
-  public tick(tick: IEngineLoopTickContext): Promise<void> | void {}
+  public tick(context: IEngineLoopTickContext): Promise<void> | void {}
 }

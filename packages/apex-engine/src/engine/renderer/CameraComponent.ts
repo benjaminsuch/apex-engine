@@ -9,11 +9,12 @@ import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RenderWorker } from './RenderWorker';
+import { IRenderWorkerContext } from './RenderWorkerContext';
 import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
 const _m1 = new Matrix4();
 
-export class CameraComponentProxy extends SceneComponentProxy {
+export class CameraComponentProxy extends SceneComponentProxy<PerspectiveCamera> {
   declare aspect: number;
 
   declare far: number;
@@ -30,7 +31,7 @@ export class CameraComponentProxy extends SceneComponentProxy {
 
   declare zoom: number;
 
-  public override sceneObject: PerspectiveCamera;
+  protected override readonly object: PerspectiveCamera;
 
   constructor(
     [fov, aspect, near, far]: [number, number, number, number],
@@ -43,21 +44,21 @@ export class CameraComponentProxy extends SceneComponentProxy {
 
     const camera = this.renderer.camera as PerspectiveCamera;
 
-    this.sceneObject = new PerspectiveCamera(fov, camera.aspect, near, far);
-    this.renderer.camera = this.sceneObject;
+    this.object = new PerspectiveCamera(fov, camera.aspect, near, far);
+    this.renderer.camera = this.object;
   }
 
   public override tick(tick: IEngineLoopTickContext): void {
     super.tick(tick);
 
-    this.sceneObject.aspect = this.aspect;
-    this.sceneObject.far = this.far;
-    this.sceneObject.filmGauge = this.filmGauge;
-    this.sceneObject.filmOffset = this.filmOffset;
-    this.sceneObject.focus = this.focus;
-    this.sceneObject.fov = this.fov;
-    this.sceneObject.near = this.near;
-    this.sceneObject.zoom = this.zoom;
+    this.object.aspect = this.aspect;
+    this.object.far = this.far;
+    this.object.filmGauge = this.filmGauge;
+    this.object.filmOffset = this.filmOffset;
+    this.object.focus = this.focus;
+    this.object.fov = this.fov;
+    this.object.near = this.near;
+    this.object.zoom = this.zoom;
   }
 }
 
@@ -94,9 +95,10 @@ export class CameraComponent extends SceneComponent {
     far: CameraComponent['far'],
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger,
-    @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext
+    @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext,
+    @IRenderWorkerContext renderContext: IRenderWorkerContext
   ) {
-    super(instantiationService, logger, physicsContext);
+    super(instantiationService, logger, physicsContext, renderContext);
 
     this.fov = fov;
     this.aspect = aspect;

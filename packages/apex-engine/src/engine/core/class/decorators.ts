@@ -20,8 +20,8 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
     Reflect.defineMetadata('schema', schema, constructor);
 
     if (IS_DEV) {
-      console.log('CLASS:', constructor.name);
-      console.log(Reflect.getOwnMetadata('schema', constructor));
+      // console.log('CLASS:', constructor.name);
+      // console.log(Reflect.getOwnMetadata('schema', constructor));
     }
 
     let byteLength = 0;
@@ -42,6 +42,7 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
     }
 
     Reflect.defineMetadata('byteLength', byteLength, constructor);
+    Reflect.defineMetadata('specifiers', classFns.map(fn => fn.name), constructor);
 
     for (const fn of classFns) {
       constructor = fn(constructor) as T;
@@ -49,6 +50,14 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
 
     return constructor;
   };
+}
+
+export function getClassSpecifiers(constructor: TClass): string {
+  return Reflect.getMetadata('specifiers', constructor) as string;
+}
+
+export function hasClassSpecifier(constructor: TClass, specifier: string): boolean {
+  return getClassSpecifiers(constructor).includes(specifier);
 }
 
 export function PROP(...args: Function[]) {

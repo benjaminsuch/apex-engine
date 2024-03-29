@@ -53,7 +53,7 @@ export class HUD extends Actor {
   public init(): void {
     this.logger.debug(this.constructor.name, `Initialize`);
 
-    mount(document.body, this.canvas);
+    mount(document.body, this.canvas, document.getElementById('canvas')!);
     mount(document.body, this.hudContainer);
 
     this.debugContainer.world = this.getWorld();

@@ -4,6 +4,7 @@ import { type Actor } from './Actor';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { type GameInstance } from './GameInstance';
 import { type GameMode } from './GameMode';
+import { type GLTFParserRegisterActorCallback } from './GLTFLoader';
 import { type Level } from './Level';
 import { IPhysicsWorkerContext } from './physics/PhysicsWorkerContext';
 import { type Player } from './Player';
@@ -102,16 +103,16 @@ export class World {
     TickManager.getInstance().endTick();
   }
 
+  public async registerActors(registerCallbacks: GLTFParserRegisterActorCallback[]): Promise<void> {
+    await Promise.all(registerCallbacks.map(async register => register(this.getCurrentLevel())));
+  }
+
   public initActorsForPlay(): void {
     if (!this.isInitialized) {
       throw new Error(`World has not been initialized.`);
     }
 
-    this.logger.debug(
-      this.constructor.name,
-      'Initialize actors for play',
-      IS_BROWSER ? this.actors : this.actors.length
-    );
+    this.logger.debug(this.constructor.name, 'Initialize actors for play', IS_BROWSER ? this.actors : this.actors.length);
 
     if (this.currentLevel) {
       this.currentLevel.initActors();

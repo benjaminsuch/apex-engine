@@ -21,7 +21,7 @@ export class RenderProxyManager extends ProxyManager {
     const proxy = this.instantiationService.createInstance(Constructor, args, tb, id, originThread, this.renderer);
 
     if (proxy instanceof SceneComponentProxy) {
-      this.renderer.addSceneObject(proxy.sceneObject);
+      this.renderer.addSceneObject(proxy.get());
     }
 
     return proxy;

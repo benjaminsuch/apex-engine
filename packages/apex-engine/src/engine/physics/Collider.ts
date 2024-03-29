@@ -244,6 +244,10 @@ export class Collider implements IProxyOrigin {
   }
 
   public tick(context: IEngineLoopTickContext): void {}
+
+  public getProxyArgs(): [] {
+    return [];
+  }
 }
 
 class ColliderTickFunction extends TickFunction<Collider> {

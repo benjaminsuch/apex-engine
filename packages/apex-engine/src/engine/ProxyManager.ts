@@ -217,7 +217,6 @@ export class ProxyManager {
   protected registerTickFunctions(): void {
     if (!this.managerTick.isRegistered) {
       this.managerTick.canTick = true;
-      this.managerTick.tickGroup = ETickGroup.PostPhysics;
       this.managerTick.register();
     }
   }
@@ -235,13 +234,23 @@ export class ProxyDeployment {
   constructor(public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {}
 
   public toJSON(): IProxyConstructionData {
+    const [image] = this.origin.getProxyArgs();
+    const transferables: any[] = [];
+
+    if (IS_BROWSER) {
+      if (image instanceof ImageBitmap) {
+        transferables.push(image);
+      }
+    }
+
     return {
       constructor: (this.origin.constructor as TProxyOriginConstructor).proxyClassName,
       id: getTargetId(this.origin) as number,
       tb: this.origin.tripleBuffer,
-      args: this.args,
+      args: this.origin.getProxyArgs(),
       originThread: EProxyThread.Game,
       tick: this.tick,
+      transferables,
     };
   }
 }

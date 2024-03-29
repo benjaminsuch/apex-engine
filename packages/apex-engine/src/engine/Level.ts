@@ -1,11 +1,6 @@
-import { type Object3D } from 'three';
-import { type GLTF } from 'three-stdlib';
-
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
-import { Actor } from './Actor';
-import { resolveComponent } from './renderer/components';
-import { type SceneComponent } from './renderer/SceneComponent';
+import { type Actor } from './Actor';
 import { type World } from './World';
 
 export class Level {
@@ -68,37 +63,5 @@ export class Level {
 
   public isCurrentLevel(): boolean {
     return this.world?.getCurrentLevel() === this;
-  }
-
-  /**
-   * Creates the actors and its components.
-   *
-   * @param content The content from the AssetWorker's `loadGLTF`
-   */
-  public load({ scene }: GLTF): void {
-    this.logger.debug(this.constructor.name, 'Loading content');
-
-    function addComponent(child: Object3D, actor: Actor): SceneComponent {
-      const [ComponentConstructor, args] = resolveComponent(child);
-      // @ts-ignore
-      return actor.addComponent(ComponentConstructor, ...args);
-    }
-
-    function traverseChildren(children: Object3D['children'] = [], parent: SceneComponent): void {
-      for (const child of children) {
-        const component = addComponent(child, parent.getOwner());
-        component.copyFromObject3D(child);
-        component.attachToComponent(parent);
-        traverseChildren(child.children, component);
-      }
-    }
-
-    for (const child of scene.children) {
-      const actor = this.getWorld().spawnActor(Actor, this);
-      const rootComponent = addComponent(child, actor);
-
-      rootComponent.setAsRoot(actor);
-      traverseChildren(child.children, rootComponent);
-    }
   }
 }

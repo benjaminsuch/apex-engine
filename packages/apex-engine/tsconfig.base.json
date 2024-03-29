@@ -12,6 +12,7 @@
     "skipLibCheck": true,
     "strict": true,
     "strictFunctionTypes": true,
+    "stripInternal": true,
     "sourceMap": false,
     "target": "ESNext",
   }

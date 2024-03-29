@@ -4,11 +4,11 @@ import { IInstantiationService } from '../../platform/di/common/InstantiationSer
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { getTargetId } from '../core/class/decorators';
 import { EProxyThread, type IProxyConstructionData } from '../core/class/specifiers/proxy';
-import { TripleBuffer, type TripleBufferJSON } from '../core/memory/TripleBuffer';
+import { type TripleBufferJSON } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { Flags } from '../Flags';
 import { Collider, type ColliderRegisterArgs, getColliderDescConstructor } from '../physics/Collider';
-import { KinematicController, type KinematicControllerConstructorArgs, KinematicControllerProxy } from '../physics/KinematicController';
+import { KinematicController, type KinematicControllerConstructorArgs } from '../physics/KinematicController';
 import { PhysicsInfo } from '../physics/PhysicsInfo';
 import { type PhysicsWorkerTaskJSON } from '../physics/PhysicsTaskManager';
 import { createRigidBodyDesc, RigidBody } from '../physics/RigidBody';
@@ -19,8 +19,6 @@ export interface ICreatedProxyData {
   id: number;
   tb: TripleBufferJSON;
 }
-
-const proxyConstructors = { KinematicControllerProxy };
 
 export class PhysicsWorker {
   private renderPort!: MessagePort;

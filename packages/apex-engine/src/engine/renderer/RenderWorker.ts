@@ -1,4 +1,4 @@
-import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLight, HemisphereLight, LineBasicMaterial, LineSegments, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, BufferAttribute, BufferGeometry, DirectionalLight, HemisphereLight, LineBasicMaterial, LineSegments, type Material, type Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, type Source, Texture, WebGLRenderer } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -15,6 +15,7 @@ interface RenderWorkerInitMessageData {
   flags: Uint8Array[];
   initialHeight: number;
   initialWidth: number;
+  isNode?: boolean;
   physicsPort: MessagePort;
 }
 
@@ -22,6 +23,8 @@ export class RenderWorker {
   private frameId: number = 0;
 
   private readonly info: RenderingInfo;
+
+  private readonly tasks: RenderWorkerTaskJSON[] = [];
 
   /**
    * Will be set during the `init` phase and will listen to incoming messages,
@@ -52,68 +55,70 @@ export class RenderWorker {
     this.scene = new Scene();
 
     this.info = this.instantiationService.createInstance(RenderingInfo, Flags.RENDER_FLAGS, undefined);
-    this.info.init();
   }
 
-  public init({ canvas, flags, initialHeight, initialWidth, physicsPort }: RenderWorkerInitMessageData): void {
+  public init({ canvas, flags, initialHeight, initialWidth, physicsPort, isNode }: RenderWorkerInitMessageData): void {
     if (this.isInitialized) {
       this.logger.error(this.constructor.name, `Already initialized`);
       return;
     }
 
-    Flags.GAME_FLAGS = flags[0];
-    Flags.RENDER_FLAGS = flags[1];
+    if (!isNode) {
+      Flags.GAME_FLAGS = flags[0];
+      Flags.RENDER_FLAGS = flags[1];
 
-    this.renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
-    this.renderer.toneMapping = ACESFilmicToneMapping;
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = PCFSoftShadowMap;
+      this.renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
+      this.renderer.toneMapping = ACESFilmicToneMapping;
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = PCFSoftShadowMap;
 
-    this.physicsPort = physicsPort;
+      this.physicsPort = physicsPort;
 
-    const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 1);
-    hemiLight.position.set(0, 20, 0);
+      const hemiLight = new HemisphereLight(0xffffff, 0x8d8d8d, 1);
+      hemiLight.position.set(0, 20, 0);
 
-    this.scene.add(hemiLight);
+      this.scene.add(hemiLight);
 
-    const dirLight = new DirectionalLight(0xffffff, 3);
-    dirLight.castShadow = false;
-    dirLight.position.set(5, 10, 25);
+      const dirLight = new DirectionalLight(0xffffff, 3);
+      dirLight.castShadow = false;
+      dirLight.position.set(5, 10, 25);
 
-    this.scene.add(dirLight);
+      this.scene.add(dirLight);
 
-    this.setSize(initialWidth, initialHeight);
+      this.setSize(initialWidth, initialHeight);
 
-    const lines = new LineSegments(
-      new BufferGeometry(),
-      new LineBasicMaterial({ color: 0xffffff, vertexColors: true })
-    );
-    lines.visible = true;
+      const lines = new LineSegments(
+        new BufferGeometry(),
+        new LineBasicMaterial({ color: 0xffffff, vertexColors: true })
+      );
+      lines.visible = true;
 
-    this.scene.add(lines);
+      this.scene.add(lines);
 
-    this.physicsPort.addEventListener('message', (event) => {
-      const { colors, vertices } = event.data;
-      const position = lines.geometry.getAttribute('position');
-      const color = lines.geometry.getAttribute('color');
+      this.physicsPort.addEventListener('message', (event) => {
+        const { colors, vertices } = event.data;
+        const position = lines.geometry.getAttribute('position');
+        const color = lines.geometry.getAttribute('color');
 
-      if (position instanceof BufferAttribute) {
-        position.copyArray(event.data.vertices);
-        position.needsUpdate = true;
-      }
-      if (!position) {
-        lines.geometry.setAttribute('position', new BufferAttribute(vertices, 3));
-      }
-      if (color instanceof BufferAttribute) {
-        color.copyArray(event.data.colors);
-        color.needsUpdate = true;
-      }
-      if (!color) {
-        lines.geometry.setAttribute('color', new BufferAttribute(colors, 4));
-      }
-    });
-    this.physicsPort.start();
+        if (position instanceof BufferAttribute) {
+          position.copyArray(event.data.vertices);
+          position.needsUpdate = true;
+        }
+        if (!position) {
+          lines.geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+        }
+        if (color instanceof BufferAttribute) {
+          color.copyArray(event.data.colors);
+          color.needsUpdate = true;
+        }
+        if (!color) {
+          lines.geometry.setAttribute('color', new BufferAttribute(colors, 4));
+        }
+      });
+      this.physicsPort.start();
+    }
 
+    this.info.init();
     this.isInitialized = true;
     console.log('RenderWorker', this);
   }
@@ -145,6 +150,36 @@ export class RenderWorker {
 
     TripleBuffer.swapReadBufferFlags(Flags.GAME_FLAGS);
 
+    const deferredTasks: RenderWorkerTaskJSON[] = [];
+
+    // todo: Convert to TickFunction
+    if (this.tasks.length > 0) {
+      let task: RenderWorkerTaskJSON | undefined;
+
+      while (task = this.tasks.shift()) {
+        const proxy = this.proxyManager.getProxy(task.target, EProxyThread.Game);
+
+        if (proxy) {
+          const descriptor = proxy.target[task.name as keyof typeof proxy];
+
+          if (typeof descriptor === 'function') {
+            const result = (descriptor as Function).apply(proxy.target, task.params);
+
+            // In case `result` returns `false`, that means the task was unsuccessful and should re-run
+            // in the next tick. Tasks that failed and should not re-run throw an exception.
+            if (!result) {
+              deferredTasks.push(task);
+            }
+          }
+        } else {
+          // If the proxy does not exist (it could be created at a later point), we push it back
+          deferredTasks.push(task);
+        }
+      }
+
+      this.tasks.push(...deferredTasks);
+    }
+
     this.tickManager.startTick(tickContext);
     await this.tickManager.runAllTicks();
     this.tickManager.endTick();
@@ -160,20 +195,6 @@ export class RenderWorker {
   }
 
   public receiveTasks(tasks: RenderWorkerTaskJSON[]): void {
-    if (tasks.length > 0) {
-      let task: RenderWorkerTaskJSON | undefined;
-
-      while (task = tasks.shift()) {
-        const proxy = this.proxyManager.getProxy(task.target, EProxyThread.Game);
-
-        if (proxy) {
-          const descriptor = proxy.target[task.name as keyof typeof proxy];
-
-          if (typeof descriptor === 'function') {
-            (descriptor as Function).apply(proxy.target, task.params);
-          }
-        }
-      }
-    }
+    this.tasks.push(...tasks);
   }
 }

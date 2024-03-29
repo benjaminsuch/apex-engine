@@ -1,8 +1,8 @@
 import { createServer, type Server } from 'node:http';
 import { extname, join, posix, resolve } from 'node:path';
 
+import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
-// import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
 import fs from 'fs-extra';
 import mime from 'mime';
@@ -92,6 +92,7 @@ export async function serveBrowserTarget(target: TargetConfig): Promise<void> {
       buildInfo(target, levels),
       workerPlugin({ target }),
       nodeResolve({ preferBuiltins: true }),
+      commonjs({ requireReturnsDefault: true }),
       typescript(),
       htmlPlugin(
         './index.js',
@@ -241,6 +242,7 @@ export async function serveElectronTarget(target: TargetConfig): Promise<void> {
       buildInfo(target, levels),
       workerPlugin({ target }),
       nodeResolve({ preferBuiltins: true }),
+      commonjs({ requireReturnsDefault: true }),
       typescript(),
       htmlPlugin(
         './sandbox.js',
@@ -323,6 +325,7 @@ export async function serveNodeTarget(target: TargetConfig): Promise<void> {
       buildInfo(target, levels),
       workerPlugin({ target, format: 'cjs' }),
       nodeResolve({ preferBuiltins: true }),
+      commonjs({ requireReturnsDefault: true }),
       typescript(),
     ],
     watch: {

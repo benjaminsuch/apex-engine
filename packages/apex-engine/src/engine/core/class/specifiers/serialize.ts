@@ -110,6 +110,10 @@ export function mat4(): SerializerFunction {
   return createSerializer('mat4', Float32Array, 16 * Float32Array.BYTES_PER_ELEMENT, true);
 }
 
+export function mat3(): SerializerFunction {
+  return createSerializer('mat3', Float32Array, 12 * Float32Array.BYTES_PER_ELEMENT, true);
+}
+
 export function quat(): SerializerFunction {
   return createSerializer('quat', Float32Array, 4 * Float32Array.BYTES_PER_ELEMENT, true);
 }

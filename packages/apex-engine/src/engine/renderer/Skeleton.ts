@@ -1,17 +1,20 @@
-import { Matrix4 } from 'three';
+import * as THREE from 'three';
 
 import { CLASS } from '../core/class/decorators';
-import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type ProxyInstance } from '../ProxyInstance';
 import { RenderProxy } from './RenderProxy';
 import { type RenderWorker } from './RenderWorker';
 import { type SceneComponentProxy } from './SceneComponent';
 
-export class SkeletonProxy extends RenderProxy {
+export class SkeletonProxy extends RenderProxy<THREE.Skeleton> {
   public readonly bones: SceneComponentProxy[] = [];
 
-  public readonly boneInverses: Matrix4[] = [];
+  public readonly boneInverses: THREE.Matrix4[] = [];
+
+  protected readonly object: THREE.Skeleton;
 
   constructor(
     [bones, boneInverses]: [RenderProxy['id'][], number[]] = [[], []],
@@ -35,12 +38,24 @@ export class SkeletonProxy extends RenderProxy {
     }
 
     while (boneInverses.length > 0) {
-      this.boneInverses.push(new Matrix4().fromArray(boneInverses.splice(0, 16)));
+      this.boneInverses.push(new THREE.Matrix4().fromArray(boneInverses.splice(0, 16)));
     }
+
+    this.object = new THREE.Skeleton();
   }
 }
 
 @CLASS(proxy(EProxyThread.Render, SkeletonProxy))
-export class Skeleton {
-  constructor(public readonly bones: ProxyInstance['id'][], public readonly boneInverses: number[]) {}
+export class Skeleton implements IProxyOrigin {
+  declare readonly tripleBuffer: TripleBuffer;
+
+  declare readonly byteView: Uint8Array;
+
+  constructor(public readonly bones: ProxyInstance['id'][], public readonly boneInverses: number[] | THREE.Matrix4Tuple[]) {}
+
+  public tick(context: IEngineLoopTickContext): void {}
+
+  public getProxyArgs(): [] {
+    return [];
+  }
 }

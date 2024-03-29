@@ -6,8 +6,8 @@ import { TripleBuffer } from './core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Flags } from './Flags';
 import { GameInstance } from './GameInstance';
+import { GLTFLoader, type GLTFParserRegisterActorCallback } from './GLTFLoader';
 import { type Level } from './Level';
-import { GLTFLoader } from './three/GLTFLoader';
 
 export class ApexEngine {
   private static instance?: ApexEngine;
@@ -85,18 +85,20 @@ export class ApexEngine {
         throw new Error(`Cannot load map: World is not initialized.`);
       }
 
-      const loader = this.instantiationService.createInstance(GLTFLoader);
-      const content = await loader.load(`game/maps/${url}`);
       const { default: LoadedLevel }: { default: typeof Level } = await loadLevel(url);
       const level = this.instantiationService.createInstance(LoadedLevel);
-
-      world.setCurrentLevel(level);
-      level.load(content);
-
-      await world.setGameMode(url);
+      const loader = this.instantiationService.createInstance(GLTFLoader);
 
       level.init();
-      gameInstance.setupHUD();
+      world.setCurrentLevel(level);
+
+      await world.setGameMode(url);
+      await world.registerActors((await loader.loadAsync(`game/maps/${url}.glb`)) as GLTFParserRegisterActorCallback[]);
+
+      if (IS_BROWSER) {
+        gameInstance.setupHUD();
+      }
+
       world.initActorsForPlay();
 
       if (IS_BROWSER) {

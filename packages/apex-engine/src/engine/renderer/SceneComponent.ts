@@ -17,12 +17,13 @@ import { type ProxyInstance } from '../ProxyInstance';
 import { RenderProxy } from './RenderProxy';
 import { RenderTaskManager, RenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
+import { IRenderWorkerContext } from './RenderWorkerContext';
 
 const _target = new Vector3();
 const _position = new Vector3();
 const _m1 = new Matrix4();
 
-export class SceneComponentProxy extends RenderProxy {
+export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderProxy<T> {
   declare position: [number, number, number];
 
   declare scale: [number, number, number];
@@ -45,41 +46,38 @@ export class SceneComponentProxy extends RenderProxy {
 
   public childIndex: number = -1;
 
-  public sceneObject: Object3D;
+  protected readonly object: T;
 
-  constructor(
-    args: unknown[] = [],
-    tb: TripleBuffer,
-    id: number,
-    thread: EProxyThread,
-    renderer: RenderWorker
-  ) {
+  constructor(args: unknown[] = [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super(args, tb, id, thread, renderer);
 
-    this.sceneObject = new Object3D();
+    this.object = new Object3D() as T;
   }
 
-  public setParent(id: ProxyInstance['id']): void {
+  public setParent(id: ProxyInstance['id']): boolean {
     const parent = this.renderer.proxyManager.getProxy<SceneComponentProxy>(id, EProxyThread.Game);
 
-    if (parent) {
-      parent.target.sceneObject.add(this.sceneObject);
-    } else {
-      console.warn(`Couldnt find parent ("${id}") for proxy "${this.id}".`);
+    if (!parent) {
+      console.warn(`Parent (${id}) for proxy "${this.id}" not found. Trying again next tick.`);
+      return false;
     }
+
+    parent.target.object.add(this.object);
+
+    return true;
   }
 
-  public override tick(tick: IEngineLoopTickContext): void {
-    super.tick(tick);
+  public override tick(context: IEngineLoopTickContext): void {
+    super.tick(context);
 
-    this.sceneObject.castShadow = this.castShadow;
-    this.sceneObject.receiveShadow = this.receiveShadow;
-    this.sceneObject.visible = this.visible;
-    this.sceneObject.position.fromArray(this.position);
-    this.sceneObject.quaternion.fromArray(this.rotation);
-    this.sceneObject.scale.fromArray(this.scale);
-    this.sceneObject.matrixWorld.fromArray(this.matrixWorld);
-    this.sceneObject.up.fromArray(this.up);
+    this.object.castShadow = this.castShadow;
+    this.object.receiveShadow = this.receiveShadow;
+    this.object.visible = this.visible;
+    this.object.position.fromArray(this.position);
+    this.object.quaternion.fromArray(this.rotation);
+    this.object.scale.fromArray(this.scale);
+    this.object.matrixWorld.fromArray(this.matrixWorld);
+    this.object.up.fromArray(this.up);
   }
 }
 
@@ -177,7 +175,8 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   constructor(
     @IInstantiationService instantiationService: IInstantiationService,
     @IConsoleLogger logger: IConsoleLogger,
-    @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext
+    @IPhysicsWorkerContext protected readonly physicsContext: IPhysicsWorkerContext,
+    @IRenderWorkerContext protected readonly renderContext: IRenderWorkerContext
   ) {
     super(instantiationService, logger);
   }
@@ -293,6 +292,10 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
 
       this.animations.set(clip.name, action);
     }
+  }
+
+  public getProxyArgs(): [] {
+    return [];
   }
 
   protected onLookAt(target: Vector3, position: Vector3, up: Vector3): Matrix4 {

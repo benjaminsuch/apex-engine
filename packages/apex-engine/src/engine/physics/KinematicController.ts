@@ -53,6 +53,10 @@ export class KinematicController implements IProxyOrigin {
   public enableSnapToGround(distance: number): void {
     this.worldController.enableSnapToGround(distance);
   }
+
+  public getProxyArgs(): [] {
+    return [];
+  }
 }
 
 class SetApplyImpulsesToDynamicBodiesTask extends PhysicsWorkerTask<KinematicControllerProxy, 'setApplyImpulsesToDynamicBodies', [boolean]> {

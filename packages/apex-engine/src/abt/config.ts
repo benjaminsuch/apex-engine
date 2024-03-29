@@ -20,10 +20,15 @@ export interface BuildConfig {
   plugins?: BuildPlugin[];
 }
 
+export interface EnvVars {
+  PHYSICS_DEBUG_BUFFER_ENABLED: boolean;
+}
+
 export interface TargetConfig {
   defaultGameMode: string;
   defaultMap: string;
   defaultPawn: string;
+  env?: EnvVars;
   platform: Platform;
   target: Target;
   plugins: string[];
