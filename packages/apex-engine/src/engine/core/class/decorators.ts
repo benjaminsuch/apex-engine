@@ -20,8 +20,8 @@ export function CLASS(...classFns: ClassDecoratorFunction[]) {
     Reflect.defineMetadata('schema', schema, constructor);
 
     if (IS_DEV) {
-      // console.log('CLASS:', constructor.name);
-      // console.log(Reflect.getOwnMetadata('schema', constructor));
+      console.log('CLASS:', constructor.name);
+      console.log(Reflect.getOwnMetadata('schema', constructor));
     }
 
     let byteLength = 0;
@@ -71,11 +71,7 @@ export function PROP(...args: Function[]) {
 }
 
 export function FUNC(...args: Function[]) {
-  return function (
-    target: InstanceType<TClass>,
-    prop: string | symbol,
-    descriptor: PropertyDescriptor
-  ): void {
+  return function (target: InstanceType<TClass>, prop: string | symbol, descriptor: PropertyDescriptor): void {
     addPropToSchema(target.constructor, prop, descriptor);
 
     for (const fn of args) {
@@ -122,11 +118,7 @@ export function isFuncSchema(schema: PropSchema | FuncSchema): schema is FuncSch
   return schema.type === 'function';
 }
 
-export function addPropToSchema(
-  constructor: TClass & { schema?: Schema },
-  prop: string | symbol,
-  descriptor?: PropertyDescriptor
-): void {
+export function addPropToSchema(constructor: TClass & { schema?: Schema }, prop: string | symbol, descriptor?: PropertyDescriptor): void {
   const key = prop.toString();
   let schema = getClassSchema(constructor)!;
 
@@ -137,15 +129,7 @@ export function addPropToSchema(
   if (descriptor) {
     schema[key] = { type: 'function', isRPC: false, descriptor };
   } else {
-    schema[key] = {
-      type: 'uint8',
-      size: 0,
-      required: false,
-      arrayType: Uint8Array,
-      isArray: false,
-      offset: 0,
-      pos: 0,
-    };
+    schema[key] = { type: 'uint8', size: 0, required: false, arrayType: Uint8Array, isArray: false, offset: 0, pos: 0 };
   }
 
   Reflect.defineMetadata('schema', schema, constructor);
@@ -156,12 +140,7 @@ export function getPropFromSchema(constructor: TClass, prop: string | symbol): P
   return schema[prop.toString()];
 }
 
-export function setPropOnSchema(
-  constructor: TClass,
-  prop: string | symbol,
-  key: keyof PropSchema | keyof FuncSchema,
-  value: any
-): void {
+export function setPropOnSchema(constructor: TClass, prop: string | symbol, key: keyof PropSchema | keyof FuncSchema, value: any): void {
   const schema = getClassSchema(constructor);
 
   if (!schema) {
