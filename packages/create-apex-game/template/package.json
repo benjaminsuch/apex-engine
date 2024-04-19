@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "abt serve",
     "dev-browser": "yarn abt serve --platform browser",
-    "dev-electron": "yarn abt serve --platform electron"
+    "dev-electron": "yarn abt serve --platform electron",
+    "dev-node": "yarn abt serve --platform node"
   },
   "dependencies": {
     "apex-engine": "latest",

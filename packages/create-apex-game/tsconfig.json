@@ -1,6 +1,6 @@
 {
-  "exclude": ["node_modules"],
-  "include": ["*.ts"],
+  "exclude": ["node_modules", "template"],
+  "include": ["index.ts"],
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "module": "esnext",
@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext"
-  }
+  },
 }
