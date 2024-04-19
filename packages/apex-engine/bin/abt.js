@@ -19,7 +19,7 @@ import { WebSocketServer } from 'ws';
 import { spawn } from 'node:child_process';
 
 var name = "apex-engine";
-var version = "0.18.2-0";
+var version = "0.19.1-0";
 var description = "A cross-platform game engine written in Typescript.";
 var author = "Benjamin Such";
 var keywords = [
