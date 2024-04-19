@@ -1,6 +1,6 @@
 {
   "name": "apex-engine",
-  "version": "0.18.2-0",
+  "version": "0.19.1-0",
   "description": "A cross-platform game engine written in Typescript.",
   "author": "Benjamin Such",
   "keywords": [

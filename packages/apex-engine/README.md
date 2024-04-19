@@ -8,7 +8,7 @@ The Apex Engine is a multiplatform game engine that allows you to create 3D game
 - **Cross-Platform**
     - Compile your game for the browser, desktop or NodeJS
 - **Multithreading**
-    - Renderer and Physics run in their own thread
+    - Renderer and Physics run in separate threads
 - **Actor-Component Framework**
     - Objects in your world are represented as actors and come with a wide-rand of functionality
     - Use components to enhance the actor's capabilities and reduce redundancy
@@ -17,7 +17,7 @@ The Apex Engine is a multiplatform game engine that allows you to create 3D game
 - **Audio**
     - planned
 - **AI**
-    - planned
+    - in development
 - **Physics**
     - Uses [Rapier](https://rapier.rs/docs/) physics engine
     - Neatly integrated into our components, enabled by default
@@ -44,5 +44,3 @@ $ yarn create apex-game ~/myprojects/MyCoolGame
 # npm
 $ npm create apex-game@latest ~/myprojects/MyCoolGame
 ```
-
-Additionally to the project destination, you can specify various options (see below).
