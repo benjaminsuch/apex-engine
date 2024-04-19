@@ -15,11 +15,7 @@ export class DesktopMain {
       width: 1920,
       show: false,
       title: 'Apex Engine | Electron',
-      webPreferences: {
-        enableWebSQL: false,
-        sandbox: true,
-        spellcheck: false,
-      },
+      webPreferences: { enableWebSQL: false, sandbox: true, spellcheck: false },
     });
 
     this.window.webContents.session.webRequest.onHeadersReceived((details, callback) => {

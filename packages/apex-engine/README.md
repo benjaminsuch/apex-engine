@@ -44,5 +44,3 @@ $ yarn create apex-game ~/myprojects/MyCoolGame
 # npm
 $ npm create apex-game@latest ~/myprojects/MyCoolGame
 ```
-
-Additionally to the project destination, you can specify various options (see below).
