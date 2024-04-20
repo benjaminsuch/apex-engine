@@ -31,9 +31,11 @@ export class ColorProxy extends RenderProxy<THREE.Color> {
 
 @CLASS(proxy(EProxyThread.Render, ColorProxy))
 export class Color extends THREE.Color implements IProxyOrigin {
-  declare readonly byteView: Uint8Array;
+  declare readonly byteView: IProxyOrigin['byteView'];
 
-  declare readonly tripleBuffer: TripleBuffer;
+  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
+
+  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
 
   @PROP(serialize(float32))
   declare r: number;

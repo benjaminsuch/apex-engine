@@ -83,9 +83,11 @@ export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderPr
 
 @CLASS(proxy(EProxyThread.Render, SceneComponentProxy))
 export class SceneComponent extends ActorComponent implements IProxyOrigin {
-  declare readonly byteView: Uint8Array;
+  declare readonly byteView: IProxyOrigin['byteView'];
 
-  declare readonly tripleBuffer: TripleBuffer;
+  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
+
+  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
 
   /**
    * Available after `loadAnimations` has been called.

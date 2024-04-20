@@ -222,6 +222,10 @@ export class GLTFLoader extends Loader {
     loader.load(url, onLoadHandler, onProgress, onErrorHandler);
   }
 
+  public override loadAsync(url: string, onProgress?: GLTFLoaderOnProgressHandler): Promise<GLTFParserRegisterActorCallback[]> {
+    return super.loadAsync(url, onProgress) as Promise<GLTFParserRegisterActorCallback[]>;
+  }
+
   public parse(data: string | ArrayBuffer, path: string, onLoad: GLTFParserOnLoadHandler, onError: GLTFParserOnErrorHandler): void {
     const json = this.readData(data);
     const parser = this.instantiationService.createInstance(GLTFParser, json, {

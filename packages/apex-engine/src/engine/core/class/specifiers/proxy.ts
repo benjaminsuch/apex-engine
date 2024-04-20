@@ -2,7 +2,7 @@ import type { Matrix3, Matrix4, Quaternion, Vector2, Vector3 } from 'three';
 
 import { type IEngineLoopTickContext } from '../../../EngineLoop';
 import { Flags } from '../../../Flags';
-import { ProxyManager } from '../../../ProxyManager';
+import { type ProxyDeployment, ProxyManager } from '../../../ProxyManager';
 import { TripleBuffer, type TripleBufferJSON } from '../../memory/TripleBuffer';
 import { getClassSchema, getTargetId, isPropSchema } from '../decorators';
 import { id } from './id';
@@ -20,8 +20,9 @@ export interface IProxyConstructionData {
 export interface IProxyOrigin {
   readonly tripleBuffer: TripleBuffer;
   readonly byteView: Uint8Array;
-  tick(tick: IEngineLoopTickContext): Promise<void> | void;
+  cancelDeployment(): boolean;
   getProxyArgs(): any[];
+  tick(tick: IEngineLoopTickContext): Promise<void> | void;
 }
 
 export type TProxyOriginConstructor = TClass<IProxyOrigin> & { proxyClassName: string };
@@ -47,11 +48,13 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
     // `RenderProxy`, when we construct the proxy on the render-thread.
     Reflect.defineMetadata('proxy:origin', constructor, proxyClass);
 
-    return class extends constructor {
+    return class extends constructor implements IProxyOrigin {
       // @ts-ignore
       public static override readonly name: string = constructor.name;
 
       public static readonly proxyClassName: string = proxyClass.name;
+
+      private readonly deployment: ProxyDeployment | null = null;
 
       public readonly tripleBuffer!: TripleBuffer;
 
@@ -437,7 +440,7 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
         // the Worker is loading the Proxy-Classes (e.g. SceneComponentProxy) and thus, will load
         // the `GameProxyManager`, which imports the `IRenderWorkerContext`, which imports from
         // `RenderWorker`. This will lead to a "BAD_IMPORT" error from rollup.
-        ProxyManager.getInstance().deployProxy(this, args, thread);
+        this.deployment = ProxyManager.getInstance().deployProxy(this, args, thread);
       }
 
       public async tick(tick: IEngineLoopTickContext): Promise<void> {
@@ -446,6 +449,10 @@ export function proxy(thread: EProxyThread, proxyClass: TClass) {
 
       public getProxyArgs(): any[] {
         return super.getProxyArgs();
+      }
+
+      public cancelDeployment(): boolean {
+        return super.cancelDeployment();
       }
     };
   };

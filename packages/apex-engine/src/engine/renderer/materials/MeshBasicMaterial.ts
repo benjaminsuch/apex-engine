@@ -260,9 +260,11 @@ export interface MeshBasicMaterialProxyArgs extends MaterialProxyArgs {
 
 @CLASS(proxy(EProxyThread.Render, MeshBasicMaterialProxy))
 export class MeshBasicMaterial extends THREE.MeshBasicMaterial implements IProxyOrigin {
-  declare readonly byteView: Uint8Array;
+  declare readonly byteView: IProxyOrigin['byteView'];
 
-  declare readonly tripleBuffer: TripleBuffer;
+  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
+
+  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
 
   @PROP(serialize(boolean))
   declare alphaHash: boolean;

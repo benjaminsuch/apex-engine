@@ -5,7 +5,6 @@ import { IInstantiationService } from '../../platform/di/common/InstantiationSer
 import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
 import { float32, float64, int8, serialize, uint8, uint16 } from '../core/class/specifiers/serialize';
-import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
 import { TickFunction } from '../TickManager';
@@ -116,9 +115,11 @@ export class RigidBodyProxy extends ProxyInstance {
  */
 @CLASS(proxy(EProxyThread.Game, RigidBodyProxy))
 export class RigidBody implements IProxyOrigin {
-  declare readonly tripleBuffer: TripleBuffer;
+  declare readonly byteView: IProxyOrigin['byteView'];
 
-  declare readonly byteView: Uint8Array;
+  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
+
+  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
 
   @PROP(serialize(float64))
   public readonly handle: number;

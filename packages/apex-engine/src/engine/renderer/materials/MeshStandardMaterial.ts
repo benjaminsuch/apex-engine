@@ -169,21 +169,21 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
     this.object.alphaTest = this.alphaTest;
     this.object.alphaToCoverage = this.alphaToCoverage;
 
-    if (this.alphaMap) {
-      const texture = this.alphaMap.get();
+    // if (this.alphaMap) {
+    //   const texture = this.alphaMap.get();
 
-      if (this.object.alphaMap !== texture) {
-        this.object.alphaMap = texture;
-      }
-    }
+    //   if (this.object.alphaMap !== texture) {
+    //     this.object.alphaMap = texture;
+    //   }
+    // }
 
-    if (this.aoMap) {
-      const texture = this.aoMap.get();
+    // if (this.aoMap) {
+    //   const texture = this.aoMap.get();
 
-      if (this.object.aoMap !== texture) {
-        this.object.aoMap = texture;
-      }
-    }
+    //   if (this.object.aoMap !== texture) {
+    //     this.object.aoMap = texture;
+    //   }
+    // }
 
     this.object.aoMapIntensity = this.aoMapIntensity;
     this.object.blendAlpha = this.blendAlpha;
@@ -195,13 +195,13 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
     this.object.blendSrc = this.blendSrc;
     this.object.blendSrcAlpha = this.blendSrcAlpha;
 
-    if (this.bumpMap) {
-      const texture = this.bumpMap.get();
+    // if (this.bumpMap) {
+    //   const texture = this.bumpMap.get();
 
-      if (this.object.bumpMap !== texture) {
-        this.object.bumpMap = texture;
-      }
-    }
+    //   if (this.object.bumpMap !== texture) {
+    //     this.object.bumpMap = texture;
+    //   }
+    // }
 
     this.object.bumpScale = this.bumpScale;
     this.object.clipIntersection = this.clipIntersection;
@@ -213,13 +213,13 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
     this.object.depthFunc = this.depthFunc;
     this.object.depthTest = this.depthTest;
 
-    if (this.displacementMap) {
-      const texture = this.displacementMap.get();
+    // if (this.displacementMap) {
+    //   const texture = this.displacementMap.get();
 
-      if (this.object.displacementMap !== texture) {
-        this.object.displacementMap = texture;
-      }
-    }
+    //   if (this.object.displacementMap !== texture) {
+    //     this.object.displacementMap = texture;
+    //   }
+    // }
 
     this.object.displacementBias = this.displacementBias;
     this.object.displacementScale = this.displacementScale;
@@ -227,62 +227,62 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
 
     if (this.emissive) this.object.emissive.copy(this.emissive.get());
 
-    if (this.emissiveMap) {
-      const texture = this.emissiveMap.get();
+    // if (this.emissiveMap) {
+    //   const texture = this.emissiveMap.get();
 
-      if (this.object.emissiveMap !== texture) {
-        this.object.emissiveMap = texture;
-      }
-    }
+    //   if (this.object.emissiveMap !== texture) {
+    //     this.object.emissiveMap = texture;
+    //   }
+    // }
 
-    if (this.envMap) {
-      const texture = this.envMap.get();
+    // if (this.envMap) {
+    //   const texture = this.envMap.get();
 
-      if (this.object.envMap !== texture) {
-        this.object.envMap = texture;
-      }
-    }
+    //   if (this.object.envMap !== texture) {
+    //     this.object.envMap = texture;
+    //   }
+    // }
 
     this.object.envMapIntensity = this.envMapIntensity;
     this.object.flatShading = this.flatShading;
     this.object.fog = this.fog;
     this.object.forceSinglePass = this.forceSinglePass;
 
-    if (this.lightMap) {
-      const texture = this.lightMap.get();
+    // if (this.lightMap) {
+    //   const texture = this.lightMap.get();
 
-      if (this.object.lightMap !== texture) {
-        this.object.lightMap = texture;
-      }
-    }
+    //   if (this.object.lightMap !== texture) {
+    //     this.object.lightMap = texture;
+    //   }
+    // }
 
     this.object.lightMapIntensity = this.lightMapIntensity;
 
-    if (this.map) {
-      const texture = this.map.get();
+    // if (this.map) {
+    //   const texture = this.map.get();
 
-      if (this.object.map !== texture) {
-        this.object.map = texture;
-      }
-    }
+    //   if (this.object.map !== texture) {
+    //     this.object.map = texture;
+    //   }
+    // }
 
     this.object.metalness = this.metalness;
 
-    if (this.metalnessMap) {
-      const texture = this.metalnessMap.get();
+    // if (this.metalnessMap) {
+    //   const texture = this.metalnessMap.get();
 
-      if (this.object.metalnessMap !== texture) {
-        this.object.metalnessMap = texture;
-      }
-    }
+    //   if (this.object.metalnessMap !== texture) {
+    //     this.object.metalnessMap = texture;
+    //   }
+    // }
 
-    if (this.normalMap) {
-      const texture = this.normalMap.get();
+    // if (this.normalMap) {
+    //   const texture = this.normalMap.get();
 
-      if (this.object.normalMap !== texture) {
-        this.object.normalMap = texture;
-      }
-    }
+    //   if (this.object.normalMap !== texture) {
+    //     this.object.normalMap = texture;
+    //   }
+    // }
 
     this.object.normalMapType = this.normalMapType;
     this.object.normalScale.fromArray(this.normalScale);
@@ -294,13 +294,13 @@ export class MeshStandardMaterialProxy extends MaterialProxy<THREE.MeshStandardM
     this.object.premultipliedAlpha = this.premultipliedAlpha;
     this.object.roughness = this.roughness;
 
-    if (this.roughnessMap) {
-      const texture = this.roughnessMap.get();
+    // if (this.roughnessMap) {
+    //   const texture = this.roughnessMap.get();
 
-      if (this.object.roughnessMap !== texture) {
-        this.object.roughnessMap = texture;
-      }
-    }
+    //   if (this.object.roughnessMap !== texture) {
+    //     this.object.roughnessMap = texture;
+    //   }
+    // }
 
     this.object.side = this.side;
     this.object.stencilWrite = this.stencilWrite;
@@ -348,9 +348,11 @@ export interface MeshStandardMaterialProxyArgs extends MaterialProxyArgs {
 
 @CLASS(proxy(EProxyThread.Render, MeshStandardMaterialProxy))
 export class MeshStandardMaterial extends THREE.MeshStandardMaterial implements IProxyOrigin {
-  declare readonly byteView: Uint8Array;
+  declare readonly byteView: IProxyOrigin['byteView'];
 
-  declare readonly tripleBuffer: TripleBuffer;
+  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
+
+  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
 
   @PROP(serialize(boolean))
   declare alphaHash: boolean;

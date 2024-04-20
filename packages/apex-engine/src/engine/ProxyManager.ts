@@ -100,9 +100,24 @@ export class ProxyManager {
    * @param args
    * @param thread The thread where the proxy is being instantiated on.
    */
-  public deployProxy(origin: IProxyOrigin, args: unknown[], thread: EProxyThread): void {
+  public deployProxy(origin: IProxyOrigin, args: unknown[], thread: EProxyThread): ProxyDeployment {
+    const deployment = new ProxyDeployment(this, origin, args, thread);
+
     this.origins.push(origin);
-    this.deploymentQueue.push(new ProxyDeployment(origin, args, thread));
+    this.deploymentQueue.push(deployment);
+
+    return deployment;
+  }
+
+  public cancelDeployment(deployment: ProxyDeployment): boolean {
+    const idx = this.deploymentQueue.indexOf(deployment);
+
+    if (idx > -1) {
+      this.deploymentQueue.removeAtSwap(idx);
+      return true;
+    }
+
+    return false;
   }
 
   public async registerProxies(stack: IProxyConstructionData[]): Promise<void> {
@@ -231,7 +246,11 @@ class ProxyManagerTickFunction extends TickFunction<ProxyManager> {
 export class ProxyDeployment {
   public tick: IEngineLoopTickContext['id'] = -1;
 
-  constructor(public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {}
+  constructor(private readonly manager: ProxyManager, public readonly origin: IProxyOrigin, public readonly args: any[], public readonly thread: EProxyThread) {}
+
+  public cancel(): boolean {
+    return this.manager.cancelDeployment(this);
+  }
 
   public toJSON(): IProxyConstructionData {
     const [image] = this.origin.getProxyArgs();

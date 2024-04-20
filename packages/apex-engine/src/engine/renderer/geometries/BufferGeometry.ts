@@ -57,9 +57,11 @@ export interface BufferGeometryProxyArgs {
 
 @CLASS(proxy(EProxyThread.Render, BufferGeometryProxy))
 export class BufferGeometry<Attributes extends THREE.NormalOrGLBufferAttributes = THREE.NormalBufferAttributes> extends THREE.BufferGeometry<Attributes> implements IProxyOrigin {
-  declare readonly byteView: Uint8Array;
+  declare readonly byteView: IProxyOrigin['byteView'];
 
-  declare readonly tripleBuffer: TripleBuffer;
+  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
+
+  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
 
   declare name: string;
 
