@@ -23,6 +23,9 @@ The Apex Engine is a multiplatform game engine that allows you to create 3D game
     - Uses [Rapier](https://rapier.rs/docs/) physics engine
     - Neatly integrated into our components, enabled by default
 
+## Preview
+<img src="https://private-user-images.githubusercontent.com/706852/324191575-6cfec2ae-6938-400a-99c5-ac10b8b55457.gif?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTM2MzE0MDcsIm5iZiI6MTcxMzYzMTEwNywicGF0aCI6Ii83MDY4NTIvMzI0MTkxNTc1LTZjZmVjMmFlLTY5MzgtNDAwYS05OWM1LWFjMTBiOGI1NTQ1Ny5naWY_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjQwNDIwJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI0MDQyMFQxNjM4MjdaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT0zNDEyYTUyNGU0NDkxMDIyMTBmYjkyNzAzOTQ2NmVmNjE4N2I0NjlhNzc1OTFlMjlkNzU5ZTc3MTMzYmI1YTFlJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZhY3Rvcl9pZD0wJmtleV9pZD0wJnJlcG9faWQ9MCJ9.xW9mWCpsKV0P4H1NyV8_sZozu5X8eqwx-P3NW4_wdt4" />
+
 ## Get started
 
 ### Setup
