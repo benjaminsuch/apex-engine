@@ -172,6 +172,10 @@ export class GLTFLoader extends Loader {
     this.registerExtensions();
   }
 
+  public override loadAsync(url: string, onProgress?: GLTFLoaderOnProgressHandler): Promise<GLTFParserRegisterActorCallback[]> {
+    return super.loadAsync(url, onProgress) as Promise<GLTFParserRegisterActorCallback[]>;
+  }
+
   public override load(url: string, onLoad: GLTFParserOnLoadHandler, onProgress?: GLTFLoaderOnProgressHandler, onError?: GLTFParserOnErrorHandler): void {
     const self = this;
     let resourcePath: string;
