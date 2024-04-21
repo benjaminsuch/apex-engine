@@ -2,6 +2,7 @@ import type RAPIER from '@dimforge/rapier3d-compat';
 
 import { CLASS } from '../core/class/decorators';
 import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
+import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';
 import { ProxyInstance } from '../ProxyInstance';
 import { PhysicsTaskManager, PhysicsWorkerTask } from './PhysicsTaskManager';
@@ -29,11 +30,9 @@ export class KinematicControllerProxy extends ProxyInstance {
 
 @CLASS(proxy(EProxyThread.Game, KinematicControllerProxy))
 export class KinematicController implements IProxyOrigin {
-  declare readonly byteView: IProxyOrigin['byteView'];
+  declare readonly tripleBuffer: TripleBuffer;
 
-  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
-
-  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
+  declare readonly byteView: Uint8Array;
 
   public readonly worldController: RAPIER.KinematicCharacterController;
 

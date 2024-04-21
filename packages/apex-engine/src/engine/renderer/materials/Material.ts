@@ -29,11 +29,9 @@ export interface MaterialProxyArgs {
 
 @CLASS(proxy(EProxyThread.Render, MaterialProxy))
 export class Material extends THREE.Material implements IProxyOrigin {
-  declare readonly byteView: IProxyOrigin['byteView'];
+  declare readonly byteView: Uint8Array;
 
-  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
-
-  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
+  declare readonly tripleBuffer: TripleBuffer;
 
   @PROP(serialize(boolean))
   declare alphaHash: boolean;

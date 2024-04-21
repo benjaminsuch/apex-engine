@@ -47,11 +47,9 @@ export class SkeletonProxy extends RenderProxy<THREE.Skeleton> {
 
 @CLASS(proxy(EProxyThread.Render, SkeletonProxy))
 export class Skeleton implements IProxyOrigin {
-  declare readonly byteView: IProxyOrigin['byteView'];
+  declare readonly tripleBuffer: TripleBuffer;
 
-  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
-
-  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
+  declare readonly byteView: Uint8Array;
 
   constructor(public readonly bones: ProxyInstance['id'][], public readonly boneInverses: number[] | THREE.Matrix4Tuple[]) {}
 

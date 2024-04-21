@@ -35,11 +35,9 @@ export class SourceProxy extends RenderProxy<THREE.Source> {
 
 @CLASS(proxy(EProxyThread.Render, SourceProxy))
 export class Source extends THREE.Source implements IProxyOrigin {
-  declare readonly byteView: IProxyOrigin['byteView'];
+  declare readonly byteView: Uint8Array;
 
-  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
-
-  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
+  declare readonly tripleBuffer: TripleBuffer;
 
   declare readonly data: ImageBitmap | OffscreenCanvas;
 

@@ -212,11 +212,9 @@ export interface MeshPhysicalMaterialProxyArgs extends MeshStandardMaterialProxy
 
 @CLASS(proxy(EProxyThread.Render, MeshPhysicalMaterialProxy))
 export class MeshPhysicalMaterial extends THREE.MeshPhysicalMaterial implements IProxyOrigin {
-  declare readonly byteView: IProxyOrigin['byteView'];
+  declare readonly byteView: Uint8Array;
 
-  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
-
-  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
+  declare readonly tripleBuffer: TripleBuffer;
 
   @PROP(serialize(boolean))
   declare alphaHash: boolean;

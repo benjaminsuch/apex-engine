@@ -36,11 +36,9 @@ export interface CapsuleGeometryProxyArgs {
 
 @CLASS(proxy(EProxyThread.Render, CapsuleGeometryProxy))
 export class CapsuleGeometry extends THREE.CapsuleGeometry implements IProxyOrigin {
-  declare readonly byteView: IProxyOrigin['byteView'];
+  declare readonly byteView: Uint8Array;
 
-  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
-
-  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
+  declare readonly tripleBuffer: TripleBuffer;
 
   public tick(): void {}
 

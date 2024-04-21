@@ -3,7 +3,7 @@ import { Matrix4, PerspectiveCamera, type Vector3 } from 'three';
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS, PROP } from '../core/class/decorators';
-import { EProxyThread, type IProxyOrigin, proxy } from '../core/class/specifiers/proxy';
+import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { float32, serialize, uint16 } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from '../EngineLoop';

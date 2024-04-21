@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 import { CLASS, PROP } from '../../core/class/decorators';
-import { EProxyThread, type IProxyOrigin, proxy } from '../../core/class/specifiers/proxy';
+import { EProxyThread, proxy } from '../../core/class/specifiers/proxy';
 import { boolean, float32, ref, serialize, string } from '../../core/class/specifiers/serialize';
 import { type Color } from '../Color';
 import { type Texture } from '../textures/Texture';
@@ -14,13 +14,7 @@ export interface LineBasicMaterialParameters extends Omit<THREE.LineBasicMateria
 }
 
 @CLASS(proxy(EProxyThread.Render, LineBasicMaterialProxy))
-export class LineBasicMaterial extends THREE.LineBasicMaterial implements IProxyOrigin {
-  declare readonly byteView: IProxyOrigin['byteView'];
-
-  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
-
-  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
-
+export class LineBasicMaterial extends THREE.LineBasicMaterial {
   @PROP(serialize(ref(true)))
   declare color: Color;
 
@@ -41,11 +35,5 @@ export class LineBasicMaterial extends THREE.LineBasicMaterial implements IProxy
 
   constructor(params: LineBasicMaterialParameters) {
     super(params);
-  }
-
-  public tick(): void {}
-
-  public getProxyArgs(): [] {
-    return [];
   }
 }

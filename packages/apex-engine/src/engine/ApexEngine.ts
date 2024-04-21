@@ -6,7 +6,7 @@ import { TripleBuffer } from './core/memory/TripleBuffer';
 import { type IEngineLoopTickContext } from './EngineLoop';
 import { Flags } from './Flags';
 import { GameInstance } from './GameInstance';
-import { GLTFLoader } from './GLTFLoader';
+import { GLTFLoader, type GLTFParserRegisterActorCallback } from './GLTFLoader';
 import { type Level } from './Level';
 
 export class ApexEngine {
@@ -93,7 +93,7 @@ export class ApexEngine {
       world.setCurrentLevel(level);
 
       await world.setGameMode(url);
-      await world.registerActors(await loader.loadAsync(`game/maps/${url}.glb`));
+      await world.registerActors((await loader.loadAsync(`game/maps/${url}.glb`)) as GLTFParserRegisterActorCallback[]);
 
       if (IS_BROWSER) {
         gameInstance.setupHUD();

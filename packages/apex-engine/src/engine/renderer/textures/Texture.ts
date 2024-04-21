@@ -115,11 +115,9 @@ export interface TextureProxyArgs {
 
 @CLASS(proxy(EProxyThread.Render, TextureProxy))
 export class Texture extends THREE.Texture implements IProxyOrigin {
-  declare readonly byteView: IProxyOrigin['byteView'];
+  declare readonly byteView: Uint8Array;
 
-  declare readonly tripleBuffer: IProxyOrigin['tripleBuffer'];
-
-  declare readonly cancelDeployment: IProxyOrigin['cancelDeployment'];
+  declare readonly tripleBuffer: TripleBuffer;
 
   @PROP(serialize(ref(true)))
   declare source: Source;
