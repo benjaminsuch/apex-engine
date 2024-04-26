@@ -4,13 +4,14 @@
 //
 // and is licensed under the MIT license.
 
-import { Box3, BufferAttribute, ClampToEdgeWrapping, DoubleSide, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, Loader, LoaderUtils, type LoadingManager, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3 } from 'three';
+import { Box3, BufferAttribute, ClampToEdgeWrapping, DoubleSide, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, Loader, LoaderUtils, type LoadingManager, Matrix4, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3 } from 'three';
 import { DRACOLoader, type GLTF, type KTX2Loader } from 'three-stdlib';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { Actor } from './Actor';
 import { FileLoader } from './FileLoader';
 import { type Level } from './Level';
+import { Bone } from './renderer/Bone';
 import { Color } from './renderer/Color';
 import { BufferGeometry } from './renderer/geometries/BufferGeometry';
 import { type Material } from './renderer/materials/Material';
@@ -19,6 +20,7 @@ import { MeshPhysicalMaterial } from './renderer/materials/MeshPhysicalMaterial'
 import { MeshStandardMaterial, type MeshStandardMaterialParameters } from './renderer/materials/MeshStandardMaterial';
 import { MeshComponent } from './renderer/MeshComponent';
 import { SceneComponent } from './renderer/SceneComponent';
+import { Skeleton } from './renderer/Skeleton';
 import { SkinnedMeshComponent } from './renderer/SkinnedMeshComponent';
 import { Texture } from './renderer/textures/Texture';
 
@@ -435,6 +437,7 @@ export interface GLTFMesh extends GLTFObject {
 export interface GLTFNode extends GLTFObject {
   camera?: number;
   children?: number[];
+  isBone?: boolean;
   matrix: number[];
   mesh?: number;
   rotation?: [number, number, number];
@@ -554,6 +557,16 @@ export class GLTFParser {
   }
 
   public parse(onLoad: GLTFParserOnLoadHandler, onError?: GLTFParserOnErrorHandler): void {
+    const skins = this.data.skins ?? [];
+
+    for (let i = 0; i < skins.length; ++i) {
+      const joints = skins[i].joints;
+
+      for (let j = 0; j < joints.length; ++j) {
+        this.data.nodes[joints[j]].isBone = true;
+      }
+    }
+
     this.loadScene(0).then(onLoad).catch(onError);
   }
 
@@ -592,34 +605,34 @@ export class GLTFParser {
     if (!dependency) {
       switch (type) {
         case 'accessor':
-          dependency = this.loadAccessor(index);
+          dependency = await this.loadAccessor(index);
           break;
         case 'buffer':
-          dependency = this.loadBuffer(index);
+          dependency = await this.loadBuffer(index);
           break;
         case 'bufferView':
-          dependency = this.loadBufferView(index);
+          dependency = await this.loadBufferView(index);
           break;
-        case 'bufferView':
-          dependency = this.loadCamera(index);
+        case 'camera':
+          dependency = await this.loadCamera(index);
           break;
         case 'material':
-          dependency = this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMaterial?.(index));
+          dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMaterial?.(index));
           break;
         case 'mesh':
-          dependency = this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMesh?.(index));
+          dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMesh?.(index));
           break;
         case 'node':
-          dependency = this.loadNode(index);
+          dependency = await this.loadNode(index);
           break;
         case 'scene':
-          dependency = this.loadScene(index);
+          dependency = await this.loadScene(index);
           break;
         case 'skin':
-          dependency = this.loadSkin(index);
+          dependency = await this.loadSkin(index);
           break;
         case 'texture':
-          dependency = this.invokeOne((ext: GLTFLoaderExtension) => ext.loadTexture?.(index));
+          dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadTexture?.(index));
           break;
       }
 
@@ -926,8 +939,8 @@ export class GLTFParser {
     pending.push(this.loadGeometries(primitives));
 
     return Promise.all(pending).then((results) => {
-      const materials = results.slice(0, results.length - 1) as Array<Material | null>;
-      const geometries = results[results.length - 1] as Array<BufferGeometry>;
+      const geometries = results.pop() as Array<BufferGeometry>;
+      const materials = results as Array<Material | null>;
       const meshRegisterCallbacks: GLTFParserRegisterComponentCallback[] = [];
 
       for (let i = 0; i < geometries.length; i++) {
@@ -983,7 +996,47 @@ export class GLTFParser {
     });
   }
 
-  public async loadSkin(index: number): Promise<any> {}
+  public async loadSkin(index: number): Promise<GLTFParserRegisterComponentCallback> {
+    const { inverseBindMatrices, joints } = this.data.skins[index];
+    const pending: Promise<GLTFParserRegisterComponentCallback | BufferAttribute | InterleavedBufferAttribute | null>[] = [];
+
+    for (let i = 0; i < joints.length; i++) {
+      pending.push(this.loadNodeShallow(joints[i]));
+    }
+
+    if (inverseBindMatrices !== undefined) {
+      pending.push(this.getDependency('accessor', inverseBindMatrices));
+    } else {
+      pending.push(Promise.resolve(null));
+    }
+
+    return Promise.all(pending).then((results) => {
+      const inverseBindMatrices = results.pop() as BufferAttribute | InterleavedBufferAttribute | null;
+      const joints = results as GLTFParserRegisterComponentCallback[];
+
+      return async (actor, parent) => {
+        const bones: SceneComponent[] = [];
+        const boneInverses: Matrix4[] = [];
+
+        for (let i = 0; i < joints.length; i++) {
+          const registerComponent = joints[i];
+          const component = await registerComponent(actor, parent);
+
+          bones.push(component);
+
+          const mat4 = new Matrix4();
+
+          if (inverseBindMatrices) {
+            mat4.fromArray(inverseBindMatrices.array, i * 16);
+          }
+
+          boneInverses.push(mat4);
+        }
+        console.log('bones', bones);
+        return this.instantiationService.createInstance(Skeleton, bones, boneInverses) as any;
+      };
+    });
+  }
 
   public async loadNode(index: number): Promise<GLTFParserRegisterComponentCallback> {
     const { children = [], skin } = this.data.nodes[index];
@@ -998,8 +1051,9 @@ export class GLTFParser {
       return Promise.all(pending).then(async ([registerComponent, ...children]) => {
         const component = await registerComponent(actor, parent);
 
-        if (skin) {
-          const skeleton = await this.getDependency('skin', skin);
+        if (skin !== undefined) {
+          const registerSkeleton = await this.getDependency('skin', skin);
+          // await registerSkeleton(actor, component);
           // if (component.isSkinnedMesh) component.bind(skeleton, identityMatrix)
         }
 
@@ -1014,7 +1068,7 @@ export class GLTFParser {
   }
 
   private async loadNodeShallow(index: number): Promise<GLTFParserRegisterComponentCallback> {
-    const { camera, extensions, matrix, mesh, name = '', rotation, scale, translation } = this.data.nodes[index];
+    const { camera, extensions, isBone = false, matrix, mesh, name = '', rotation, scale, translation } = this.data.nodes[index];
     const pending: Promise<GLTFParserRegisterComponentCallback[]>[] = [mesh !== undefined ? this.getDependency('mesh', mesh) : Promise.resolve([])];
 
     if (camera !== undefined) {
@@ -1026,9 +1080,8 @@ export class GLTFParser {
 
       for (let i = 0; i < meshRegisterCallbacks.length; i++) {
         const registerComponent = meshRegisterCallbacks[i];
-        const component = await registerComponent(actor);
+        const component = await registerComponent(actor, parent);
 
-        component.name = name;
         // assignExtrasToUserData(component, nodeDef);
 
         if (extensions) {
@@ -1052,24 +1105,23 @@ export class GLTFParser {
         components.push(component);
       }
 
-      if (components.length === 1) {
-        if (parent) {
-          components[0].attachToComponent(parent);
-        }
-        return components[0];
+      let component: SceneComponent;
+
+      if (isBone) {
+        component = actor.addComponent(Bone);
+      } else if (components.length === 1) {
+        component = components[0];
       } else {
-        const group = actor.addComponent(SceneComponent);
-
-        for (let i = 0; i < components.length; i++) {
-          components[i].attachToComponent(group);
-        }
-
-        if (parent) {
-          group.attachToComponent(parent);
-        }
-
-        return group;
+        component = actor.addComponent(SceneComponent);
       }
+
+      component.name = name;
+
+      if (parent) {
+        component.attachToComponent(parent);
+      }
+
+      return component;
     });
   }
 

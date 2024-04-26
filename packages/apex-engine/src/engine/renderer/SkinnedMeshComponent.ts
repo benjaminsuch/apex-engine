@@ -44,17 +44,17 @@ export class SkinnedMeshComponent extends MeshComponent {
 
     if (mesh.skeleton) {
       const bonesUuid = mesh.skeleton.bones.map(({ uuid }) => uuid);
-      const bones: ProxyInstance['id'][] = [];
+      const bones: SceneComponent[] = [];
 
       for (const origin of GameProxyManager.getInstance().origins) {
-        const sceneComponent = origin as SceneComponent;
+        const component = origin as SceneComponent;
 
-        if (bonesUuid.includes(sceneComponent.uuid)) {
-          bones.push(getTargetId(sceneComponent) as number);
+        if (bonesUuid.includes(component.uuid)) {
+          bones.push(component);
         }
       }
 
-      this.skeleton = this.instantiationService.createInstance(Skeleton, bones, mesh.skeleton.boneInverses.map(m => m.toArray()).flat());
+      this.skeleton = this.instantiationService.createInstance(Skeleton, bones, mesh.skeleton.boneInverses);
     }
   }
 }
