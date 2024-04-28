@@ -155,3 +155,6 @@ export function setPropOnSchema(constructor: TClass, prop: string | symbol, key:
 export function getTargetId(target: InstanceType<TClass>): undefined | number {
   return Reflect.getMetadata('id', target);
 }
+
+// @ts-ignore
+globalThis['getTargetId'] = getTargetId;

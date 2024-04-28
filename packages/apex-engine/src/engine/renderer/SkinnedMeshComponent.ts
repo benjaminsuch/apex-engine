@@ -1,13 +1,16 @@
-import { Matrix4, type SkinnedMesh } from 'three';
+import * as THREE from 'three';
 
-import { CLASS, getTargetId, PROP } from '../core/class/decorators';
+import { IInstantiationService } from '../../platform/di/common/InstantiationService';
+import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
+import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { mat4, ref, serialize } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { GameProxyManager } from '../GameProxyManager';
-import { type ProxyInstance } from '../ProxyInstance';
+import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { type RenderWorker } from './RenderWorker';
+import { IRenderWorkerContext } from './RenderWorkerContext';
 import { type SceneComponent } from './SceneComponent';
 import { Skeleton, type SkeletonProxy } from './Skeleton';
 
@@ -18,10 +21,21 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
 
   declare bindMatrixInverse: Matrix4AsArray;
 
-  // public override sceneObject: SkinnedMesh;
+  public override readonly object: THREE.SkinnedMesh;
 
-  constructor(args: [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
+  constructor([params]: any[], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super([], tb, id, thread, renderer);
+    console.log('skinned mesh proxy', this);
+    const geometry = this.geometry.get();
+
+    this.object = new THREE.SkinnedMesh(geometry, this.material.get());
+
+    if (params) {
+      this.object.name = params.name;
+      this.object.uuid = params.uuid || this.object.uuid;
+    }
+
+    this.object.bind(this.skeleton.get());
   }
 }
 
@@ -31,12 +45,25 @@ export class SkinnedMeshComponent extends MeshComponent {
   public skeleton: Skeleton | null = null;
 
   @PROP(serialize(mat4))
-  public bindMatrix: Matrix4 = new Matrix4();
+  public bindMatrix: THREE.Matrix4 = new THREE.Matrix4();
 
   @PROP(serialize(mat4))
-  public bindMatrixInverse: Matrix4 = new Matrix4();
+  public bindMatrixInverse: THREE.Matrix4 = new THREE.Matrix4();
 
-  public override copyFromObject3D(mesh: SkinnedMesh): void {
+  constructor(
+    geometry: MeshComponent['geometry'],
+    material: MeshComponent['material'],
+  @IInstantiationService instantiationService: IInstantiationService,
+  @IConsoleLogger logger: IConsoleLogger,
+  @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext,
+  @IRenderWorkerContext renderContext: IRenderWorkerContext
+  ) {
+    super(geometry, material, instantiationService, logger, physicsContext, renderContext);
+
+    console.log('SkinnedMesh', this);
+  }
+
+  public override copyFromObject3D(mesh: THREE.SkinnedMesh): void {
     super.copyFromObject3D(mesh);
 
     this.bindMatrix = mesh.bindMatrix;

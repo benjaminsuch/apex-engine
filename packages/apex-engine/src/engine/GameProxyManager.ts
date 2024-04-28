@@ -20,7 +20,13 @@ export class GameProxyManager extends ProxyManager {
   public override tick(tick: IEngineLoopTickContext): void {
     super.tick(tick);
 
-    this.renderContext.sendTasks(RenderTaskManager.getTasks());
+    const tasks = RenderTaskManager.getTasks();
+
+    if (tasks.length) {
+      console.log('tasks', RenderTaskManager.getTasks().slice());
+    }
+
+    this.renderContext.sendTasks(tasks);
     RenderTaskManager.clear();
   }
 

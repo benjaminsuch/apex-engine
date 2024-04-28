@@ -17,12 +17,15 @@ export class BufferGeometryProxy extends RenderProxy<THREE.BufferGeometry> {
     super([], tb, id, originThread, renderer);
 
     const { attributes, index, boundingSphere, uuid, name } = data;
-    const { position, normal, uv } = attributes;
+    const { position, normal, skinIndex, skinWeight, uv } = attributes;
 
     this.object = new THREE.BufferGeometry();
 
     this.object.setAttribute('position', createBufferAttribute(position));
+
     if (normal) this.object.setAttribute('normal', createBufferAttribute(normal));
+    if (skinIndex) this.object.setAttribute('skinIndex', createBufferAttribute(skinIndex));
+    if (skinWeight) this.object.setAttribute('skinWeight', createBufferAttribute(skinWeight));
     if (uv) this.object.setAttribute('uv', createBufferAttribute(uv));
 
     this.object.setIndex(createBufferAttribute(index as THREE.IBufferAttributeJSON));
@@ -41,6 +44,8 @@ export interface BufferGeometryProxyArgs {
   attributes: {
     position: THREE.IBufferAttributeJSON;
     normal?: THREE.IBufferAttributeJSON;
+    skinIndex?: THREE.IBufferAttributeJSON;
+    skinWeight?: THREE.IBufferAttributeJSON;
     uv?: THREE.IBufferAttributeJSON;
   };
   boundingSphere: {

@@ -230,6 +230,8 @@ export class GLTFLoader extends Loader {
 
   public parse(data: string | ArrayBuffer, path: string, onLoad: GLTFParserOnLoadHandler, onError: GLTFParserOnErrorHandler): void {
     const json = this.readData(data);
+    console.log('loaded gltf json:', path);
+    console.log(json);
     const parser = this.instantiationService.createInstance(GLTFParser, json, {
       // extensions: this.extensions,
       path,
@@ -432,6 +434,7 @@ export interface GLTFPrimitive extends GLTFObject {
 export interface GLTFMesh extends GLTFObject {
   primitives: GLTFPrimitive[];
   weights?: number[];
+  isSkinnedMesh?: boolean;
 }
 
 export interface GLTFNode extends GLTFObject {
@@ -554,9 +557,12 @@ export class GLTFParser {
     if (this.options.crossOrigin === 'use-credentials') {
       this.fileLoader.setWithCredentials(true);
     }
+    console.log('cache', this.cache);
   }
 
   public parse(onLoad: GLTFParserOnLoadHandler, onError?: GLTFParserOnErrorHandler): void {
+    const meshes = this.data.meshes ?? [];
+    const nodes = this.data.nodes ?? [];
     const skins = this.data.skins ?? [];
 
     for (let i = 0; i < skins.length; ++i) {
@@ -564,6 +570,14 @@ export class GLTFParser {
 
       for (let j = 0; j < joints.length; ++j) {
         this.data.nodes[joints[j]].isBone = true;
+      }
+    }
+
+    for (let i = 0; i < nodes.length; ++i) {
+      const node = nodes[i];
+
+      if (node.mesh !== undefined && node.skin !== undefined) {
+        meshes[node.mesh].isSkinnedMesh = true;
       }
     }
 
@@ -602,6 +616,12 @@ export class GLTFParser {
     const cacheKey = type + ':' + index;
     let dependency = this.cache.get(cacheKey);
 
+    if (type === 'node') {
+      return this.loadNode(index);
+    } else if (type === 'skin') {
+      return this.loadSkin(index);
+    }
+
     if (!dependency) {
       switch (type) {
         case 'accessor':
@@ -622,21 +642,17 @@ export class GLTFParser {
         case 'mesh':
           dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMesh?.(index));
           break;
-        case 'node':
-          dependency = await this.loadNode(index);
-          break;
         case 'scene':
           dependency = await this.loadScene(index);
-          break;
-        case 'skin':
-          dependency = await this.loadSkin(index);
           break;
         case 'texture':
           dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadTexture?.(index));
           break;
       }
 
-      this.cache.set(cacheKey, dependency);
+      if (dependency) {
+        this.cache.set(cacheKey, dependency);
+      }
     }
 
     return dependency;
@@ -650,7 +666,7 @@ export class GLTFParser {
       const registerComponent = await this.getDependency('node', nodes[i]);
 
       callbacks.push(async (level, actor: Actor = level.getWorld().spawnActor(Actor)) => {
-        await registerComponent(actor);
+        await registerComponent(actor, actor.rootComponent);
         return actor;
       });
     }
@@ -920,7 +936,7 @@ export class GLTFParser {
 
   public async loadMesh(index: number): Promise<GLTFParserRegisterComponentCallback[]> {
     const meshDef = this.data.meshes[index];
-    const { primitives, name = '' } = meshDef;
+    const { isSkinnedMesh = false, primitives, name = '' } = meshDef;
     const isBrowser = IS_NODE === false && IS_WORKER === false;
     const pending = [];
 
@@ -957,7 +973,7 @@ export class GLTFParser {
             || primitive.mode === WEBGL_CONSTANTS.TRIANGLE_FAN
             || primitive.mode === undefined
           ) {
-            if (false) {
+            if (isSkinnedMesh) {
               component = actor.addComponent(SkinnedMeshComponent, geometry, material);
               // component.normalizeSkinWeights();
             } else {
@@ -977,11 +993,11 @@ export class GLTFParser {
           // addUnknownExtensionsToUserData(this.extensions, component, primitive);
           }
 
-          component.name = name;
-
           if (isBrowser) {
             this.assignFinalMaterial(component);
           }
+
+          component.name = name;
 
           this.associations.set(component, {
             meshes: index,
@@ -1015,8 +1031,15 @@ export class GLTFParser {
       const joints = results as GLTFParserRegisterComponentCallback[];
 
       return async (actor, parent) => {
+        const cacheKey = 'skin:' + index;
         const bones: SceneComponent[] = [];
         const boneInverses: Matrix4[] = [];
+
+        let skeleton: Skeleton = this.cache.get(cacheKey);
+
+        if (skeleton) {
+          return skeleton;
+        }
 
         for (let i = 0; i < joints.length; i++) {
           const registerComponent = joints[i];
@@ -1032,16 +1055,20 @@ export class GLTFParser {
 
           boneInverses.push(mat4);
         }
-        console.log('bones', bones);
-        return this.instantiationService.createInstance(Skeleton, bones, boneInverses) as any;
+
+        skeleton = this.instantiationService.createInstance(Skeleton, bones, boneInverses);
+
+        this.cache.set(cacheKey, skeleton);
+
+        return skeleton as any;
       };
     });
   }
 
   public async loadNode(index: number): Promise<GLTFParserRegisterComponentCallback> {
-    const { children = [], skin } = this.data.nodes[index];
+    const { children = [], name = '', skin } = this.data.nodes[index];
 
-    return async (actor: Actor, parent?: SceneComponent) => {
+    return async (actor: Actor) => {
       const pending: Promise<GLTFParserRegisterComponentCallback>[] = [this.loadNodeShallow(index)];
 
       for (let i = 0; i < children.length; i++) {
@@ -1049,17 +1076,26 @@ export class GLTFParser {
       }
 
       return Promise.all(pending).then(async ([registerComponent, ...children]) => {
-        const component = await registerComponent(actor, parent);
+        const component = await registerComponent(actor);
 
         if (skin !== undefined) {
           const registerSkeleton = await this.getDependency('skin', skin);
-          // await registerSkeleton(actor, component);
-          // if (component.isSkinnedMesh) component.bind(skeleton, identityMatrix)
+          const skeleton = await registerSkeleton(actor, component);
+          const skinnedMeshes: SceneComponent[] = [component, ...component.children];
+
+          for (let i = 0; i < skinnedMeshes.length; ++i) {
+            const mesh = skinnedMeshes[i];
+
+            if (mesh instanceof SkinnedMeshComponent) {
+              mesh.skeleton = skeleton;
+            }
+          }
         }
 
         for (let i = 0; i < children.length; i++) {
           const registerChildComponent = children[i];
-          await registerChildComponent(actor, component);
+          const child = await registerChildComponent(actor, component);
+          child.attachToComponent(component);
         }
 
         return component;
@@ -1075,26 +1111,19 @@ export class GLTFParser {
       pending.push(this.getDependency('camera', camera));
     }
 
-    return Promise.all(pending).then(([meshRegisterCallbacks, camera]) => async (actor: Actor, parent?: SceneComponent) => {
+    return Promise.all(pending).then(([meshRegisterCallbacks, camera]) => async (actor: Actor) => {
+      const cacheKey = 'node:' + index;
+      let component: SceneComponent = this.cache.get(cacheKey);
+
+      if (component) {
+        return component;
+      }
+
       const components: SceneComponent[] = [];
 
       for (let i = 0; i < meshRegisterCallbacks.length; i++) {
         const registerComponent = meshRegisterCallbacks[i];
-        const component = await registerComponent(actor, parent);
-
-        // assignExtrasToUserData(component, nodeDef);
-
-        if (extensions) {
-        // addUnknownExtensionsToUserData(extensions, node, nodeDef);
-        }
-
-        if (matrix) {
-          // component.applyMatrix4(new Matrix4().fromArray(matrix))
-        } else {
-          if (translation) component.position.fromArray(translation);
-          if (rotation) component.rotation.fromArray(rotation);
-          if (scale) component.scale.fromArray(scale);
-        }
+        const component = await registerComponent(actor);
 
         if (!this.associations.has(component)) {
           this.associations.set(component, {});
@@ -1105,8 +1134,6 @@ export class GLTFParser {
         components.push(component);
       }
 
-      let component: SceneComponent;
-
       if (isBone) {
         component = actor.addComponent(Bone);
       } else if (components.length === 1) {
@@ -1115,11 +1142,30 @@ export class GLTFParser {
         component = actor.addComponent(SceneComponent);
       }
 
+      if (component !== components[0]) {
+        for (let i = 0; i < components.length; ++i) {
+          components[i].attachToComponent(component);
+        }
+      }
+
       component.name = name;
 
-      if (parent) {
-        component.attachToComponent(parent);
+      // assignExtrasToUserData(component, nodeDef);
+
+      if (extensions) {
+        // addUnknownExtensionsToUserData(extensions, node, nodeDef);
       }
+
+      if (matrix) {
+        console.log('applyMatrix');
+        // component.applyMatrix4(new Matrix4().fromArray(matrix))
+      } else {
+        if (translation) component.position.fromArray(translation);
+        if (rotation) component.rotation.fromArray(rotation);
+        if (scale) component.scale.fromArray(scale);
+      }
+
+      this.cache.set(cacheKey, component);
 
       return component;
     });

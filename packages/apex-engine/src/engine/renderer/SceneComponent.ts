@@ -13,7 +13,6 @@ import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type ColliderProxy } from '../physics/Collider';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RigidBodyProxy } from '../physics/RigidBody';
-import { type ProxyInstance } from '../ProxyInstance';
 import { RenderProxy } from './RenderProxy';
 import { RenderTaskManager, RenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
@@ -48,23 +47,15 @@ export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderPr
 
   protected readonly object: T;
 
-  constructor(args: unknown[] = [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
-    super(args, tb, id, thread, renderer);
+  constructor([params]: any[] = [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
+    super([], tb, id, thread, renderer);
 
     this.object = new Object3D() as T;
-  }
 
-  public setParent(id: ProxyInstance['id']): boolean {
-    const parent = this.renderer.proxyManager.getProxy<SceneComponentProxy>(id, EProxyThread.Game);
-
-    if (!parent) {
-      console.warn(`Parent (${id}) for proxy "${this.id}" not found. Trying again next tick.`);
-      return false;
+    if (params) {
+      this.object.name = params.name;
+      this.object.uuid = params.uuid || this.object.uuid;
     }
-
-    parent.target.object.add(this.object);
-
-    return true;
   }
 
   public override tick(context: IEngineLoopTickContext): void {
@@ -79,6 +70,11 @@ export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderPr
     this.object.matrixWorld.fromArray(this.matrixWorld);
     this.object.up.fromArray(this.up);
   }
+}
+
+export interface SceneComponentProxyArgs {
+  name: string;
+  uuid: string;
 }
 
 @CLASS(proxy(EProxyThread.Render, SceneComponentProxy))
@@ -294,8 +290,13 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     }
   }
 
-  public getProxyArgs(): [] {
-    return [];
+  public getProxyArgs(): [SceneComponentProxyArgs, ...unknown[]] {
+    return [
+      {
+        name: this.name,
+        uuid: this.uuid,
+      },
+    ];
   }
 
   protected onLookAt(target: Vector3, position: Vector3, up: Vector3): Matrix4 {

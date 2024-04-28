@@ -5,15 +5,20 @@ import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
 import { RenderProxy } from './RenderProxy';
 import { type RenderWorker } from './RenderWorker';
-import { SceneComponent } from './SceneComponent';
+import { SceneComponent, SceneComponentProxy } from './SceneComponent';
 
-export class BoneProxy extends RenderProxy<THREE.Bone> {
-  protected readonly object: THREE.Bone;
+export class BoneProxy extends SceneComponentProxy<THREE.Bone> {
+  protected override readonly object: THREE.Bone;
 
-  constructor([]: [] = [], tb: TripleBuffer, id: number, originThread: EProxyThread, renderer: RenderWorker) {
-    super([], tb, id, originThread, renderer);
+  constructor([params]: any[] = [], tb: TripleBuffer, id: number, originThread: EProxyThread, renderer: RenderWorker) {
+    super([params], tb, id, originThread, renderer);
 
     this.object = new THREE.Bone();
+
+    if (params) {
+      this.object.name = params.name;
+      this.object.uuid = params.uuid || this.object.uuid;
+    }
   }
 }
 
