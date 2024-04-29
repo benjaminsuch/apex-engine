@@ -557,7 +557,6 @@ export class GLTFParser {
     if (this.options.crossOrigin === 'use-credentials') {
       this.fileLoader.setWithCredentials(true);
     }
-    console.log('cache', this.cache);
   }
 
   public parse(onLoad: GLTFParserOnLoadHandler, onError?: GLTFParserOnErrorHandler): void {
@@ -782,9 +781,8 @@ export class GLTFParser {
 
   public async loadMaterial(index: number): Promise<any> {
     const materialDef = this.data.materials[index];
+    const { alphaCutoff = 0.5, alphaMode = ALPHA_MODES.OPAQUE, doubleSided, emissiveFactor, emissiveTexture, extensions = {}, extras, normalTexture, occlusionTexture, pbrMetallicRoughness = {} } = materialDef;
     const pending = [];
-
-    const { extensions = {}, pbrMetallicRoughness = {} } = materialDef;
 
     const materialParams: Record<string, any> = {};
     let materialType: typeof MeshBasicMaterial | typeof MeshStandardMaterial;
@@ -822,11 +820,9 @@ export class GLTFParser {
       pending.push(Promise.all(this.invokeAll((ext: GLTFLoaderExtension) => ext.extendMaterialParams?.(index, materialParams))));
     }
 
-    if (materialDef.doubleSided === true) {
+    if (doubleSided === true) {
       materialParams.side = DoubleSide;
     }
-
-    const alphaMode = materialDef.alphaMode ?? ALPHA_MODES.OPAQUE;
 
     if (alphaMode === ALPHA_MODES.BLEND) {
       materialParams.transparent = true;
@@ -835,34 +831,34 @@ export class GLTFParser {
       materialParams.transparent = false;
 
       if (alphaMode === ALPHA_MODES.MASK) {
-        materialParams.alphaTest = materialDef.alphaCutoff ?? 0.5;
+        materialParams.alphaTest = alphaCutoff;
       }
     }
 
-    if (materialDef.normalTexture !== undefined && materialType !== MeshBasicMaterial) {
-      pending.push(this.assignTexture(materialParams, 'normalMap', materialDef.normalTexture));
+    if (normalTexture !== undefined && materialType !== MeshBasicMaterial) {
+      pending.push(this.assignTexture(materialParams, 'normalMap', normalTexture));
       materialParams.normalScale = new Vector2(1, 1);
 
-      if (materialDef.normalTexture.scale !== undefined) {
-        const scale = materialDef.normalTexture.scale;
+      if (normalTexture.scale !== undefined) {
+        const scale = normalTexture.scale;
         materialParams.normalScale.set(scale, scale);
       }
     }
 
-    if (materialDef.occlusionTexture !== undefined && materialType !== MeshBasicMaterial) {
-      pending.push(this.assignTexture(materialParams, 'aoMap', materialDef.occlusionTexture));
+    if (occlusionTexture !== undefined && materialType !== MeshBasicMaterial) {
+      pending.push(this.assignTexture(materialParams, 'aoMap', occlusionTexture));
 
-      if (materialDef.occlusionTexture.strength !== undefined) {
-        materialParams.aoMapIntensity = materialDef.occlusionTexture.strength;
+      if (occlusionTexture.strength !== undefined) {
+        materialParams.aoMapIntensity = occlusionTexture.strength;
       }
     }
 
-    if (materialDef.emissiveFactor !== undefined && materialType !== MeshBasicMaterial) {
-      materialParams.emissive = new Color().fromArray(materialDef.emissiveFactor);
+    if (emissiveFactor !== undefined && materialType !== MeshBasicMaterial) {
+      materialParams.emissive = new Color().fromArray(emissiveFactor);
     }
 
-    if (materialDef.emissiveTexture !== undefined && materialType !== MeshBasicMaterial) {
-      pending.push(this.assignTexture(materialParams, 'emissiveMap', materialDef.emissiveTexture, 3001));
+    if (emissiveTexture !== undefined && materialType !== MeshBasicMaterial) {
+      pending.push(this.assignTexture(materialParams, 'emissiveMap', emissiveTexture, 3001));
     }
 
     return Promise.all(pending).then(() => {
@@ -872,11 +868,11 @@ export class GLTFParser {
         material.name = materialDef.name;
       }
 
-      assignExtrasToUserData(material, materialDef);
+      assignExtrasToUserData(material, extras);
       this.associations.set(material, { materials: index });
 
-      if (materialDef.extensions) {
-        addUnknownExtensionsToUserData(extensions, material, materialDef);
+      if (extensions) {
+        addUnknownExtensionsToUserData(this.extensions, material, extensions);
       }
 
       material.needsUpdate = true;
@@ -936,7 +932,7 @@ export class GLTFParser {
 
   public async loadMesh(index: number): Promise<GLTFParserRegisterComponentCallback[]> {
     const meshDef = this.data.meshes[index];
-    const { isSkinnedMesh = false, primitives, name = '' } = meshDef;
+    const { extras, isSkinnedMesh = false, primitives, name = '' } = meshDef;
     const isBrowser = IS_NODE === false && IS_WORKER === false;
     const pending = [];
 
@@ -955,7 +951,7 @@ export class GLTFParser {
     pending.push(this.loadGeometries(primitives));
 
     return Promise.all(pending).then((results) => {
-      const geometries = results.pop() as Array<BufferGeometry>;
+      const geometries = results.pop() as BufferGeometry[];
       const materials = results as Array<Material | null>;
       const meshRegisterCallbacks: GLTFParserRegisterComponentCallback[] = [];
 
@@ -987,10 +983,10 @@ export class GLTFParser {
             updateMorphTargets(component, meshDef);
           }
 
-          assignExtrasToUserData(component, meshDef);
+          assignExtrasToUserData(component, extras);
 
           if (primitive.extensions) {
-          // addUnknownExtensionsToUserData(this.extensions, component, primitive);
+            addUnknownExtensionsToUserData(this.extensions, component, primitive.extensions);
           }
 
           if (isBrowser) {
@@ -1106,7 +1102,7 @@ export class GLTFParser {
   }
 
   private async loadNodeShallow(index: number): Promise<GLTFParserRegisterComponentCallback> {
-    const { camera, extensions, isBone = false, matrix, mesh, name = '', rotation, scale, translation } = this.data.nodes[index];
+    const { camera, extensions, extras, isBone = false, matrix, mesh, name = '', rotation, scale, translation } = this.data.nodes[index];
     const pending: Promise<GLTFParserRegisterComponentCallback[]>[] = [mesh !== undefined ? this.getDependency('mesh', mesh) : Promise.resolve([])];
 
     if (camera !== undefined) {
@@ -1152,10 +1148,10 @@ export class GLTFParser {
 
       component.name = name;
 
-      // assignExtrasToUserData(component, nodeDef);
+      assignExtrasToUserData(component, extras);
 
       if (extensions) {
-        // addUnknownExtensionsToUserData(extensions, node, nodeDef);
+        addUnknownExtensionsToUserData(this.extensions, component, extensions);
       }
 
       if (matrix) {
@@ -1566,9 +1562,9 @@ function getImageURIMimeType(uri: string): string {
   return 'image/png';
 }
 
-function assignExtrasToUserData(object: InstanceType<TClass>, { extras }: GLTFObject): void {
+function assignExtrasToUserData(object: InstanceType<TClass>, extras?: Record<string, unknown>): void {
   if (extras) {
-    if (typeof extras === 'object') {
+    if (extras && typeof extras === 'object') {
       Object.assign(object.userData, extras);
     } else {
       console.warn('THREE.GLTFLoader: Ignoring primitive type .extras, ' + extras);
@@ -1628,7 +1624,7 @@ async function addPrimitiveAttributes(geometry: BufferGeometry, primitiveDef: GL
     });
   }
 
-  const { attributes, indices, targets = [] } = primitiveDef;
+  const { attributes, extras, indices, targets = [] } = primitiveDef;
 
   for (const prop in attributes) {
     const attr = prop as keyof typeof ATTRIBUTES;
@@ -1649,7 +1645,7 @@ async function addPrimitiveAttributes(geometry: BufferGeometry, primitiveDef: GL
     );
   }
 
-  assignExtrasToUserData(geometry, primitiveDef);
+  assignExtrasToUserData(geometry, extras);
   computeBounds(geometry, primitiveDef, parser);
 
   return Promise.all(pending).then(() => addMorphTargets(geometry, targets, parser));
@@ -1811,12 +1807,12 @@ function updateMorphTargets(component: MeshComponent, { extras, weights = [] }: 
   }
 }
 
-function addUnknownExtensionsToUserData(knownExtensions: Record<string, any>, object: InstanceType<TClass>, objectDef: GLTFObject): void {
-  for (const name in objectDef.extensions) {
+function addUnknownExtensionsToUserData(knownExtensions: Record<string, any>, object: InstanceType<TClass>, extensions: GLTFObject['extensions']): void {
+  for (const name in extensions) {
     if (knownExtensions[name]) {
       object.userData.gltfExtensions = {
         ...object.userData.gltfExtensions,
-        [name]: objectDef.extensions[name],
+        [name]: extensions[name],
       };
     }
   }

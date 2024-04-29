@@ -195,9 +195,6 @@ export class RenderWorker {
   }
 
   public receiveTasks(tasks: RenderWorkerTaskJSON[]): void {
-    if (tasks.length) {
-      console.log('tasks', tasks.slice());
-    }
     this.tasks.push(...tasks);
   }
 }

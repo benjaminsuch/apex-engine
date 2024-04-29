@@ -10,20 +10,12 @@ import { MeshComponent } from './renderer/MeshComponent';
 import { ETickGroup, TickFunction } from './TickManager';
 
 export class Character extends Pawn {
-  protected readonly capsuleComponent: MeshComponent;
+  protected capsuleComponent: MeshComponent | null = null;
 
   public readonly postPhysicsTick: PostPhysicsTickFunction;
 
-  constructor(radius: number = 1, length: number = 3, @IInstantiationService instantiationService: IInstantiationService, @IConsoleLogger logger: IConsoleLogger) {
+  constructor(@IInstantiationService instantiationService: IInstantiationService, @IConsoleLogger logger: IConsoleLogger) {
     super(instantiationService, logger);
-
-    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(radius, length), new MeshStandardMaterial());
-    this.capsuleComponent.visible = false;
-    this.capsuleComponent.position.set(0, length + length / 2, 0);
-    this.capsuleComponent.colliderShape = RAPIER.ShapeType.ConvexPolyhedron;
-    this.capsuleComponent.setBodyType(RAPIER.RigidBodyType.KinematicPositionBased);
-
-    this.rootComponent = this.capsuleComponent;
 
     this.postPhysicsTick = this.instantiationService.createInstance(PostPhysicsTickFunction, this);
     this.postPhysicsTick.canTick = true;
@@ -31,11 +23,22 @@ export class Character extends Pawn {
     this.postPhysicsTick.register();
   }
 
-  public updateComponentBody(): void {
-    const rigidBody = this.capsuleComponent.rigidBody;
+  public initCapsuleComponent(radius: number = 1, length: number = 3): MeshComponent {
+    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(radius, length), new MeshStandardMaterial());
+    this.capsuleComponent.visible = false;
+    this.capsuleComponent.position.set(0, length + length / 2, 0);
+    this.capsuleComponent.colliderShape = RAPIER.ShapeType.ConvexPolyhedron;
+    this.capsuleComponent.setBodyType(RAPIER.RigidBodyType.KinematicPositionBased);
 
-    if (rigidBody) {
-      this.capsuleComponent.position.fromArray(rigidBody.position);
+    return this.capsuleComponent as MeshComponent;
+  }
+
+  public updateComponentBody(): void {
+    const capsule = this.capsuleComponent;
+    const rigidBody = capsule?.rigidBody;
+
+    if (capsule && rigidBody) {
+      capsule.position.fromArray(rigidBody.position);
     }
   }
 }
