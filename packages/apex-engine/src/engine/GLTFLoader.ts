@@ -975,7 +975,7 @@ export class GLTFParser {
           ) {
             if (isSkinnedMesh) {
               component = actor.addComponent(SkinnedMeshComponent, geometry, material);
-              // component.normalizeSkinWeights();
+              (component as SkinnedMeshComponent).normalizeSkinWeights();
             } else {
               component = actor.addComponent(MeshComponent, geometry, material);
             }
@@ -999,10 +999,7 @@ export class GLTFParser {
 
           component.name = name;
 
-          this.associations.set(component, {
-            meshes: index,
-            primitives: i,
-          });
+          this.associations.set(component, { meshes: index, primitives: i });
 
           return component;
         });
@@ -1060,6 +1057,7 @@ export class GLTFParser {
 
         this.cache.set(cacheKey, skeleton);
 
+        // Skeleton is not of type `SceneComponent`, but I can't refactor the code now. Crikey!
         return skeleton as any;
       };
     });
@@ -1068,7 +1066,7 @@ export class GLTFParser {
   public async loadNode(index: number): Promise<GLTFParserRegisterComponentCallback> {
     const { children = [], name = '', skin } = this.data.nodes[index];
 
-    return async (actor: Actor) => {
+    return async (actor, parent) => {
       const pending: Promise<GLTFParserRegisterComponentCallback>[] = [this.loadNodeShallow(index)];
 
       for (let i = 0; i < children.length; i++) {
@@ -1094,8 +1092,12 @@ export class GLTFParser {
 
         for (let i = 0; i < children.length; i++) {
           const registerChildComponent = children[i];
-          const child = await registerChildComponent(actor, component);
+          const child = await registerChildComponent(actor);
           child.attachToComponent(component);
+        }
+
+        if (parent) {
+          component.attachToComponent(parent);
         }
 
         return component;
@@ -1111,7 +1113,7 @@ export class GLTFParser {
       pending.push(this.getDependency('camera', camera));
     }
 
-    return Promise.all(pending).then(([meshRegisterCallbacks, camera]) => async (actor: Actor) => {
+    return Promise.all(pending).then(([meshRegisterCallbacks, camera]) => async (actor) => {
       const cacheKey = 'node:' + index;
       let component: SceneComponent = this.cache.get(cacheKey);
 
@@ -1157,8 +1159,7 @@ export class GLTFParser {
       }
 
       if (matrix) {
-        console.log('applyMatrix');
-        // component.applyMatrix4(new Matrix4().fromArray(matrix))
+        component.applyMatrix4(new Matrix4().fromArray(matrix));
       } else {
         if (translation) component.position.fromArray(translation);
         if (rotation) component.rotation.fromArray(rotation);

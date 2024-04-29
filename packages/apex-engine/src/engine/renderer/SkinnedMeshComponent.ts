@@ -1,16 +1,13 @@
 import * as THREE from 'three';
 
-import { IInstantiationService } from '../../platform/di/common/InstantiationService';
-import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
 import { CLASS, PROP } from '../core/class/decorators';
 import { EProxyThread, proxy } from '../core/class/specifiers/proxy';
-import { mat4, ref, serialize } from '../core/class/specifiers/serialize';
+import { mat4, ref, serialize, string } from '../core/class/specifiers/serialize';
 import { type TripleBuffer } from '../core/memory/TripleBuffer';
+import { type IEngineLoopTickContext } from '../EngineLoop';
 import { GameProxyManager } from '../GameProxyManager';
-import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { type RenderWorker } from './RenderWorker';
-import { IRenderWorkerContext } from './RenderWorkerContext';
 import { type SceneComponent } from './SceneComponent';
 import { Skeleton, type SkeletonProxy } from './Skeleton';
 
@@ -21,11 +18,13 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
 
   declare bindMatrixInverse: Matrix4AsArray;
 
+  declare bindMode: THREE.BindMode;
+
   public override readonly object: THREE.SkinnedMesh;
 
   constructor([params]: any[], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super([], tb, id, thread, renderer);
-    console.log('skinned mesh proxy', this);
+
     const geometry = this.geometry.get();
 
     this.object = new THREE.SkinnedMesh(geometry, this.material.get());
@@ -35,7 +34,15 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
       this.object.uuid = params.uuid || this.object.uuid;
     }
 
-    this.object.bind(this.skeleton.get());
+    this.object.bind(this.skeleton.get(), new THREE.Matrix4());
+  }
+
+  public override tick(context: IEngineLoopTickContext): void {
+    super.tick(context);
+
+    this.object.bindMode = this.bindMode;
+    this.object.bindMatrix.fromArray(this.bindMatrix);
+    this.object.bindMatrixInverse.fromArray(this.bindMatrixInverse);
   }
 }
 
@@ -50,17 +57,26 @@ export class SkinnedMeshComponent extends MeshComponent {
   @PROP(serialize(mat4))
   public bindMatrixInverse: THREE.Matrix4 = new THREE.Matrix4();
 
-  constructor(
-    geometry: MeshComponent['geometry'],
-    material: MeshComponent['material'],
-  @IInstantiationService instantiationService: IInstantiationService,
-  @IConsoleLogger logger: IConsoleLogger,
-  @IPhysicsWorkerContext physicsContext: IPhysicsWorkerContext,
-  @IRenderWorkerContext renderContext: IRenderWorkerContext
-  ) {
-    super(geometry, material, instantiationService, logger, physicsContext, renderContext);
+  @PROP(serialize(string, 8))
+  public bindMode: THREE.BindMode = 'attached';
 
-    console.log('SkinnedMesh', this);
+  public normalizeSkinWeights(): void {
+    const vector = new THREE.Vector4();
+    const skinWeight = this.geometry.attributes.skinWeight as THREE.BufferAttribute;
+
+    for (let i = 0, l = skinWeight.count; i < l; i++) {
+      vector.fromBufferAttribute(skinWeight, i);
+
+      const scale = 1.0 / vector.manhattanLength();
+
+      if (scale !== Infinity) {
+        vector.multiplyScalar(scale);
+      } else {
+        vector.set(1, 0, 0, 0);
+      }
+
+      skinWeight.setXYZW(i, vector.x, vector.y, vector.z, vector.w);
+    }
   }
 
   public override copyFromObject3D(mesh: THREE.SkinnedMesh): void {

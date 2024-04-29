@@ -27,7 +27,13 @@ export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderPr
 
   declare scale: [number, number, number];
 
+  declare matrix: Matrix4AsArray;
+
+  declare matrixAutoUpdate: boolean;
+
   declare matrixWorld: Matrix4AsArray;
+
+  declare matrixWorldNeedsUpdate: boolean;
 
   declare rotation: [number, number, number, number];
 
@@ -62,13 +68,16 @@ export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderPr
     super.tick(context);
 
     this.object.castShadow = this.castShadow;
-    this.object.receiveShadow = this.receiveShadow;
-    this.object.visible = this.visible;
+    this.object.matrix.fromArray(this.matrix);
+    this.object.matrixAutoUpdate = this.matrixAutoUpdate;
+    this.object.matrixWorld.fromArray(this.matrixWorld);
+    this.object.matrixWorldNeedsUpdate = this.matrixWorldNeedsUpdate;
     this.object.position.fromArray(this.position);
     this.object.quaternion.fromArray(this.rotation);
     this.object.scale.fromArray(this.scale);
-    this.object.matrixWorld.fromArray(this.matrixWorld);
+    this.object.receiveShadow = this.receiveShadow;
     this.object.up.fromArray(this.up);
+    this.object.visible = this.visible;
   }
 }
 
@@ -128,7 +137,16 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   public scale: Vector3 = new Vector3(1, 1, 1);
 
   @PROP(serialize(mat4))
+  public matrix: Matrix4 = new Matrix4();
+
+  @PROP(serialize(boolean))
+  public matrixAutoUpdate: boolean = true;
+
+  @PROP(serialize(mat4))
   public matrixWorld: Matrix4 = new Matrix4();
+
+  @PROP(serialize(boolean))
+  public matrixWorldNeedsUpdate: boolean = false;
 
   @PROP(serialize(vec3))
   public up: Vector3 = Object3D.DEFAULT_UP;
@@ -167,6 +185,8 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
    * Will be registered when `MeshComponent.beginPlay` is called.
    */
   public collider: ColliderProxy | null = null;
+
+  public userData: Record<string, any> = {};
 
   constructor(
     @IInstantiationService instantiationService: IInstantiationService,
@@ -260,6 +280,18 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
       }
     }
     return false;
+  }
+
+  public applyMatrix4(matrix: Matrix4): void {
+    if (this.matrixAutoUpdate) this.updateMatrix();
+
+    this.matrix.premultiply(matrix);
+    this.matrix.decompose(this.position, this.rotation, this.scale);
+  }
+
+  public updateMatrix(): void {
+    this.matrix.compose(this.position, this.rotation, this.scale);
+    this.matrixWorldNeedsUpdate = true;
   }
 
   public lookAt(x: number, y: number, z: number): void {

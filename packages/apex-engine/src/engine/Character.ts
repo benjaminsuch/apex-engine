@@ -14,11 +14,12 @@ export class Character extends Pawn {
 
   public readonly postPhysicsTick: PostPhysicsTickFunction;
 
-  constructor(@IInstantiationService instantiationService: IInstantiationService, @IConsoleLogger logger: IConsoleLogger) {
+  constructor(radius: number = 1, length: number = 3, @IInstantiationService instantiationService: IInstantiationService, @IConsoleLogger logger: IConsoleLogger) {
     super(instantiationService, logger);
 
-    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(1, 3), new MeshStandardMaterial());
-    this.capsuleComponent.position.set(0, 4, 0);
+    this.capsuleComponent = this.addComponent(MeshComponent, new CapsuleGeometry(radius, length), new MeshStandardMaterial());
+    this.capsuleComponent.visible = false;
+    this.capsuleComponent.position.set(0, length + length / 2, 0);
     this.capsuleComponent.colliderShape = RAPIER.ShapeType.ConvexPolyhedron;
     this.capsuleComponent.setBodyType(RAPIER.RigidBodyType.KinematicPositionBased);
 
@@ -34,7 +35,7 @@ export class Character extends Pawn {
     const rigidBody = this.capsuleComponent.rigidBody;
 
     if (rigidBody) {
-      this.rootComponent?.position.fromArray(rigidBody.position);
+      this.capsuleComponent.position.fromArray(rigidBody.position);
     }
   }
 }
