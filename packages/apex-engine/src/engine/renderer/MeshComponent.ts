@@ -21,10 +21,15 @@ export class MeshComponentProxy extends SceneComponentProxy<THREE.Mesh> {
 
   protected override readonly object: THREE.Mesh;
 
-  constructor(args: never[], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
-    super(args, tb, id, thread, renderer);
+  constructor([params]: any[], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
+    super([], tb, id, thread, renderer);
 
     this.object = new THREE.Mesh(this.geometry.get(), this.material.get());
+
+    if (params) {
+      this.object.name = params.name;
+      this.object.uuid = params.uuid || this.object.uuid;
+    }
   }
 }
 

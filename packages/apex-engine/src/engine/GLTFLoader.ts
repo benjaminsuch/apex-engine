@@ -4,13 +4,14 @@
 //
 // and is licensed under the MIT license.
 
-import { Box3, BufferAttribute, ClampToEdgeWrapping, DoubleSide, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, Loader, LoaderUtils, type LoadingManager, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3 } from 'three';
+import { Box3, BufferAttribute, ClampToEdgeWrapping, DoubleSide, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, Loader, LoaderUtils, type LoadingManager, Matrix4, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3 } from 'three';
 import { DRACOLoader, type GLTF, type KTX2Loader } from 'three-stdlib';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { Actor } from './Actor';
 import { FileLoader } from './FileLoader';
 import { type Level } from './Level';
+import { Bone } from './renderer/Bone';
 import { Color } from './renderer/Color';
 import { BufferGeometry } from './renderer/geometries/BufferGeometry';
 import { type Material } from './renderer/materials/Material';
@@ -19,6 +20,7 @@ import { MeshPhysicalMaterial } from './renderer/materials/MeshPhysicalMaterial'
 import { MeshStandardMaterial, type MeshStandardMaterialParameters } from './renderer/materials/MeshStandardMaterial';
 import { MeshComponent } from './renderer/MeshComponent';
 import { SceneComponent } from './renderer/SceneComponent';
+import { Skeleton } from './renderer/Skeleton';
 import { SkinnedMeshComponent } from './renderer/SkinnedMeshComponent';
 import { Texture } from './renderer/textures/Texture';
 
@@ -172,6 +174,10 @@ export class GLTFLoader extends Loader {
     this.registerExtensions();
   }
 
+  public override loadAsync(url: string, onProgress?: GLTFLoaderOnProgressHandler): Promise<GLTFParserRegisterActorCallback[]> {
+    return super.loadAsync(url, onProgress) as Promise<GLTFParserRegisterActorCallback[]>;
+  }
+
   public override load(url: string, onLoad: GLTFParserOnLoadHandler, onProgress?: GLTFLoaderOnProgressHandler, onError?: GLTFParserOnErrorHandler): void {
     const self = this;
     let resourcePath: string;
@@ -224,6 +230,8 @@ export class GLTFLoader extends Loader {
 
   public parse(data: string | ArrayBuffer, path: string, onLoad: GLTFParserOnLoadHandler, onError: GLTFParserOnErrorHandler): void {
     const json = this.readData(data);
+    console.log('loaded gltf json:', path);
+    console.log(json);
     const parser = this.instantiationService.createInstance(GLTFParser, json, {
       // extensions: this.extensions,
       path,
@@ -426,11 +434,13 @@ export interface GLTFPrimitive extends GLTFObject {
 export interface GLTFMesh extends GLTFObject {
   primitives: GLTFPrimitive[];
   weights?: number[];
+  isSkinnedMesh?: boolean;
 }
 
 export interface GLTFNode extends GLTFObject {
   camera?: number;
   children?: number[];
+  isBone?: boolean;
   matrix: number[];
   mesh?: number;
   rotation?: [number, number, number];
@@ -550,6 +560,26 @@ export class GLTFParser {
   }
 
   public parse(onLoad: GLTFParserOnLoadHandler, onError?: GLTFParserOnErrorHandler): void {
+    const meshes = this.data.meshes ?? [];
+    const nodes = this.data.nodes ?? [];
+    const skins = this.data.skins ?? [];
+
+    for (let i = 0; i < skins.length; ++i) {
+      const joints = skins[i].joints;
+
+      for (let j = 0; j < joints.length; ++j) {
+        this.data.nodes[joints[j]].isBone = true;
+      }
+    }
+
+    for (let i = 0; i < nodes.length; ++i) {
+      const node = nodes[i];
+
+      if (node.mesh !== undefined && node.skin !== undefined) {
+        meshes[node.mesh].isSkinnedMesh = true;
+      }
+    }
+
     this.loadScene(0).then(onLoad).catch(onError);
   }
 
@@ -585,41 +615,43 @@ export class GLTFParser {
     const cacheKey = type + ':' + index;
     let dependency = this.cache.get(cacheKey);
 
+    if (type === 'node') {
+      return this.loadNode(index);
+    } else if (type === 'skin') {
+      return this.loadSkin(index);
+    }
+
     if (!dependency) {
       switch (type) {
         case 'accessor':
-          dependency = this.loadAccessor(index);
+          dependency = await this.loadAccessor(index);
           break;
         case 'buffer':
-          dependency = this.loadBuffer(index);
+          dependency = await this.loadBuffer(index);
           break;
         case 'bufferView':
-          dependency = this.loadBufferView(index);
+          dependency = await this.loadBufferView(index);
           break;
-        case 'bufferView':
-          dependency = this.loadCamera(index);
+        case 'camera':
+          dependency = await this.loadCamera(index);
           break;
         case 'material':
-          dependency = this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMaterial?.(index));
+          dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMaterial?.(index));
           break;
         case 'mesh':
-          dependency = this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMesh?.(index));
-          break;
-        case 'node':
-          dependency = this.loadNode(index);
+          dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMesh?.(index));
           break;
         case 'scene':
-          dependency = this.loadScene(index);
-          break;
-        case 'skin':
-          dependency = this.loadSkin(index);
+          dependency = await this.loadScene(index);
           break;
         case 'texture':
-          dependency = this.invokeOne((ext: GLTFLoaderExtension) => ext.loadTexture?.(index));
+          dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadTexture?.(index));
           break;
       }
 
-      this.cache.set(cacheKey, dependency);
+      if (dependency) {
+        this.cache.set(cacheKey, dependency);
+      }
     }
 
     return dependency;
@@ -633,7 +665,7 @@ export class GLTFParser {
       const registerComponent = await this.getDependency('node', nodes[i]);
 
       callbacks.push(async (level, actor: Actor = level.getWorld().spawnActor(Actor)) => {
-        await registerComponent(actor);
+        await registerComponent(actor, actor.rootComponent);
         return actor;
       });
     }
@@ -749,9 +781,8 @@ export class GLTFParser {
 
   public async loadMaterial(index: number): Promise<any> {
     const materialDef = this.data.materials[index];
+    const { alphaCutoff = 0.5, alphaMode = ALPHA_MODES.OPAQUE, doubleSided, emissiveFactor, emissiveTexture, extensions = {}, extras, normalTexture, occlusionTexture, pbrMetallicRoughness = {} } = materialDef;
     const pending = [];
-
-    const { extensions = {}, pbrMetallicRoughness = {} } = materialDef;
 
     const materialParams: Record<string, any> = {};
     let materialType: typeof MeshBasicMaterial | typeof MeshStandardMaterial;
@@ -789,11 +820,9 @@ export class GLTFParser {
       pending.push(Promise.all(this.invokeAll((ext: GLTFLoaderExtension) => ext.extendMaterialParams?.(index, materialParams))));
     }
 
-    if (materialDef.doubleSided === true) {
+    if (doubleSided === true) {
       materialParams.side = DoubleSide;
     }
-
-    const alphaMode = materialDef.alphaMode ?? ALPHA_MODES.OPAQUE;
 
     if (alphaMode === ALPHA_MODES.BLEND) {
       materialParams.transparent = true;
@@ -802,34 +831,34 @@ export class GLTFParser {
       materialParams.transparent = false;
 
       if (alphaMode === ALPHA_MODES.MASK) {
-        materialParams.alphaTest = materialDef.alphaCutoff ?? 0.5;
+        materialParams.alphaTest = alphaCutoff;
       }
     }
 
-    if (materialDef.normalTexture !== undefined && materialType !== MeshBasicMaterial) {
-      pending.push(this.assignTexture(materialParams, 'normalMap', materialDef.normalTexture));
+    if (normalTexture !== undefined && materialType !== MeshBasicMaterial) {
+      pending.push(this.assignTexture(materialParams, 'normalMap', normalTexture));
       materialParams.normalScale = new Vector2(1, 1);
 
-      if (materialDef.normalTexture.scale !== undefined) {
-        const scale = materialDef.normalTexture.scale;
+      if (normalTexture.scale !== undefined) {
+        const scale = normalTexture.scale;
         materialParams.normalScale.set(scale, scale);
       }
     }
 
-    if (materialDef.occlusionTexture !== undefined && materialType !== MeshBasicMaterial) {
-      pending.push(this.assignTexture(materialParams, 'aoMap', materialDef.occlusionTexture));
+    if (occlusionTexture !== undefined && materialType !== MeshBasicMaterial) {
+      pending.push(this.assignTexture(materialParams, 'aoMap', occlusionTexture));
 
-      if (materialDef.occlusionTexture.strength !== undefined) {
-        materialParams.aoMapIntensity = materialDef.occlusionTexture.strength;
+      if (occlusionTexture.strength !== undefined) {
+        materialParams.aoMapIntensity = occlusionTexture.strength;
       }
     }
 
-    if (materialDef.emissiveFactor !== undefined && materialType !== MeshBasicMaterial) {
-      materialParams.emissive = new Color().fromArray(materialDef.emissiveFactor);
+    if (emissiveFactor !== undefined && materialType !== MeshBasicMaterial) {
+      materialParams.emissive = new Color().fromArray(emissiveFactor);
     }
 
-    if (materialDef.emissiveTexture !== undefined && materialType !== MeshBasicMaterial) {
-      pending.push(this.assignTexture(materialParams, 'emissiveMap', materialDef.emissiveTexture, 3001));
+    if (emissiveTexture !== undefined && materialType !== MeshBasicMaterial) {
+      pending.push(this.assignTexture(materialParams, 'emissiveMap', emissiveTexture, 3001));
     }
 
     return Promise.all(pending).then(() => {
@@ -839,11 +868,11 @@ export class GLTFParser {
         material.name = materialDef.name;
       }
 
-      assignExtrasToUserData(material, materialDef);
+      assignExtrasToUserData(material, extras);
       this.associations.set(material, { materials: index });
 
-      if (materialDef.extensions) {
-        addUnknownExtensionsToUserData(extensions, material, materialDef);
+      if (extensions) {
+        addUnknownExtensionsToUserData(this.extensions, material, extensions);
       }
 
       material.needsUpdate = true;
@@ -903,7 +932,7 @@ export class GLTFParser {
 
   public async loadMesh(index: number): Promise<GLTFParserRegisterComponentCallback[]> {
     const meshDef = this.data.meshes[index];
-    const { primitives, name = '' } = meshDef;
+    const { extras, isSkinnedMesh = false, primitives, name = '' } = meshDef;
     const isBrowser = IS_NODE === false && IS_WORKER === false;
     const pending = [];
 
@@ -922,8 +951,8 @@ export class GLTFParser {
     pending.push(this.loadGeometries(primitives));
 
     return Promise.all(pending).then((results) => {
-      const materials = results.slice(0, results.length - 1) as Array<Material | null>;
-      const geometries = results[results.length - 1] as Array<BufferGeometry>;
+      const geometries = results.pop() as BufferGeometry[];
+      const materials = results as Array<Material | null>;
       const meshRegisterCallbacks: GLTFParserRegisterComponentCallback[] = [];
 
       for (let i = 0; i < geometries.length; i++) {
@@ -940,9 +969,9 @@ export class GLTFParser {
             || primitive.mode === WEBGL_CONSTANTS.TRIANGLE_FAN
             || primitive.mode === undefined
           ) {
-            if (false) {
+            if (isSkinnedMesh) {
               component = actor.addComponent(SkinnedMeshComponent, geometry, material);
-              // component.normalizeSkinWeights();
+              (component as SkinnedMeshComponent).normalizeSkinWeights();
             } else {
               component = actor.addComponent(MeshComponent, geometry, material);
             }
@@ -954,22 +983,19 @@ export class GLTFParser {
             updateMorphTargets(component, meshDef);
           }
 
-          assignExtrasToUserData(component, meshDef);
+          assignExtrasToUserData(component, extras);
 
           if (primitive.extensions) {
-          // addUnknownExtensionsToUserData(this.extensions, component, primitive);
+            addUnknownExtensionsToUserData(this.extensions, component, primitive.extensions);
           }
-
-          component.name = name;
 
           if (isBrowser) {
             this.assignFinalMaterial(component);
           }
 
-          this.associations.set(component, {
-            meshes: index,
-            primitives: i,
-          });
+          component.name = name;
+
+          this.associations.set(component, { meshes: index, primitives: i });
 
           return component;
         });
@@ -979,12 +1005,64 @@ export class GLTFParser {
     });
   }
 
-  public async loadSkin(index: number): Promise<any> {}
+  public async loadSkin(index: number): Promise<GLTFParserRegisterComponentCallback> {
+    const { inverseBindMatrices, joints } = this.data.skins[index];
+    const pending: Promise<GLTFParserRegisterComponentCallback | BufferAttribute | InterleavedBufferAttribute | null>[] = [];
+
+    for (let i = 0; i < joints.length; i++) {
+      pending.push(this.loadNodeShallow(joints[i]));
+    }
+
+    if (inverseBindMatrices !== undefined) {
+      pending.push(this.getDependency('accessor', inverseBindMatrices));
+    } else {
+      pending.push(Promise.resolve(null));
+    }
+
+    return Promise.all(pending).then((results) => {
+      const inverseBindMatrices = results.pop() as BufferAttribute | InterleavedBufferAttribute | null;
+      const joints = results as GLTFParserRegisterComponentCallback[];
+
+      return async (actor, parent) => {
+        const cacheKey = 'skin:' + index;
+        const bones: SceneComponent[] = [];
+        const boneInverses: Matrix4[] = [];
+
+        let skeleton: Skeleton = this.cache.get(cacheKey);
+
+        if (skeleton) {
+          return skeleton;
+        }
+
+        for (let i = 0; i < joints.length; i++) {
+          const registerComponent = joints[i];
+          const component = await registerComponent(actor, parent);
+
+          bones.push(component);
+
+          const mat4 = new Matrix4();
+
+          if (inverseBindMatrices) {
+            mat4.fromArray(inverseBindMatrices.array, i * 16);
+          }
+
+          boneInverses.push(mat4);
+        }
+
+        skeleton = this.instantiationService.createInstance(Skeleton, bones, boneInverses);
+
+        this.cache.set(cacheKey, skeleton);
+
+        // Skeleton is not of type `SceneComponent`, but I can't refactor the code now. Crikey!
+        return skeleton as any;
+      };
+    });
+  }
 
   public async loadNode(index: number): Promise<GLTFParserRegisterComponentCallback> {
-    const { children = [], skin } = this.data.nodes[index];
+    const { children = [], name = '', skin } = this.data.nodes[index];
 
-    return async (actor: Actor, parent?: SceneComponent) => {
+    return async (actor, parent) => {
       const pending: Promise<GLTFParserRegisterComponentCallback>[] = [this.loadNodeShallow(index)];
 
       for (let i = 0; i < children.length; i++) {
@@ -992,16 +1070,30 @@ export class GLTFParser {
       }
 
       return Promise.all(pending).then(async ([registerComponent, ...children]) => {
-        const component = await registerComponent(actor, parent);
+        const component = await registerComponent(actor);
 
-        if (skin) {
-          const skeleton = await this.getDependency('skin', skin);
-          // if (component.isSkinnedMesh) component.bind(skeleton, identityMatrix)
+        if (skin !== undefined) {
+          const registerSkeleton = await this.getDependency('skin', skin);
+          const skeleton = await registerSkeleton(actor, component);
+          const skinnedMeshes: SceneComponent[] = [component, ...component.children];
+
+          for (let i = 0; i < skinnedMeshes.length; ++i) {
+            const mesh = skinnedMeshes[i];
+
+            if (mesh instanceof SkinnedMeshComponent) {
+              mesh.skeleton = skeleton;
+            }
+          }
         }
 
         for (let i = 0; i < children.length; i++) {
           const registerChildComponent = children[i];
-          await registerChildComponent(actor, component);
+          const child = await registerChildComponent(actor);
+          child.attachToComponent(component);
+        }
+
+        if (parent) {
+          component.attachToComponent(parent);
         }
 
         return component;
@@ -1010,34 +1102,26 @@ export class GLTFParser {
   }
 
   private async loadNodeShallow(index: number): Promise<GLTFParserRegisterComponentCallback> {
-    const { camera, extensions, matrix, mesh, name = '', rotation, scale, translation } = this.data.nodes[index];
+    const { camera, extensions, extras, isBone = false, matrix, mesh, name = '', rotation, scale, translation } = this.data.nodes[index];
     const pending: Promise<GLTFParserRegisterComponentCallback[]>[] = [mesh !== undefined ? this.getDependency('mesh', mesh) : Promise.resolve([])];
 
     if (camera !== undefined) {
       pending.push(this.getDependency('camera', camera));
     }
 
-    return Promise.all(pending).then(([meshRegisterCallbacks, camera]) => async (actor: Actor, parent?: SceneComponent) => {
+    return Promise.all(pending).then(([meshRegisterCallbacks, camera]) => async (actor) => {
+      const cacheKey = 'node:' + index;
+      let component: SceneComponent = this.cache.get(cacheKey);
+
+      if (component) {
+        return component;
+      }
+
       const components: SceneComponent[] = [];
 
       for (let i = 0; i < meshRegisterCallbacks.length; i++) {
         const registerComponent = meshRegisterCallbacks[i];
         const component = await registerComponent(actor);
-
-        component.name = name;
-        // assignExtrasToUserData(component, nodeDef);
-
-        if (extensions) {
-        // addUnknownExtensionsToUserData(extensions, node, nodeDef);
-        }
-
-        if (matrix) {
-          // component.applyMatrix4(new Matrix4().fromArray(matrix))
-        } else {
-          if (translation) component.position.fromArray(translation);
-          if (rotation) component.rotation.fromArray(rotation);
-          if (scale) component.scale.fromArray(scale);
-        }
 
         if (!this.associations.has(component)) {
           this.associations.set(component, {});
@@ -1048,24 +1132,39 @@ export class GLTFParser {
         components.push(component);
       }
 
-      if (components.length === 1) {
-        if (parent) {
-          components[0].attachToComponent(parent);
-        }
-        return components[0];
+      if (isBone) {
+        component = actor.addComponent(Bone);
+      } else if (components.length === 1) {
+        component = components[0];
       } else {
-        const group = actor.addComponent(SceneComponent);
-
-        for (let i = 0; i < components.length; i++) {
-          components[i].attachToComponent(group);
-        }
-
-        if (parent) {
-          group.attachToComponent(parent);
-        }
-
-        return group;
+        component = actor.addComponent(SceneComponent);
       }
+
+      if (component !== components[0]) {
+        for (let i = 0; i < components.length; ++i) {
+          components[i].attachToComponent(component);
+        }
+      }
+
+      component.name = name;
+
+      assignExtrasToUserData(component, extras);
+
+      if (extensions) {
+        addUnknownExtensionsToUserData(this.extensions, component, extensions);
+      }
+
+      if (matrix) {
+        component.applyMatrix4(new Matrix4().fromArray(matrix));
+      } else {
+        if (translation) component.position.fromArray(translation);
+        if (rotation) component.rotation.fromArray(rotation);
+        if (scale) component.scale.fromArray(scale);
+      }
+
+      this.cache.set(cacheKey, component);
+
+      return component;
     });
   }
 
@@ -1463,9 +1562,9 @@ function getImageURIMimeType(uri: string): string {
   return 'image/png';
 }
 
-function assignExtrasToUserData(object: InstanceType<TClass>, { extras }: GLTFObject): void {
+function assignExtrasToUserData(object: InstanceType<TClass>, extras?: Record<string, unknown>): void {
   if (extras) {
-    if (typeof extras === 'object') {
+    if (extras && typeof extras === 'object') {
       Object.assign(object.userData, extras);
     } else {
       console.warn('THREE.GLTFLoader: Ignoring primitive type .extras, ' + extras);
@@ -1525,7 +1624,7 @@ async function addPrimitiveAttributes(geometry: BufferGeometry, primitiveDef: GL
     });
   }
 
-  const { attributes, indices, targets = [] } = primitiveDef;
+  const { attributes, extras, indices, targets = [] } = primitiveDef;
 
   for (const prop in attributes) {
     const attr = prop as keyof typeof ATTRIBUTES;
@@ -1546,7 +1645,7 @@ async function addPrimitiveAttributes(geometry: BufferGeometry, primitiveDef: GL
     );
   }
 
-  assignExtrasToUserData(geometry, primitiveDef);
+  assignExtrasToUserData(geometry, extras);
   computeBounds(geometry, primitiveDef, parser);
 
   return Promise.all(pending).then(() => addMorphTargets(geometry, targets, parser));
@@ -1708,12 +1807,12 @@ function updateMorphTargets(component: MeshComponent, { extras, weights = [] }: 
   }
 }
 
-function addUnknownExtensionsToUserData(knownExtensions: Record<string, any>, object: InstanceType<TClass>, objectDef: GLTFObject): void {
-  for (const name in objectDef.extensions) {
+function addUnknownExtensionsToUserData(knownExtensions: Record<string, any>, object: InstanceType<TClass>, extensions: GLTFObject['extensions']): void {
+  for (const name in extensions) {
     if (knownExtensions[name]) {
       object.userData.gltfExtensions = {
         ...object.userData.gltfExtensions,
-        [name]: objectDef.extensions[name],
+        [name]: extensions[name],
       };
     }
   }

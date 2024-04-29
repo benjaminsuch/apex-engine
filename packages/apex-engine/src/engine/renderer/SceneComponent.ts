@@ -13,7 +13,6 @@ import { type IEngineLoopTickContext } from '../EngineLoop';
 import { type ColliderProxy } from '../physics/Collider';
 import { IPhysicsWorkerContext } from '../physics/PhysicsWorkerContext';
 import { type RigidBodyProxy } from '../physics/RigidBody';
-import { type ProxyInstance } from '../ProxyInstance';
 import { RenderProxy } from './RenderProxy';
 import { RenderTaskManager, RenderWorkerTask } from './RenderTaskManager';
 import { type RenderWorker } from './RenderWorker';
@@ -28,7 +27,13 @@ export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderPr
 
   declare scale: [number, number, number];
 
+  declare matrix: Matrix4AsArray;
+
+  declare matrixAutoUpdate: boolean;
+
   declare matrixWorld: Matrix4AsArray;
+
+  declare matrixWorldNeedsUpdate: boolean;
 
   declare rotation: [number, number, number, number];
 
@@ -48,37 +53,37 @@ export class SceneComponentProxy<T extends Object3D = Object3D> extends RenderPr
 
   protected readonly object: T;
 
-  constructor(args: unknown[] = [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
-    super(args, tb, id, thread, renderer);
+  constructor([params]: any[] = [], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
+    super([], tb, id, thread, renderer);
 
     this.object = new Object3D() as T;
-  }
 
-  public setParent(id: ProxyInstance['id']): boolean {
-    const parent = this.renderer.proxyManager.getProxy<SceneComponentProxy>(id, EProxyThread.Game);
-
-    if (!parent) {
-      console.warn(`Parent (${id}) for proxy "${this.id}" not found. Trying again next tick.`);
-      return false;
+    if (params) {
+      this.object.name = params.name;
+      this.object.uuid = params.uuid || this.object.uuid;
     }
-
-    parent.target.object.add(this.object);
-
-    return true;
   }
 
   public override tick(context: IEngineLoopTickContext): void {
     super.tick(context);
 
     this.object.castShadow = this.castShadow;
-    this.object.receiveShadow = this.receiveShadow;
-    this.object.visible = this.visible;
+    this.object.matrix.fromArray(this.matrix);
+    this.object.matrixAutoUpdate = this.matrixAutoUpdate;
+    this.object.matrixWorld.fromArray(this.matrixWorld);
+    this.object.matrixWorldNeedsUpdate = this.matrixWorldNeedsUpdate;
     this.object.position.fromArray(this.position);
     this.object.quaternion.fromArray(this.rotation);
     this.object.scale.fromArray(this.scale);
-    this.object.matrixWorld.fromArray(this.matrixWorld);
+    this.object.receiveShadow = this.receiveShadow;
     this.object.up.fromArray(this.up);
+    this.object.visible = this.visible;
   }
+}
+
+export interface SceneComponentProxyArgs {
+  name: string;
+  uuid: string;
 }
 
 @CLASS(proxy(EProxyThread.Render, SceneComponentProxy))
@@ -132,7 +137,16 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   public scale: Vector3 = new Vector3(1, 1, 1);
 
   @PROP(serialize(mat4))
+  public matrix: Matrix4 = new Matrix4();
+
+  @PROP(serialize(boolean))
+  public matrixAutoUpdate: boolean = true;
+
+  @PROP(serialize(mat4))
   public matrixWorld: Matrix4 = new Matrix4();
+
+  @PROP(serialize(boolean))
+  public matrixWorldNeedsUpdate: boolean = false;
 
   @PROP(serialize(vec3))
   public up: Vector3 = Object3D.DEFAULT_UP;
@@ -171,6 +185,8 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
    * Will be registered when `MeshComponent.beginPlay` is called.
    */
   public collider: ColliderProxy | null = null;
+
+  public userData: Record<string, any> = {};
 
   constructor(
     @IInstantiationService instantiationService: IInstantiationService,
@@ -266,6 +282,18 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     return false;
   }
 
+  public applyMatrix4(matrix: Matrix4): void {
+    if (this.matrixAutoUpdate) this.updateMatrix();
+
+    this.matrix.premultiply(matrix);
+    this.matrix.decompose(this.position, this.rotation, this.scale);
+  }
+
+  public updateMatrix(): void {
+    this.matrix.compose(this.position, this.rotation, this.scale);
+    this.matrixWorldNeedsUpdate = true;
+  }
+
   public lookAt(x: number, y: number, z: number): void {
     _target.set(x, y, z);
     _position.setFromMatrixPosition(this.matrixWorld);
@@ -294,8 +322,13 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     }
   }
 
-  public getProxyArgs(): [] {
-    return [];
+  public getProxyArgs(): [SceneComponentProxyArgs, ...unknown[]] {
+    return [
+      {
+        name: this.name,
+        uuid: this.uuid,
+      },
+    ];
   }
 
   protected onLookAt(target: Vector3, position: Vector3, up: Vector3): Matrix4 {

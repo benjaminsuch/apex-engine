@@ -34,7 +34,7 @@ export class CameraComponentProxy extends SceneComponentProxy<PerspectiveCamera>
   protected override readonly object: PerspectiveCamera;
 
   constructor(
-    [fov, aspect, near, far]: [number, number, number, number],
+    [params, fov, aspect, near, far]: [any, number, number, number, number],
     tb: TripleBuffer,
     id: number,
     thread: EProxyThread,
@@ -45,6 +45,12 @@ export class CameraComponentProxy extends SceneComponentProxy<PerspectiveCamera>
     const camera = this.renderer.camera as PerspectiveCamera;
 
     this.object = new PerspectiveCamera(fov, camera.aspect, near, far);
+
+    if (params) {
+      this.object.name = params.name;
+      this.object.uuid = params.uuid || this.object.uuid;
+    }
+
     this.renderer.camera = this.object;
   }
 
@@ -107,6 +113,19 @@ export class CameraComponent extends SceneComponent {
     this.setBodyType(null);
 
     this.componentTick.canTick = true;
+  }
+
+  public override getProxyArgs(): [{ name: string, uuid: string }, number, number, number, number] {
+    return [
+      {
+        name: this.name,
+        uuid: this.uuid,
+      },
+      this.fov,
+      this.aspect,
+      this.near,
+      this.far,
+    ];
   }
 
   protected override onLookAt(target: Vector3, position: Vector3, up: Vector3): Matrix4 {

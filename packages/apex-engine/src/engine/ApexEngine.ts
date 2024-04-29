@@ -93,7 +93,7 @@ export class ApexEngine {
       world.setCurrentLevel(level);
 
       await world.setGameMode(url);
-      await world.registerActors((await loader.loadAsync(`game/maps/${url}.glb`)) as GLTFParserRegisterActorCallback[]);
+      await world.registerActors(await loader.loadAsync(`game/maps/${url}.glb`));
 
       if (IS_BROWSER) {
         gameInstance.setupHUD();

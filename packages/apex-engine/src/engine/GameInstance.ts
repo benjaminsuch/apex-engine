@@ -64,9 +64,9 @@ export class GameInstance {
   public async start(): Promise<void> {
     this.logger.info(this.constructor.name, `Start`);
 
-    return this.engine.loadMap(DEFAULT_MAP)
-      .then(() => this.renderWorker.start())
-      .then(() => this.getWorld().beginPlay());
+    await this.engine.loadMap(DEFAULT_MAP);
+    await this.renderWorker.start();
+    await this.getWorld().beginPlay();
   }
 
   public setupHUD(): void {
