@@ -1,5 +1,5 @@
 import type RAPIER from '@dimforge/rapier3d-compat';
-import { type AnimationAction, type AnimationClip, AnimationMixer, Matrix4, Object3D, Quaternion, Vector3 } from 'three';
+import { type AnimationAction, type AnimationClip, type AnimationMixer, Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 
 import { IInstantiationService } from '../../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../../platform/logging/common/ConsoleLogger';
@@ -306,20 +306,6 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     this.position.copy(obj.position);
     this.rotation.copy(obj.quaternion);
     this.scale.copy(obj.scale);
-  }
-
-  public loadAnimations(animations: AnimationClip[], obj: Object3D): void {
-    this.mixer = new AnimationMixer(obj);
-
-    for (const clip of animations) {
-      const action = this.mixer.clipAction(clip);
-      action.enabled = false;
-      action.setEffectiveTimeScale(1);
-      action.setEffectiveWeight(1);
-      action.play();
-
-      this.animations.set(clip.name, action);
-    }
   }
 
   public getProxyArgs(): [SceneComponentProxyArgs, ...unknown[]] {

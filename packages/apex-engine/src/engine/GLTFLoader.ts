@@ -4,7 +4,7 @@
 //
 // and is licensed under the MIT license.
 
-import { Box3, BufferAttribute, ClampToEdgeWrapping, DoubleSide, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, Loader, LoaderUtils, type LoadingManager, Matrix4, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3 } from 'three';
+import { AnimationClip, Box3, BufferAttribute, ClampToEdgeWrapping, DoubleSide, FrontSide, ImageBitmapLoader, InterleavedBuffer, InterleavedBufferAttribute, InterpolateDiscrete, InterpolateLinear, LinearFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearSRGBColorSpace, Loader, LoaderUtils, type LoadingManager, Matrix4, MirroredRepeatWrapping, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NumberKeyframeTrack, QuaternionKeyframeTrack, RepeatWrapping, Sphere, TextureLoader, Vector2, Vector3, VectorKeyframeTrack } from 'three';
 import { DRACOLoader, type GLTF, type KTX2Loader } from 'three-stdlib';
 
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
@@ -138,6 +138,7 @@ export interface GLTFLoaderExtension {
   name: string;
   beforeRoot?: () => Promise<void>;
   afterRoot?: (result: GLTF) => Promise<void>;
+  loadAnimation?: (index: number) => Promise<AnimationClip | undefined>;
   loadNode?: (nodeIndex: number) => Promise<SceneComponent | null>;
   loadMesh?: (meshIndex: number) => Promise<MeshComponent | SkinnedMeshComponent | null>;
   loadBufferView?: (bufferViewIndex: number) => Promise<ArrayBuffer | null>;
@@ -174,8 +175,8 @@ export class GLTFLoader extends Loader {
     this.registerExtensions();
   }
 
-  public override loadAsync(url: string, onProgress?: GLTFLoaderOnProgressHandler): Promise<GLTFParserRegisterActorCallback[]> {
-    return super.loadAsync(url, onProgress) as Promise<GLTFParserRegisterActorCallback[]>;
+  public override loadAsync(url: string, onProgress?: GLTFLoaderOnProgressHandler): Promise<GLTFParsedFile> {
+    return super.loadAsync(url, onProgress) as Promise<GLTFParsedFile>;
   }
 
   public override load(url: string, onLoad: GLTFParserOnLoadHandler, onProgress?: GLTFLoaderOnProgressHandler, onError?: GLTFParserOnErrorHandler): void {
@@ -272,7 +273,7 @@ export class GLTFLoader extends Loader {
     parser.parse(onLoad, onError);
   }
 
-  public async parseAsync(data: string | ArrayBuffer, path: string): Promise<GLTFParserRegisterActorCallback[]> {
+  public async parseAsync(data: string | ArrayBuffer, path: string): Promise<GLTFParsedFile> {
     return new Promise((resolve, reject) => this.parse(data, path, resolve, reject));
   }
 
@@ -359,6 +360,7 @@ export interface GLTFAccessor extends GLTFObject {
 
 export interface GLTFAnimation extends GLTFObject {
   channels: any[];
+  parameters?: any[];
   samplers: any[];
 }
 
@@ -488,7 +490,7 @@ export interface GLTFCamera extends GLTFObject {
 
 export interface GLTFFileContent {
   accessors: GLTFAccessor[];
-  animations?: GLTFAnimation[];
+  animations: GLTFAnimation[];
   asset: GLTFAsset;
   bufferViews: GLTFBufferView[];
   buffers: GLTFBuffer[];
@@ -516,9 +518,14 @@ export interface GLTFParserOptions {
   requestHeader: { [header: string]: string };
 }
 
+export interface GLTFParsedFile {
+  scene: GLTFParserRegisterActorCallback[];
+  animations: GLTFParserRegisterComponentCallback[];
+}
+
 export type GLTFParserRegisterActorCallback = (level: Level, actor?: Actor) => Promise<Actor>;
 
-export type GLTFParserOnLoadHandler = (actors: GLTFParserRegisterActorCallback[]) => void;
+export type GLTFParserOnLoadHandler = (gltf: GLTFParsedFile) => void;
 
 export type GLTFParserOnErrorHandler = (event: ErrorEvent) => void;
 
@@ -560,9 +567,7 @@ export class GLTFParser {
   }
 
   public parse(onLoad: GLTFParserOnLoadHandler, onError?: GLTFParserOnErrorHandler): void {
-    const meshes = this.data.meshes ?? [];
-    const nodes = this.data.nodes ?? [];
-    const skins = this.data.skins ?? [];
+    const { animations = [], meshes = [], nodes = [], skins = [] } = this.data;
 
     for (let i = 0; i < skins.length; ++i) {
       const joints = skins[i].joints;
@@ -580,7 +585,9 @@ export class GLTFParser {
       }
     }
 
-    this.loadScene(0).then(onLoad).catch(onError);
+    Promise.all([this.loadScene(0), Promise.all(animations.map(async (_, index) => this.loadAnimation(index)))])
+      .then(([scene, animations]) => onLoad({ scene, animations }))
+      .catch(onError);
   }
 
   public invokeOne(func: Function): any {
@@ -615,16 +622,17 @@ export class GLTFParser {
     const cacheKey = type + ':' + index;
     let dependency = this.cache.get(cacheKey);
 
-    if (type === 'node') {
-      return this.loadNode(index);
-    } else if (type === 'skin') {
-      return this.loadSkin(index);
-    }
+    if (type === 'mesh') return this.loadMesh(index);
+    if (type === 'node') return this.loadNode(index);
+    if (type === 'skin') return this.loadSkin(index);
 
     if (!dependency) {
       switch (type) {
         case 'accessor':
           dependency = await this.loadAccessor(index);
+          break;
+        case 'animation':
+          dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadAnimation?.(index));
           break;
         case 'buffer':
           dependency = await this.loadBuffer(index);
@@ -637,9 +645,6 @@ export class GLTFParser {
           break;
         case 'material':
           dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMaterial?.(index));
-          break;
-        case 'mesh':
-          dependency = await this.invokeOne((ext: GLTFLoaderExtension) => ext.loadMesh?.(index));
           break;
         case 'scene':
           dependency = await this.loadScene(index);
@@ -961,14 +966,14 @@ export class GLTFParser {
         const material = materials[i];
 
         meshRegisterCallbacks.push(async (actor) => {
-          let component: MeshComponent;
+          const cacheKey = 'mesh:' + index + '_' + i;
+          let component: MeshComponent = this.cache.get(cacheKey);
 
-          if (
-            primitive.mode === WEBGL_CONSTANTS.TRIANGLES
-            || primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP
-            || primitive.mode === WEBGL_CONSTANTS.TRIANGLE_FAN
-            || primitive.mode === undefined
-          ) {
+          if (component) {
+            return component;
+          }
+
+          if (primitive.mode === WEBGL_CONSTANTS.TRIANGLES || primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP || primitive.mode === WEBGL_CONSTANTS.TRIANGLE_FAN || primitive.mode === undefined) {
             if (isSkinnedMesh) {
               component = actor.addComponent(SkinnedMeshComponent, geometry, material);
               (component as SkinnedMeshComponent).normalizeSkinWeights();
@@ -993,9 +998,10 @@ export class GLTFParser {
             this.assignFinalMaterial(component);
           }
 
-          component.name = name;
+          component.name = name + '_' + i;
 
           this.associations.set(component, { meshes: index, primitives: i });
+          this.cache.set(cacheKey, component);
 
           return component;
         });
@@ -1060,7 +1066,7 @@ export class GLTFParser {
   }
 
   public async loadNode(index: number): Promise<GLTFParserRegisterComponentCallback> {
-    const { children = [], name = '', skin } = this.data.nodes[index];
+    const { children = [], skin } = this.data.nodes[index];
 
     return async (actor, parent) => {
       const pending: Promise<GLTFParserRegisterComponentCallback>[] = [this.loadNodeShallow(index)];
@@ -1282,7 +1288,7 @@ export class GLTFParser {
           bufferAttribute = new BufferAttribute(bufferAttribute.array.slice(), bufferAttribute.itemSize, bufferAttribute.normalized);
         }
 
-        for (let i = 0, il = sparseIndices.length; i < il; i++) {
+        for (let i = 0; i < sparseIndices.length; i++) {
           const index = sparseIndices[i];
 
           bufferAttribute.setX(index, sparseValues[i * itemSize]);
@@ -1296,6 +1302,123 @@ export class GLTFParser {
 
       return bufferAttribute;
     });
+  }
+
+  public async loadAnimation(index: number): Promise<GLTFParserRegisterComponentCallback> {
+    const { channels, name = 'animation_' + index, parameters, samplers } = this.data.animations[index];
+
+    const pending = {
+      nodes: [] as Promise<GLTFParserRegisterComponentCallback>[],
+      inputAccessors: [] as Promise<BufferAttribute>[],
+      outputAccessors: [] as Promise<BufferAttribute>[],
+      samplers: [] as any[],
+      targets: [] as any[],
+    };
+
+    for (let i = 0; i < channels.length; ++i) {
+      const channel = channels[i];
+      const target = channel.target;
+
+      if (target.node === undefined) continue;
+
+      const sampler = samplers[channel.sampler];
+      const input = parameters !== undefined ? parameters[sampler.input] : sampler.input;
+      const output = parameters !== undefined ? parameters[sampler.output] : sampler.output;
+
+      pending.nodes.push(this.getDependency('node', target.node));
+      pending.inputAccessors.push(this.getDependency('accessor', input));
+      pending.outputAccessors.push(this.getDependency('accessor', output));
+      pending.samplers.push(sampler);
+      pending.targets.push(target);
+    }
+
+    const result = await Promise.all([
+      Promise.all(pending.nodes),
+      Promise.all(pending.inputAccessors),
+      Promise.all(pending.outputAccessors),
+      Promise.all(pending.samplers),
+      Promise.all(pending.targets),
+    ]);
+
+    return async (actor) => {
+      const [nodes, inputAccessors, outputAccessors, samplers, targets] = result;
+      const tracks = [];
+
+      for (let i = 0; i < nodes.length; ++i) {
+        const getComponent = nodes[i];
+
+        if (!getComponent) continue;
+
+        const component = await getComponent(actor);
+        const inputAccessor = inputAccessors[i];
+        const outputAccessor = outputAccessors[i];
+        const sampler = samplers[i];
+        const target = targets[i];
+
+        // component.updateMatrix();
+
+        const targetPath = PATH_PROPERTIES[target.path as keyof typeof PATH_PROPERTIES];
+
+        let TypedKeyframeTrack: typeof NumberKeyframeTrack | QuaternionKeyframeTrack | VectorKeyframeTrack;
+
+        switch (targetPath) {
+          case PATH_PROPERTIES.weights:
+            TypedKeyframeTrack = NumberKeyframeTrack;
+            break;
+          case PATH_PROPERTIES.rotation:
+            TypedKeyframeTrack = QuaternionKeyframeTrack;
+            break;
+          case PATH_PROPERTIES.translation:
+          case PATH_PROPERTIES.scale:
+          default:
+            TypedKeyframeTrack = VectorKeyframeTrack;
+            break;
+        }
+
+        const componentName = component.name ?? 'node_' + index;
+        const interpolation = sampler.interpolation !== undefined ? INTERPOLATION[sampler.interpolation as keyof typeof INTERPOLATION] : InterpolateLinear;
+        const targetNames = [];
+
+        if (targetPath === PATH_PROPERTIES.weights) {
+          // component.traverse(function(object) {
+          //   if (object.morphTargetInfluences) {
+          //     targetNames.push(object.name ? object.name : object.uuid);
+          //   }
+          // });
+        } else {
+          targetNames.push(componentName);
+        }
+
+        let outputArray = outputAccessor.array;
+
+        if (outputAccessor.normalized) {
+          const scale = getNormalizedComponentScale(outputArray.constructor as any);
+          const scaled = new Float32Array(outputArray.length);
+
+          for (let j = 0; j < outputArray.length; j++) {
+            scaled[j] = outputArray[j] * scale;
+          }
+
+          outputArray = scaled;
+        }
+
+        for (let j = 0; j < targetNames.length; j++) {
+          const track = new TypedKeyframeTrack(targetNames[j] + '.' + targetPath, inputAccessor.array, outputArray, interpolation);
+
+          if (sampler.interpolation === 'CUBICSPLINE') {
+            // track.createInterpolant = function InterpolantFactoryMethodGLTFCubicSpline(result) {
+            //   const interpolantType = this instanceof QuaternionKeyframeTrack ? GLTFCubicSplineQuaternionInterpolant : GLTFCubicSplineInterpolant;
+            //   return new interpolantType(this.times, this.values, this.getValueSize() / 3, result);
+            // };
+            // track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline = true;
+          }
+
+          tracks.push(track);
+        }
+      }
+
+      return new AnimationClip(name, undefined, tracks) as any;
+    };
   }
 
   public async assignTexture(
@@ -1564,7 +1687,10 @@ function getImageURIMimeType(uri: string): string {
 
 function assignExtrasToUserData(object: InstanceType<TClass>, extras?: Record<string, unknown>): void {
   if (extras) {
-    if (extras && typeof extras === 'object') {
+    if (typeof extras.apex === 'string') {
+      extras.apex = JSON.parse(extras.apex);
+    }
+    if (typeof extras === 'object') {
       Object.assign(object.userData, extras);
     } else {
       console.warn('THREE.GLTFLoader: Ignoring primitive type .extras, ' + extras);

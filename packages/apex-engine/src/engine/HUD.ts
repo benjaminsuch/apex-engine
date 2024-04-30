@@ -41,6 +41,7 @@ export class HUD extends Actor {
     super(instantiationService, logger);
 
     this.canvas = el('canvas', { id: 'hud' });
+    this.canvas.hidden = true;
 
     this.debugContainer = this.instantiationService.createInstance(DebugContainer);
     this.hudContainer = this.instantiationService.createInstance(HUDContainer);

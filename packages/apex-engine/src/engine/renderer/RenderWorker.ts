@@ -87,10 +87,7 @@ export class RenderWorker {
 
       this.setSize(initialWidth, initialHeight);
 
-      const lines = new LineSegments(
-        new BufferGeometry(),
-        new LineBasicMaterial({ color: 0xffffff, vertexColors: true })
-      );
+      const lines = new LineSegments(new BufferGeometry(), new LineBasicMaterial({ color: 0xffffff, vertexColors: true }));
       lines.visible = true;
 
       this.scene.add(lines);
