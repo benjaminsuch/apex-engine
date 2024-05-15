@@ -12,7 +12,7 @@ import { type BufferGeometry, type BufferGeometryProxy } from './geometries/Buff
 import { type Material, type MaterialProxy } from './materials/Material';
 import { type RenderWorker } from './RenderWorker';
 import { IRenderWorkerContext } from './RenderWorkerContext';
-import { SceneComponent, SceneComponentProxy } from './SceneComponent';
+import { SceneComponent, SceneComponentProxy, type SceneComponentProxyArgs } from './SceneComponent';
 
 export class MeshComponentProxy extends SceneComponentProxy<THREE.Mesh> {
   declare geometry: BufferGeometryProxy;
@@ -21,7 +21,7 @@ export class MeshComponentProxy extends SceneComponentProxy<THREE.Mesh> {
 
   protected override readonly object: THREE.Mesh;
 
-  constructor([params]: any[], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
+  constructor([params]: [SceneComponentProxyArgs], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
     super([], tb, id, thread, renderer);
 
     this.object = new THREE.Mesh(this.geometry.get(), this.material.get());

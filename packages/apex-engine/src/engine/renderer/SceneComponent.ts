@@ -95,9 +95,7 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
   /**
    * Available after `loadAnimations` has been called.
    */
-  private mixer: AnimationMixer | null = null;
-
-  private readonly animations: Map<AnimationClip['name'], AnimationAction> = new Map();
+  protected mixer: AnimationMixer | null = null;
 
   /**
    * This property is used for registering the rigid-body. It supports `null`,
@@ -127,11 +125,17 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     this.bodyType = val;
   }
 
+  public readonly animations: Map<AnimationClip['name'], AnimationAction> = new Map();
+
   @PROP(serialize(vec3))
   public position: Vector3 = new Vector3();
 
   @PROP(serialize(quat))
   public rotation: Quaternion = new Quaternion();
+
+  public get quaternion(): Quaternion {
+    return this.rotation;
+  }
 
   @PROP(serialize(vec3))
   public scale: Vector3 = new Vector3(1, 1, 1);
@@ -199,6 +203,10 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
 
   public override async tick(context: IEngineLoopTickContext): Promise<void> {
     await super.tick(context);
+
+    if (this.mixer) {
+      this.mixer.update(context.delta);
+    }
   }
 
   public setAsRoot(actor: Actor): void {
@@ -308,14 +316,22 @@ export class SceneComponent extends ActorComponent implements IProxyOrigin {
     this.scale.copy(obj.scale);
   }
 
-  public loadAnimations(animations: AnimationClip[], obj: Object3D): void {
-    this.mixer = new AnimationMixer(obj);
+  /**
+   * Creates an animation mixer and creates an action for each clip.
+   *
+   * Note: Every action calls `play` after creation, but has it's effective weight set to `0`.
+   *
+   * @param clips - An array of animation clips.
+   */
+  public loadAnimations(clips: AnimationClip[]): void {
+    this.mixer = new AnimationMixer(this as any);
 
-    for (const clip of animations) {
+    for (const clip of clips) {
       const action = this.mixer.clipAction(clip);
-      action.enabled = false;
+
+      action.enabled = true;
       action.setEffectiveTimeScale(1);
-      action.setEffectiveWeight(1);
+      action.setEffectiveWeight(0);
       action.play();
 
       this.animations.set(clip.name, action);

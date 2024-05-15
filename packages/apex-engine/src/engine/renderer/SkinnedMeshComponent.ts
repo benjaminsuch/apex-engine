@@ -8,7 +8,7 @@ import { type IEngineLoopTickContext } from '../EngineLoop';
 import { GameProxyManager } from '../GameProxyManager';
 import { MeshComponent, MeshComponentProxy } from './MeshComponent';
 import { type RenderWorker } from './RenderWorker';
-import { type SceneComponent } from './SceneComponent';
+import { type SceneComponent, type SceneComponentProxyArgs } from './SceneComponent';
 import { Skeleton, type SkeletonProxy } from './Skeleton';
 
 export class SkinnedMeshComponentProxy extends MeshComponentProxy {
@@ -22,8 +22,8 @@ export class SkinnedMeshComponentProxy extends MeshComponentProxy {
 
   public override readonly object: THREE.SkinnedMesh;
 
-  constructor([params]: any[], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
-    super([], tb, id, thread, renderer);
+  constructor([params]: [SceneComponentProxyArgs], tb: TripleBuffer, id: number, thread: EProxyThread, renderer: RenderWorker) {
+    super([params], tb, id, thread, renderer);
 
     const geometry = this.geometry.get();
 
