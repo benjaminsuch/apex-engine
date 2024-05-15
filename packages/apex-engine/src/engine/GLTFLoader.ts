@@ -523,6 +523,9 @@ export interface GLTFParsedFile {
   animations: GLTFParserRegisterComponentCallback[];
 }
 
+/**
+ * Spawns a new actor if an existing `actor` is not provided and registers all it's components.
+ */
 export type GLTFParserRegisterActorCallback = (level: Level, actor?: Actor) => Promise<Actor>;
 
 export type GLTFParserOnLoadHandler = (gltf: GLTFParsedFile) => void;
@@ -969,9 +972,7 @@ export class GLTFParser {
           const cacheKey = 'mesh:' + index + '_' + i;
           let component: MeshComponent = this.cache.get(cacheKey);
 
-          if (component) {
-            return component;
-          }
+          if (component) return component;
 
           if (primitive.mode === WEBGL_CONSTANTS.TRIANGLES || primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP || primitive.mode === WEBGL_CONSTANTS.TRIANGLE_FAN || primitive.mode === undefined) {
             if (isSkinnedMesh) {
@@ -1036,9 +1037,7 @@ export class GLTFParser {
 
         let skeleton: Skeleton = this.cache.get(cacheKey);
 
-        if (skeleton) {
-          return skeleton;
-        }
+        if (skeleton) return skeleton;
 
         for (let i = 0; i < joints.length; i++) {
           const registerComponent = joints[i];
@@ -1119,9 +1118,7 @@ export class GLTFParser {
       const cacheKey = 'node:' + index;
       let component: SceneComponent = this.cache.get(cacheKey);
 
-      if (component) {
-        return component;
-      }
+      if (component) return component;
 
       const components: SceneComponent[] = [];
 

@@ -1,3 +1,5 @@
+import { MathUtils } from 'three';
+
 import { IInstantiationService } from '../platform/di/common/InstantiationService';
 import { IConsoleLogger } from '../platform/logging/common/ConsoleLogger';
 import { type Actor } from './Actor';
@@ -23,7 +25,7 @@ export class ActorComponent {
 
   public name: string = '';
 
-  public uuid: string = '';
+  public uuid: string = MathUtils.generateUUID();
 
   constructor(
     @IInstantiationService protected readonly instantiationService: IInstantiationService,
